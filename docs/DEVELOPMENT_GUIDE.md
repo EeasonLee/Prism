@@ -1,4 +1,4 @@
-# Prism项目开发指南
+# Prism 项目开发指南
 
 > 版本：v1.0.0  
 > 更新时间：2025-08-08  
@@ -21,20 +21,17 @@
 ### 1. 环境要求
 
 **必需软件：**
-- **Node.js**: 18.0.0+ (推荐使用Volta管理)
+
+- **Node.js**: 18.0.0+ (推荐使用 Volta 管理)
 - **pnpm**: 8.0.0+ (包管理器)
 - **Git**: 2.30.0+ (版本控制)
 - **VS Code**: 1.80.0+ (推荐编辑器)
 
 **推荐插件：**
+
 ```json
 {
-  "recommendations": [
-    "bradlc.vscode-tailwindcss",
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
-    "ms-vscode.vscode-typescript-next"
-  ]
+  "recommendations": ["bradlc.vscode-tailwindcss", "esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "ms-vscode.vscode-typescript-next"]
 }
 ```
 
@@ -57,7 +54,8 @@ npx nx serve prism
 
 ### 3. 开发工具配置
 
-**VS Code设置 (.vscode/settings.json):**
+**VS Code 设置 (.vscode/settings.json):**
+
 ```json
 {
   "editor.formatOnSave": true,
@@ -105,13 +103,15 @@ git push origin feature/user-management
 
 ### 2. 组件开发流程
 
-**步骤1：创建组件**
+**步骤 1：创建组件**
+
 ```bash
 # 生成新组件
 npx nx generate @nx/react:component UserCard --project=prism --export
 ```
 
-**步骤2：编写组件**
+**步骤 2：编写组件**
+
 ```tsx
 // apps/prism/src/app/components/user-card/user-card.tsx
 import { FC } from 'react';
@@ -131,29 +131,19 @@ export const UserCard: FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-center space-x-4">
-        <img
-          src={user.avatar || '/default-avatar.png'}
-          alt={user.name}
-          className="w-12 h-12 rounded-full"
-        />
+        <img src={user.avatar || '/default-avatar.png'} alt={user.name} className="w-12 h-12 rounded-full" />
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
           <p className="text-gray-600">{user.email}</p>
         </div>
         <div className="flex space-x-2">
           {onEdit && (
-            <button
-              onClick={() => onEdit(user)}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
+            <button onClick={() => onEdit(user)} className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
               编辑
             </button>
           )}
           {onDelete && (
-            <button
-              onClick={() => onDelete(user.id)}
-              className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-            >
+            <button onClick={() => onDelete(user.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
               删除
             </button>
           )}
@@ -164,14 +154,16 @@ export const UserCard: FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
 };
 ```
 
-**步骤3：导出组件**
+**步骤 3：导出组件**
+
 ```tsx
 // apps/prism/src/app/components/user-card/index.ts
 export { UserCard } from './user-card';
 export type { UserCardProps } from './user-card';
 ```
 
-**步骤4：使用组件**
+**步骤 4：使用组件**
+
 ```tsx
 // apps/prism/src/app/app.tsx
 import { UserCard } from './components/user-card';
@@ -180,7 +172,7 @@ const mockUser = {
   id: 1,
   name: '张三',
   email: 'zhangsan@example.com',
-  avatar: '/avatars/zhangsan.jpg'
+  avatar: '/avatars/zhangsan.jpg',
 };
 
 function App() {
@@ -194,11 +186,7 @@ function App() {
 
   return (
     <div className="p-6">
-      <UserCard
-        user={mockUser}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      <UserCard user={mockUser} onEdit={handleEdit} onDelete={handleDelete} />
     </div>
   );
 }
@@ -206,13 +194,15 @@ function App() {
 
 ### 3. 页面开发流程
 
-**步骤1：创建页面组件**
+**步骤 1：创建页面组件**
+
 ```bash
 # 生成页面组件
 npx nx generate @nx/react:component UserList --project=prism --export
 ```
 
-**步骤2：配置路由**
+**步骤 2：配置路由**
+
 ```tsx
 // apps/prism/src/app/app.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -222,10 +212,8 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm">
-          {/* 导航栏 */}
-        </nav>
-        
+        <nav className="bg-white shadow-sm">{/* 导航栏 */}</nav>
+
         <main className="container mx-auto px-4 py-8">
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -243,9 +231,10 @@ function App() {
 
 ## 📏 代码规范
 
-### 1. TypeScript规范
+### 1. TypeScript 规范
 
 **类型定义：**
+
 ```typescript
 // ✅ 好的做法
 interface User {
@@ -264,6 +253,7 @@ interface User {
 ```
 
 **函数类型：**
+
 ```typescript
 // ✅ 好的做法
 const handleUserClick = (user: User): void => {
@@ -276,9 +266,10 @@ const handleUserClick = (user: any) => {
 };
 ```
 
-### 2. React规范
+### 2. React 规范
 
 **组件命名：**
+
 ```tsx
 // ✅ 好的做法 - PascalCase
 export const UserCard: FC<UserCardProps> = ({ user }) => {
@@ -291,7 +282,8 @@ export const userCard: FC<UserCardProps> = ({ user }) => {
 };
 ```
 
-**Hooks使用：**
+**Hooks 使用：**
+
 ```tsx
 // ✅ 好的做法
 function UserList() {
@@ -315,21 +307,14 @@ function UserList() {
     fetchUsers();
   }, []);
 
-  return (
-    <div>
-      {loading ? (
-        <div>加载中...</div>
-      ) : (
-        users.map(user => <UserCard key={user.id} user={user} />)
-      )}
-    </div>
-  );
+  return <div>{loading ? <div>加载中...</div> : users.map((user) => <UserCard key={user.id} user={user} />)}</div>;
 }
 ```
 
-### 3. CSS规范
+### 3. CSS 规范
 
-**Tailwind使用：**
+**Tailwind 使用：**
+
 ```tsx
 // ✅ 好的做法 - 语义化类名
 <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
@@ -348,6 +333,7 @@ function UserList() {
 ```
 
 **自定义样式：**
+
 ```css
 /* apps/prism/src/styles.css */
 @tailwind base;
@@ -359,7 +345,7 @@ function UserList() {
   .btn-primary {
     @apply px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors;
   }
-  
+
   .card {
     @apply bg-white rounded-lg shadow-md p-6;
   }
@@ -373,18 +359,21 @@ function UserList() {
 ### 1. React DevTools
 
 **安装：**
+
 - Chrome: [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi)
 - Firefox: [React Developer Tools](https://addons.mozilla.org/en-US/firefox/addon/react-devtools/)
 
 **使用技巧：**
+
 - 查看组件树结构
-- 检查组件props和state
+- 检查组件 props 和 state
 - 性能分析
 - 组件重渲染分析
 
 ### 2. 浏览器调试
 
-**Console调试：**
+**Console 调试：**
+
 ```typescript
 // 开发环境调试
 if (process.env.NODE_ENV === 'development') {
@@ -394,6 +383,7 @@ if (process.env.NODE_ENV === 'development') {
 ```
 
 **断点调试：**
+
 ```typescript
 // 在代码中添加断点
 function handleUserClick(user: User) {
@@ -404,7 +394,8 @@ function handleUserClick(user: User) {
 
 ### 3. 网络调试
 
-**API调试：**
+**API 调试：**
+
 ```typescript
 // 使用fetch调试
 const response = await fetch('/api/users');
@@ -417,17 +408,11 @@ console.log('响应数据:', data);
 ### 4. 性能调试
 
 **React Profiler：**
+
 ```tsx
 import { Profiler } from 'react';
 
-function onRenderCallback(
-  id: string,
-  phase: string,
-  actualDuration: number,
-  baseDuration: number,
-  startTime: number,
-  commitTime: number
-) {
+function onRenderCallback(id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) {
   console.log(`组件 ${id} 渲染时间: ${actualDuration}ms`);
 }
 
@@ -444,9 +429,10 @@ function App() {
 
 ## ⚡ 性能优化
 
-### 1. React优化
+### 1. React 优化
 
 **避免不必要的重渲染：**
+
 ```tsx
 // ✅ 好的做法 - 使用React.memo
 const UserCard = React.memo<UserCardProps>(({ user, onEdit, onDelete }) => {
@@ -470,6 +456,7 @@ const sortedUsers = useMemo(() => {
 ```
 
 **懒加载组件：**
+
 ```tsx
 // ✅ 好的做法 - 懒加载
 const UserDetail = lazy(() => import('./components/user-detail'));
@@ -486,6 +473,7 @@ function App() {
 ### 2. 构建优化
 
 **代码分割：**
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
@@ -503,6 +491,7 @@ export default defineConfig({
 ```
 
 **图片优化：**
+
 ```tsx
 // ✅ 好的做法 - 使用WebP格式
 <img
@@ -527,7 +516,8 @@ export default defineConfig({
 
 ### 1. 构建问题
 
-**Q: 构建时出现TypeScript错误**
+**Q: 构建时出现 TypeScript 错误**
+
 ```bash
 # 解决方案
 npx nx typecheck prism
@@ -535,6 +525,7 @@ npx nx typecheck prism
 ```
 
 **Q: 热更新不工作**
+
 ```bash
 # 解决方案
 # 1. 检查文件是否在正确的目录
@@ -547,6 +538,7 @@ rm -rf .nx/cache
 ### 2. 依赖问题
 
 **Q: 依赖安装失败**
+
 ```bash
 # 解决方案
 # 1. 清除缓存
@@ -558,6 +550,7 @@ pnpm install
 ```
 
 **Q: 版本冲突**
+
 ```bash
 # 解决方案
 # 1. 查看依赖树
@@ -570,7 +563,8 @@ pnpm install --fix-lockfile
 
 ### 3. 开发问题
 
-**Q: ESLint错误太多**
+**Q: ESLint 错误太多**
+
 ```bash
 # 解决方案
 # 1. 自动修复
@@ -579,7 +573,8 @@ npx nx lint prism --fix
 # 在.eslintignore中添加文件路径
 ```
 
-**Q: Tailwind样式不生效**
+**Q: Tailwind 样式不生效**
+
 ```bash
 # 解决方案
 # 1. 检查配置文件
@@ -597,6 +592,7 @@ rm -rf .nx/cache
 ### 1. 项目结构
 
 **推荐的目录结构：**
+
 ```
 apps/prism/src/
 ├── app/                    # 应用组件
@@ -613,37 +609,37 @@ apps/prism/src/
 ### 2. 组件设计
 
 **组件设计原则：**
+
 - **单一职责** - 每个组件只做一件事
 - **可复用性** - 组件应该可以在不同地方使用
 - **可测试性** - 组件应该易于测试
 - **可维护性** - 组件应该易于理解和修改
 
 **组件分类：**
+
 ```tsx
 // 1. 展示组件 (Presentational Components)
-const UserAvatar = ({ user }: { user: User }) => (
-  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
-);
+const UserAvatar = ({ user }: { user: User }) => <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />;
 
 // 2. 容器组件 (Container Components)
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
-  
+
   useEffect(() => {
     // 数据获取逻辑
   }, []);
-  
+
   return (
     <div>
-      {users.map(user => <UserCard key={user.id} user={user} />)}
+      {users.map((user) => (
+        <UserCard key={user.id} user={user} />
+      ))}
     </div>
   );
 };
 
 // 3. 高阶组件 (Higher-Order Components)
-const withLoading = <P extends object>(
-  Component: React.ComponentType<P>
-) => {
+const withLoading = <P extends object>(Component: React.ComponentType<P>) => {
   return (props: P & { loading?: boolean }) => {
     if (props.loading) {
       return <div>加载中...</div>;
@@ -656,6 +652,7 @@ const withLoading = <P extends object>(
 ### 3. 状态管理
 
 **本地状态：**
+
 ```tsx
 // 使用useState管理简单状态
 const [count, setCount] = useState(0);
@@ -663,6 +660,7 @@ const [user, setUser] = useState<User | null>(null);
 ```
 
 **复杂状态：**
+
 ```tsx
 // 使用useReducer管理复杂状态
 interface State {
@@ -671,10 +669,7 @@ interface State {
   error: string | null;
 }
 
-type Action = 
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: User[] }
-  | { type: 'FETCH_ERROR'; payload: string };
+type Action = { type: 'FETCH_START' } | { type: 'FETCH_SUCCESS'; payload: User[] } | { type: 'FETCH_ERROR'; payload: string };
 
 const userReducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -693,11 +688,9 @@ const userReducer = (state: State, action: Action): State => {
 ### 4. 错误处理
 
 **错误边界：**
+
 ```tsx
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -726,21 +719,24 @@ class ErrorBoundary extends React.Component<
 ## 📚 学习资源
 
 ### 官方文档
-- [React官方文档](https://react.dev/)
-- [TypeScript官方文档](https://www.typescriptlang.org/docs/)
-- [Vite官方文档](https://vitejs.dev/)
-- [Tailwind CSS文档](https://tailwindcss.com/docs)
+
+- [React 官方文档](https://react.dev/)
+- [TypeScript 官方文档](https://www.typescriptlang.org/docs/)
+- [Vite 官方文档](https://vitejs.dev/)
+- [Tailwind CSS 文档](https://tailwindcss.com/docs)
 
 ### 推荐书籍
-- 《React学习手册》
-- 《TypeScript编程》
-- 《现代JavaScript教程》
+
+- 《React 学习手册》
+- 《TypeScript 编程》
+- 《现代 JavaScript 教程》
 
 ### 在线课程
-- React官方教程
-- TypeScript入门课程
+
+- React 官方教程
+- TypeScript 入门课程
 - 前端工程化实践
 
 ---
 
-*本文档将随着项目发展持续更新*
+_本文档将随着项目发展持续更新_
