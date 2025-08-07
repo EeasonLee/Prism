@@ -1,0 +1,5 @@
+# 运行ESLint检查
+npx nx lint prism
+
+# 运行Prettier格式化
+npx prettier --write .
