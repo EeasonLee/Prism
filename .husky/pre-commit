@@ -1,2 +1,3 @@
+#!/bin/sh
 npx nx lint prism
 npx prettier --write .
