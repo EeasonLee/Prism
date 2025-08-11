@@ -140,9 +140,17 @@ Prism 是一个基于 Nx Monorepo 的企业级中后台系统，采用现代化�
 {
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "production": ["default", "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)"]
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)"
+    ]
   },
-  "plugins": ["@nx/js/typescript", "@nx/react/router-plugin", "@nx/eslint/plugin", "@nx/vite/plugin"],
+  "plugins": [
+    "@nx/js/typescript",
+    "@nx/react/router-plugin",
+    "@nx/eslint/plugin",
+    "@nx/vite/plugin"
+  ],
   "generators": {
     "@nx/react": {
       "application": {
@@ -227,7 +235,13 @@ export default defineConfig(() => ({
 const { createGlobPatternsForDependencies } = require('@nx/react/tailwind');
 
 module.exports = {
-  content: [join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'), ...createGlobPatternsForDependencies(__dirname)],
+  content: [
+    join(
+      __dirname,
+      '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'
+    ),
+    ...createGlobPatternsForDependencies(__dirname),
+  ],
   theme: {
     extend: {},
   },
