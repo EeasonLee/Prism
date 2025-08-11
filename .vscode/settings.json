@@ -1,0 +1,33 @@
+{
+  // ===== 编辑器基础设置 =====
+  "editor.tabSize": 2, // 设置缩进大小为 2 个空格
+  "editor.insertSpaces": true, // 使用空格而不是制表符进行缩进
+  "editor.detectIndentation": false, // 禁用自动检测文件缩进，强制使用我们的设置
+  // ===== 代码格式化设置 =====
+  "editor.formatOnSave": true, // 保存文件时自动格式化代码
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // 使用 Prettier 作为默认格式化工具
+  // ===== 保存时自动修复设置 =====
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit", // 保存时自动修复所有 ESLint 问题
+    "source.organizeImports": "explicit" // 保存时自动整理和排序导入语句
+  },
+  // ===== TypeScript 设置 =====
+  "typescript.preferences.importModuleSpecifier": "relative", // 导入模块时使用相对路径而不是绝对路径
+  "typescript.suggest.autoImports": true, // 启用 TypeScript 自动导入建议
+  // ===== ESLint 验证设置 =====
+  "eslint.validate": [
+    "javascript", // 验证 JavaScript 文件
+    "javascriptreact", // 验证 JSX 文件
+    "typescript", // 验证 TypeScript 文件
+    "typescriptreact" // 验证 TSX 文件
+  ],
+  // ===== 文件关联设置 =====
+  "files.associations": {
+    "*.css": "tailwindcss" // 将 .css 文件关联到 Tailwind CSS 语言模式
+  },
+  // ===== Tailwind CSS 设置 =====
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript", // 在 TypeScript 文件中启用 Tailwind CSS 智能提示
+    "typescriptreact": "javascript" // 在 TSX 文件中启用 Tailwind CSS 智能提示
+  }
+}
