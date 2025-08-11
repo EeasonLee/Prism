@@ -31,7 +31,12 @@
 
 ```json
 {
-  "recommendations": ["bradlc.vscode-tailwindcss", "esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "ms-vscode.vscode-typescript-next"]
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-typescript-next"
+  ]
 }
 ```
 
@@ -131,19 +136,29 @@ export const UserCard: FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-center space-x-4">
-        <img src={user.avatar || '/default-avatar.png'} alt={user.name} className="w-12 h-12 rounded-full" />
+        <img
+          src={user.avatar || '/default-avatar.png'}
+          alt={user.name}
+          className="w-12 h-12 rounded-full"
+        />
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
           <p className="text-gray-600">{user.email}</p>
         </div>
         <div className="flex space-x-2">
           {onEdit && (
-            <button onClick={() => onEdit(user)} className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+            <button
+              onClick={() => onEdit(user)}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
               编辑
             </button>
           )}
           {onDelete && (
-            <button onClick={() => onDelete(user.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+            <button
+              onClick={() => onDelete(user.id)}
+              className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+            >
               删除
             </button>
           )}
@@ -307,7 +322,15 @@ function UserList() {
     fetchUsers();
   }, []);
 
-  return <div>{loading ? <div>加载中...</div> : users.map((user) => <UserCard key={user.id} user={user} />)}</div>;
+  return (
+    <div>
+      {loading ? (
+        <div>加载中...</div>
+      ) : (
+        users.map(user => <UserCard key={user.id} user={user} />)
+      )}
+    </div>
+  );
 }
 ```
 
@@ -412,7 +435,14 @@ console.log('响应数据:', data);
 ```tsx
 import { Profiler } from 'react';
 
-function onRenderCallback(id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) {
+function onRenderCallback(
+  id: string,
+  phase: string,
+  actualDuration: number,
+  baseDuration: number,
+  startTime: number,
+  commitTime: number
+) {
   console.log(`组件 ${id} 渲染时间: ${actualDuration}ms`);
 }
 
@@ -619,7 +649,9 @@ apps/prism/src/
 
 ```tsx
 // 1. 展示组件 (Presentational Components)
-const UserAvatar = ({ user }: { user: User }) => <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />;
+const UserAvatar = ({ user }: { user: User }) => (
+  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+);
 
 // 2. 容器组件 (Container Components)
 const UserList = () => {
@@ -631,7 +663,7 @@ const UserList = () => {
 
   return (
     <div>
-      {users.map((user) => (
+      {users.map(user => (
         <UserCard key={user.id} user={user} />
       ))}
     </div>
@@ -669,7 +701,10 @@ interface State {
   error: string | null;
 }
 
-type Action = { type: 'FETCH_START' } | { type: 'FETCH_SUCCESS'; payload: User[] } | { type: 'FETCH_ERROR'; payload: string };
+type Action =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: User[] }
+  | { type: 'FETCH_ERROR'; payload: string };
 
 const userReducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -690,7 +725,10 @@ const userReducer = (state: State, action: Action): State => {
 **错误边界：**
 
 ```tsx
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };

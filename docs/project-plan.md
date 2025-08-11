@@ -383,7 +383,13 @@ module.exports = {
   overrides: [
     {
       files: ['*.ts', '*.tsx', '*.js', '*.jsx'],
-      extends: ['@typescript-eslint/recommended', 'plugin:@typescript-eslint/recommended-requiring-type-checking', 'plugin:react/recommended', 'plugin:react-hooks/recommended', 'plugin:jsx-a11y/recommended'],
+      extends: [
+        '@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended-requiring-type-checking',
+        'plugin:react/recommended',
+        'plugin:react-hooks/recommended',
+        'plugin:jsx-a11y/recommended',
+      ],
       rules: {
         '@nx/enforce-module-boundaries': [
           'error',
@@ -555,7 +561,15 @@ const defaultProps: Partial<ButtonProps> = {
 };
 
 // 组件实现
-export const Button: React.FC<ButtonProps> = ({ variant = 'primary', size = 'md', disabled = false, loading = false, children, onClick, ...props }) => {
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  children,
+  onClick,
+  ...props
+}) => {
   // 组件逻辑
 };
 
@@ -837,7 +851,11 @@ export const trackPageView = (url: string) => {
   }
 };
 
-export const trackEvent = (action: string, category: string, label?: string) => {
+export const trackEvent = (
+  action: string,
+  category: string,
+  label?: string
+) => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', action, {
       event_category: category,
@@ -1247,7 +1265,9 @@ export class PageGenerator {
     const files: GeneratedFiles = {};
 
     // 生成页面组件
-    files[`${options.name}/index.tsx`] = await this.generatePageComponent(options);
+    files[`${options.name}/index.tsx`] = await this.generatePageComponent(
+      options
+    );
 
     // 生成 API hooks
     files[`${options.name}/hooks.ts`] = await this.generateHooks(options);
@@ -1263,7 +1283,9 @@ export class PageGenerator {
     return files;
   }
 
-  private async generatePageComponent(options: PageGeneratorOptions): Promise<string> {
+  private async generatePageComponent(
+    options: PageGeneratorOptions
+  ): Promise<string> {
     // 使用模板引擎生成页面组件
     return this.renderTemplate('page.tsx.hbs', {
       name: options.name,
@@ -1281,7 +1303,9 @@ export class PageGenerator {
 import { Command } from 'commander';
 import { PageGenerator } from '@my-admin/generators';
 
-export const generateCommand = new Command('generate').alias('g').description('Generate code from templates');
+export const generateCommand = new Command('generate')
+  .alias('g')
+  .description('Generate code from templates');
 
 generateCommand
   .command('page <name>')
@@ -1337,7 +1361,11 @@ interface ComponentRecommendation {
 }
 
 export class ComponentRecommender {
-  recommend(context: { pageType: 'list' | 'detail' | 'form'; dataType: 'user' | 'product' | 'order' | 'generic'; features: string[] }): ComponentRecommendation[] {
+  recommend(context: {
+    pageType: 'list' | 'detail' | 'form';
+    dataType: 'user' | 'product' | 'order' | 'generic';
+    features: string[];
+  }): ComponentRecommendation[] {
     const recommendations: ComponentRecommendation[] = [];
 
     if (context.pageType === 'list') {
@@ -1396,7 +1424,7 @@ export class DesignParser {
 
   private elementsToJSX(elements: DesignElement[]): string {
     return elements
-      .map((element) => {
+      .map(element => {
         switch (element.type) {
           case 'button':
             return `<Button ${this.propsToString(element.properties)}>
@@ -1494,13 +1522,18 @@ ${info.description}
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
-${info.props.map((prop) => `| ${prop.name} | \`${prop.type}\` | ${prop.default} | ${prop.description} |`).join('\n')}
+${info.props
+  .map(
+    prop =>
+      `| ${prop.name} | \`${prop.type}\` | ${prop.default} | ${prop.description} |`
+  )
+  .join('\n')}
 
 ## Examples
 
 ${info.examples
   .map(
-    (example) => `
+    example => `
 ### ${example.title}
 
 \`\`\`tsx
