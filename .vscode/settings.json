@@ -29,5 +29,6 @@
   "tailwindCSS.includeLanguages": {
     "typescript": "javascript", // 在 TypeScript 文件中启用 Tailwind CSS 智能提示
     "typescriptreact": "javascript" // 在 TSX 文件中启用 Tailwind CSS 智能提示
-  }
+  },
+  "nxConsole.generateAiAgentRules": true
 }
