@@ -1,102 +1,150 @@
-#
+# Prism
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+✨ 基于 [Nx](https://nx.dev) 和 [Next.js](https://nextjs.org) 的现代化 Web 应用工作区 ✨
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+这是一个使用 Nx 21.3.11 和 Next.js 15 构建的现代化 Web 应用项目，采用 pnpm 作为包管理器。
 
-## Run tasks
+## 🚀 快速开始
 
-To run the dev server for your app, use:
+### 开发环境启动
 
-```sh
-npx nx serve prism
-```
-
-To create a production bundle:
+启动 prism 应用的开发服务器：
 
 ```sh
-npx nx build prism
+pnpm nx run prism:dev
 ```
 
-To see all available targets to run for a project, run:
+或者使用简写：
 
 ```sh
-npx nx show project prism
+pnpm nx dev prism
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+应用将在 `http://localhost:3000` 启动。
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 构建生产版本
 
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
+构建 prism 应用的生产版本：
 
 ```sh
-npx nx g @nx/react:app demo
+pnpm nx run prism:build
 ```
 
-To generate a new library, use:
+### 查看项目信息
+
+查看 prism 项目的所有可用任务：
 
 ```sh
-npx nx g @nx/react:lib mylib
+pnpm nx show project prism
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+## 🏗️ 项目结构
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```
+Prism/
+├── apps/
+│   └── prism/                 # Next.js 应用
+│       ├── app/              # Next.js App Router
+│       │   ├── layout.tsx    # 根布局
+│       │   ├── page.tsx      # 首页
+│       │   └── globals.css   # 全局样式
+│       ├── components/       # 可复用组件
+│       ├── lib/             # 工具函数
+│       ├── public/          # 静态资源
+│       └── ...              # 配置文件
+├── tsconfig.base.json       # 基础 TypeScript 配置
+├── eslint.config.mjs        # 基础 ESLint 配置
+├── nx.json                  # Nx 工作区配置
+└── package.json             # 项目依赖
+```
 
-## Set up CI!
+## 🛠️ 技术栈
 
-### Step 1
+- **构建工具**: [Nx](https://nx.dev) 21.3.11
+- **前端框架**: [Next.js](https://nextjs.org) 15
+- **UI 框架**: [React](https://react.dev) 19
+- **样式方案**: [Tailwind CSS](https://tailwindcss.com)
+- **包管理器**: [pnpm](https://pnpm.io)
+- **代码规范**: ESLint + Prettier
+- **类型检查**: TypeScript
 
-To connect to Nx Cloud, run the following command:
+## 📦 添加新项目
+
+### 生成新的 Next.js 应用
 
 ```sh
-npx nx connect
+pnpm nx g @nx/next:app my-app
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
+### 生成新的 React 库
 
 ```sh
-npx nx g ci-workflow
+pnpm nx g @nx/react:lib my-lib
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 查看可用插件
 
-## Install Nx Console
+```sh
+pnpm nx list
+```
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+## 🔧 开发工具
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 安装 Nx Console
 
-## Useful links
+Nx Console 是一个编辑器扩展，可以增强你的开发体验。它让你能够在 IDE 中运行任务、生成代码，并改善代码自动补全。
 
-Learn more:
+[安装 Nx Console &raquo;](https://nx.dev/getting-started/editor-setup)
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 可视化项目依赖
 
-And join the Nx community:
+查看项目依赖图：
 
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```sh
+pnpm nx graph
+```
+
+## 🚀 部署
+
+### 构建生产版本
+
+```sh
+pnpm nx run prism:build
+```
+
+### 启动生产服务器
+
+```sh
+pnpm nx run prism:start
+```
+
+## 📋 常用命令
+
+| 命令                  | 描述           |
+| --------------------- | -------------- |
+| `pnpm nx dev prism`   | 启动开发服务器 |
+| `pnpm nx build prism` | 构建生产版本   |
+| `pnpm nx lint prism`  | 代码检查       |
+| `pnpm nx test prism`  | 运行测试       |
+| `pnpm nx graph`       | 查看依赖图     |
+
+## 🔗 有用的链接
+
+了解更多：
+
+- [Nx 文档](https://nx.dev)
+- [Next.js 文档](https://nextjs.org/docs)
+- [Tailwind CSS 文档](https://tailwindcss.com/docs)
+- [React 文档](https://react.dev)
+
+加入社区：
+
+- [Nx Discord](https://go.nx.dev/community)
+- [Next.js Discord](https://discord.gg/nextjs)
+- [React Discord](https://discord.gg/react)
+
+## 📄 许可证
+
+MIT
