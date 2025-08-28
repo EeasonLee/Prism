@@ -57,7 +57,8 @@
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
       }
-    }
+    },
+    "@nx/next/plugin"
   ],
   "generators": {
     "@nx/react": {
