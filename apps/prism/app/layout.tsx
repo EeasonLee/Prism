@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import './globals.css';
+import { AppProviders } from './providers';
+import { env } from '../lib/env';
+
+export const metadata: Metadata = {
+  title: 'Prism',
+  description: 'Prism monorepo powered by Nx + Next.js',
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
+};
 
 export default function RootLayout({
   children,
@@ -6,8 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" data-app={env.NODE_ENV}>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

@@ -10,6 +10,7 @@ export default [
       '**/.next',
       '**/vite.config.*.timestamp*',
       '**/vitest.config.*.timestamp*',
+      '**/next-env.d.ts',
     ],
   },
   {
