@@ -12,6 +12,23 @@
     ],
     "sharedGlobals": []
   },
+  "targetDefaults": {
+    "build": {
+      "inputs": ["production", "^production"],
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "inputs": ["default", "^default"]
+    },
+    "test": {
+      "inputs": ["default", "^default"],
+      "dependsOn": ["^test"]
+    },
+    "typecheck": {
+      "inputs": ["default", "^default"],
+      "dependsOn": ["^typecheck"]
+    }
+  },
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
