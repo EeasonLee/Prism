@@ -128,6 +128,12 @@ pnpm nx run prism:start
 | `pnpm nx test prism`  | 运行测试       |
 | `pnpm nx graph`       | 查看依赖图     |
 
+## 🧪 测试
+
+- `pnpm test`（或 `pnpm nx test prism`）会调用 Vitest，配置位于 `apps/prism/vite.config.ts`。
+- 示例单测放在 `apps/prism/tests`，可直接仿照 `page.spec.tsx` 新增页面/组件测试。
+- 如需 IDE 内运行，可使用 `vitest.workspace.ts`，它会自动发现各子项目的测试配置。
+
 ## ✅ CI 质量门槛
 
 仓库根目录提供 `.github/workflows/ci.yml`，在 push / PR 时自动执行：

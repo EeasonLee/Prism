@@ -36,7 +36,9 @@
     "test": {
       "executor": "@nx/vite:test",
       "options": {
-        "passWithNoTests": true
+        "passWithNoTests": false,
+        "config": "apps/prism/vite.config.ts",
+        "reportsDirectory": "apps/prism/test-output/vitest"
       }
     },
     "typecheck": {

@@ -22,7 +22,7 @@
     },
     "test": {
       "inputs": ["default", "^default"],
-      "dependsOn": ["^test"]
+      "dependsOn": ["^test", "^build"]
     },
     "typecheck": {
       "inputs": ["default", "^default"],
