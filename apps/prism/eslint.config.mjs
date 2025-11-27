@@ -11,7 +11,8 @@ export default [
       'node_modules/**/*',
       'dist/**/*',
       'build/**/*',
-      'next-env.d.ts',
+      '.turbo/**/*',
+      '**/next-env.d.ts',
     ],
   },
   {
@@ -21,8 +22,14 @@ export default [
     },
     rules: {
       // Next.js specific rules
-      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-html-link-for-pages': 'off',
       '@next/next/no-img-element': 'error',
+    },
+  },
+  {
+    files: ['next-env.d.ts'],
+    rules: {
+      '@typescript-eslint/triple-slash-reference': 'off',
     },
   },
 ];

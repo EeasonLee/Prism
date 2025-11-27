@@ -4,7 +4,13 @@
   "license": "MIT",
   "scripts": {
     "prepare": "husky",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "dev": "nx dev prism",
+    "build": "nx build prism",
+    "start": "nx start prism",
+    "lint": "nx lint prism",
+    "test": "nx test prism",
+    "typecheck": "nx run prism:typecheck"
   },
   "config": {
     "commitizen": {
