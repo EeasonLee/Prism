@@ -14,6 +14,12 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'jsdom',
+    setupFiles: ['tests/setup.ts'],
+    css: {
+      modules: {
+        classNameStrategy: 'stable',
+      },
+    },
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {

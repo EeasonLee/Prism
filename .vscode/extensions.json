@@ -7,6 +7,7 @@
     "csstools.postcss",
     "ms-vscode.typescript-language-features",
     "formulahendry.auto-rename-tag",
-    "christian-kohler.path-intellisense"
+    "christian-kohler.path-intellisense",
+    "ms-playwright.playwright"
   ]
 }

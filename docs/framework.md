@@ -15,16 +15,18 @@
 
 ## 3. 技术选型与落地
 
-| 领域              | 选型                                             | 落地现状                                                                                                              |
-| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| 包管理 / Monorepo | `pnpm + Nx 21.3.11`                              | 根 `package.json` + `pnpm-workspace.yaml` 管理，`apps/prism` 已配 `project.json`、`targetDefaults`。                  |
-| 前端框架          | `Next.js 15 (App Router) + React 19`             | `apps/prism` 采用 App Router，`next config` 由 `@nx/next` 包装并启用 typed routes、图片格式优化等特性。               |
-| 样式体系          | `Tailwind CSS 3.4`                               | `apps/prism/tailwind.config.js` 与 Nx 的 `createGlobPatternsForDependencies` 集成，后续将扩展 Design Token。          |
-| 语言 & 规范       | `TypeScript 5.8` + ESLint Flat Config + Prettier | 根 `eslint.config.mjs` + 子项目继承 + lint-staged；CI 强制执行。                                                      |
-| 测试              | `Vitest 3 + jsdom`                               | `apps/prism/vite.config.ts`、`tsconfig.spec.json`、示例测试 `tests/page.spec.tsx` 已上线，下一步接入 RTL/Playwright。 |
-| Runtime 配置      | `zod`                                            | `apps/prism/lib/env.ts` 在构建期校验 `NODE_ENV` / `NEXT_PUBLIC_APP_URL`，并由 `layout.tsx` 统一消费。                 |
-| CI/CD             | GitHub Actions                                   | `.github/workflows/ci.yml` 在 push / PR 执行 lint/test/typecheck，确保质量门槛统一。                                  |
-| 文档              | Markdown + Nx Console                            | `docs/plan.md`、`docs/dev-env.md`、本文件作为学习和复盘入口，后续可配合 Nx Console/Graph 可视化。                     |
+| 领域              | 选型                                             | 落地现状                                                                                                                        |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 包管理 / Monorepo | `pnpm + Nx 21.3.11`                              | 根 `package.json` + `pnpm-workspace.yaml` 管理，`apps/prism` 已配 `project.json`、`targetDefaults`。                            |
+| 前端框架          | `Next.js 15 (App Router) + React 19`             | `apps/prism` 采用 App Router，`next config` 由 `@nx/next` 包装并启用 typed routes、图片格式优化等特性。                         |
+| 样式体系          | `Tailwind CSS 3.4`                               | `apps/prism/tailwind.config.js` 与 Nx 的 `createGlobPatternsForDependencies` 集成，后续将扩展 Design Token。                    |
+| 语言 & 规范       | `TypeScript 5.8` + ESLint Flat Config + Prettier | 根 `eslint.config.mjs` + 子项目继承 + lint-staged；CI 强制执行。                                                                |
+| 测试              | `Vitest 3 + RTL + Playwright`                    | Vitest + React Testing Library（`tests/setup.ts`）、Playwright e2e（`apps/prism/playwright.config.js`、`e2e` 目录）均已接入。   |
+| Runtime 配置      | `zod`                                            | `apps/prism/lib/env.ts` 在构建期校验 `NODE_ENV` / `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_LOG_LEVEL`，并由 `layout.tsx` 统一消费。 |
+| State / Provider  | React Context + 自定义 `AppProviders`            | `app/providers.tsx` 提供 AppConfig、日志、后续可接 Theme/Auth；面向 UI 层无侵入扩展。                                           |
+| 观测体系          | 自研 `logger` + `metrics` + Web Vitals           | `lib/observability/logger.ts`、`metrics.ts`、`app/reportWebVitals.ts` 形成默认日志/性能路径；未来易接三方服务。                 |
+| CI/CD             | GitHub Actions + Husky + lint-staged             | `.github/workflows/ci.yml` 在 push / PR 执行 lint/test/typecheck；Husky 保证提交前格式/质量一致。                               |
+| 文档 / 工具       | Markdown + Nx Console + Volta                    | `docs/plan.md`、`docs/dev-env.md`、`docs/framework.md` 形成协作手册；Volta 锁定 Node/pnpm；推荐使用 Nx Console 图形界面。       |
 
 ## 4. 技术特性一览
 
@@ -39,18 +41,28 @@
 - App Router 结构（`app/layout.tsx`、`app/page.tsx`）已整合 `AppProviders`、metadata、`typedRoutes`，可快速扩展 Providers、Error Boundary、Route Handler。
 - `next-env.d.ts` + `next.config.js` 保证 typed routes 自动生成；`layout` 依据 `env` 设置 `metadataBase`。
 - `app/error.tsx`、`app/loading.tsx` 提供统一的全局体验，后续可继续扩展国际化、缓存策略等。
+- `app/page.tsx` 演示如何结合 Tailwind、Link、文案模块化，既是首页模板，也是组件/测试/e2e 的样本。
 
 ### 4.3 测试与质量
 
-- Vitest 作为单元/组件测试基石，已与 Nx 任务联动（`pnpm test` == `nx test prism`）。
-- `tests/page.spec.tsx` 演示如何直接测试 App Router 组件，后续将引入 React Testing Library + Playwright，实现端到端覆盖。
-- CI 保证 `lint/test/typecheck` 全部通过才能合并，避免“我机器能跑”的误判。
+- Vitest + React Testing Library：`tests/setup.ts` 统一注入 `jest-dom`、自动 cleanup，可在 `apps/prism/tests` 新增组件/Hook 测试。
+- Playwright：`apps/prism/e2e` 提供 smoke case（验证 hero 内容），`pnpm e2e` 会自动拉起 Next dev server；CI 可按需接管。
+- `app/page.tsx`、`tests/page.spec.tsx`、`e2e/example.spec.ts` 三者联动，确保 UI/UX 变更必有单元 + 端到端回归。
+- CI 保证 `lint/test/typecheck` 全部通过才能合并，后续可将 Playwright 加入 workflow 或独立 job。
+- lint-staged + Husky：提交前自动运行 ESLint/Prettier，避免“脏代码”进入版本库。
 
-### 4.4 文档与协作
+### 4.4 观测与日志
+
+- `lib/observability/logger.ts` 定义 `createLogger`，支持日志级别和作用域，客户端 Provider、错误边界等已经示范用法。
+- `lib/observability/metrics.ts` + `app/reportWebVitals.ts` 将 Web Vitals 写入缓冲区，可扩展到上报系统。
+- `AppProviders`、`app/error.tsx` 内置默认埋点，后续扩展指标/日志只需调用 `logger` 或 `recordMetric`。
+
+### 4.5 文档与协作
 
 - `docs/plan.md` 记录所有任务优先级，任何设计变更都必须在此更新状态。
 - `docs/dev-env.md` 用生活化步骤说明如何安装 Volta/nvm/插件，降低环境差异。
 - 本文件提供“框架知识地图”，新成员只要读完即可理解目标、理念、技术栈和特性。
+- `README.md` 面向开发者，提供命令对照表、测试/观测说明；新同学只要照 README 操作，就能跑通 dev/build/lint/test/e2e。
 
 ---
 
