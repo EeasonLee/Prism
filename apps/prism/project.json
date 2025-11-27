@@ -41,6 +41,13 @@
         "reportsDirectory": "apps/prism/test-output/vitest"
       }
     },
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/prism/playwright.config.js",
+        "passWithNoTests": false
+      }
+    },
     "typecheck": {
       "executor": "@nx/js:tsc",
       "options": {

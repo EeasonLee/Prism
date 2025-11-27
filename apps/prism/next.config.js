@@ -1,4 +1,4 @@
-import { withNx } from '@nx/next/plugins/with-nx.js';
+const { withNx } = require('@nx/next/plugins/with-nx');
 
 const nextConfig = {
   reactStrictMode: true,
@@ -14,4 +14,4 @@ const nextConfig = {
   },
 };
 
-export default withNx(nextConfig);
+module.exports = withNx(nextConfig);

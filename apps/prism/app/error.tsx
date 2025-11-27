@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logger } from '../lib/observability/logger';
 
 export default function GlobalError({
   error,
@@ -10,7 +11,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    logger.error('Global error boundary triggered', {
+      message: error.message,
+      digest: error.digest,
+    });
   }, [error]);
 
   return (

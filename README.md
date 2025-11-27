@@ -120,26 +120,33 @@ pnpm nx run prism:start
 
 ## 📋 常用命令
 
-| 命令                  | 描述           |
-| --------------------- | -------------- |
-| `pnpm nx dev prism`   | 启动开发服务器 |
-| `pnpm nx build prism` | 构建生产版本   |
-| `pnpm nx lint prism`  | 代码检查       |
-| `pnpm nx test prism`  | 运行测试       |
-| `pnpm nx graph`       | 查看依赖图     |
+| 命令                                 | 描述                               |
+| ------------------------------------ | ---------------------------------- |
+| `pnpm nx dev prism`                  | 启动开发服务器                     |
+| `pnpm nx build prism`                | 构建生产版本                       |
+| `pnpm nx lint prism`                 | 代码检查                           |
+| `pnpm nx test prism`                 | 运行 Vitest + RTL                  |
+| `pnpm nx run prism:e2e` / `pnpm e2e` | Playwright E2E（需安装浏览器依赖） |
+| `pnpm nx graph`                      | 查看依赖图                         |
 
 ## 🧪 测试
 
-- `pnpm test`（或 `pnpm nx test prism`）会调用 Vitest，配置位于 `apps/prism/vite.config.ts`。
-- 示例单测放在 `apps/prism/tests`，可直接仿照 `page.spec.tsx` 新增页面/组件测试。
-- 如需 IDE 内运行，可使用 `vitest.workspace.ts`，它会自动发现各子项目的测试配置。
+- **单元 / 组件**：`pnpm test`（或 `pnpm nx test prism`）调用 Vitest + React Testing Library，配置位于 `apps/prism/vite.config.ts` 与 `tests/setup.ts`。
+- **端到端**：`pnpm e2e`（或 `pnpm nx run prism:e2e`）调用 Playwright，配置在 `apps/prism/playwright.config.js`。第一次运行前请执行 `pnpm exec playwright install`，如在 Linux/WSL 需按提示安装 `playwright install-deps`。
+- 如需 IDE 内运行 Vitest，可使用 `vitest.workspace.ts` 自动发现测试配置。
 
 ## 🧱 Next.js 应用底座特性
 
-- **Typed Routes**：`apps/prism/next.config.js` 已启用 `experimental.typedRoutes`，避免手写路由字符串。
-- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验 `NEXT_PUBLIC_APP_URL` 等关键变量，`layout.tsx` 中统一消费。
-- **全局 Providers**：`app/providers.tsx` 提供 `AppConfig` 上下文，可扩展主题、鉴权等全局状态。
+- **Typed Routes**：`apps/prism/next.config.js` 已启用 `typedRoutes`，避免手写路由字符串。
+- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验 `NEXT_PUBLIC_APP_URL / LOG_LEVEL` 等关键变量，`layout.tsx` 中统一消费。
+- **全局 Providers**：`app/providers.tsx` 提供 `AppConfig` 上下文并在客户端记录日志，可扩展主题、鉴权等全局状态。
 - **标准 Loading / Error**：`app/loading.tsx`、`app/error.tsx` 提供统一体验，错误页自动记录日志并允许一键重试。
+
+## 🛰️ 观测基线
+
+- `lib/observability/logger.ts` 暴露 `createLogger` 与默认 `logger`，支持 `NEXT_PUBLIC_LOG_LEVEL` 控制输出等级，可在服务端/客户端通用。
+- `lib/observability/metrics.ts` + `app/reportWebVitals.ts` 将 Next Web Vitals 记录进缓冲区，便于后续对接 Sentry/Datadog 等平台。
+- 在客户端 Provider 中会自动埋点应用启动日志；也可在业务代码中通过 `logger.info()` / `recordMetric()` 扩展。
 
 ## ✅ CI 质量门槛
 

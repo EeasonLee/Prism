@@ -24,6 +24,10 @@
       "inputs": ["default", "^default"],
       "dependsOn": ["^test", "^build"]
     },
+    "e2e": {
+      "inputs": ["default", "^default"],
+      "dependsOn": ["^build"]
+    },
     "typecheck": {
       "inputs": ["default", "^default"],
       "dependsOn": ["^typecheck"]
@@ -75,7 +79,13 @@
         "watchDepsTargetName": "watch-deps"
       }
     },
-    "@nx/next/plugin"
+    "@nx/next/plugin",
+    {
+      "plugin": "@nx/playwright/plugin",
+      "options": {
+        "targetName": "e2e"
+      }
+    }
   ],
   "generators": {
     "@nx/react": {
