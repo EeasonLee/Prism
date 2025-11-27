@@ -37,5 +37,3 @@
 - 其它编辑器请根据上述功能自行寻找等效插件，保持一致的开发体验。
 
 > 后续如需调整 Node/pnpm 版本或插件列表，只需更新 `package.json` 的 `volta` 字段与 `.vscode/extensions.json`，并同步通知团队。
-
-
