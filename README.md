@@ -134,6 +134,13 @@ pnpm nx run prism:start
 - 示例单测放在 `apps/prism/tests`，可直接仿照 `page.spec.tsx` 新增页面/组件测试。
 - 如需 IDE 内运行，可使用 `vitest.workspace.ts`，它会自动发现各子项目的测试配置。
 
+## 🧱 Next.js 应用底座特性
+
+- **Typed Routes**：`apps/prism/next.config.js` 已启用 `experimental.typedRoutes`，避免手写路由字符串。
+- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验 `NEXT_PUBLIC_APP_URL` 等关键变量，`layout.tsx` 中统一消费。
+- **全局 Providers**：`app/providers.tsx` 提供 `AppConfig` 上下文，可扩展主题、鉴权等全局状态。
+- **标准 Loading / Error**：`app/loading.tsx`、`app/error.tsx` 提供统一体验，错误页自动记录日志并允许一键重试。
+
 ## ✅ CI 质量门槛
 
 仓库根目录提供 `.github/workflows/ci.yml`，在 push / PR 时自动执行：

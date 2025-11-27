@@ -1,10 +1,17 @@
-const { withNx } = require('@nx/next/plugins/with-nx');
+import { withNx } from '@nx/next/plugins/with-nx.js';
 
 const nextConfig = {
   reactStrictMode: true,
+  typedRoutes: true,
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
   nx: {
     svgr: false,
   },
 };
 
-module.exports = withNx(nextConfig);
+export default withNx(nextConfig);
