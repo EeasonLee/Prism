@@ -7,6 +7,7 @@ export default [
   {
     ignores: [
       '**/dist',
+      '**/.next',
       '**/vite.config.*.timestamp*',
       '**/vitest.config.*.timestamp*',
     ],
@@ -21,8 +22,16 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['scope:shared', 'type:ui', 'type:lib'],
+            },
+            {
+              sourceTag: 'scope:frontend',
+              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:shared',
+              onlyDependOnLibsWithTags: ['scope:shared'],
             },
           ],
         },

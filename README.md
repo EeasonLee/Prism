@@ -10,18 +10,12 @@
 
 ### 开发环境启动
 
-在安装依赖前，请先阅读《[开发环境约定](docs/dev-env.md)》，确保 Node/pnpm 版本正确。
+在安装依赖前，请先阅读《[开发环境约定](docs/dev-env.md)》，确保 Node/pnpm 与 Volta 设置正确。
 
-启动 prism 应用的开发服务器：
-
-```sh
-pnpm nx run prism:dev
-```
-
-或者使用简写：
+启动 prism 应用的开发服务器（所有命令均通过 Nx 运行，保证缓存与受影响分析可用）：
 
 ```sh
-pnpm nx dev prism
+pnpm dev        # 等同于 nx dev prism
 ```
 
 应用将在 `http://localhost:3000` 启动。
@@ -31,12 +25,12 @@ pnpm nx dev prism
 构建 prism 应用的生产版本：
 
 ```sh
-pnpm nx run prism:build
+pnpm build      # 等同于 nx build prism
 ```
 
 ### 查看项目信息
 
-查看 prism 项目的所有可用任务：
+常用命令均有脚本别名（`pnpm dev/build/lint/test/typecheck`），完整任务列表可通过以下命令查看：
 
 ```sh
 pnpm nx show project prism

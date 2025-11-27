@@ -1,0 +1,51 @@
+{
+  "name": "prism",
+  "root": "apps/prism",
+  "projectType": "application",
+  "sourceRoot": "apps/prism/app",
+  "tags": ["type:app", "scope:frontend"],
+  "targets": {
+    "dev": {
+      "executor": "@nx/next:server",
+      "options": {
+        "buildTarget": "prism:build",
+        "port": 3000,
+        "dev": true
+      }
+    },
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/prism"
+      }
+    },
+    "start": {
+      "executor": "@nx/next:server",
+      "options": {
+        "buildTarget": "prism:build",
+        "dev": false
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/prism/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "main": "apps/prism/app/page.tsx",
+        "tsConfig": "apps/prism/tsconfig.json",
+        "outputPath": "dist/apps/prism"
+      }
+    }
+  }
+}
