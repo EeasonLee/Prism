@@ -4,7 +4,7 @@
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
     "jsx": "preserve",
-    "lib": ["dom"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "types": [
       "node",
       "@nx/react/typings/cssmodule.d.ts",

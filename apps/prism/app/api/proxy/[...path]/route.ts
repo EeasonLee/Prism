@@ -11,33 +11,33 @@ import { env } from '../../../../lib/env';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> | { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   return handleProxyRequest(request, resolvedParams.path, 'GET');
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> | { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   return handleProxyRequest(request, resolvedParams.path, 'POST');
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> | { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   return handleProxyRequest(request, resolvedParams.path, 'PUT');
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> | { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   return handleProxyRequest(request, resolvedParams.path, 'DELETE');
 }
 
@@ -60,7 +60,7 @@ async function handleProxyRequest(
     const fullUrl = queryString ? `${targetUrl}?${queryString}` : targetUrl;
 
     // 准备请求头
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 

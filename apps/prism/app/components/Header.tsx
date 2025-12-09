@@ -3,10 +3,13 @@ import type { ReactNode } from 'react';
 
 type NavLink = {
   label: string;
-  href: string;
+  href: string; // Will be '/aboutus' | '/support' | '/recipes' at runtime
 };
 
-type ProductLink = NavLink;
+type DropdownItem = {
+  label: string;
+  href: string; // Can be external URL or internal route
+};
 
 type IconButtonProps = {
   label: string;
@@ -31,14 +34,71 @@ function IconButton({ label, badge, children }: IconButtonProps) {
   );
 }
 
+type DropdownNavProps = {
+  label: string;
+  items: DropdownItem[];
+};
+
+function DropdownNav({ label, items }: DropdownNavProps) {
+  const linkClassName =
+    'block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500';
+
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+        aria-expanded="false"
+      >
+        {label}
+        <svg
+          aria-hidden="true"
+          className="h-4 w-4"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-slate-100 bg-white opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
+        <ul className="divide-y divide-slate-100 p-2">
+          {items.map(item => {
+            return (
+              <li key={item.href}>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={linkClassName}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export function Header() {
   const navLinks: NavLink[] = [
-    { label: 'About Us', href: '/aboutus' },
-    { label: 'Support', href: '/support' },
-    { label: 'Recipes', href: '/recipes' },
+    { label: 'About Us', href: 'https://www.joydeem.com/aboutus' },
   ];
 
-  const productLinks: ProductLink[] = [
+  const supportLinks: DropdownItem[] = [
+    { label: 'FAQs', href: 'https://www.joydeem.com/faqs' },
+    { label: 'Warranty', href: 'https://www.joydeem.com/warrant' },
+    { label: 'Return Policy', href: 'https://www.joydeem.com/return-policy' },
+    { label: 'Contact Us', href: 'https://www.joydeem.com/contact-us' },
+  ];
+
+  const productLinks: DropdownItem[] = [
     {
       label: 'Dough Mixers',
       href: 'https://www.joydeem.com/kitchen-appliances/dough-makers.html',
@@ -51,10 +111,22 @@ export function Header() {
       label: 'Blenders & Juicers',
       href: 'https://www.joydeem.com/kitchen-appliances/kitchen-appliances-blenders-juicers-html.html',
     },
-    { label: 'Hot Pots With Grill', href: '/products/hot-pots-with-grill' },
-    { label: 'Kettles & Tea Machines', href: '/products/kettles-tea' },
-    { label: 'Meat Grinders', href: '/products/meat-grinders' },
-    { label: 'Steam Ovens', href: '/products/steam-ovens' },
+    {
+      label: 'Hot Pots With Grill',
+      href: 'https://www.joydeem.com/kitchen-appliances/asian-specialty.html',
+    },
+    {
+      label: 'Kettles & Tea Machines',
+      href: 'https://www.joydeem.com/kitchen-appliances/kitchen-gadgets.html',
+    },
+    {
+      label: 'Meat Grinders',
+      href: 'https://www.joydeem.com/kitchen-appliances/meat-grinders.html',
+    },
+    {
+      label: 'Steam Ovens',
+      href: 'https://www.joydeem.com/kitchen-appliances/steam-ovens.html',
+    },
   ];
 
   return (
@@ -71,51 +143,28 @@ export function Header() {
           aria-label="主导航"
           className="hidden items-center justify-center gap-4 md:flex"
         >
-          <div className="group relative">
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-              aria-expanded="false"
-            >
-              Products
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-slate-100 bg-white opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
-              <ul className="divide-y divide-slate-100 p-2">
-                {productLinks.map(item => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <DropdownNav label="Products" items={productLinks} />
 
           {navLinks.map(item => (
-            <Link
+            <a
               key={item.href}
               href={item.href}
+              target="_blank"
               className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+              rel="noreferrer"
             >
               {item.label}
-            </Link>
+            </a>
           ))}
+
+          <DropdownNav label="Support" items={supportLinks} />
+
+          <Link
+            href="/recipes"
+            className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+          >
+            Recipes
+          </Link>
         </nav>
 
         <div className="flex items-center justify-end gap-2">

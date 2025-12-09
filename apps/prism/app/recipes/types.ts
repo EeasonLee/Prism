@@ -29,7 +29,7 @@ export interface Recipe {
   slug: string;
   description: string;
   content?: string; // 富文本内容（HTML格式）
-  ingredientsContent?: any; // 富文本内容（HTML格式）
+  ingredientsContent?: string; // 富文本内容（HTML格式）
   featuredImage: {
     url: string;
     alternativeText?: string;
