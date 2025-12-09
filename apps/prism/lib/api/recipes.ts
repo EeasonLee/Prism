@@ -9,15 +9,24 @@ import type {
 import { env } from '../env';
 
 /**
+ * 检查是否在客户端环境（浏览器）
+ * Next.js 15 类型安全的环境检测
+ */
+function isClient(): boolean {
+  return (
+    typeof globalThis !== 'undefined' &&
+    typeof (globalThis as Record<string, unknown>).window !== 'undefined'
+  );
+}
+
+/**
  * 获取 API 基础 URL
  * - 客户端：使用 Next.js 代理路由（/api/proxy），避免 CORS 问题
  * - 服务端：直接调用 Strapi API
  */
 function getApiBaseUrl(): string {
   // 判断是否在客户端（浏览器环境）
-  const isClient = typeof window !== 'undefined';
-
-  if (isClient) {
+  if (isClient()) {
     // 客户端使用代理路由，避免 CORS
     return '/api/proxy';
   }
@@ -71,7 +80,7 @@ export async function getFilterTypes(): Promise<FilterTypesResponse> {
     throw new Error(`Failed to fetch filter types: ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<FilterTypesResponse>;
 }
 
 /**
@@ -109,7 +118,7 @@ export async function getFilters(params?: {
     throw new Error(`Failed to fetch filters: ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<FilterListResponse>;
 }
 
 /**
@@ -156,7 +165,7 @@ export async function searchRecipes(
     throw new Error(`Failed to search recipes: ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<RecipeSearchResponse>;
 }
 
 /**
@@ -194,7 +203,7 @@ export async function getRecipeBySlug(
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { data: Recipe };
 
     // 验证返回数据结构
     if (!data || !data.data) {
