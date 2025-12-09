@@ -135,7 +135,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                   Prep: {formatTime(recipe.prepTime)}
                 </div>
               )}
-              {recipe.cookTime && recipe.cookTime > 0 && (
+              {!!recipe.cookTime && (
                 <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2">
                   <svg
                     className="h-5 w-5"
@@ -153,7 +153,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                   Cook: {formatTime(recipe.cookTime)}
                 </div>
               )}
-              {recipe.servings && recipe.servings > 0 && (
+              {!!recipe.servings && (
                 <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2">
                   <svg
                     className="h-5 w-5"
@@ -171,7 +171,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                   Serves: {recipe.servings}
                 </div>
               )}
-              {recipe.rating && recipe.rating > 0 && (
+              {!!recipe.rating && (
                 <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-amber-800">
                   <svg
                     className="h-5 w-5"
