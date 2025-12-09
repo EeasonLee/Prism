@@ -12,12 +12,12 @@ import { env } from '../env';
  * 检查是否在客户端环境（浏览器）
  * Next.js 15 类型安全的环境检测
  */
-function isClient(): boolean {
-  return (
-    typeof globalThis !== 'undefined' &&
-    typeof (globalThis as Record<string, unknown>).window !== 'undefined'
-  );
-}
+// function isClient(): boolean {
+//   return (
+//     typeof globalThis !== 'undefined' &&
+//     typeof (globalThis as Record<string, unknown>).window !== 'undefined'
+//   );
+// }
 
 /**
  * 获取 API 基础 URL
@@ -26,10 +26,10 @@ function isClient(): boolean {
  */
 function getApiBaseUrl(): string {
   // 判断是否在客户端（浏览器环境）
-  if (isClient()) {
-    // 客户端使用代理路由，避免 CORS
-    return '/api/proxy';
-  }
+  // if (isClient()) {
+  //   // 客户端使用代理路由，避免 CORS
+  //   return '/api/proxy';
+  // }
 
   // 服务端直接调用 Strapi
   const baseUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
