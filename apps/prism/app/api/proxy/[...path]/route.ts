@@ -3,11 +3,11 @@ import { env } from '../../../../lib/env';
 
 /**
  * Next.js API 代理路由
- * 用于代理所有对 Strapi 后端的请求，避免 CORS 问题
+ * 用于代理所有后端的请求，避免 CORS 问题
  *
  * 使用方式：
  * - 前端请求: /api/proxy/recipe-filters/types
- * - 实际转发到: http://localhost:1337/api/recipe-filters/types
+ * - 实际转发到: env.NEXT_PUBLIC_API_URL/api/recipe-filters/types
  */
 export async function GET(
   request: NextRequest,
@@ -47,12 +47,12 @@ async function handleProxyRequest(
   method: string
 ) {
   try {
-    // 获取 Strapi API 基础 URL
-    const strapiBaseUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+    // 获取 API 基础 URL
+    const apiBaseUrl = env.NEXT_PUBLIC_API_URL;
 
     // 构建目标 URL
     const path = pathSegments.join('/');
-    const targetUrl = `${strapiBaseUrl}/api/${path}`;
+    const targetUrl = `${apiBaseUrl}/api/${path}`;
 
     // 获取查询参数
     const searchParams = request.nextUrl.searchParams;
@@ -81,7 +81,7 @@ async function handleProxyRequest(
       }
     }
 
-    // 转发请求到 Strapi
+    // 转发请求到后端
     const response = await fetch(fullUrl, {
       method,
       headers,
