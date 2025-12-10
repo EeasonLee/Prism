@@ -6,40 +6,31 @@ import type {
   RecipeSearchResponse,
 } from '../../app/recipes/types';
 
-import { env } from '../env';
-
-/**
- * 检查是否在客户端环境（浏览器）
- * Next.js 15 类型安全的环境检测
- */
-// function isClient(): boolean {
-//   return (
-//     typeof globalThis !== 'undefined' &&
-//     typeof (globalThis as Record<string, unknown>).window !== 'undefined'
-//   );
-// }
+import { env, IS_DEVELOPMENT } from '../env';
 
 /**
  * 获取 API 基础 URL
  * - 客户端：使用 Next.js 代理路由（/api/proxy），避免 CORS 问题
- * - 服务端：直接调用 Strapi API
  */
 function getApiBaseUrl(): string {
-  // 判断是否在客户端（浏览器环境）
-  // if (isClient()) {
-  //   // 客户端使用代理路由，避免 CORS
-  //   return '/api/proxy';
-  // }
+  if (IS_DEVELOPMENT) {
+    return '/api/proxy';
+  }
 
-  // 服务端直接调用 Strapi
-  const baseUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-  // 确保 URL 以 /api 结尾
+  const baseUrl = env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL is not set');
+  }
+
   if (baseUrl.endsWith('/api')) {
     return baseUrl;
   }
+
   if (baseUrl.endsWith('/')) {
     return `${baseUrl}api`;
   }
+
   return `${baseUrl}/api`;
 }
 
