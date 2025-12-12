@@ -59,9 +59,17 @@ async function handleProxyRequest(
     const queryString = searchParams.toString();
     const fullUrl = queryString ? `${targetUrl}?${queryString}` : targetUrl;
 
-    // 准备请求头
+    // 准备请求头，沿用部分来源头以避免被网关识别为“非浏览器”
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'User-Agent':
+        request.headers.get('user-agent') ||
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      Referer: request.headers.get('referer') || apiBaseUrl || '',
+      Origin: request.headers.get('origin') || apiBaseUrl || '',
     };
 
     // 如果需要，可以在这里添加认证头

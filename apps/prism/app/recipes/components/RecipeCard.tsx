@@ -42,14 +42,9 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         {/* Favorite icon */}
-        <button
-          onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            // TODO: Implement favorite functionality
-          }}
-          className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 shadow-sm transition-all hover:bg-white hover:shadow-md"
-          aria-label="Add to favorites"
+        <span
+          className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 shadow-sm"
+          aria-hidden
         >
           <svg
             className="h-5 w-5 text-gray-700"
@@ -64,7 +59,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
               d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
             />
           </svg>
-        </button>
+        </span>
       </div>
 
       {/* Content area */}
