@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { env } from '../../../lib/env';
 import type { Recipe } from '../types';
+import { RecipeCard } from './RecipeCard';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -69,7 +70,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-4 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-8">
           <nav
             className="flex items-center space-x-2 text-sm"
             aria-label="Breadcrumb"
@@ -108,8 +109,21 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       </div>
 
       {/* Hero */}
-      <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
+          {recipe.featuredImage && (
+            <div className="relative aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
+              <Image
+                src={imageUrl}
+                alt={imageAlt}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 520px"
+              />
+            </div>
+          )}
+
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
               {recipe.categories?.map(category => (
@@ -135,6 +149,54 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 </p>
               )}
             </div>
+
+            {/* 产品 */}
+            {recipe.products && recipe.products.length > 0 && (
+              <div className="mb-8">
+                <h3 className="mb-4 text-1xl font-bold text-gray-900">Tools</h3>
+                <div className="flex flex-wrap gap-6">
+                  {recipe.products.map(product => {
+                    const productImageUrl = product.image?.url
+                      ? getImageUrl(product.image.url)
+                      : null;
+                    const productUrl = product.url || '#';
+
+                    return (
+                      <a
+                        key={product.id}
+                        href={productUrl}
+                        // target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col items-center transition-transform hover:scale-105"
+                      >
+                        <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gray-100 shadow-sm ring-1 ring-gray-200 transition-shadow group-hover:ring-gray-300">
+                          {productImageUrl ? (
+                            <Image
+                              src={productImageUrl}
+                              alt={
+                                product.image?.alternativeText || product.name
+                              }
+                              fill
+                              className="object-cover"
+                              sizes="66px"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gray-200 text-2xl font-semibold text-gray-400">
+                              {product.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        {/* {product.shortDescription && (
+                          <p className="mt-2 max-w-[96px] text-center text-xs text-gray-600 line-clamp-2">
+                            {product.shortDescription}
+                          </p>
+                        )} */}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-4 text-sm text-gray-700">
               {recipe.prepTime && recipe.prepTime > 0 && (
@@ -205,89 +267,14 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               )}
             </div>
           </div>
-
-          {recipe.featuredImage && (
-            <div className="relative aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
-              <Image
-                src={imageUrl}
-                alt={imageAlt}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 768px) 100vw, 520px"
-              />
-            </div>
-          )}
         </div>
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-6xl px-6 pb-12 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr,1fr]">
-          {/* Left content */}
-          <div className="space-y-10">
-            {recipe.content && (
-              <section className="space-y-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Preparation
-                </h2>
-                <div
-                  className="recipe-content prose prose-lg max-w-none 
-                    prose-headings:text-gray-900 prose-headings:font-bold
-                    prose-p:text-gray-700 prose-p:leading-relaxed prose-p:my-4
-                    prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-800 hover:prose-a:underline
-                    prose-strong:text-gray-900 prose-strong:font-semibold
-                    prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-4 prose-ol:my-4
-                    prose-li:text-gray-700 prose-li:my-2
-                    prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full prose-img:h-auto
-                    prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-4
-                    prose-code:text-sm prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                    prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:my-4
-                    prose-hr:my-8 prose-hr:border-gray-200"
-                  dangerouslySetInnerHTML={{ __html: recipe.content }}
-                />
-              </section>
-            )}
-
-            {recipe.instructions && recipe.instructions.length > 0 && (
-              <section className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Instructions
-                </h2>
-                <ol className="space-y-6">
-                  {recipe.instructions.map((instruction, index) => (
-                    <li key={index} className="flex gap-4">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                        {instruction.step || index + 1}
-                      </div>
-                      <div className="flex-1 space-y-4">
-                        {instruction.image && (
-                          <div className="relative aspect-video overflow-hidden rounded-lg">
-                            <Image
-                              src={getImageUrl(instruction.image.url)}
-                              alt={
-                                instruction.image.alternativeText ||
-                                `Step ${index + 1}`
-                              }
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 100vw, 600px"
-                            />
-                          </div>
-                        )}
-                        <p className="leading-relaxed text-gray-700">
-                          {instruction.instruction}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-          </div>
-
-          {/* Right column */}
-          <aside className="space-y-6">
+      <div className="mx-auto max-w-7xl px-6 pb-12 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr,1.6fr]">
+          {/* Left content - Ingredient Notes */}
+          <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-xl font-semibold text-gray-900">
@@ -387,6 +374,100 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               </div>
             )}
 
+            {recipe.filters && recipe.filters.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                  Categories
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {recipe.filters.map(filter => (
+                    <span
+                      key={filter.id}
+                      className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800"
+                    >
+                      {filter.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* Right content - Preparation */}
+          <div className="space-y-10">
+            {recipe.content && (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Preparation
+                </h2>
+                <div
+                  className="recipe-content prose prose-lg max-w-none 
+                    prose-headings:text-gray-900 prose-headings:font-bold
+                    prose-p:text-gray-700 prose-p:leading-relaxed prose-p:my-4
+                    prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-800 hover:prose-a:underline
+                    prose-strong:text-gray-900 prose-strong:font-semibold
+                    prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-4 prose-ol:my-4
+                    prose-li:text-gray-700 prose-li:my-2
+                    prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full prose-img:h-auto
+                    prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-4
+                    prose-code:text-sm prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                    prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:my-4
+                    prose-hr:my-8 prose-hr:border-gray-200"
+                  dangerouslySetInnerHTML={{ __html: recipe.content }}
+                />
+              </section>
+            )}
+
+            {/* 推荐食谱列表 */}
+            {recipe.relatedRecipes && recipe.relatedRecipes.length > 0 && (
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Recommended Recipes
+                </h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {recipe.relatedRecipes.map(relatedRecipe => (
+                    <RecipeCard key={relatedRecipe.id} recipe={relatedRecipe} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {recipe.instructions && recipe.instructions.length > 0 && (
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Instructions
+                </h2>
+                <ol className="space-y-6">
+                  {recipe.instructions.map((instruction, index) => (
+                    <li key={index} className="flex gap-4">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                        {instruction.step || index + 1}
+                      </div>
+                      <div className="flex-1 space-y-4">
+                        {instruction.image && (
+                          <div className="relative aspect-video overflow-hidden rounded-lg">
+                            <Image
+                              src={getImageUrl(instruction.image.url)}
+                              alt={
+                                instruction.image.alternativeText ||
+                                `Step ${index + 1}`
+                              }
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 600px"
+                            />
+                          </div>
+                        )}
+                        <p className="leading-relaxed text-gray-700">
+                          {instruction.instruction}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
             {recipe.tags && recipe.tags.length > 0 && (
               <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -405,24 +486,6 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               </div>
             )}
 
-            {recipe.filters && recipe.filters.length > 0 && (
-              <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                  Categories
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {recipe.filters.map(filter => (
-                    <span
-                      key={filter.id}
-                      className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800"
-                    >
-                      {filter.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {recipe.author && (
               <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <h3 className="mb-2 text-sm font-semibold text-gray-900">
@@ -433,7 +496,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 </p>
               </div>
             )}
-          </aside>
+          </div>
         </div>
       </div>
     </div>
