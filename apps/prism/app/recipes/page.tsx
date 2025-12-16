@@ -5,7 +5,7 @@ import type { SelectedFilters } from './types';
 export const revalidate = 60;
 
 type RecipesPageProps = {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const DEFAULT_PAGE_SIZE = 12;
@@ -34,7 +34,7 @@ function parseNumberArray(
 }
 
 function buildSelectedFilters(
-  searchParams: RecipesPageProps['searchParams']
+  searchParams: Record<string, string | string[] | undefined>
 ): SelectedFilters {
   const categoryIdValue = searchParams.categoryId;
   const categoryId =
@@ -53,12 +53,15 @@ function buildSelectedFilters(
 }
 
 export default async function RecipesPage({ searchParams }: RecipesPageProps) {
-  const page = Math.max(1, parseNumber(searchParams.page, 1));
+  // Next.js 15: searchParams 现在是 Promise，需要先 await
+  const resolvedSearchParams = await searchParams;
+
+  const page = Math.max(1, parseNumber(resolvedSearchParams.page, 1));
   const pageSize = Math.max(
     1,
-    parseNumber(searchParams.pageSize, DEFAULT_PAGE_SIZE)
+    parseNumber(resolvedSearchParams.pageSize, DEFAULT_PAGE_SIZE)
   );
-  const selectedFilters = buildSelectedFilters(searchParams);
+  const selectedFilters = buildSelectedFilters(resolvedSearchParams);
 
   const [filterTypesResponse, recipesResponse] = await Promise.all([
     getFilterTypes(),
