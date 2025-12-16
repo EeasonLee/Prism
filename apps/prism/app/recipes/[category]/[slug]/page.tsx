@@ -1,13 +1,15 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getRecipeBySlug } from '../../../lib/api/recipes';
-import { RecipeDetail } from '../components/RecipeDetail';
-import type { Recipe } from '../types';
+import { getRecipeBySlug } from '../../../../lib/api/recipes';
+import { RecipeDetail } from '../../components/RecipeDetail';
+import type { Recipe } from '../../types';
 
 export default function RecipeDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const category = params?.category as string;
   const slug = params?.slug as string;
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,14 @@ export default function RecipeDetailPage() {
         setError(null);
         const { data } = await getRecipeBySlug(slug);
         setRecipe(data);
+
+        // 验证 URL 中的 category 是否与食谱的实际分类匹配
+        const actualCategorySlug = data.categories?.[0]?.slug;
+        if (actualCategorySlug && category !== actualCategorySlug) {
+          // 重定向到正确的路由
+          router.replace(`/recipes/${actualCategorySlug}/${slug}`);
+          return;
+        }
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Unknown error');
         setError(error);
@@ -44,7 +54,7 @@ export default function RecipeDetailPage() {
     };
 
     fetchRecipe();
-  }, [slug]);
+  }, [slug, category, router]);
 
   if (loading) {
     return (

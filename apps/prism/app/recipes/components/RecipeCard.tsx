@@ -27,9 +27,12 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   const category =
     recipe.categories?.[0]?.name || recipe.filters?.[0]?.name || 'RECIPE';
 
+  // Get category slug for URL, fallback to 'recipe' if no category
+  const categorySlug = recipe.categories?.[0]?.slug || 'recipe';
+
   return (
     <Link
-      href={`/recipes/${recipe.slug}`}
+      href={`/recipes/${categorySlug}/${recipe.slug}`}
       className="group relative block overflow-hidden rounded-lg bg-white transition-shadow hover:shadow-lg"
     >
       {/* Image container */}

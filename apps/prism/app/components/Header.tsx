@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -41,13 +42,13 @@ type DropdownNavProps = {
 
 function DropdownNav({ label, items }: DropdownNavProps) {
   const linkClassName =
-    'block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500';
+    'block px-4 py-3 text-sm font-medium text-[#1a1a1a] leading-none transition hover:bg-gray-100 hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500';
 
   return (
     <div className="group relative">
       <button
         type="button"
-        className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+        className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
         aria-expanded="false"
       >
         {label}
@@ -71,7 +72,6 @@ function DropdownNav({ label, items }: DropdownNavProps) {
               <li key={item.href}>
                 <a
                   href={item.href}
-                  target="_blank"
                   rel="noopener noreferrer"
                   className={linkClassName}
                 >
@@ -130,18 +130,22 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto grid max-w-7xl grid-cols-[auto,1fr,auto] items-center gap-6 px-4 py-4 md:px-8">
-        <Link
-          href="/"
-          className="text-2xl font-semibold tracking-tight text-orange-500"
-        >
-          Joydeem
+    <header className="sticky top-0 z-30 bg-[#f2f2f2]">
+      <div className="mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-[50px]">
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="/images/logo.png"
+            alt="Joydeem"
+            width={170}
+            height={57}
+            className="h-[57px] w-auto"
+            priority
+          />
         </Link>
 
         <nav
           aria-label="主导航"
-          className="hidden items-center justify-center gap-4 md:flex"
+          className="hidden h-[55px] flex-1 items-center justify-center gap-9 md:flex"
         >
           <DropdownNav label="Products" items={productLinks} />
 
@@ -149,8 +153,7 @@ export function Header() {
             <a
               key={item.href}
               href={item.href}
-              target="_blank"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+              className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
               rel="noreferrer"
             >
               {item.label}
@@ -161,13 +164,13 @@ export function Header() {
 
           <Link
             href="/recipes"
-            className="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
           >
             Recipes
           </Link>
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 shrink-0">
           <IconButton label="Search">
             <svg
               aria-hidden="true"

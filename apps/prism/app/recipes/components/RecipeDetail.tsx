@@ -60,30 +60,50 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const imageUrl = getImageUrl(recipe.featuredImage?.url);
   const imageAlt = recipe.featuredImage?.alternativeText || recipe.title;
 
+  // Get the first category for breadcrumb
+  const category = recipe.categories?.[0];
+  const categoryId = category?.id;
+  const categoryName = category?.name || 'Recipe';
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Back button */}
+      {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-4 lg:px-8">
-          <Link
-            href="/recipes"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+          <nav
+            className="flex items-center space-x-2 text-sm"
+            aria-label="Breadcrumb"
           >
-            <svg
-              className="mr-2 h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <Link
+              href="/recipes"
+              className="text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Recipes
-          </Link>
+              recipes
+            </Link>
+            {category && (
+              <>
+                <span className="text-gray-400" aria-hidden="true">
+                  &gt;
+                </span>
+                <Link
+                  href={
+                    categoryId
+                      ? `/recipes?categoryId=${categoryId}`
+                      : '/recipes'
+                  }
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  {categoryName}
+                </Link>
+              </>
+            )}
+            <span className="text-gray-400" aria-hidden="true">
+              &gt;
+            </span>
+            <span className="text-gray-900 font-medium" aria-current="page">
+              {recipe.title}
+            </span>
+          </nav>
         </div>
       </div>
 
