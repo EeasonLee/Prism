@@ -25,6 +25,12 @@ export default async function RecipeDetailPage({
     // 在服务端获取食谱数据
     const { data: recipe } = await getRecipeBySlug(slug);
 
+    // 临时：输出接口返回的完整数据（查看后可以删除）
+    console.log('=== 食谱详情接口返回数据 ===');
+    console.log(JSON.stringify(recipe.products, null, 2));
+    console.log(JSON.stringify(recipe.relatedRecipes, null, 2));
+    console.log('=== 数据输出结束 ===');
+
     // 验证 URL 中的 category 是否与食谱的实际分类匹配
     const actualCategorySlug = recipe.categories?.[0]?.slug;
     if (actualCategorySlug && category !== actualCategorySlug) {

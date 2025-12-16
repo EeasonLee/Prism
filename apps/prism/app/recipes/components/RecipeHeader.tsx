@@ -134,9 +134,9 @@ export function RecipeHeader({
             >
               Search
             </button>
-            {isLoading && (
-              <span className="text-sm text-gray-500">加载中...</span>
-            )}
+            {/* {isLoading && (
+              <span className="text-sm text-gray-500">loading...</span>
+            )} */}
           </div>
         </form>
       </div>

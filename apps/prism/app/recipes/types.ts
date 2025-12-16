@@ -93,6 +93,24 @@ export interface Recipe {
     email?: string;
   };
   relatedRecipes?: Recipe[];
+  products?: Array<{
+    id: number;
+    documentId?: string;
+    name: string;
+    sku?: string;
+    url?: string;
+    slug?: string;
+    shortDescription?: string;
+    description?: string;
+    price?: number;
+    isActive?: boolean;
+    isFeatured?: boolean;
+    stock?: number;
+    image?: {
+      url: string;
+      alternativeText?: string;
+    } | null;
+  }>;
 }
 
 // 分页信息
