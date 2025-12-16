@@ -135,6 +135,7 @@ export interface SelectedFilters {
   specialDiets: number[];
   holidaysEvents: number[];
   productTypes: number[];
+  categoryId?: number;
 }
 
 // 搜索参数
@@ -149,4 +150,5 @@ export interface RecipeSearchParams {
   specialDiets?: number[];
   holidaysEvents?: number[];
   productTypes?: number[];
+  categoryId?: number;
 }

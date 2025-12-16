@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { FiltersPanel } from './components/FiltersPanel';
 import { RecipeGrid } from './components/RecipeGrid';
@@ -43,6 +44,11 @@ function buildBaseSearchParams(
     });
   });
 
+  // Handle categoryId separately as it's a single number, not an array
+  if (selectedFilters.categoryId) {
+    params.set('categoryId', String(selectedFilters.categoryId));
+  }
+
   return params;
 }
 
@@ -65,6 +71,38 @@ export function RecipesClient({
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Static inspiration section */}
+      <div className="bg-[#f6f6f6]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12 lg:flex-row lg:items-center lg:gap-12 lg:px-8">
+          <div className="flex-1 space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-wide text-gray-700">
+              Recipe Inspiration
+            </p>
+            <h1 className="text-3xl font-bold leading-tight text-gray-900">
+              Our recipe library is here to help you get the most out of your
+              Cuisinart® appliances and cookware.
+            </h1>
+            <p className="text-base leading-relaxed text-gray-700">
+              Whether you need ideas for breakfast, lunch, dinner, dessert, or
+              snacks, we have.
+            </p>
+          </div>
+          <div className="flex-1">
+            <div className="overflow-hidden rounded-lg shadow-md">
+              <Image
+                src="https://www.cuisinart.com/dw/image/v2/ABAF_PRD/on/demandware.static/-/Sites-us-cuisinart-sfra-Library/default/dw75c0fcb3/images/recipe-Images/07_28_fusionfrittata.jpg?sw=704&sh=396&q=100"
+                alt="Recipe inspiration"
+                width={704}
+                height={396}
+                className="h-full w-full object-cover"
+                sizes="(max-width: 1024px) 100vw, 704px"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           <aside className="w-full lg:w-64 lg:flex-shrink-0">

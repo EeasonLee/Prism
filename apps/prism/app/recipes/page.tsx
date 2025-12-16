@@ -36,6 +36,10 @@ function parseNumberArray(
 function buildSelectedFilters(
   searchParams: RecipesPageProps['searchParams']
 ): SelectedFilters {
+  const categoryIdValue = searchParams.categoryId;
+  const categoryId =
+    categoryIdValue !== undefined ? parseNumber(categoryIdValue, 0) : undefined;
+
   return {
     recipeTypes: parseNumberArray(searchParams.recipeTypes) ?? [],
     ingredients: parseNumberArray(searchParams.ingredients) ?? [],
@@ -44,6 +48,7 @@ function buildSelectedFilters(
     specialDiets: parseNumberArray(searchParams.specialDiets) ?? [],
     holidaysEvents: parseNumberArray(searchParams.holidaysEvents) ?? [],
     productTypes: parseNumberArray(searchParams.productTypes) ?? [],
+    categoryId: categoryId && categoryId > 0 ? categoryId : undefined,
   };
 }
 

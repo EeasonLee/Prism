@@ -286,6 +286,9 @@ export async function searchRecipes(
   if (params.productTypes && params.productTypes.length > 0) {
     queryParams.productTypes = params.productTypes;
   }
+  if (params.categoryId) {
+    queryParams.categoryId = params.categoryId;
+  }
 
   const queryString = buildQueryString(queryParams);
   const url = `${API_BASE_URL}/recipes/search?${queryString}`;
