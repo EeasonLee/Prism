@@ -4,6 +4,7 @@ import type {
   Recipe,
   RecipeSearchParams,
   RecipeSearchResponse,
+  SearchRecipesResponse,
 } from '../../app/recipes/types';
 
 import { apiClient } from './client';
@@ -68,6 +69,38 @@ export async function getFilters(params?: {
   const endpoint = `recipe-filters${queryString ? `?${queryString}` : ''}`;
 
   return apiClient.get<FilterListResponse>(endpoint);
+}
+
+/**
+ * 按关键字搜索食谱（新搜索接口）
+ */
+export async function searchRecipesByKeyword(params: {
+  q: string;
+  page?: number;
+  pageSize?: number;
+  tags?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  cookTimeGte?: number;
+  cookTimeLte?: number;
+  ratingGte?: number;
+  sort?: string | string[];
+}): Promise<SearchRecipesResponse> {
+  const queryParams: Record<string, unknown> = {
+    q: params.q,
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 12,
+    tags: params.tags,
+    difficulty: params.difficulty,
+    cookTimeGte: params.cookTimeGte,
+    cookTimeLte: params.cookTimeLte,
+    ratingGte: params.ratingGte,
+    sort: Array.isArray(params.sort) ? params.sort.join(',') : params.sort,
+  };
+
+  const queryString = buildQueryString(queryParams);
+  const endpoint = `search/recipes?${queryString}`;
+
+  return apiClient.get<SearchRecipesResponse>(endpoint);
 }
 
 /**

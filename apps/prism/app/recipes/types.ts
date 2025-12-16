@@ -28,8 +28,7 @@ export interface Recipe {
   title: string;
   slug: string;
   description: string;
-  content?: string; // 富文本内容（HTML格式）
-  ingredientsContent?: string; // 富文本内容（HTML格式）
+  // 兼容搜索接口返回的图片字段
   featuredImage: {
     url: string;
     alternativeText?: string;
@@ -37,6 +36,12 @@ export interface Recipe {
     width?: number;
     height?: number;
   } | null;
+  // 兼容搜索接口返回的跳转地址
+  url?: string;
+  // 兼容搜索接口返回的高亮摘要
+  summary?: string;
+  content?: string; // 富文本内容（HTML格式）
+  ingredientsContent?: string; // 富文本内容（HTML格式）
   categories?: Array<{
     id: number;
     name: string;
@@ -136,6 +141,8 @@ export interface SelectedFilters {
   holidaysEvents: number[];
   productTypes: number[];
   categoryId?: number;
+  // 关键字搜索
+  searchQuery?: string;
 }
 
 // 搜索参数
@@ -151,4 +158,38 @@ export interface RecipeSearchParams {
   holidaysEvents?: number[];
   productTypes?: number[];
   categoryId?: number;
+}
+
+// 新搜索接口返回的条目
+export interface SearchRecipeItem {
+  id: number;
+  slug: string;
+  title: string;
+  summary?: string;
+  ingredients?: string;
+  body?: string;
+  tags?: string[];
+  cook_time?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  updated_at?: string;
+  rating?: number;
+  thumbnail?: string | null;
+  url?: string;
+  highlight?: {
+    title?: string;
+    summary?: string;
+    ingredients?: string;
+    body?: string;
+  };
+}
+
+export interface SearchRecipesResponse {
+  data: SearchRecipeItem[];
+  meta: {
+    pagination: PaginationInfo;
+    took?: number;
+    query?: string;
+    source?: string;
+    degraded?: boolean;
+  };
 }
