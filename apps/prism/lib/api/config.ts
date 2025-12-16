@@ -3,9 +3,30 @@ import { env } from '../env';
 
 /**
  * API 配置 Schema
+ * baseUrl 可以是完整 URL 或相对路径
  */
 const apiConfigSchema = z.object({
-  baseUrl: z.string().url(),
+  baseUrl: z.string().refine(
+    val => {
+      // 允许完整 URL
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      // 允许相对路径（以 / 开头）
+      if (val.startsWith('/')) {
+        return true;
+      }
+      return false;
+    },
+    {
+      message: 'baseUrl must be a valid URL or a relative path starting with /',
+    }
+  ),
   timeout: z.number().min(1000).default(30000),
   retries: z.number().min(0).max(3).default(1),
 });

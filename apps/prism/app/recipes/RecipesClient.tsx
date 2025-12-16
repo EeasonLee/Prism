@@ -1,8 +1,13 @@
+'use client';
+
+import { Loader } from '@/components/ui/loader';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
 import { FiltersPanel } from './components/FiltersPanel';
 import { RecipeGrid } from './components/RecipeGrid';
 import { RecipeHeader } from './components/RecipeHeader';
+import { useRecipesData } from './hooks/useRecipesData';
 import type {
   Facets,
   FilterType,
@@ -21,52 +26,60 @@ interface RecipesClientProps {
   pageSize: number;
 }
 
-function buildBaseSearchParams(
-  selectedFilters: SelectedFilters,
-  pageSize: number
-) {
-  const params = new URLSearchParams();
-  params.set('pageSize', String(pageSize));
-
-  const filterEntries: Array<[keyof SelectedFilters, number[]]> = [
-    ['recipeTypes', selectedFilters.recipeTypes],
-    ['ingredients', selectedFilters.ingredients],
-    ['cuisines', selectedFilters.cuisines],
-    ['dishTypes', selectedFilters.dishTypes],
-    ['specialDiets', selectedFilters.specialDiets],
-    ['holidaysEvents', selectedFilters.holidaysEvents],
-    ['productTypes', selectedFilters.productTypes],
-  ];
-
-  filterEntries.forEach(([key, values]) => {
-    values.forEach(value => {
-      params.append(key, String(value));
-    });
-  });
-
-  // Handle categoryId separately as it's a single number, not an array
-  if (selectedFilters.categoryId) {
-    params.set('categoryId', String(selectedFilters.categoryId));
-  }
-
-  return params;
+function parseFiltersFromSearchParams(
+  searchParams: URLSearchParams
+): SelectedFilters {
+  return {
+    recipeTypes: searchParams.getAll('recipeTypes').map(Number).filter(Boolean),
+    ingredients: searchParams.getAll('ingredients').map(Number).filter(Boolean),
+    cuisines: searchParams.getAll('cuisines').map(Number).filter(Boolean),
+    dishTypes: searchParams.getAll('dishTypes').map(Number).filter(Boolean),
+    specialDiets: searchParams
+      .getAll('specialDiets')
+      .map(Number)
+      .filter(Boolean),
+    holidaysEvents: searchParams
+      .getAll('holidaysEvents')
+      .map(Number)
+      .filter(Boolean),
+    productTypes: searchParams
+      .getAll('productTypes')
+      .map(Number)
+      .filter(Boolean),
+    categoryId: searchParams.get('categoryId')
+      ? Number(searchParams.get('categoryId'))
+      : undefined,
+    searchQuery: searchParams.get('q') || undefined,
+  };
 }
 
 export function RecipesClient({
-  recipes,
-  facets,
-  pagination,
+  recipes: initialRecipes,
+  facets: initialFacets,
+  pagination: initialPagination,
   filterTypes,
-  selectedFilters,
-  page,
-  pageSize,
+  selectedFilters: initialSelectedFilters,
+  page: initialPage,
+  pageSize: initialPageSize,
 }: RecipesClientProps) {
-  const baseParams = buildBaseSearchParams(selectedFilters, pageSize);
+  const searchParams = useSearchParams();
+  const { recipes, facets, pagination, isLoading, refetch } = useRecipesData(
+    initialRecipes,
+    initialFacets,
+    initialPagination
+  );
 
-  const createPageHref = (targetPage: number) => {
-    const params = new URLSearchParams(baseParams);
-    params.set('page', String(targetPage));
-    return `/recipes?${params.toString()}`;
+  // 使用 useMemo 缓存当前筛选条件和页面大小，避免频繁重新计算
+  const currentFilters = useMemo(() => {
+    return parseFiltersFromSearchParams(searchParams);
+  }, [searchParams]);
+
+  const currentPageSize = useMemo(() => {
+    return Number(searchParams.get('pageSize')) || initialPageSize;
+  }, [searchParams, initialPageSize]);
+
+  const handlePageChange = (targetPage: number) => {
+    refetch(currentFilters, targetPage, currentPageSize);
   };
 
   return (
@@ -80,7 +93,7 @@ export function RecipesClient({
             </p>
             <h1 className="text-3xl font-bold leading-tight text-gray-900">
               Our recipe library is here to help you get the most out of your
-              Cuisinart® appliances and cookware.
+              Joydeem® appliances and cookware.
             </h1>
             <p className="text-base leading-relaxed text-gray-700">
               Whether you need ideas for breakfast, lunch, dinner, dessert, or
@@ -109,8 +122,11 @@ export function RecipesClient({
             <FiltersPanel
               filterTypes={filterTypes}
               facets={facets}
-              selectedFilters={selectedFilters}
-              pageSize={pageSize}
+              selectedFilters={currentFilters}
+              pageSize={currentPageSize}
+              onFilterChange={(filters, page, pageSize) =>
+                refetch(filters, page, pageSize)
+              }
             />
           </aside>
 
@@ -118,49 +134,70 @@ export function RecipesClient({
             <RecipeHeader
               totalRecipes={pagination?.total ?? 0}
               showingRecipes={recipes.length}
-              pageSize={pageSize}
-              selectedFilters={selectedFilters}
+              pageSize={currentPageSize}
+              selectedFilters={currentFilters}
+              onPageSizeChange={(filters, page, pageSize) =>
+                refetch(filters, page, pageSize)
+              }
+              onSearch={(filters, page, pageSize, searchQuery) =>
+                refetch({ ...filters, searchQuery }, page, pageSize)
+              }
             />
-            {recipes.length === 0 ? (
-              <div className="rounded-lg bg-gray-50 p-8 text-center">
-                <p className="text-gray-600">No recipes found</p>
-              </div>
-            ) : (
-              <>
-                <RecipeGrid recipes={recipes} />
-                {pagination && pagination.pageCount > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    {page > 1 ? (
-                      <Link
-                        href={createPageHref(page - 1)}
-                        className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                      >
-                        Previous
-                      </Link>
-                    ) : (
-                      <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
-                        Previous
-                      </span>
-                    )}
-                    <span className="px-4 text-sm text-gray-700">
-                      Page {pagination.page} of {pagination.pageCount}
+            <div className="relative">
+              {isLoading && (
+                <div className="pointer-events-auto absolute inset-0 z-10 flex items-start justify-center bg-white/60 backdrop-blur-[2px] pt-6">
+                  <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-2 shadow-sm">
+                    <Loader size="sm" className="text-gray-700" />
+                    <span className="text-sm text-gray-700">
+                      Loading recipes...
                     </span>
-                    {page < pagination.pageCount ? (
-                      <Link
-                        href={createPageHref(page + 1)}
-                        className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                      >
-                        Next
-                      </Link>
-                    ) : (
-                      <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
-                        Next
-                      </span>
-                    )}
                   </div>
-                )}
-              </>
-            )}
+                </div>
+              )}
+
+              {recipes.length === 0 ? (
+                <div className="rounded-lg bg-gray-50 p-8 text-center">
+                  <p className="text-gray-600">No recipes found</p>
+                </div>
+              ) : (
+                <>
+                  <RecipeGrid recipes={recipes} />
+                  {pagination && pagination.pageCount > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      {pagination.page > 1 ? (
+                        <button
+                          onClick={() => handlePageChange(pagination.page - 1)}
+                          disabled={isLoading}
+                          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                      ) : (
+                        <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
+                          Previous
+                        </span>
+                      )}
+                      <span className="px-4 text-sm text-gray-700">
+                        Page {pagination.page} of {pagination.pageCount}
+                      </span>
+                      {pagination.page < pagination.pageCount ? (
+                        <button
+                          onClick={() => handlePageChange(pagination.page + 1)}
+                          disabled={isLoading}
+                          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      ) : (
+                        <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
+                          Next
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </main>
         </div>
       </div>
