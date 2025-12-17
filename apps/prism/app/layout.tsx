@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { env } from '../lib/env';
+import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import './globals.css';
 import { AppProviders } from './providers';
@@ -25,6 +26,7 @@ export default function RootLayout({
         <AppProviders>
           <Header />
           {children}
+          <Footer />
         </AppProviders>
       </body>
     </html>
