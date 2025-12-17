@@ -137,7 +137,7 @@ export function FiltersPanel({
 
     // 更新本地状态
     setLocalFilters(prev => {
-      const currentValues = prev[key];
+      const currentValues = prev[key] as number[];
       const newValues = checked
         ? [...currentValues, optionId]
         : currentValues.filter(id => id !== optionId);
@@ -157,7 +157,8 @@ export function FiltersPanel({
   const isOptionChecked = (filterType: string, id: number) => {
     const key = filterTypeKeyMap[filterType];
     if (!key) return false;
-    return localFilters[key].includes(id);
+    const values = localFilters[key] as number[];
+    return values.includes(id);
   };
 
   return (
@@ -227,7 +228,9 @@ export function FiltersPanel({
                               filterType.value,
                               option.id
                             )}
-                            onCheckedChange={checked =>
+                            onCheckedChange={(
+                              checked: boolean | 'indeterminate'
+                            ) =>
                               handleCheckboxChange(
                                 filterType.value,
                                 option.id,

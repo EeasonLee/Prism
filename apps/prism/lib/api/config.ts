@@ -42,7 +42,7 @@ export type Environment = 'development' | 'test' | 'production';
  * 判断是否在服务端运行
  */
 function isServerSide(): boolean {
-  return typeof window === 'undefined';
+  return typeof (globalThis as any).window === 'undefined';
 }
 
 /**
