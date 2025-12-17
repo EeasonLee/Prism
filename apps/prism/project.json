@@ -24,6 +24,7 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "prism:build",
+        "port": 3002,
         "dev": false
       }
     },
