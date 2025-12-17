@@ -160,7 +160,7 @@ export async function getRecipeBySlug(
 
   // 只在服务端支持缓存配置
   const options =
-    typeof window === 'undefined'
+    typeof (globalThis as any).window === 'undefined'
       ? ({ next: { revalidate } } as const)
       : undefined;
 

@@ -36,13 +36,14 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   // 否则使用 categories 构建 URL
   const hasCategoryInUrl =
     recipe.url && recipe.url.match(/^\/recipes\/[^/]+\/[^/]+$/);
-  const targetHref = hasCategoryInUrl
-    ? recipe.url
-    : `/recipes/${categorySlug}/${recipe.slug}`;
+  const targetHref: string =
+    hasCategoryInUrl && recipe.url
+      ? recipe.url
+      : `/recipes/${categorySlug}/${recipe.slug}`;
 
   return (
     <Link
-      href={targetHref}
+      href={targetHref as any}
       className="group relative block overflow-hidden rounded-lg bg-white transition-shadow hover:shadow-lg"
     >
       {/* Image container */}

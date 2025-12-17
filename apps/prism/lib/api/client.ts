@@ -3,7 +3,7 @@ import type { ClientRequestOptions } from './adapters/client-adapter';
 import { clientRequest } from './adapters/client-adapter';
 import type { ServerRequestOptions } from './adapters/server-adapter';
 import { serverRequest } from './adapters/server-adapter';
-import { getApiConfig, isDevelopment } from './config';
+import { isDevelopment } from './config';
 import {
   ApiError,
   AuthenticationError,
@@ -26,8 +26,9 @@ type RequestOptions = (ServerRequestOptions | ClientRequestOptions) & {
  * 统一的 API Client
  */
 class ApiClient {
-  private config = getApiConfig();
-  private isServer = typeof window === 'undefined';
+  private get isServer(): boolean {
+    return typeof (globalThis as any).window === 'undefined';
+  }
 
   /**
    * 执行请求

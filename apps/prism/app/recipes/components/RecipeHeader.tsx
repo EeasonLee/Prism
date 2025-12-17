@@ -112,7 +112,7 @@ export function RecipeHeader({
               type="search"
               placeholder="Search recipes..."
               value={searchText}
-              onChange={e => setSearchText(e.target.value)}
+              onChange={(e: any) => setSearchText(e.target.value)}
               disabled={isLoading}
             />
           </div>
