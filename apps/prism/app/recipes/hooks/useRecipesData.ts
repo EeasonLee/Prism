@@ -64,11 +64,16 @@ export function useRecipesData(
   const [pagination, setPagination] = useState<PaginationInfo | null>(
     initialPagination
   );
+  // 首屏 SSR：isLoading 初始为 false，因为数据已经通过 props 传入
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   // 使用 ref 跟踪是否是我们主动触发的 URL 更新
   const isUpdatingUrlRef = useRef(false);
+  // 标记是否已完成首次渲染（服务端数据已使用）
+  const isInitialMountRef = useRef(true);
+  // 标记服务端数据是否已使用（避免首次渲染时发起请求）
+  const hasUsedServerDataRef = useRef(false);
   // 初始化为当前 URL 对应的参数，避免首屏重复请求
   const initialFilters = parseFiltersFromSearchParams(searchParams);
   const initialPage = Math.max(1, Number(searchParams.get('page')) || 1);
@@ -86,24 +91,40 @@ export function useRecipesData(
 
   const mapSearchItemToRecipe = useCallback(
     (item: SearchRecipeItem): Recipe => {
+      // 处理图片 URL：thumbnail 可能是相对路径或完整 URL
+      let imageUrl = item.thumbnail;
+      if (imageUrl) {
+        // 如果是完整 URL，直接使用
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+          // 完整 URL，直接使用
+        } else {
+          // 如果是相对路径，确保以 / 开头
+          imageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+        }
+      }
+
       return {
         id: item.id,
+        // 保存高亮版本和原始版本，用于渲染
         title: item.highlight?.title || item.title,
         slug: item.slug,
         description: item.highlight?.summary || item.summary || '',
         summary: item.summary,
-        featuredImage: item.thumbnail
+        featuredImage: imageUrl
           ? {
-              url: item.thumbnail,
+              url: imageUrl,
+              alternativeText: item.title,
             }
           : null,
-        categories: [],
+        categories: item.categories || [],
         filters: [],
         cookTime: item.cook_time,
         difficulty: item.difficulty,
         rating: item.rating,
         updatedAt: item.updated_at,
         url: item.url,
+        // 保存高亮信息，用于渲染
+        highlight: item.highlight,
       };
     },
     []
@@ -197,7 +218,26 @@ export function useRecipesData(
 
   // 当 URL 变化时（比如浏览器前进/后退），重新获取数据
   useEffect(() => {
-    // 如果是我们主动更新的 URL，跳过
+    // 首次渲染时，标记服务端数据已使用
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      const page = Math.max(1, Number(searchParams.get('page')) || 1);
+      const pageSize = Math.max(1, Number(searchParams.get('pageSize')) || 12);
+      const filters = parseFiltersFromSearchParams(searchParams);
+      const requestKey = JSON.stringify({ filters, page, pageSize });
+
+      // 如果服务端数据与当前 URL 参数匹配，标记已使用服务端数据，不发起请求
+      if (lastRequestParamsRef.current === requestKey) {
+        hasUsedServerDataRef.current = true;
+        return; // 首屏 SSR：直接使用服务端数据，不显示 loading
+      }
+
+      // 如果数据不匹配，说明 URL 参数与服务端数据不一致，需要重新获取
+      // 但这种情况应该很少见，因为服务端应该根据 URL 参数返回对应数据
+      hasUsedServerDataRef.current = true;
+    }
+
+    // 如果是我们主动更新的 URL，跳过（避免循环请求）
     if (isUpdatingUrlRef.current) {
       return;
     }
@@ -212,6 +252,8 @@ export function useRecipesData(
       return;
     }
 
+    // 只有在 URL 真正变化且已使用过服务端数据后，才发起客户端请求
+    // 此时显示 loading 是合理的（用户交互导致的请求）
     lastRequestParamsRef.current = requestKey;
     refetch(filters, page, pageSize, false);
   }, [searchParams, refetch]);

@@ -3,7 +3,7 @@
 import { Loader } from '@/components/ui/loader';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FiltersPanel } from './components/FiltersPanel';
 import { RecipeGrid } from './components/RecipeGrid';
 import { RecipeHeader } from './components/RecipeHeader';
@@ -69,14 +69,51 @@ export function RecipesClient({
     initialPagination
   );
 
-  // 使用 useMemo 缓存当前筛选条件和页面大小，避免频繁重新计算
-  const currentFilters = useMemo(() => {
-    return parseFiltersFromSearchParams(searchParams);
-  }, [searchParams]);
+  // 使用 useState 管理筛选条件和页面大小，初始值使用 props（服务端数据）
+  // 这样可以确保服务端和客户端首次渲染一致，避免 hydration 不匹配
+  const [currentFilters, setCurrentFilters] = useState<SelectedFilters>(
+    initialSelectedFilters
+  );
+  const [currentPageSize, setCurrentPageSize] = useState(initialPageSize);
 
-  const currentPageSize = useMemo(() => {
-    return Number(searchParams.get('pageSize')) || initialPageSize;
-  }, [searchParams, initialPageSize]);
+  // 在客户端 hydration 后，同步 URL 参数（仅在 URL 变化时更新）
+  useEffect(() => {
+    const urlFilters = parseFiltersFromSearchParams(searchParams);
+    const urlPageSize = Number(searchParams.get('pageSize')) || initialPageSize;
+
+    // 只在 URL 参数与当前状态不同时更新
+    if (JSON.stringify(urlFilters) !== JSON.stringify(currentFilters)) {
+      setCurrentFilters(urlFilters);
+    }
+    if (urlPageSize !== currentPageSize) {
+      setCurrentPageSize(urlPageSize);
+    }
+  }, [searchParams, currentFilters, currentPageSize, initialPageSize]);
+
+  // 检查是否有可用的筛选选项
+  const hasAvailableFilters = useMemo(() => {
+    if (!facets || !filterTypes || filterTypes.length === 0) {
+      return false;
+    }
+
+    const filterTypeKeyMap: Record<string, keyof Facets> = {
+      'recipe-type': 'recipe-type',
+      'main-ingredients': 'main-ingredients',
+      cuisine: 'cuisine',
+      'dish-type': 'dish-type',
+      'special-diets': 'special-diets',
+      'holidays-events': 'holidays-events',
+      'product-type': 'product-type',
+    };
+
+    // 检查是否有任何筛选类型有可用的选项
+    return filterTypes.some(filterType => {
+      const facetKey = filterTypeKeyMap[filterType.value] as keyof Facets;
+      if (!facetKey) return false;
+      const options = facets[facetKey];
+      return options && Array.isArray(options) && options.length > 0;
+    });
+  }, [facets, filterTypes]);
 
   const handlePageChange = (targetPage: number) => {
     refetch(currentFilters, targetPage, currentPageSize);
@@ -118,17 +155,19 @@ export function RecipesClient({
 
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
         <div className="flex flex-col gap-8 lg:flex-row">
-          <aside className="w-full lg:w-64 lg:flex-shrink-0">
-            <FiltersPanel
-              filterTypes={filterTypes}
-              facets={facets}
-              selectedFilters={currentFilters}
-              pageSize={currentPageSize}
-              onFilterChange={(filters, page, pageSize) =>
-                refetch(filters, page, pageSize)
-              }
-            />
-          </aside>
+          {hasAvailableFilters && (
+            <aside className="w-full lg:w-64 lg:flex-shrink-0">
+              <FiltersPanel
+                filterTypes={filterTypes}
+                facets={facets}
+                selectedFilters={currentFilters}
+                pageSize={currentPageSize}
+                onFilterChange={(filters, page, pageSize) =>
+                  refetch(filters, page, pageSize)
+                }
+              />
+            </aside>
+          )}
 
           <main className="min-w-0 flex-1">
             <RecipeHeader

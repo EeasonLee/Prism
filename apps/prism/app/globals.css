@@ -56,4 +56,9 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* 搜索高亮样式 */
+  mark {
+    @apply bg-yellow-200 text-gray-900 font-medium px-0.5 rounded;
+  }
 }
