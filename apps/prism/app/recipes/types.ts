@@ -40,6 +40,13 @@ export interface Recipe {
   url?: string;
   // 兼容搜索接口返回的高亮摘要
   summary?: string;
+  // 高亮信息（搜索接口返回）
+  highlight?: {
+    title?: string;
+    summary?: string;
+    ingredients?: string;
+    body?: string;
+  };
   content?: string; // 富文本内容（HTML格式）
   ingredientsContent?: string; // 富文本内容（HTML格式）
   categories?: Array<{
@@ -193,6 +200,11 @@ export interface SearchRecipeItem {
   rating?: number;
   thumbnail?: string | null;
   url?: string;
+  categories?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
   highlight?: {
     title?: string;
     summary?: string;

@@ -30,6 +30,11 @@ interface RecipeHeaderProps {
 
 const pageSizeOptions = [12, 24, 48];
 
+// 格式化数字，使用固定 locale 避免 hydration 不匹配
+function formatNumber(num: number): string {
+  return num.toLocaleString('en-US');
+}
+
 export function RecipeHeader({
   totalRecipes,
   showingRecipes,
@@ -77,10 +82,11 @@ export function RecipeHeader({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="mb-2 text-4xl font-bold text-gray-900">
-            {totalRecipes.toLocaleString()} Recipes
+            {formatNumber(totalRecipes)} Recipes
           </h1>
           <p className="text-sm text-gray-600">
-            Showing {showingRecipes} of {totalRecipes.toLocaleString()} recipes
+            Showing {formatNumber(showingRecipes)} of{' '}
+            {formatNumber(totalRecipes)} recipes
           </p>
         </div>
         <form
