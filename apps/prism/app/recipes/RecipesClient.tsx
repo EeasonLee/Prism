@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { FiltersPanel } from './components/FiltersPanel';
+import { Pagination } from './components/Pagination';
 import { RecipeGrid } from './components/RecipeGrid';
 import { RecipeHeader } from './components/RecipeHeader';
 import { useRecipesData } from './hooks/useRecipesData';
@@ -175,9 +176,6 @@ export function RecipesClient({
               showingRecipes={recipes.length}
               pageSize={currentPageSize}
               selectedFilters={currentFilters}
-              onPageSizeChange={(filters, page, pageSize) =>
-                refetch(filters, page, pageSize)
-              }
               onSearch={(filters, page, pageSize, searchQuery) =>
                 refetch({ ...filters, searchQuery }, page, pageSize)
               }
@@ -201,37 +199,16 @@ export function RecipesClient({
               ) : (
                 <>
                   <RecipeGrid recipes={recipes} />
-                  {pagination && pagination.pageCount > 1 && (
-                    <div className="mt-8 flex items-center justify-center gap-2">
-                      {pagination.page > 1 ? (
-                        <button
-                          onClick={() => handlePageChange(pagination.page - 1)}
-                          disabled={isLoading}
-                          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                        >
-                          Previous
-                        </button>
-                      ) : (
-                        <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
-                          Previous
-                        </span>
-                      )}
-                      <span className="px-4 text-sm text-gray-700">
-                        Page {pagination.page} of {pagination.pageCount}
-                      </span>
-                      {pagination.page < pagination.pageCount ? (
-                        <button
-                          onClick={() => handlePageChange(pagination.page + 1)}
-                          disabled={isLoading}
-                          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                        >
-                          Next
-                        </button>
-                      ) : (
-                        <span className="rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400">
-                          Next
-                        </span>
-                      )}
+                  {pagination && (
+                    <div className="mt-8">
+                      <Pagination
+                        pagination={pagination}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={newPageSize => {
+                          refetch(currentFilters, 1, newPageSize);
+                        }}
+                        isLoading={isLoading}
+                      />
                     </div>
                   )}
                 </>

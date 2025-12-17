@@ -1,6 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 type NavLink = {
   label: string;
@@ -16,13 +19,26 @@ type IconButtonProps = {
   label: string;
   badge?: number;
   children: ReactNode;
+  onClick?: () => void;
+  ariaExpanded?: boolean;
+  ariaControls?: string;
 };
 
-function IconButton({ label, badge, children }: IconButtonProps) {
+function IconButton({
+  label,
+  badge,
+  children,
+  onClick,
+  ariaExpanded,
+  ariaControls,
+}: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
+      aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
+      onClick={onClick}
       className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
     >
       {children}
@@ -87,6 +103,8 @@ function DropdownNav({ label, items }: DropdownNavProps) {
 }
 
 export function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const navLinks: NavLink[] = [
     { label: 'About Us', href: 'https://www.joydeem.com/aboutus' },
   ];
@@ -131,8 +149,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 bg-[#f2f2f2]">
-      <div className="mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-[50px]">
-        <Link href="/" className="flex items-center shrink-0">
+      <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
+        <a
+          href="https://www.joydeem.com"
+          className="flex items-center shrink-0"
+        >
           <Image
             src="/images/logo.png"
             alt="Joydeem"
@@ -141,7 +162,7 @@ export function Header() {
             className="h-[57px] w-auto"
             priority
           />
-        </Link>
+        </a>
 
         <nav
           aria-label="主导航"
@@ -170,8 +191,8 @@ export function Header() {
           </Link>
         </nav>
 
-        <div className="flex items-center justify-end gap-2 shrink-0">
-          <IconButton label="Search">
+        <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
+          {/* <IconButton label="Search">
             <svg
               aria-hidden="true"
               className="h-5 w-5"
@@ -185,25 +206,30 @@ export function Header() {
               <circle cx="11" cy="11" r="6" />
               <path d="m15.5 15.5 3.5 3.5" />
             </svg>
-          </IconButton>
+          </IconButton> */}
 
-          <IconButton label="Account">
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c1.5-3 4.5-4.5 8-4.5s6.5 1.5 8 4.5" />
-            </svg>
-          </IconButton>
+          <a
+            href="https://www.joydeem.com/customer/account/"
+            rel="noopener noreferrer"
+          >
+            <IconButton label="Account">
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c1.5-3 4.5-4.5 8-4.5s6.5 1.5 8 4.5" />
+              </svg>
+            </IconButton>
+          </a>
 
-          <IconButton label="Favorites" badge={0}>
+          {/* <IconButton label="Favorites" badge={0}>
             <svg
               aria-hidden="true"
               className="h-5 w-5"
@@ -216,9 +242,9 @@ export function Header() {
             >
               <path d="M12 17.5 6.5 21l1.5-6-5-4.5 6.6-.5L12 4l2.4 6 6.6.5-5 4.5 1.5 6z" />
             </svg>
-          </IconButton>
+          </IconButton> */}
 
-          <IconButton label="Cart" badge={0}>
+          {/* <IconButton label="Cart" badge={0}>
             <svg
               aria-hidden="true"
               className="h-5 w-5"
@@ -233,22 +259,91 @@ export function Header() {
               <circle cx="17" cy="20" r="1.5" />
               <path d="M3 4h2l1.5 12.5h11l1-9H6.2" />
             </svg>
-          </IconButton>
+          </IconButton> */}
 
-          <IconButton label="Menu">
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="md:hidden">
+            <IconButton
+              label="Menu"
+              onClick={() => setIsMobileMenuOpen(open => !open)}
+              ariaExpanded={isMobileMenuOpen}
+              ariaControls="mobile-menu"
             >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </IconButton>
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </IconButton>
+          </div>
+        </div>
+
+        <div
+          id="mobile-menu"
+          className={`md:hidden absolute left-0 right-0 top-full border-t border-slate-200 bg-white shadow-xl transition-[opacity,visibility,transform] duration-200 ${
+            isMobileMenuOpen
+              ? 'visible translate-y-0 opacity-100'
+              : 'invisible -translate-y-2 opacity-0'
+          }`}
+        >
+          <div className="px-4 py-4 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Products</p>
+              <ul className="mt-2 space-y-2">
+                {productLinks.map(item => (
+                  <li key={item.href}>
+                    <a
+                      href={item.href}
+                      className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {navLinks.map(item => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                >
+                  {item.label}
+                </a>
+              ))}
+
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Support</p>
+                <ul className="mt-2 space-y-2">
+                  {supportLinks.map(item => (
+                    <li key={item.href}>
+                      <a
+                        href={item.href}
+                        className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <Link
+                href="/recipes"
+                className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+              >
+                Recipes
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </header>

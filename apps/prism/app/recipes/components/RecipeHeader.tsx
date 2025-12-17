@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SelectedFilters } from '../types';
 
 interface RecipeHeaderProps {
@@ -15,11 +8,6 @@ interface RecipeHeaderProps {
   showingRecipes: number;
   pageSize: number;
   selectedFilters: SelectedFilters;
-  onPageSizeChange: (
-    filters: SelectedFilters,
-    page: number,
-    pageSize: number
-  ) => Promise<void>;
   onSearch: (
     filters: SelectedFilters,
     page: number,
@@ -27,8 +15,6 @@ interface RecipeHeaderProps {
     searchQuery: string
   ) => Promise<void>;
 }
-
-const pageSizeOptions = [12, 24, 48];
 
 // 格式化数字，使用固定 locale 避免 hydration 不匹配
 function formatNumber(num: number): string {
@@ -40,38 +26,48 @@ export function RecipeHeader({
   showingRecipes,
   pageSize,
   selectedFilters,
-  onPageSizeChange,
   onSearch,
 }: RecipeHeaderProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPageSize, setCurrentPageSize] = useState(pageSize);
+  // 使用 ref 跟踪上一次成功提交的搜索查询，避免 useEffect 延迟
+  const lastSubmittedQueryRef = useRef<string>(
+    (selectedFilters.searchQuery || '').trim()
+  );
   const [searchText, setSearchText] = useState(
     selectedFilters.searchQuery || ''
   );
 
-  const handleSelectChange = async (value: string) => {
-    const newPageSize = Number(value);
-    setCurrentPageSize(newPageSize);
-    setIsLoading(true);
-    try {
-      await onPageSizeChange(selectedFilters, 1, newPageSize);
-    } finally {
-      setIsLoading(false);
+  // 当外部搜索查询变化时（比如通过筛选清空搜索），同步更新
+  useEffect(() => {
+    const externalQuery = (selectedFilters.searchQuery || '').trim();
+    if (externalQuery !== lastSubmittedQueryRef.current) {
+      lastSubmittedQueryRef.current = externalQuery;
+      setSearchText(selectedFilters.searchQuery || '');
     }
-  };
+  }, [selectedFilters.searchQuery]);
+
+  // 检查搜索文本是否有变化（与上次提交的查询比较）
+  const currentSearchQuery = searchText.trim();
+  const hasChanged = currentSearchQuery !== lastSubmittedQueryRef.current;
+  const isSearchDisabled = isLoading || !hasChanged;
 
   const handleSearchSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+    if (isSearchDisabled) return;
+
     setIsLoading(true);
     try {
+      const trimmedQuery = searchText.trim();
       await onSearch(
-        { ...selectedFilters, searchQuery: searchText },
+        { ...selectedFilters, searchQuery: trimmedQuery },
         1,
-        currentPageSize,
-        searchText
+        pageSize,
+        trimmedQuery
       );
+      // 搜索成功后，更新上次提交的查询
+      lastSubmittedQueryRef.current = trimmedQuery;
     } finally {
       setIsLoading(false);
     }
@@ -89,10 +85,7 @@ export function RecipeHeader({
             {formatNumber(totalRecipes)} recipes
           </p>
         </div>
-        <form
-          className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
-          onSubmit={handleSearchSubmit}
-        >
+        <form className="flex w-full sm:w-auto" onSubmit={handleSearchSubmit}>
           <div className="flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 shadow-sm sm:w-80">
             <svg
               className="h-5 w-5 text-gray-400"
@@ -116,34 +109,13 @@ export function RecipeHeader({
               disabled={isLoading}
             />
           </div>
-          <div className="flex items-center gap-3">
-            <Select
-              value={String(currentPageSize)}
-              onValueChange={handleSelectChange}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select page size" />
-              </SelectTrigger>
-              <SelectContent>
-                {pageSizeOptions.map(option => (
-                  <SelectItem key={option} value={String(option)}>
-                    Showing {option} Recipes
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <button
-              type="submit"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-              disabled={isLoading}
-            >
-              Search
-            </button>
-            {/* {isLoading && (
-              <span className="text-sm text-gray-500">loading...</span>
-            )} */}
-          </div>
+          <button
+            type="submit"
+            className="ml-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSearchDisabled}
+          >
+            Search
+          </button>
         </form>
       </div>
     </div>
