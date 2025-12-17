@@ -79,7 +79,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               href="/recipes"
               className="text-gray-600 hover:text-gray-900 transition-colors"
             >
-              recipes
+              Recipes
             </Link>
             {category && (
               <>

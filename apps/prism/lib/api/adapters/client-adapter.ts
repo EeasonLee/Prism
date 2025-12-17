@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '../config';
+
 /**
  * 客户端请求选项
  */
@@ -7,7 +9,8 @@ export interface ClientRequestOptions extends RequestInit {
 
 /**
  * 客户端请求适配器
- * - 通过 /api/proxy 路由代理请求（解决跨域）
+ * - 开发环境：通过 /api/proxy 路由代理请求（解决跨域）
+ * - 生产环境：直接请求后端 API（生产环境已配置 CORS）
  * - 实现超时控制
  * - 统一的请求格式
  */
@@ -17,10 +20,23 @@ export async function clientRequest(
 ): Promise<Response> {
   const { timeout = 30000, ...fetchOptions } = options;
 
-  // 客户端统一使用代理路由
-  // 移除 url 开头的 /，因为代理路由会自动处理
-  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-  const proxyUrl = `/api/proxy/${cleanUrl}`;
+  // 获取 API 基础 URL
+  const baseUrl = getApiBaseUrl();
+
+  // 判断是否使用代理（开发环境使用代理）
+  const useProxy = baseUrl === '/api/proxy';
+
+  let requestUrl: string;
+  if (useProxy) {
+    // 开发环境：使用代理路由
+    // 移除 url 开头的 /，因为代理路由会自动处理
+    const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+    requestUrl = `/api/proxy/${cleanUrl}`;
+  } else {
+    // 生产环境：直接请求后端 API
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    requestUrl = `${baseUrl}${cleanUrl}`;
+  }
 
   // 使用 AbortController 实现超时
   const controller = new AbortController();
@@ -29,7 +45,7 @@ export async function clientRequest(
   }, timeout);
 
   try {
-    const response = await fetch(proxyUrl, {
+    const response = await fetch(requestUrl, {
       ...fetchOptions,
       signal: controller.signal,
       headers: {
