@@ -48,8 +48,7 @@ function isServerSide(): boolean {
 /**
  * 获取 API 基础 URL
  * - 服务端：直接使用后端地址（无跨域问题）
- * - 客户端开发环境：使用代理路由（解决跨域）
- * - 客户端生产环境：直接使用后端地址（生产环境已配置 CORS）
+ * - 客户端：使用代理路由（解决跨域）
  */
 export function getApiBaseUrl(): string {
   if (isServerSide()) {
@@ -68,23 +67,7 @@ export function getApiBaseUrl(): string {
     return `${baseUrl}/api`;
   }
 
-  // 客户端：生产环境直接使用后端地址，开发环境使用代理路由
-  if (isProduction()) {
-    const baseUrl = env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) {
-      throw new Error('NEXT_PUBLIC_API_URL is required in production');
-    }
-    // 确保 URL 以 /api 结尾
-    if (baseUrl.endsWith('/api')) {
-      return baseUrl;
-    }
-    if (baseUrl.endsWith('/')) {
-      return `${baseUrl}api`;
-    }
-    return `${baseUrl}/api`;
-  }
-
-  // 开发环境：使用代理路由
+  // 客户端：使用代理路由
   return '/api/proxy';
 }
 
