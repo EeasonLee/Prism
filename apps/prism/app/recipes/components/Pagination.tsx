@@ -30,7 +30,6 @@ export function Pagination({
   const getPageNumbers = () => {
     const delta = 2; // 当前页前后显示的页码数
     const range: (number | string)[] = [];
-    const rangeWithDots: (number | string)[] = [];
 
     // 计算起始和结束页码
     let start = Math.max(2, page - delta);

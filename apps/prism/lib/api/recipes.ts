@@ -159,10 +159,9 @@ export async function getRecipeBySlug(
   const endpoint = `recipes/slug/${slug}`;
 
   // 只在服务端支持缓存配置
-  const options =
-    typeof (globalThis as any).window === 'undefined'
-      ? ({ next: { revalidate } } as const)
-      : undefined;
+  const isServer =
+    typeof (globalThis as Record<string, unknown>).window === 'undefined';
+  const options = isServer ? ({ next: { revalidate } } as const) : undefined;
 
   return apiClient.get<{ data: Recipe }>(endpoint, options);
 }
