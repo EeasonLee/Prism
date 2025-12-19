@@ -138,7 +138,7 @@ pnpm nx run prism:start
 ## 🧱 Next.js 应用底座特性
 
 - **Typed Routes**：`apps/prism/next.config.js` 已启用 `typedRoutes`，避免手写路由字符串。
-- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验 `NEXT_PUBLIC_APP_URL / LOG_LEVEL` 等关键变量，`layout.tsx` 中统一消费。
+- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验环境变量，详见《[环境变量配置](docs/env-config.md)》。
 - **全局 Providers**：`app/providers.tsx` 提供 `AppConfig` 上下文并在客户端记录日志，可扩展主题、鉴权等全局状态。
 - **标准 Loading / Error**：`app/loading.tsx`、`app/error.tsx` 提供统一体验，错误页自动记录日志并允许一键重试。
 

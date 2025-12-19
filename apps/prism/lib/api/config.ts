@@ -41,34 +41,23 @@ export type Environment = 'development' | 'test' | 'production';
 /**
  * 判断是否在服务端运行
  */
-function isServerSide(): boolean {
-  return typeof (globalThis as any).window === 'undefined';
+export function isServerSide(): boolean {
+  return typeof window === 'undefined';
 }
 
 /**
  * 获取 API 基础 URL
- * - 服务端：直接使用后端地址（无跨域问题）
- * - 客户端：使用代理路由（解决跨域）
+ * 直接返回配置的 API URL，不再拼接 /api
+ * 接口路径应该以 api/ 开头（如 api/recipes）
  */
 export function getApiBaseUrl(): string {
-  if (isServerSide()) {
-    // 服务端：直接请求后端
-    const baseUrl = env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) {
-      throw new Error('NEXT_PUBLIC_API_URL is required on server side');
-    }
-    // 确保 URL 以 /api 结尾
-    if (baseUrl.endsWith('/api')) {
-      return baseUrl;
-    }
-    if (baseUrl.endsWith('/')) {
-      return `${baseUrl}api`;
-    }
-    return `${baseUrl}/api`;
+  const baseUrl = env.NEXT_PUBLIC_API_URL;
+  if (!baseUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL is required');
   }
 
-  // 客户端：使用代理路由
-  return '/api/proxy';
+  // 移除末尾的斜杠，统一处理
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 }
 
 /**

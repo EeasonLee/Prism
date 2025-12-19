@@ -16,7 +16,6 @@ export interface ServerRequestOptions extends RequestInit {
  * - 直接使用 fetch 请求后端 API（无跨域问题）
  * - 支持 Next.js 缓存配置
  * - 自动添加认证 token
- * - 模拟浏览器请求头
  */
 export async function serverRequest(
   url: string,
@@ -25,38 +24,17 @@ export async function serverRequest(
   const { next, ...fetchOptions } = options;
 
   // 构建完整的 URL
-  // 如果 url 已经是完整 URL，直接使用；否则拼接 baseUrl
+  // url 应该以 api/ 开头（如 api/recipes）
   const baseUrl = getApiBaseUrl();
-  const fullUrl = url.startsWith('http')
-    ? url
-    : url.startsWith('/')
-    ? `${baseUrl}${url}`
-    : `${baseUrl}/${url}`;
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const fullUrl = url.startsWith('http') ? url : `${baseUrl}/${cleanUrl}`;
 
   // 准备请求头
   const headers = new Headers(fetchOptions.headers);
 
   // 设置基础请求头
   headers.set('Content-Type', 'application/json');
-  headers.set('Accept', 'application/json, text/plain, */*');
-
-  // 模拟浏览器请求头（避免被后端拦截）
-  headers.set(
-    'User-Agent',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  );
-  headers.set('Accept-Language', 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7');
-  headers.set('Accept-Encoding', 'gzip, deflate, br');
-  headers.set('Cache-Control', 'no-cache');
-  headers.set('Pragma', 'no-cache');
-
-  // 设置 Referer 和 Origin 为后端地址
-  const apiBaseUrl = env.NEXT_PUBLIC_API_URL || '';
-  headers.set('Referer', apiBaseUrl);
-  headers.set('Origin', apiBaseUrl);
-  headers.set('Sec-Fetch-Dest', 'empty');
-  headers.set('Sec-Fetch-Mode', 'cors');
-  headers.set('Sec-Fetch-Site', 'same-origin');
+  headers.set('Accept', 'application/json');
 
   // 添加认证 token（服务端专用，不会暴露到客户端）
   if (env.STRAPI_API_TOKEN) {
@@ -64,9 +42,23 @@ export async function serverRequest(
   }
 
   // 执行请求
-  return fetch(fullUrl, {
-    ...fetchOptions,
-    headers,
-    next, // Next.js 缓存配置
-  });
+  try {
+    return await fetch(fullUrl, {
+      ...fetchOptions,
+      headers,
+      next, // Next.js 缓存配置
+    });
+  } catch (error) {
+    // 开发环境：提供更详细的错误信息
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Server Request Failed]', {
+        baseUrl,
+        url,
+        fullUrl,
+        apiUrl: env.NEXT_PUBLIC_API_URL,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    throw error;
+  }
 }
