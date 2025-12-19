@@ -8,6 +8,7 @@ import type {
 } from '../../app/recipes/types';
 
 import { apiClient } from './client';
+import { isServerSide } from './config';
 
 /**
  * 构建查询字符串
@@ -38,7 +39,7 @@ function buildQueryString(params: Record<string, unknown>): string {
  * 获取筛选类型列表
  */
 export async function getFilterTypes(): Promise<FilterTypesResponse> {
-  return apiClient.get<FilterTypesResponse>('recipe-filters/types');
+  return apiClient.get<FilterTypesResponse>('api/recipe-filters/types');
 }
 
 /**
@@ -66,7 +67,7 @@ export async function getFilters(params?: {
   }
 
   const queryString = buildQueryString(queryParams);
-  const endpoint = `recipe-filters${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `api/recipe-filters${queryString ? `?${queryString}` : ''}`;
 
   return apiClient.get<FilterListResponse>(endpoint);
 }
@@ -98,7 +99,7 @@ export async function searchRecipesByKeyword(params: {
   };
 
   const queryString = buildQueryString(queryParams);
-  const endpoint = `search/recipes?${queryString}`;
+  const endpoint = `api/search/recipes?${queryString}`;
 
   return apiClient.get<SearchRecipesResponse>(endpoint);
 }
@@ -142,7 +143,7 @@ export async function searchRecipes(
   }
 
   const queryString = buildQueryString(queryParams);
-  const endpoint = `recipes/search?${queryString}`;
+  const endpoint = `api/recipes/search?${queryString}`;
 
   return apiClient.get<RecipeSearchResponse>(endpoint);
 }
@@ -156,12 +157,12 @@ export async function getRecipeBySlug(
   slug: string,
   revalidate = 3600
 ): Promise<{ data: Recipe }> {
-  const endpoint = `recipes/slug/${slug}`;
+  const endpoint = `api/recipes/slug/${slug}`;
 
   // 只在服务端支持缓存配置
-  const isServer =
-    typeof (globalThis as Record<string, unknown>).window === 'undefined';
-  const options = isServer ? ({ next: { revalidate } } as const) : undefined;
+  const options = isServerSide()
+    ? ({ next: { revalidate } } as const)
+    : undefined;
 
   return apiClient.get<{ data: Recipe }>(endpoint, options);
 }

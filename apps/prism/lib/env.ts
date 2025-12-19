@@ -26,19 +26,3 @@ export const env = mergedSchema.parse({
 export const IS_DEVELOPMENT = env.NODE_ENV === 'development';
 export const IS_PRODUCTION = env.NODE_ENV === 'production';
 export const IS_TEST = env.NODE_ENV === 'test';
-
-// 只在开发环境打印环境变量信息
-if (IS_DEVELOPMENT) {
-  console.log('【当前环境】:', env.NODE_ENV);
-  console.log('【当前接口地址】:', env.NEXT_PUBLIC_API_URL);
-  if (env.STRAPI_API_TOKEN) {
-    console.log(
-      '【API Token】: 已配置 (长度:',
-      env.STRAPI_API_TOKEN.length,
-      ', 前10字符:',
-      env.STRAPI_API_TOKEN.substring(0, 10) + '...)'
-    );
-  } else {
-    console.warn('【API Token】: ⚠️  未配置！服务端请求可能失败');
-  }
-}

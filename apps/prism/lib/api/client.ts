@@ -3,7 +3,7 @@ import type { ClientRequestOptions } from './adapters/client-adapter';
 import { clientRequest } from './adapters/client-adapter';
 import type { ServerRequestOptions } from './adapters/server-adapter';
 import { serverRequest } from './adapters/server-adapter';
-import { isDevelopment } from './config';
+import { isDevelopment, isServerSide } from './config';
 import {
   ApiError,
   AuthenticationError,
@@ -27,7 +27,7 @@ type RequestOptions = (ServerRequestOptions | ClientRequestOptions) & {
  */
 class ApiClient {
   private get isServer(): boolean {
-    return typeof (globalThis as any).window === 'undefined';
+    return isServerSide();
   }
 
   /**
@@ -46,12 +46,11 @@ class ApiClient {
       : endpoint;
 
     try {
-      // 开发环境日志
-      if (!skipLogging && isDevelopment()) {
+      // 服务端日志（客户端日志由 clientRequest 在浏览器控制台显示）
+      if (!skipLogging && this.isServer && isDevelopment()) {
         logger.debug('API Request', {
           endpoint: cleanEndpoint,
           method: requestOptions.method || 'GET',
-          isServer: this.isServer,
         });
       }
 
@@ -68,8 +67,8 @@ class ApiClient {
 
       const duration = Date.now() - startTime;
 
-      // 开发环境日志
-      if (!skipLogging && isDevelopment()) {
+      // 服务端日志（客户端日志由 clientRequest 在浏览器控制台显示）
+      if (!skipLogging && this.isServer && isDevelopment()) {
         logger.debug('API Response', {
           endpoint: cleanEndpoint,
           status: response.status,
@@ -110,14 +109,16 @@ class ApiClient {
     response: Response,
     endpoint: string
   ): Promise<never> {
+    // 尝试解析错误响应数据（可能是 JSON 或文本）
     let errorData: unknown;
-
     try {
       errorData = await response.json();
     } catch {
+      // JSON 解析失败，尝试获取文本
       try {
         errorData = await response.text();
       } catch {
+        // 无法获取响应体，使用 null
         errorData = null;
       }
     }
