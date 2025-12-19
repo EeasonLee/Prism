@@ -50,7 +50,11 @@ test-output
 
 # Environment files
 .env*.local
+.env.development
 .env.production
+apps/prism/.env.development
+apps/prism/.env.local
+apps/prism/.env.production
 
 # Deployment scripts
 ecosystem.config.js
