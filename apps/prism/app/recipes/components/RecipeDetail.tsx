@@ -156,8 +156,8 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 <h3 className="mb-4 text-1xl font-bold text-gray-900">Tools</h3>
                 <div className="flex flex-wrap gap-6">
                   {recipe.products.map(product => {
-                    const productImageUrl = product.image?.url
-                      ? getImageUrl(product.image.url)
+                    const productImageUrl = product.image
+                      ? getImageUrl(product.image)
                       : null;
                     const productUrl = product.url || '#';
 
@@ -165,7 +165,6 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                       <a
                         key={product.id}
                         href={productUrl}
-                        // target="_blank"
                         rel="noopener noreferrer"
                         className="group flex flex-col items-center transition-transform hover:scale-105"
                       >
@@ -173,9 +172,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                           {productImageUrl ? (
                             <Image
                               src={productImageUrl}
-                              alt={
-                                product.image?.alternativeText || product.name
-                              }
+                              alt={product.name}
                               fill
                               className="object-cover"
                               sizes="66px"
@@ -199,7 +196,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             )}
 
             <div className="flex flex-wrap gap-4 text-sm text-gray-700">
-              {recipe.prepTime && recipe.prepTime > 0 && (
+              {!!recipe.prepTime && (
                 <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2">
                   <svg
                     className="h-5 w-5"

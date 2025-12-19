@@ -1,12 +1,10 @@
-'use client';
-
 export function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Company Section */}
-          <div>
+          <div className="lg:col-span-2">
             <h4 className="mb-4 text-base font-semibold text-gray-900">
               Company
             </h4>
@@ -149,40 +147,6 @@ export function Footer() {
                 </a>
               </li>
             </ul>
-          </div>
-
-          {/* Subscribe Section */}
-          <div>
-            <h4 className="mb-4 text-base font-semibold text-gray-900">
-              Subscribe
-            </h4>
-            <p className="mb-4 text-sm text-gray-600">
-              Enter your email below to be the first to know about new
-              collections and product launches.
-            </p>
-            <form
-              action="https://www.joydeem.com/newsletter/subscriber/new"
-              method="post"
-              className="space-y-3"
-            >
-              <div>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="Your email address"
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-0"
-                />
-              </div>
-              <div>
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                >
-                  Subscribe
-                </button>
-              </div>
-            </form>
           </div>
         </div>
 
