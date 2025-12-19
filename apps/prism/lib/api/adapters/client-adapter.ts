@@ -11,7 +11,9 @@ export interface ClientRequestOptions extends RequestInit {
 /**
  * 构建请求头
  */
-function buildHeaders(customHeaders?: HeadersInit): Record<string, string> {
+function buildHeaders(
+  customHeaders?: RequestInit['headers']
+): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -93,8 +95,9 @@ export async function clientRequest(
     }
 
     // 在浏览器控制台显示请求日志（仅开发环境）
+
     if (
-      typeof window !== 'undefined' &&
+      typeof (globalThis as { window?: unknown }).window !== 'undefined' &&
       process.env.NODE_ENV === 'development'
     ) {
       logRequest({
@@ -115,8 +118,9 @@ export async function clientRequest(
     const duration = Date.now() - startTime;
 
     // 在浏览器控制台显示错误日志（仅开发环境）
+
     if (
-      typeof window !== 'undefined' &&
+      typeof (globalThis as { window?: unknown }).window !== 'undefined' &&
       process.env.NODE_ENV === 'development'
     ) {
       logRequest({

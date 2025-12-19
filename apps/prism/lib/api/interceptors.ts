@@ -9,7 +9,7 @@ interface RequestLog {
   status?: number;
   statusText?: string;
   duration?: number;
-  requestHeaders?: HeadersInit;
+  requestHeaders?: RequestInit['headers'];
   responseHeaders?: Headers;
   requestBody?: unknown;
   responseBody?: unknown;
@@ -21,30 +21,6 @@ interface RequestLog {
  */
 function formatRequestLog(log: RequestLog): string {
   const { method, url, status, statusText, duration, error } = log;
-
-  // 状态码颜色
-  const getStatusColor = (status?: number) => {
-    if (!status) return 'color: #999';
-    if (status >= 200 && status < 300) return 'color: #0c0';
-    if (status >= 300 && status < 400) return 'color: #fa0';
-    if (status >= 400) return 'color: #f00';
-    return 'color: #999';
-  };
-
-  // 方法颜色
-  const getMethodColor = (method: string) => {
-    const colors: Record<string, string> = {
-      GET: 'color: #0ea5e9',
-      POST: 'color: #10b981',
-      PUT: 'color: #f59e0b',
-      PATCH: 'color: #8b5cf6',
-      DELETE: 'color: #ef4444',
-    };
-    return colors[method] || 'color: #999';
-  };
-
-  const methodStyle = getMethodColor(method);
-  const statusStyle = status ? getStatusColor(status) : 'color: #999';
 
   if (error) {
     return `%c${method}%c ${url} %c❌ ${error.message}`;
@@ -99,7 +75,11 @@ function getStyleArgs(log: RequestLog): string[] {
  */
 export function logRequest(log: RequestLog): void {
   // 只在浏览器环境且开发环境下执行
-  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') {
+
+  if (
+    typeof (globalThis as { window?: unknown }).window === 'undefined' ||
+    process.env.NODE_ENV !== 'development'
+  ) {
     return;
   }
 
@@ -143,7 +123,11 @@ export function logRequest(log: RequestLog): void {
  */
 export function logRequestSimple(log: RequestLog): void {
   // 只在浏览器环境且开发环境下执行
-  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') {
+
+  if (
+    typeof (globalThis as { window?: unknown }).window === 'undefined' ||
+    process.env.NODE_ENV !== 'development'
+  ) {
     return;
   }
 

@@ -43,7 +43,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
   return (
     <Link
-      href={targetHref as any}
+      href={targetHref as '/recipes' & string}
       className="group relative block overflow-hidden rounded-lg bg-white transition-shadow hover:shadow-lg"
     >
       {/* Image container */}
