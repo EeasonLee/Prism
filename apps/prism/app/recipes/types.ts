@@ -113,10 +113,7 @@ export interface Recipe {
     isActive?: boolean;
     isFeatured?: boolean;
     stock?: number;
-    image?: {
-      url: string;
-      alternativeText?: string;
-    } | null;
+    image?: string;
   }>;
 }
 
