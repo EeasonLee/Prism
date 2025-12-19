@@ -73,6 +73,29 @@ export function RecipeHeader({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setSearchText(newValue);
+
+    // 当输入框被清空（比如通过浏览器默认清除按钮）且之前有搜索内容时，自动触发搜索更新
+    if (newValue === '' && lastSubmittedQueryRef.current !== '') {
+      handleClearSearch();
+    }
+  };
+
+  const handleClearSearch = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      await onSearch({ ...selectedFilters, searchQuery: '' }, 1, pageSize, '');
+      // 清空成功后，更新上次提交的查询
+      lastSubmittedQueryRef.current = '';
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="mb-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -105,7 +128,7 @@ export function RecipeHeader({
               type="search"
               placeholder="Search recipes..."
               value={searchText}
-              onChange={(e: any) => setSearchText(e.target.value)}
+              onChange={handleInputChange}
               disabled={isLoading}
             />
           </div>
