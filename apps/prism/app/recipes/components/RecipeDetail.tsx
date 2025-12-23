@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { env } from '../../../lib/env';
+import { PageContainer } from '../../components/PageContainer';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 
@@ -70,7 +71,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-8">
+        <PageContainer className="py-4">
           <nav
             className="flex items-center space-x-2 text-sm"
             aria-label="Breadcrumb"
@@ -105,11 +106,11 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               {recipe.title}
             </span>
           </nav>
-        </div>
+        </PageContainer>
       </div>
 
       {/* Hero */}
-      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+      <PageContainer className="py-10">
         <div className="grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
           {recipe.featuredImage && (
             <div className="relative aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
@@ -265,10 +266,10 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             </div>
           </div>
         </div>
-      </div>
+      </PageContainer>
 
       {/* Body */}
-      <div className="mx-auto max-w-7xl px-6 pb-12 lg:px-8">
+      <PageContainer className="pb-12">
         <div className="grid gap-10 lg:grid-cols-[0.8fr,1.6fr]">
           {/* Left content - Ingredient Notes */}
           <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
@@ -495,7 +496,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             )}
           </div>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }
