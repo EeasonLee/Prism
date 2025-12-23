@@ -4,6 +4,7 @@ import { Loader } from '@/components/ui/loader';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { PageContainer } from '../components/PageContainer';
 import { FiltersPanel } from './components/FiltersPanel';
 import { Pagination } from './components/Pagination';
 import { RecipeGrid } from './components/RecipeGrid';
@@ -124,7 +125,10 @@ export function RecipesClient({
     <div className="min-h-screen bg-white">
       {/* Static inspiration section */}
       <div className="bg-[#f6f6f6]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12 lg:flex-row lg:items-center lg:gap-12 lg:px-8">
+        <PageContainer
+          fullWidth
+          className="flex flex-col gap-8 py-12 lg:flex-row lg:items-center lg:gap-12"
+        >
           <div className="flex-1 space-y-4">
             <p className="text-sm font-semibold uppercase tracking-wide text-gray-700">
               Recipe Inspiration
@@ -151,10 +155,10 @@ export function RecipesClient({
               />
             </div>
           </div>
-        </div>
+        </PageContainer>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+      <PageContainer fullWidth className="py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           {hasAvailableFilters && (
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
@@ -216,7 +220,7 @@ export function RecipesClient({
             </div>
           </main>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

@@ -1,7 +1,9 @@
+import { PageContainer } from './PageContainer';
+
 export function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+      <PageContainer className="py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Company Section */}
           <div className="lg:col-span-2">
@@ -156,7 +158,7 @@ export function Footer() {
             © {new Date().getFullYear()} Joydeem. All rights reserved.
           </p>
         </div>
-      </div>
+      </PageContainer>
     </footer>
   );
 }

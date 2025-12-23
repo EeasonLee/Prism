@@ -189,6 +189,13 @@ export function Header() {
           >
             Recipes
           </Link>
+
+          <Link
+            href="/blog"
+            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+          >
+            Blog
+          </Link>
         </nav>
 
         <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
@@ -341,6 +348,13 @@ export function Header() {
                 className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
               >
                 Recipes
+              </Link>
+
+              <Link
+                href="/blog"
+                className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+              >
+                Blog
               </Link>
             </div>
           </div>
