@@ -124,8 +124,8 @@ export async function fetchCategoryCounts(params?: {
     queryString ? `?${queryString}` : ''
   }`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 60 } } as const)
-    : undefined;
+    ? ({ next: { revalidate: 60 }, skipLogging: true } as const)
+    : { skipLogging: true };
   return apiClient.get<{ data: CategoryDetail[] }>(endpoint, options);
 }
 

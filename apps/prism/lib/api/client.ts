@@ -90,10 +90,18 @@ class ApiClient {
 
       // 错误日志
       if (!skipLogging) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
         logger.error('API Request Failed', {
           endpoint: cleanEndpoint,
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage,
           duration: `${duration}ms`,
+          errorType:
+            error instanceof Error ? error.constructor.name : typeof error,
         });
       }
 
