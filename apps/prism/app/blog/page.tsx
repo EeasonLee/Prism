@@ -1,10 +1,10 @@
+import { PageContainer } from '@/app/components/PageContainer';
 import { fetchCategoryBySlug } from '../../lib/api/articles';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
 import { env } from '../../lib/env';
 import type { HeroSlide } from '../components/HeroCarousel';
 import { HeroCarousel } from '../components/HeroCarousel';
-import { PageContainer } from '@/app/components/PageContainer';
 import { ArticleSearchBox } from './components/ArticleSearchBox';
 import { ProductCategories } from './components/ProductCategories';
 import { ThemeCategories } from './components/ThemeCategories';
@@ -68,45 +68,61 @@ export default async function BlogPage() {
   const themeCategory = themeRes?.data || null;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
       {/* 全屏轮播图 */}
       {slides.length > 0 ? (
-        <HeroCarousel
-          slides={slides}
-          // height="h-screen"
-          autoPlayInterval={5000}
-          showIndicators
-          showNavigation
-        />
+        <div className="relative">
+          <HeroCarousel
+            slides={slides}
+            autoPlayInterval={5000}
+            showIndicators
+            showNavigation
+          />
+          {/* 渐变遮罩，让内容更易读 */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+        </div>
       ) : null}
 
-      {/* 搜索区域 - 突出显示 */}
-      <div className="bg-gradient-to-b from-white via-gray-50 to-white py-12 lg:py-16">
+      {/* 搜索区域 */}
+      <section className="relative -mt-16 z-10">
         <PageContainer>
           <div className="mx-auto max-w-4xl">
-            <div className="mb-6 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
-                Explore Great Content
-              </h2>
-              <p className="mt-3 text-lg text-gray-600">
-                Search articles and keywords to discover more great content
-              </p>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 lg:p-8">
+              <div className="mb-6 text-center">
+                <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
+                  Discover Your Next Read
+                </h2>
+                <p className="mt-3 text-lg text-gray-600">
+                  Explore our curated collection of articles, guides, and
+                  insights
+                </p>
+              </div>
+              <ArticleSearchBox
+                placeholder="Search articles, keywords..."
+                suggestionLimit={8}
+                className="max-w-3xl mx-auto"
+              />
             </div>
-            <ArticleSearchBox
-              placeholder="Search articles, keywords..."
-              suggestionLimit={8}
-            />
           </div>
         </PageContainer>
-      </div>
+      </section>
 
       {/* 产品分类区域 */}
       {productCategories.length > 0 && (
-        <ProductCategories categories={productCategories} title="By Product" />
+        <section className="py-12 lg:py-16">
+          <ProductCategories
+            categories={productCategories}
+            title="By Product"
+          />
+        </section>
       )}
 
       {/* 主题分类区域 */}
-      {themeCategory && <ThemeCategories category={themeCategory} />}
+      {themeCategory && (
+        <section className="py-12 lg:py-16 bg-white">
+          <ThemeCategories category={themeCategory} />
+        </section>
+      )}
     </div>
   );
 }

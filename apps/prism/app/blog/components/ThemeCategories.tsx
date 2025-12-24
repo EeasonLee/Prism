@@ -44,10 +44,10 @@ function ArticleCard({
   return (
     <Link
       href={`/blog/${categorySlug}/${article.slug}`}
-      className="group relative block overflow-hidden rounded-lg bg-white transition-shadow hover:shadow-lg"
+      className="group relative block overflow-hidden rounded-lg bg-white shadow-md transition-all hover:shadow-lg"
     >
       {/* Image container */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100">
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -81,7 +81,7 @@ function ArticleCard({
 
       {/* Content area */}
       <div className="p-4">
-        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-gray-900 group-hover:text-blue-600">
+        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-gray-900 transition-colors group-hover:text-blue-600">
           {article.title}
         </h3>
         {article.excerpt && (
@@ -100,7 +100,7 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
   }
 
   return (
-    <div className="py-12 lg:py-16">
+    <div>
       {category.children.map(childCategory => {
         const articles = childCategory.articles || [];
         if (articles.length === 0) {
@@ -108,7 +108,7 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
         }
 
         return (
-          <section key={childCategory.id} className="mb-16 last:mb-0">
+          <section key={childCategory.id} className="mb-12 last:mb-0">
             <PageContainer>
               {/* Section Header */}
               <div className="mb-8 flex items-center justify-between">
@@ -117,7 +117,7 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
                 </h2>
                 <Link
                   href={`/blog/${childCategory.slug}`}
-                  className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                  className="text-sm font-medium text-gray-600 transition-colors hover:text-blue-600"
                 >
                   Browse All →
                 </Link>

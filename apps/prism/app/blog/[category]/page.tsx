@@ -93,7 +93,8 @@ export default async function BlogCategoryPage({
   const effectiveCategorySlug =
     categorySlug === 'all' ? undefined : categorySlug;
 
-  const [categoriesRes, countsRes, tagsRes, articlesRes] = await Promise.all([
+  // 先获取分类数据，以便根据 slug 查找分类 ID
+  const [categoriesRes, countsRes, tagsRes] = await Promise.all([
     fetchArticleCategories({
       rootOnly: true,
       includeChildren: true,
@@ -103,18 +104,16 @@ export default async function BlogCategoryPage({
     // 计数接口容错，后端 500 时仍允许页面渲染（计数置 0）
     fetchCategoryCounts({ locale: filters.locale }).catch(() => ({ data: [] })),
     fetchArticleTags({ locale: filters.locale }),
-    searchArticles({
-      page,
-      pageSize,
-      ...filters,
-    }),
   ]);
 
   const categories = categoriesRes.data;
   const counts = countsRes.data;
   const tags = tagsRes.data;
 
-  // 查找当前分类信息（用于面包屑）
+  // 合并分类数据
+  const mergedCategories = mergeCounts(categories, counts);
+
+  // 查找当前分类信息（用于筛选和面包屑）
   const findCategory = (
     list: CategoryWithCounts[],
     slug: string
@@ -129,9 +128,44 @@ export default async function BlogCategoryPage({
     return undefined;
   };
 
+  // 如果 URL 中有分类 slug 但没有显式的 categoryId，则根据 slug 查找并设置
+  const categoryFromSlug =
+    effectiveCategorySlug && effectiveCategorySlug !== 'all'
+      ? findCategory(mergedCategories, effectiveCategorySlug)
+      : undefined;
+
+  // 判断分类级别：如果有 parent，则是二级分类；否则是一级分类
+  const determineCategoryLevel = (
+    category: CategoryWithCounts | undefined
+  ): 1 | 2 | undefined => {
+    if (!category) return undefined;
+    // 如果有 parent 且 parent 不为 null，则是二级分类
+    return category.parent && category.parent !== null ? 2 : 1;
+  };
+
+  // 构建最终的筛选条件
+  const finalFilters: ArticlesFilters = {
+    ...filters,
+    // 如果 URL 参数中没有 categoryId，但路由中有分类 slug，则使用该分类
+    categoryId:
+      filters.categoryId ??
+      (categoryFromSlug ? categoryFromSlug.id : undefined),
+    categoryLevel:
+      filters.categoryLevel ??
+      (categoryFromSlug ? determineCategoryLevel(categoryFromSlug) : undefined),
+  };
+
+  // 获取文章数据
+  const articlesRes = await searchArticles({
+    page,
+    pageSize,
+    ...finalFilters,
+  });
+
+  // 使用同一个函数查找分类（用于面包屑）
   const currentCategory =
     effectiveCategorySlug && effectiveCategorySlug !== 'all'
-      ? findCategory(mergeCounts(categories, counts), effectiveCategorySlug)
+      ? findCategory(mergedCategories, effectiveCategorySlug)
       : undefined;
 
   const initialData: ArticlesSearchInitialData = {
@@ -185,9 +219,9 @@ export default async function BlogCategoryPage({
       <PageContainer fullWidth className="py-8">
         <ArticlesSearchClient
           initialCategorySlug={effectiveCategorySlug}
-          categories={mergeCounts(categories, counts)}
+          categories={mergedCategories}
           tags={tags as TagOption[]}
-          initialFilters={filters}
+          initialFilters={finalFilters}
           initialPage={page}
           initialPageSize={pageSize}
           initialData={initialData}

@@ -86,7 +86,7 @@ export function HeroCarousel({
                 {/* 文字内容 */}
                 {(slide.title || slide.description) && (
                   <div className="absolute bottom-0 left-0 right-0 z-10 p-8 text-white md:p-16">
-                    <div className="mx-auto max-w-7xl">
+                    <div className="mx-auto max-w-7xl text-center">
                       {slide.title && (
                         <h2 className="mb-4 text-3xl font-bold md:text-5xl">
                           {slide.title}

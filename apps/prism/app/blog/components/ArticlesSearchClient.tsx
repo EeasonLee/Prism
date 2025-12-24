@@ -87,12 +87,15 @@ export function ArticlesSearchClient({
   }, [categories, initialCategorySlug]);
 
   useEffect(() => {
-    // 如果 URL 未显式指定分类且路由带 slug，则用它初始化
+    // 如果 URL 未显式指定分类且路由带 slug，则用它初始化并更新 URL
     if (!filters.categoryId && categorySlugToSelection) {
-      setFilters(prev => ({
-        ...prev,
+      const nextFilters = {
+        ...filters,
         ...categorySlugToSelection,
-      }));
+      };
+      setFilters(nextFilters);
+      // 更新 URL 以保持同步
+      updateUrl(nextFilters, page, pageSize);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlugToSelection]);
@@ -155,11 +158,23 @@ export function ArticlesSearchClient({
   // 当 URL 变化（例如浏览器前进/后退）时同步状态
   useEffect(() => {
     const qsFilters = parseFiltersFromSearchParams(searchParams, filters.sort);
+
+    // 如果 URL 中没有 categoryId，但路由中有 initialCategorySlug，则保留初始筛选条件
+    // 这样可以避免从服务端传入的筛选条件被清除
+    if (!qsFilters.categoryId && categorySlugToSelection) {
+      qsFilters.categoryId = categorySlugToSelection.categoryId;
+      qsFilters.categoryLevel = categorySlugToSelection.categoryLevel;
+    } else if (!qsFilters.categoryId && initialFilters.categoryId) {
+      // 如果 URL 中没有 categoryId，但 initialFilters 中有，也保留它
+      qsFilters.categoryId = initialFilters.categoryId;
+      qsFilters.categoryLevel = initialFilters.categoryLevel;
+    }
+
     setFilters(qsFilters);
     setPage(Number(searchParams.get('page')) || 1);
     setPageSize(Number(searchParams.get('pageSize')) || pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, categorySlugToSelection]);
 
   const handleTagToggle = (id: number, checked: boolean) => {
     const current = filters.tagIds ?? [];
@@ -215,7 +230,7 @@ export function ArticlesSearchClient({
       {/* Search section */}
       <PageContainer fullWidth className="py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
-          <aside className="w-full lg:w-64 lg:flex-shrink-0">
+          <aside className="w-full lg:w-80 lg:flex-shrink-0">
             <FiltersPanel
               categories={categories}
               tags={tags}
