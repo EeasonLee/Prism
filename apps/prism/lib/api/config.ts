@@ -49,8 +49,15 @@ export function isServerSide(): boolean {
  * 获取 API 基础 URL
  * 直接返回配置的 API URL，不再拼接 /api
  * 接口路径应该以 api/ 开头（如 api/recipes）
+ *
+ * 如果启用了代理（NEXT_PUBLIC_USE_API_PROXY=true），客户端请求使用代理路径
  */
 export function getApiBaseUrl(): string {
+  // 如果是客户端且启用了代理，使用代理路径
+  if (!isServerSide() && env.NEXT_PUBLIC_USE_API_PROXY) {
+    return '/api-proxy';
+  }
+
   const baseUrl = env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) {
     throw new Error('NEXT_PUBLIC_API_URL is required');

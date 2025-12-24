@@ -11,6 +11,11 @@ const clientSchema = z.object({
   NEXT_PUBLIC_LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'])
     .default('info'),
+  // 代理配置：如果设置了，客户端请求将通过 Next.js 代理
+  NEXT_PUBLIC_USE_API_PROXY: z
+    .string()
+    .transform(val => val === 'true')
+    .optional(),
 });
 
 const mergedSchema = serverSchema.merge(clientSchema);
@@ -20,6 +25,7 @@ export const env = mergedSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_LOG_LEVEL: process.env.NEXT_PUBLIC_LOG_LEVEL,
+  NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
   STRAPI_API_TOKEN: process.env.STRAPI_API_TOKEN,
 });
 

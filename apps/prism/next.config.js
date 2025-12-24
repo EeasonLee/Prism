@@ -1,5 +1,9 @@
 const { withNx } = require('@nx/next/plugins/with-nx');
 
+// 读取环境变量
+const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
@@ -31,6 +35,19 @@ const nextConfig = {
       },
     ],
   },
+  // 配置 API 代理（仅当启用代理时）
+  ...(useApiProxy && apiUrl
+    ? {
+        async rewrites() {
+          return [
+            {
+              source: '/api-proxy/:path*',
+              destination: `${apiUrl}/:path*`,
+            },
+          ];
+        },
+      }
+    : {}),
   nx: {
     svgr: false,
   },
