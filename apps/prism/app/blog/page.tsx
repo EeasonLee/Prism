@@ -1,9 +1,13 @@
+import { fetchCategoryBySlug } from '../../lib/api/articles';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
 import { env } from '../../lib/env';
 import type { HeroSlide } from '../components/HeroCarousel';
 import { HeroCarousel } from '../components/HeroCarousel';
-import { PageContainer } from '../components/PageContainer';
+import { PageContainer } from '@/app/components/PageContainer';
+import { ArticleSearchBox } from './components/ArticleSearchBox';
+import { ProductCategories } from './components/ProductCategories';
+import { ThemeCategories } from './components/ThemeCategories';
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
@@ -23,7 +27,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       // 如果 URL 已经包含协议，直接使用；否则拼接 API base URL
       const apiBaseUrl = env.NEXT_PUBLIC_API_URL
         ? env.NEXT_PUBLIC_API_URL.replace('/api', '')
-        : 'http://localhost:1337';
+        : 'http://192.168.50.244:1337/';
       const fullImageUrl =
         imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
           ? imageUrl
@@ -50,9 +54,18 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 }
 
 export default async function BlogPage() {
-  // 服务端获取轮播图数据
-  const { data } = await getCarouselItems('article');
-  const slides = transformToHeroSlides(data);
+  // 服务端获取轮播图数据、产品分类和主题分类
+  const [carouselRes, categoryRes, themeRes] = await Promise.all([
+    getCarouselItems('article'),
+    fetchCategoryBySlug('by-product').catch(() => null), // 如果获取失败，返回 null
+    fetchCategoryBySlug('theme', { includeChildrenArticles: true }).catch(
+      () => null
+    ), // 如果获取失败，返回 null
+  ]);
+
+  const slides = transformToHeroSlides(carouselRes.data);
+  const productCategories = categoryRes?.data?.children || [];
+  const themeCategory = themeRes?.data || null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -67,15 +80,33 @@ export default async function BlogPage() {
         />
       ) : null}
 
-      {/* 博客内容区域 */}
-      <PageContainer className="py-16">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900">Blog</h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Blog content will go here
-          </p>
-        </div>
-      </PageContainer>
+      {/* 搜索区域 - 突出显示 */}
+      <div className="bg-gradient-to-b from-white via-gray-50 to-white py-12 lg:py-16">
+        <PageContainer>
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-6 text-center">
+              <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
+                Explore Great Content
+              </h2>
+              <p className="mt-3 text-lg text-gray-600">
+                Search articles and keywords to discover more great content
+              </p>
+            </div>
+            <ArticleSearchBox
+              placeholder="Search articles, keywords..."
+              suggestionLimit={8}
+            />
+          </div>
+        </PageContainer>
+      </div>
+
+      {/* 产品分类区域 */}
+      {productCategories.length > 0 && (
+        <ProductCategories categories={productCategories} title="By Product" />
+      )}
+
+      {/* 主题分类区域 */}
+      {themeCategory && <ThemeCategories category={themeCategory} />}
     </div>
   );
 }
