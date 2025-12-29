@@ -63,14 +63,26 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   );
   const selectedFilters = buildSelectedFilters(resolvedSearchParams);
 
+  // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
   const [filterTypesResponse, recipesResponse] = await Promise.all([
-    getFilterTypes(),
+    getFilterTypes().catch(() => ({ data: [] })), // 构建时失败返回空数组
     searchRecipes({
       page,
       pageSize,
       includeFacets: true,
       ...selectedFilters,
-    }),
+    }).catch(() => ({
+      data: [],
+      meta: {
+        pagination: {
+          page,
+          pageSize,
+          pageCount: 0,
+          total: 0,
+        },
+        facets: null,
+      },
+    })), // 构建时失败返回空数据
   ]);
 
   return (

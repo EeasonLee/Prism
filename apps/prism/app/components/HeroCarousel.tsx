@@ -1,8 +1,8 @@
 'use client';
 
+import { OptimizedImage } from '@/components/OptimizedImage';
 import { cn } from '@/lib/utils';
 import Autoplay from 'embla-carousel-autoplay';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   Carousel,
@@ -71,7 +71,7 @@ export function HeroCarousel({
           {slides.map((slide, index) => (
             <CarouselItem key={index} className="h-full pl-0">
               <div className="relative h-full w-full">
-                <Image
+                <OptimizedImage
                   src={slide.image}
                   alt={slide.alt}
                   fill
