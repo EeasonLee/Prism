@@ -6,6 +6,9 @@ tmp
 out-tsc
 .next
 
+# TypeScript build info
+*.tsbuildinfo
+
 # dependencies
 node_modules
 

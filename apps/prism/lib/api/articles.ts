@@ -102,7 +102,7 @@ export async function searchArticles(params: {
   );
 }
 
-export async function fetchArticleCategories(params?: {
+export async function fetchArticleCategories(_params?: {
   rootOnly?: boolean;
   includeChildren?: boolean;
   level?: string;

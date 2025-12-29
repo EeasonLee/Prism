@@ -61,7 +61,7 @@ export function RecipesClient({
   pagination: initialPagination,
   filterTypes,
   selectedFilters: initialSelectedFilters,
-  page: initialPage,
+  page: _initialPage,
   pageSize: initialPageSize,
 }: RecipesClientProps) {
   const searchParams = useSearchParams();

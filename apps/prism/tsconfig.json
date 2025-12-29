@@ -13,9 +13,6 @@
     },
     {
       "path": "./tsconfig.e2e.json"
-    },
-    {
-      "path": "./tsconfig.e2e.json"
     }
   ],
   "extends": "../../tsconfig.base.json",
@@ -26,6 +23,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]

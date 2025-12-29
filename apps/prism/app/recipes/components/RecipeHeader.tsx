@@ -74,7 +74,6 @@ export function RecipeHeader({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // @ts-expect-error - Next.js 15 typed routes issue with HTMLInputElement.value
     const newValue = e.target.value;
     setSearchText(newValue);
 

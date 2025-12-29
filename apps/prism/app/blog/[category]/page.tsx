@@ -50,7 +50,7 @@ function parseSort(value: string | string[] | undefined) {
 
 function parseFilters(
   resolvedSearchParams: Record<string, string | string[] | undefined>,
-  categorySlug: string
+  _categorySlug: string
 ): ArticlesFilters {
   return {
     q: Array.isArray(resolvedSearchParams.q)
