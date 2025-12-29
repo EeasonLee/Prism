@@ -1,45 +1,8 @@
 import type { ArticleDetail as ArticleDetailType } from '@/lib/api/articles';
-import { env } from '@/lib/env';
-import Image from 'next/image';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 interface ArticleDetailProps {
   article: ArticleDetailType;
-}
-
-// Utility function to get image URL
-function getImageUrl(
-  featuredImage: ArticleDetailType['featuredImage']
-): string | null {
-  if (!featuredImage) return null;
-
-  // 优先使用 medium 格式，其次 small，最后使用原始图片
-  const imageUrl =
-    featuredImage.formats?.medium?.url ||
-    featuredImage.formats?.small?.url ||
-    featuredImage.url;
-
-  if (!imageUrl) return null;
-
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    // 处理 localhost URL
-    if (
-      imageUrl.includes('localhost:1337') ||
-      imageUrl.includes('127.0.0.1:1337')
-    ) {
-      const apiBaseUrl =
-        env.NEXT_PUBLIC_API_URL || 'http://192.168.50.244:1337';
-      const baseUrl = apiBaseUrl.replace(/\/api$/, '').replace(/\/$/, '');
-      const path = new URL(imageUrl).pathname;
-      return `${baseUrl}${path}`;
-    }
-    return imageUrl;
-  }
-
-  // Extract base URL from API URL (remove /api suffix)
-  const apiBaseUrl = env.NEXT_PUBLIC_API_URL
-    ? env.NEXT_PUBLIC_API_URL.replace('/api', '')
-    : 'http://192.168.50.244:1337';
-  return `${apiBaseUrl}${imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`}`;
 }
 
 // Format date
@@ -53,7 +16,6 @@ function formatDate(dateString: string): string {
 }
 
 export function ArticleDetail({ article }: ArticleDetailProps) {
-  const imageUrl = getImageUrl(article.featuredImage);
   const imageAlt = article.featuredImage?.alternativeText || article.title;
 
   // Get the first category
@@ -84,19 +46,16 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
       </header>
 
       {/* Featured Image */}
-      {imageUrl && (
+      {article.featuredImage && (
         <div className="relative mb-8 aspect-video overflow-hidden rounded-lg bg-gray-100">
-          <Image
-            src={imageUrl}
+          <OptimizedImage
+            src={article.featuredImage}
             alt={imageAlt}
             fill
             className="object-cover"
             priority
             sizes="(max-width: 768px) 100vw, 896px"
-            unoptimized={
-              imageUrl.startsWith('http://localhost') ||
-              imageUrl.startsWith('http://192.168')
-            }
+            preferredFormat="medium"
           />
         </div>
       )}

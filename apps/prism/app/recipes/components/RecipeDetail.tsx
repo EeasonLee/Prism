@@ -1,25 +1,11 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { env } from '../../../lib/env';
+import { OptimizedImage } from '@/components/OptimizedImage';
 import { PageContainer } from '../../components/PageContainer';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 
 interface RecipeDetailProps {
   recipe: Recipe;
-}
-
-// Utility function to get image URL
-function getImageUrl(url: string | undefined): string {
-  if (!url) return '/placeholder-recipe.jpg';
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  // Extract base URL from API URL (remove /api suffix)
-  const apiBaseUrl = env.NEXT_PUBLIC_API_URL
-    ? env.NEXT_PUBLIC_API_URL.replace('/api', '')
-    : 'http://localhost:1337';
-  return `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`;
 }
 
 // Format time
@@ -59,7 +45,6 @@ function DifficultyBadge({ difficulty }: { difficulty?: string }) {
 }
 
 export function RecipeDetail({ recipe }: RecipeDetailProps) {
-  const imageUrl = getImageUrl(recipe.featuredImage?.url);
   const imageAlt = recipe.featuredImage?.alternativeText || recipe.title;
 
   // Get the first category for breadcrumb
@@ -114,8 +99,8 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
         <div className="grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
           {recipe.featuredImage && (
             <div className="relative aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
-              <Image
-                src={imageUrl}
+              <OptimizedImage
+                src={recipe.featuredImage}
                 alt={imageAlt}
                 fill
                 className="object-cover"
@@ -157,9 +142,6 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 <h3 className="mb-4 text-1xl font-bold text-gray-900">Tools</h3>
                 <div className="flex flex-wrap gap-6">
                   {recipe.products.map(product => {
-                    const productImageUrl = product.image
-                      ? getImageUrl(product.image)
-                      : null;
                     const productUrl = product.url || '#';
 
                     return (
@@ -170,9 +152,9 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                         className="group flex flex-col items-center transition-transform hover:scale-105"
                       >
                         <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gray-100 shadow-sm ring-1 ring-gray-200 transition-shadow group-hover:ring-gray-300">
-                          {productImageUrl ? (
-                            <Image
-                              src={productImageUrl}
+                          {product.image ? (
+                            <OptimizedImage
+                              src={product.image}
                               alt={product.name}
                               fill
                               className="object-cover"
@@ -444,8 +426,8 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                       <div className="flex-1 space-y-4">
                         {instruction.image && (
                           <div className="relative aspect-video overflow-hidden rounded-lg">
-                            <Image
-                              src={getImageUrl(instruction.image.url)}
+                            <OptimizedImage
+                              src={instruction.image}
                               alt={
                                 instruction.image.alternativeText ||
                                 `Step ${index + 1}`

@@ -1,8 +1,8 @@
 import { PageContainer } from '@/app/components/PageContainer';
+import { extractImageUrl } from '@/lib/utils/image';
 import { fetchCategoryBySlug } from '../../lib/api/articles';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
-import { env } from '../../lib/env';
 import type { HeroSlide } from '../components/HeroCarousel';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { ArticleSearchBox } from './components/ArticleSearchBox';
@@ -17,23 +17,8 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     .filter(item => item.enabled) // 只显示启用的项
     .sort((a, b) => a.order - b.order) // 按 order 排序
     .map(item => {
-      // 获取最佳尺寸的图片（优先使用 large，其次 medium，最后使用原始）
-      const imageUrl =
-        item.coverImage.formats?.large?.url ||
-        item.coverImage.formats?.medium?.url ||
-        item.coverImage.url;
-
-      // 构建完整图片 URL
-      // 如果 URL 已经包含协议，直接使用；否则拼接 API base URL
-      const apiBaseUrl = env.NEXT_PUBLIC_API_URL
-        ? env.NEXT_PUBLIC_API_URL.replace('/api', '')
-        : 'http://192.168.50.244:1337/';
-      const fullImageUrl =
-        imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
-          ? imageUrl
-          : `${apiBaseUrl}${
-              imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`
-            }`;
+      // 提取图片 URL（优先使用 large 格式）
+      const imageUrl = extractImageUrl(item.coverImage, 'large');
 
       // 构建链接 URL
       let linkUrl: string | undefined;
@@ -44,7 +29,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       }
 
       return {
-        image: fullImageUrl,
+        image: imageUrl || '',
         alt: item.coverImage.alternativeText || item.title,
         title: item.title,
         description: item.description || undefined,
@@ -55,8 +40,9 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 
 export default async function BlogPage() {
   // 服务端获取轮播图数据、产品分类和主题分类
+  // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
   const [carouselRes, categoryRes, themeRes] = await Promise.all([
-    getCarouselItems('article'),
+    getCarouselItems('article').catch(() => ({ data: [] })), // 构建时失败返回空数组
     fetchCategoryBySlug('by-product').catch(() => null), // 如果获取失败，返回 null
     fetchCategoryBySlug('theme', { includeChildrenArticles: true }).catch(
       () => null

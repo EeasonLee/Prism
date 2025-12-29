@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import Link from 'next/link';
+import { OptimizedImage } from '@/components/OptimizedImage';
 import type { Recipe } from '../types';
 
 interface RecipeCardProps {
@@ -7,23 +7,7 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
-  // Get image URL (handle relative and absolute paths)
-  const getImageUrl = (url: string | undefined): string => {
-    if (!url) return '/placeholder-recipe.jpg';
-    // If it's a full URL, return directly
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // If it's a relative path, concatenate with API base URL
-    // 移除可能的 /api 后缀，因为图片路径通常不包含 /api
-    const apiBaseUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-    const baseUrl = apiBaseUrl.replace(/\/api$/, '');
-    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-  };
-
   const imageAlt = recipe.featuredImage?.alternativeText || recipe.title;
-  const imageUrl = getImageUrl(recipe.featuredImage?.url);
 
   // Get the first category as display category
   const category =
@@ -48,35 +32,13 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
     >
       {/* Image container */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100">
-        {imageUrl && imageUrl !== '/placeholder-recipe.jpg' ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            unoptimized={
-              imageUrl.startsWith('http://localhost') ||
-              imageUrl.startsWith('http://192.168')
-            }
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-gray-400">
-            <svg
-              className="h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        )}
+        <OptimizedImage
+          src={recipe.featuredImage || null}
+          alt={imageAlt}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
         {/* Favorite icon */}
         {/* <span
           className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 shadow-sm"

@@ -1,6 +1,7 @@
 'use client';
 
 import { PageContainer } from '@/app/components/PageContainer';
+import { OptimizedImage } from '@/components/OptimizedImage';
 import {
   Accordion,
   AccordionContent,
@@ -18,8 +19,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { searchArticles, type ArticleSort } from '@/lib/api/articles';
-import { env } from '@/lib/env';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -544,31 +543,6 @@ function ArticleGrid({ articles }: { articles: ArticleItem[] }) {
 }
 
 function ArticleCard({ article }: { article: ArticleItem }) {
-  // Get image URL (handle relative and absolute paths)
-  const getImageUrl = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-
-    // If it's a full URL, check for localhost and replace if needed
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      // 如果包含 localhost，替换为正确的 IP
-      if (url.includes('localhost:1337') || url.includes('127.0.0.1:1337')) {
-        const apiBaseUrl =
-          env.NEXT_PUBLIC_API_URL || 'http://192.168.50.244:1337';
-        const baseUrl = apiBaseUrl.replace(/\/api$/, '').replace(/\/$/, '');
-        const urlObj = new URL(url);
-        return `${baseUrl}${urlObj.pathname}${urlObj.search}`;
-      }
-      return url;
-    }
-
-    // If it's a relative path, concatenate with API base URL
-    // 移除可能的 /api 后缀，因为图片路径通常不包含 /api
-    const apiBaseUrl = env.NEXT_PUBLIC_API_URL || 'http://192.168.50.244:1337';
-    const baseUrl = apiBaseUrl.replace(/\/api$/, '').replace(/\/$/, '');
-    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-  };
-
-  const imageUrl = getImageUrl(article.featuredImage);
   const cleanTitle = article.title.replace(/<[^>]+>/g, '');
   const imageAlt = cleanTitle || 'Article image';
 
@@ -583,50 +557,14 @@ function ArticleCard({ article }: { article: ArticleItem }) {
     >
       {/* Image container */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            unoptimized={
-              imageUrl.startsWith('http://localhost') ||
-              imageUrl.startsWith('http://192.168')
-            }
-            priority={false}
-            onError={e => {
-              // 图片加载失败时的处理
-              console.error('Image load error:', imageUrl);
-              const target = e.target as HTMLImageElement;
-              if (target.parentElement) {
-                target.parentElement.innerHTML = `
-                  <div class="flex h-full w-full items-center justify-center text-gray-400">
-                    <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                `;
-              }
-            }}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-gray-400">
-            <svg
-              className="h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        )}
+        <OptimizedImage
+          src={article.featuredImage}
+          alt={imageAlt}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          priority={false}
+        />
       </div>
 
       {/* Content area */}
