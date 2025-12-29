@@ -13,6 +13,7 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
@@ -21,6 +22,11 @@
     "paths": {
       "@prism/*": ["libs/*"],
       "@prism/prism/*": ["apps/prism/*"]
-    }
+    },
+    "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "incremental": true
   }
 }

@@ -1,3 +1,4 @@
+import type { Route } from 'next';
 import Link from 'next/link';
 
 interface BreadcrumbItem {
@@ -32,7 +33,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
               <span className="text-gray-900 font-medium">{item.label}</span>
             ) : (
               <Link
-                href={item.href}
+                href={item.href as Route}
                 className="text-gray-600 transition-colors hover:text-gray-900"
               >
                 {item.label}

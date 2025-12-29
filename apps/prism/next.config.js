@@ -8,7 +8,10 @@ const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: false, // 构建时进行 ESLint 检查
+  },
+  typescript: {
+    ignoreBuildErrors: false, // 构建时进行 TypeScript 类型检查
   },
   images: {
     formats: ['image/avif', 'image/webp'],

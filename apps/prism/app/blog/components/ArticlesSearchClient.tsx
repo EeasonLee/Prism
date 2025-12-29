@@ -1,5 +1,6 @@
 'use client';
 
+import { PageContainer } from '@/app/components/PageContainer';
 import {
   Accordion,
   AccordionContent,
@@ -16,17 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  searchArticles,
-  type ArticleCategory,
-  type ArticleSort,
-} from '@/lib/api/articles';
+import { searchArticles, type ArticleSort } from '@/lib/api/articles';
 import { env } from '@/lib/env';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PageContainer } from '@/app/components/PageContainer';
 import type {
   ArticleItem,
   ArticlesFilters,
@@ -529,58 +525,6 @@ function FiltersPanel({
   );
 }
 
-function CategoryRow({
-  category,
-  selectedCategoryId,
-  selectedCategoryLevel,
-  onSelect,
-}: {
-  category: CategoryWithCounts;
-  selectedCategoryId?: number;
-  selectedCategoryLevel?: 1 | 2;
-  onSelect: (cat: CategoryWithCounts, isChild: boolean) => void;
-}) {
-  const isSelected =
-    selectedCategoryId === category.id && selectedCategoryLevel === 1;
-  return (
-    <div className="space-y-1">
-      <button
-        type="button"
-        onClick={() => onSelect(category, false)}
-        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
-          isSelected
-            ? 'bg-blue-50 text-blue-700 font-medium'
-            : 'hover:bg-gray-50 text-gray-800'
-        }`}
-      >
-        <span>{category.name}</span>
-      </button>
-      {category.children && category.children.length > 0 && (
-        <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-3">
-          {category.children.map(child => {
-            const childSelected =
-              selectedCategoryId === child.id && selectedCategoryLevel === 2;
-            return (
-              <button
-                key={child.id}
-                type="button"
-                onClick={() => onSelect(child as CategoryWithCounts, true)}
-                className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
-                  childSelected
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'hover:bg-gray-50 text-gray-800'
-                }`}
-              >
-                <span className="text-gray-700">{child.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ArticleGrid({ articles }: { articles: ArticleItem[] }) {
   if (articles.length === 0) {
     return (
@@ -772,14 +716,14 @@ function Pagination({
   );
 }
 
-function findCategoryBySlug(
-  list: ArticleCategory[],
+function findCategoryBySlug<T extends { slug: string; children?: T[] }>(
+  list: T[],
   slug: string
-): ArticleCategory | undefined {
+): T | undefined {
   for (const cat of list) {
     if (cat.slug === slug) return cat;
     if (cat.children) {
-      const found = findCategoryBySlug(cat.children as ArticleCategory[], slug);
+      const found = findCategoryBySlug(cat.children, slug);
       if (found) return found;
     }
   }

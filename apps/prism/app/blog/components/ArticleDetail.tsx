@@ -1,7 +1,6 @@
-import Image from 'next/image';
-import { env } from '@/lib/env';
-import { PageContainer } from '@/app/components/PageContainer';
 import type { ArticleDetail as ArticleDetailType } from '@/lib/api/articles';
+import { env } from '@/lib/env';
+import Image from 'next/image';
 
 interface ArticleDetailProps {
   article: ArticleDetailType;

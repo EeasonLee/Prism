@@ -10,8 +10,12 @@
     "build": "nx build prism",
     "start": "nx start prism",
     "lint": "nx lint prism",
+    "lint:fix": "nx lint prism --fix",
     "test": "nx test prism",
     "typecheck": "nx run prism:typecheck",
+    "typecheck:watch": "nx run prism:typecheck --watch",
+    "check": "pnpm typecheck && pnpm lint",
+    "check:fix": "pnpm lint:fix",
     "e2e": "nx run prism:e2e"
   },
   "config": {

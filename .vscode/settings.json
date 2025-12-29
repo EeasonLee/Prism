@@ -12,15 +12,32 @@
     "source.organizeImports": "explicit" // 保存时自动整理和排序导入语句
   },
   // ===== TypeScript 设置 =====
+  "typescript.tsdk": "node_modules/typescript/lib", // 使用工作区 TypeScript 版本
+  "typescript.enablePromptUseWorkspaceTsdk": true, // 提示使用工作区 TypeScript
   "typescript.preferences.importModuleSpecifier": "relative", // 导入模块时使用相对路径而不是绝对路径
   "typescript.suggest.autoImports": true, // 启用 TypeScript 自动导入建议
+  "typescript.validate.enable": true, // 启用 TypeScript 验证
+  "typescript.check.npmIsInstalled": true, // 检查 npm 是否已安装
+  "typescript.preferences.includePackageJsonAutoImports": "on", // 自动从 package.json 导入
   // ===== ESLint 验证设置 =====
+  "eslint.enable": true, // 启用 ESLint
+  "eslint.run": "onType", // 输入时实时检查（而非仅保存时）
+  "eslint.format.enable": true, // 启用 ESLint 格式化
+  "eslint.lintTask.enable": true, // 启用 ESLint 任务
+  "eslint.useESLintClass": true, // 使用 ESLint 类
+  "eslint.experimental.useFlatConfig": true, // 使用扁平配置（ESLint 9+）
   "eslint.validate": [
     "javascript", // 验证 JavaScript 文件
     "javascriptreact", // 验证 JSX 文件
     "typescript", // 验证 TypeScript 文件
     "typescriptreact" // 验证 TSX 文件
   ],
+  // ===== 编辑器诊断设置 =====
+  "editor.diagnostics.source": "all", // 显示所有诊断源（TypeScript + ESLint）
+  "editor.diagnostics.showUnused": true, // 显示未使用的代码
+  "editor.diagnostics.showDeprecated": true, // 显示已弃用的代码
+  // ===== 问题面板设置 =====
+  "problems.showCurrentInStatus": true, // 在状态栏显示当前文件的问题数
   // ===== 文件关联设置 =====
   "files.associations": {
     "*.css": "tailwindcss" // 将 .css 文件关联到 Tailwind CSS 语言模式

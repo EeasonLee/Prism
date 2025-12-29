@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 import { searchArticles, type ArticleListItem } from '@/lib/api/articles';
 import { debounce } from '@/lib/utils/debounce';
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -89,7 +90,8 @@ export function ArticleSearchBox({
     (q: string) => {
       const trimmed = q.trim();
       if (!trimmed) return;
-      const url = `/blog/all?q=${encodeURIComponent(trimmed)}`;
+      // 使用 /blog/all 作为 category，添加类型断言以支持 Next.js typedRoutes
+      const url = `/blog/all?q=${encodeURIComponent(trimmed)}` as Route;
       router.push(url);
     },
     [router]
@@ -243,7 +245,7 @@ export function ArticleSearchBox({
         <div className="absolute z-50 mt-3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
           <div className="max-h-96 overflow-y-auto">
             <ul className="divide-y divide-gray-100">
-              {suggestions.map((item, index) => (
+              {suggestions.map((item, _index) => (
                 <li key={item.id}>
                   <button
                     type="button"

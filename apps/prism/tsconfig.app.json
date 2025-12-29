@@ -15,7 +15,10 @@
       "@nx/react/typings/image.d.ts",
       "next",
       "next/image-types/global"
-    ]
+    ],
+    "allowJs": true,
+    "incremental": true,
+    "noEmit": true
   },
   "exclude": [
     "out-tsc",
