@@ -72,9 +72,13 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      // 需要类型信息的规则暂时关闭，避免在 lint-staged 中出错
+      // 这些规则在 apps/prism/eslint.config.mjs 中已配置（仅对 TypeScript 文件）
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/await-thenable': 'off',
     },
   },
   // Prettier 配置必须放在最后，以覆盖所有格式化相关的规则
