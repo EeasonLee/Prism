@@ -270,6 +270,26 @@ export async function fetchCategoryBySlug(
   return apiClient.get<CategoryBySlugResponse>(endpoint, options);
 }
 
+/**
+ * 根据 type 获取分类
+ */
+export async function fetchCategoryByType(
+  type: string,
+  params?: {
+    includeChildrenArticles?: boolean;
+  }
+): Promise<CategoryBySlugResponse> {
+  const queryString = buildQuery({
+    type,
+    includeChildrenArticles: params?.includeChildrenArticles,
+  });
+  const endpoint = `api/categories${queryString ? `?${queryString}` : ''}`;
+  const options = isServerSide()
+    ? ({ next: { revalidate: 60 } } as const)
+    : undefined;
+  return apiClient.get<CategoryBySlugResponse>(endpoint, options);
+}
+
 export interface ArticleDetail {
   id: number;
   documentId: string;
