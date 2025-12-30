@@ -1,6 +1,6 @@
 import { PageContainer } from '@/app/components/PageContainer';
 import { extractImageUrl } from '@/lib/utils/image';
-import { fetchCategoryBySlug } from '../../lib/api/articles';
+import { fetchCategoryByType } from '../../lib/api/articles';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
 import type { HeroSlide } from '../components/HeroCarousel';
@@ -43,8 +43,8 @@ export default async function BlogPage() {
   // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
   const [carouselRes, categoryRes, themeRes] = await Promise.all([
     getCarouselItems('article').catch(() => ({ data: [] })), // 构建时失败返回空数组
-    fetchCategoryBySlug('by-product').catch(() => null), // 如果获取失败，返回 null
-    fetchCategoryBySlug('theme', { includeChildrenArticles: true }).catch(
+    fetchCategoryByType('product').catch(() => null), // 如果获取失败，返回 null
+    fetchCategoryByType('theme', { includeChildrenArticles: true }).catch(
       () => null
     ), // 如果获取失败，返回 null
   ]);
