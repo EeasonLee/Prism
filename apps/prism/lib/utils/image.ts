@@ -1,3 +1,5 @@
+import { env, IS_DEVELOPMENT } from '../env';
+
 /**
  * Strapi 图片格式类型
  */
@@ -35,17 +37,11 @@ export function processImageUrl(url: string | null | undefined): string | null {
 
   // 相对路径，根据环境拼接前缀
   // 优先使用环境变量，否则使用默认值
-  const envBaseUrl = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
-  let baseUrl: string;
-
-  if (envBaseUrl) {
-    baseUrl = envBaseUrl;
-  } else {
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    baseUrl = isDevelopment
-      ? 'http://localhost:1337'
-      : 'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages';
-  }
+  const baseUrl = env.NEXT_PUBLIC_IMAGE_BASE_URL
+    ? env.NEXT_PUBLIC_IMAGE_BASE_URL
+    : IS_DEVELOPMENT
+    ? 'http://localhost:1337'
+    : 'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages';
 
   // 确保 baseUrl 不以 / 结尾（除了根路径）
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '') || baseUrl;
