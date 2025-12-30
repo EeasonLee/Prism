@@ -255,7 +255,7 @@ export function useRecipesData(
     // 只有在 URL 真正变化且已使用过服务端数据后，才发起客户端请求
     // 此时显示 loading 是合理的（用户交互导致的请求）
     lastRequestParamsRef.current = requestKey;
-    refetch(filters, page, pageSize, false);
+    void refetch(filters, page, pageSize, false);
   }, [searchParams, refetch]);
 
   return {

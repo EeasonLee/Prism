@@ -6,6 +6,7 @@
 
 ### 核心文档
 
+- [架构概览](./overview.md) - 项目整体架构和设计原则
 - [目录结构规范](./directory-structure.md) - 项目目录组织方式和文件放置规则
 - [模块边界规则](./module-boundaries.md) - 模块之间的依赖关系和边界约束
 - [导入规范](./import-rules.md) - Import 路径的使用规范和最佳实践
@@ -13,7 +14,7 @@
 
 ### 设计决策
 
-- [架构决策记录（ADR）](./decisions/) - 重要的架构决策和理由
+- [架构决策记录（ADR）模板](./adr-template.md) - ADR 模板和使用说明
 
 ### 专项文档
 

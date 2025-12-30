@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { PageContainer } from '@prism/ui/components/PageContainer';
+import { useEffect } from 'react';
 
 export default function Error({
   error,

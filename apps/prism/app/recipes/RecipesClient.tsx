@@ -118,7 +118,7 @@ export function RecipesClient({
   }, [facets, filterTypes]);
 
   const handlePageChange = (targetPage: number) => {
-    refetch(currentFilters, targetPage, currentPageSize);
+    void refetch(currentFilters, targetPage, currentPageSize);
   };
 
   return (
@@ -209,7 +209,7 @@ export function RecipesClient({
                         pagination={pagination}
                         onPageChange={handlePageChange}
                         onPageSizeChange={newPageSize => {
-                          refetch(currentFilters, 1, newPageSize);
+                          void refetch(currentFilters, 1, newPageSize);
                         }}
                         isLoading={isLoading}
                       />
