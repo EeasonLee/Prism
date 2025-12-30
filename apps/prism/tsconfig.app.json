@@ -7,7 +7,19 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      // 应用层别名（仅限 apps/prism 内部使用）
+      "@/app/*": ["./app/*"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      // 兼容旧代码（逐步迁移）
+      "@/*": ["./*"],
+      // 共享库别名（从 tsconfig.base.json 继承，但需要显式声明以确保 IDE 识别）
+      "@prism/shared": ["../../libs/shared/src/index.ts"],
+      "@prism/shared/*": ["../../libs/shared/*"],
+      "@prism/ui": ["../../libs/ui/src/index.ts"],
+      "@prism/ui/*": ["../../libs/ui/src/*"],
+      "@prism/blog": ["../../libs/blog/src/index.ts"],
+      "@prism/blog/*": ["../../libs/blog/src/*"]
     },
     "types": [
       "node",
@@ -39,5 +51,16 @@
     "vitest.config.ts",
     "vitest.config.mts"
   ],
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  "references": [
+    {
+      "path": "../../libs/shared/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/blog/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/ui/tsconfig.lib.json"
+    }
+  ]
 }

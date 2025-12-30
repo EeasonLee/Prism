@@ -160,7 +160,16 @@ pnpm nx run prism:start
 
 ## 🔗 有用的链接
 
-了解更多：
+### 项目文档
+
+- [架构文档](docs/architecture/README.md) - 项目架构设计文档
+  - [模块边界规则](docs/architecture/module-boundaries.md) - Nx monorepo 模块边界和依赖管理规则
+  - [导入规范](docs/architecture/import-rules.md) - Import 路径使用规范
+  - [目录结构规范](docs/architecture/directory-structure.md) - 项目目录组织方式
+- [开发计划](docs/development-plan.md) - 架构重构与优化计划
+- [工程标准](docs/engineering-standards.md) - 工程配置和最佳实践
+
+### 外部文档
 
 - [Nx 文档](https://nx.dev)
 - [Next.js 文档](https://nextjs.org/docs)

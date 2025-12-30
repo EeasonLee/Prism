@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { OptimizedImage } from '@/components/OptimizedImage';
-import { PageContainer } from '../../components/PageContainer';
+import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 

@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@prism/ui/components/select';
 import type { PaginationInfo } from '../types';
 
 interface PaginationProps {

@@ -1,21 +1,21 @@
-import { PageContainer } from '@/app/components/PageContainer';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 import {
   fetchArticleCategories,
   fetchArticleTags,
   fetchCategoryCounts,
   searchArticles,
   type CategoryDetail,
-} from '@/lib/api/articles';
+} from '@prism/blog';
 import { redirect } from 'next/navigation';
-import { ArticleSearchBox } from '../components/ArticleSearchBox';
-import { ArticlesSearchClient } from '../components/ArticlesSearchClient';
-import { Breadcrumb } from '../components/Breadcrumb';
+import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
+import { ArticlesSearchClient } from '@prism/blog/components/ArticlesSearchClient';
+import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
 import type {
   ArticlesFilters,
   ArticlesSearchInitialData,
   CategoryWithCounts,
   TagOption,
-} from '../types';
+} from '@prism/blog';
 
 export const revalidate = 60;
 

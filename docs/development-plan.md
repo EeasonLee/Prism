@@ -47,16 +47,16 @@
 
 ### Week 1: 目录结构重构
 
-#### 任务 1.1: 制定目标结构文档（Day 1）
+#### 任务 1.1: 制定目标结构文档（Day 1）✅
 
 **目标：** 明确目标目录结构，作为重构的"宪法"
 
 **任务清单：**
 
-- [ ] 创建 `docs/architecture/directory-structure.md`
-- [ ] 定义每个目录的职责和放置规则
-- [ ] 绘制目录结构图（使用 Mermaid）
-- [ ] 说明目录命名规范
+- [x] 创建 `docs/architecture/directory-structure.md`
+- [x] 定义每个目录的职责和放置规则
+- [x] 绘制目录结构图（使用 Mermaid）
+- [x] 说明目录命名规范
 
 **验收标准：**
 
@@ -70,17 +70,17 @@
 
 ---
 
-#### 任务 1.2: 建立路径别名体系（Day 1-2）
+#### 任务 1.2: 建立路径别名体系（Day 1-2）✅
 
 **目标：** 统一配置路径别名，为后续迁移做准备
 
 **任务清单：**
 
-- [ ] 更新 `tsconfig.base.json` 路径配置
-- [ ] 更新 `apps/prism/tsconfig.app.json` 路径配置
-- [ ] 更新 `next.config.js` 路径别名（如需要）
-- [ ] 验证别名在 IDE 中正常工作
-- [ ] 创建路径别名使用规范文档
+- [x] 更新 `tsconfig.base.json` 路径配置
+- [x] 更新 `apps/prism/tsconfig.app.json` 路径配置
+- [x] 更新 `next.config.js` 路径别名（如需要）- 已确认 Nx 自动处理，无需额外配置
+- [x] 验证别名在 IDE 中正常工作 - 类型检查通过
+- [x] 创建路径别名使用规范文档
 
 **路径别名配置：**
 
@@ -117,17 +117,17 @@
 
 ---
 
-#### 任务 1.3: 创建 libs 目录结构（Day 2）
+#### 任务 1.3: 创建 libs 目录结构（Day 2）✅
 
 **目标：** 建立共享库的基础结构
 
 **任务清单：**
 
-- [ ] 创建 `libs/shared/` 目录结构
-- [ ] 创建 `libs/ui/` 目录结构
-- [ ] 创建 `libs/blog/` 目录结构（示例业务域）
-- [ ] 为每个库创建 `project.json` 和 `tsconfig.json`
-- [ ] 配置 Nx 标签（tags）
+- [x] 创建 `libs/shared/` 目录结构
+- [x] 创建 `libs/ui/` 目录结构
+- [x] 创建 `libs/blog/` 目录结构（示例业务域）
+- [x] 为每个库创建 `project.json` 和 `tsconfig.json`
+- [x] 配置 Nx 标签（tags）
 
 **目录结构：**
 
@@ -161,17 +161,17 @@ libs/
 
 ---
 
-#### 任务 1.4: 迁移共享代码到 libs/shared（Day 3）
+#### 任务 1.4: 迁移共享代码到 libs/shared（Day 3）✅
 
 **目标：** 将通用代码提取到共享库
 
 **任务清单：**
 
-- [ ] 迁移 API 通用类型到 `libs/shared/api/types/`
-- [ ] 迁移通用工具函数到 `libs/shared/utils/`
-- [ ] 迁移常量到 `libs/shared/constants/`
-- [ ] 更新所有引用（使用新路径别名）
-- [ ] 运行类型检查和构建验证
+- [x] 迁移 API 通用类型到 `libs/shared/api/types/`
+- [x] 迁移通用工具函数到 `libs/shared/utils/`
+- [x] 迁移常量到 `libs/shared/constants/`（暂无常量需要迁移）
+- [x] 更新所有引用（使用新路径别名）
+- [x] 运行类型检查和构建验证
 
 **迁移内容：**
 
@@ -201,12 +201,12 @@ libs/
 
 **任务清单：**
 
-- [ ] 迁移 blog 相关代码到 `libs/blog/`
-  - [ ] API 类型和函数 → `libs/blog/api/`
-  - [ ] 组件 → `libs/blog/components/`
-  - [ ] Hooks → `libs/blog/hooks/`
+- [x] 迁移 blog 相关代码到 `libs/blog/`
+  - [x] API 类型和函数 → `libs/blog/api/`
+  - [x] 组件 → `libs/blog/components/`
+  - [x] Hooks → `libs/blog/hooks/`（待创建）
 - [ ] 迁移 recipe 相关代码到 `libs/recipe/`
-- [ ] 更新所有引用
+- [x] 更新所有引用（blog 相关）
 - [ ] 验证模块边界规则（ESLint）
 
 **验收标准：**

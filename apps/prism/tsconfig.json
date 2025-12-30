@@ -6,6 +6,15 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared"
+    },
+    {
+      "path": "../../libs/blog"
+    },
+    {
+      "path": "../../libs/ui"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {
@@ -26,7 +35,13 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@prism/shared": ["../../libs/shared/src/index.ts"],
+      "@prism/shared/*": ["../../libs/shared/*"],
+      "@prism/ui": ["../../libs/ui/src/index.ts"],
+      "@prism/ui/*": ["../../libs/ui/src/*"],
+      "@prism/blog": ["../../libs/blog/src/index.ts"],
+      "@prism/blog/*": ["../../libs/blog/src/*"]
     },
     "plugins": [
       {

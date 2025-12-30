@@ -1,13 +1,13 @@
-import { PageContainer } from '@/app/components/PageContainer';
-import { extractImageUrl } from '@/lib/utils/image';
-import { fetchCategoryByType } from '../../lib/api/articles';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import { extractImageUrl } from '@prism/shared';
+import { fetchCategoryByType } from '@prism/blog';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
-import type { HeroSlide } from '../components/HeroCarousel';
-import { HeroCarousel } from '../components/HeroCarousel';
-import { ArticleSearchBox } from './components/ArticleSearchBox';
-import { ProductCategories } from './components/ProductCategories';
-import { ThemeCategories } from './components/ThemeCategories';
+import type { HeroSlide } from '@/app/components/HeroCarousel';
+import { HeroCarousel } from '@/app/components/HeroCarousel';
+import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
+import { ProductCategories } from '@prism/blog/components/ProductCategories';
+import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式

@@ -5,6 +5,15 @@
   "references": [
     {
       "path": "./apps/prism"
+    },
+    {
+      "path": "./libs/shared"
+    },
+    {
+      "path": "./libs/blog"
+    },
+    {
+      "path": "./libs/ui"
     }
   ]
 }

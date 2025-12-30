@@ -1,7 +1,7 @@
 'use client';
 
-import { OptimizedImage } from '@/components/OptimizedImage';
-import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { cn } from '@prism/shared';
 import Autoplay from 'embla-carousel-autoplay';
 import { useEffect, useState } from 'react';
 import {
@@ -11,7 +11,7 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from '../../components/ui/carousel';
+} from '@prism/ui/components/carousel';
 
 export interface HeroSlide {
   image: string;
