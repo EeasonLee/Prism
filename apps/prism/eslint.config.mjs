@@ -19,22 +19,21 @@ export default [
       'build/**/*',
       '.turbo/**/*',
       '**/next-env.d.ts',
+      '**/*.config.ts',
+      '**/*.config.js',
       'vite.config.ts',
       'vitest.config.ts',
-      '*.config.ts',
-      '*.config.js',
+      'playwright.config.js',
     ],
   },
   {
-    files: [
-      '**/*.ts',
-      '**/*.tsx',
-      // 排除配置文件，它们不在 tsconfig.app.json 中
-      '!**/*.config.ts',
-      '!**/*.config.js',
-      '!vite.config.ts',
-      '!vitest.config.ts',
-      '!playwright.config.ts',
+    files: ['**/*.ts', '**/*.tsx'],
+    ignores: [
+      '**/*.config.ts',
+      '**/*.config.js',
+      'vite.config.ts',
+      'vitest.config.ts',
+      'playwright.config.js',
     ],
     languageOptions: {
       parserOptions: {
