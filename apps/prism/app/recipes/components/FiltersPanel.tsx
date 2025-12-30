@@ -5,9 +5,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Checkbox } from '@/components/ui/checkbox';
-import { debounce } from '@/lib/utils/debounce';
+} from '@prism/ui/components/accordion';
+import { Checkbox } from '@prism/ui/components/checkbox';
+import { debounce } from '@prism/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Facets, FilterType, SelectedFilters } from '../types';
 

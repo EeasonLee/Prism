@@ -1,5 +1,5 @@
-import { PageContainer } from '@/app/components/PageContainer';
-import { Loader } from '@/components/ui/loader';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import { Loader } from '@prism/ui/components/loader';
 
 export default function Loading() {
   return (

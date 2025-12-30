@@ -25,6 +25,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      embla-carousel-autoplay:
+        specifier: ^8.6.0
+        version: 8.6.0(embla-carousel@8.6.0)
+      embla-carousel-react:
+        specifier: ^8.6.0
+        version: 8.6.0(react@19.0.0)
       eslint-config-next:
         specifier: 15.5.7
         version: 15.5.7(eslint@9.32.0(jiti@2.4.2))(typescript@5.8.3)

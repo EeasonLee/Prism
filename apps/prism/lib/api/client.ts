@@ -1,9 +1,3 @@
-import { createLogger } from '../observability/logger';
-import type { ClientRequestOptions } from './adapters/client-adapter';
-import { clientRequest } from './adapters/client-adapter';
-import type { ServerRequestOptions } from './adapters/server-adapter';
-import { serverRequest } from './adapters/server-adapter';
-import { isDevelopment, isServerSide } from './config';
 import {
   ApiError,
   AuthenticationError,
@@ -11,7 +5,13 @@ import {
   NetworkError,
   NotFoundError,
   TimeoutError,
-} from './errors';
+} from '@prism/shared';
+import { createLogger } from '../observability/logger';
+import type { ClientRequestOptions } from './adapters/client-adapter';
+import { clientRequest } from './adapters/client-adapter';
+import type { ServerRequestOptions } from './adapters/server-adapter';
+import { serverRequest } from './adapters/server-adapter';
+import { isDevelopment, isServerSide } from './config';
 
 const logger = createLogger('api-client');
 

@@ -1,4 +1,4 @@
-import { PageContainer } from './PageContainer';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 
 export function Footer() {
   return (

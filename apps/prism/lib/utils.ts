@@ -1,6 +1,7 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+/**
+ * 工具函数
+ *
+ * 为了保持向后兼容，从 shared 库重新导出
+ */
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export { cn } from '@prism/shared';

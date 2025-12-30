@@ -1,4 +1,4 @@
-import { PageContainer } from '../../../components/PageContainer';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 
 export default function Loading() {
   return (

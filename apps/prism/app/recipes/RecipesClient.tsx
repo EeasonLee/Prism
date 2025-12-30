@@ -1,10 +1,10 @@
 'use client';
 
-import { Loader } from '@/components/ui/loader';
+import { Loader } from '@prism/ui/components/loader';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { PageContainer } from '../components/PageContainer';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 import { FiltersPanel } from './components/FiltersPanel';
 import { Pagination } from './components/Pagination';
 import { RecipeGrid } from './components/RecipeGrid';

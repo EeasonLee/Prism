@@ -1,8 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
-import { PageContainer } from '@/app/components/PageContainer';
-import { fetchArticleBySlug, fetchArticleCategories } from '@/lib/api/articles';
-import { Breadcrumb } from '../../components/Breadcrumb';
-import { ArticleDetail } from '../../components/ArticleDetail';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import { fetchArticleBySlug, fetchArticleCategories } from '@prism/blog';
+import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
 
 type ArticleDetailPageProps = {
   params: Promise<{

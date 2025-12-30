@@ -29,8 +29,12 @@ export default [
               onlyDependOnLibsWithTags: ['scope:shared', 'type:ui', 'type:lib'],
             },
             {
+              sourceTag: 'type:lib',
+              onlyDependOnLibsWithTags: ['type:lib', 'scope:shared'],
+            },
+            {
               sourceTag: 'scope:frontend',
-              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared'],
+              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared', 'scope:ui', 'scope:blog', 'type:lib', 'type:ui'],
             },
             {
               sourceTag: 'scope:shared',

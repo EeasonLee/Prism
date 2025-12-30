@@ -3,7 +3,7 @@ import type {
   ArticleTag,
   ArticleListItem,
   ArticleSort,
-} from '@/lib/api/articles';
+} from '@prism/blog';
 
 export type ArticleItem = ArticleListItem;
 
