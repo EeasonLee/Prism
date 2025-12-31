@@ -42,23 +42,10 @@ export async function serverRequest(
   }
 
   // 执行请求
-  try {
-    return await fetch(fullUrl, {
-      ...fetchOptions,
-      headers,
-      next, // Next.js 缓存配置
-    });
-  } catch (error) {
-    // 开发环境：提供更详细的错误信息
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[Server Request Failed]', {
-        baseUrl,
-        url,
-        fullUrl,
-        apiUrl: env.NEXT_PUBLIC_API_URL,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-    throw error;
-  }
+  // 日志记录已统一在 client.ts 中处理
+  return await fetch(fullUrl, {
+    ...fetchOptions,
+    headers,
+    next, // Next.js 缓存配置
+  });
 }

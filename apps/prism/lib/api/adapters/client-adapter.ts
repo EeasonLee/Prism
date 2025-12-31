@@ -1,5 +1,4 @@
 import { getApiBaseUrl } from '../config';
-import { logRequest } from '../interceptors';
 
 /**
  * 客户端请求选项
@@ -48,7 +47,6 @@ export async function clientRequest(
   options: ClientRequestOptions = {}
 ): Promise<Response> {
   const { timeout = 30000, ...fetchOptions } = options;
-  const startTime = Date.now();
 
   const baseUrl = getApiBaseUrl();
 
@@ -59,16 +57,6 @@ export async function clientRequest(
 
   // 构建请求头
   const headers = buildHeaders(fetchOptions.headers);
-
-  // 记录请求体（用于日志）
-  let requestBody: unknown;
-  if (fetchOptions.body) {
-    try {
-      requestBody = JSON.parse(fetchOptions.body as string);
-    } catch {
-      requestBody = fetchOptions.body;
-    }
-  }
 
   // 使用 AbortController 实现超时
   const controller = new AbortController();
@@ -83,56 +71,10 @@ export async function clientRequest(
       headers,
     });
 
-    const duration = Date.now() - startTime;
-
-    // 记录响应体（用于日志）
-    const responseClone = response.clone();
-    let responseBody: unknown;
-    try {
-      responseBody = await responseClone.json();
-    } catch {
-      // 如果不是 JSON，忽略
-    }
-
-    // 在浏览器控制台显示请求日志（仅开发环境）
-
-    if (
-      typeof (globalThis as { window?: unknown }).window !== 'undefined' &&
-      process.env.NODE_ENV === 'development'
-    ) {
-      logRequest({
-        method: fetchOptions.method || 'GET',
-        url: fullUrl,
-        status: response.status,
-        statusText: response.statusText,
-        duration,
-        requestHeaders: headers,
-        responseHeaders: response.headers,
-        requestBody,
-        responseBody,
-      });
-    }
-
+    // 日志记录已统一在 client.ts 中处理
     return response;
   } catch (error) {
-    const duration = Date.now() - startTime;
-
-    // 在浏览器控制台显示错误日志（仅开发环境）
-
-    if (
-      typeof (globalThis as { window?: unknown }).window !== 'undefined' &&
-      process.env.NODE_ENV === 'development'
-    ) {
-      logRequest({
-        method: fetchOptions.method || 'GET',
-        url: fullUrl,
-        duration,
-        requestHeaders: headers,
-        requestBody,
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
-    }
-
+    // 日志记录已统一在 client.ts 中处理
     // 如果是超时错误，抛出更明确的错误信息
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(`Request timeout after ${timeout}ms`);
