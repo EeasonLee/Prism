@@ -41,7 +41,6 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 
 export default async function BlogPage() {
   // 服务端获取轮播图数据、产品分类和主题分类
-  // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
   const [carouselRes, categoryRes, themeRes] = await Promise.all([
     getCarouselItems('article').catch(error => {
       console.error('[BlogPage] Failed to fetch carousel items:', error);
@@ -51,35 +50,18 @@ export default async function BlogPage() {
       console.error('[BlogPage] Failed to fetch product categories:', error);
       return null;
     }),
-    fetchCategoryByType('theme', { includeChildrenArticles: true }).catch(
-      error => {
-        console.error('[BlogPage] Failed to fetch theme category:', error);
-        return null;
-      }
-    ),
+    fetchCategoryByType('theme', {
+      includeChildrenArticles: true,
+    }).catch(error => {
+      console.error('[BlogPage] Failed to fetch theme category:', error);
+      return null;
+    }),
   ]);
 
   const slides = transformToHeroSlides(carouselRes.data);
-  // fetchCategoryByType 返回 CategoryBySlugResponse，即 { data: CategoryDetail }
-  // CategoryDetail 有 children 属性（可选数组）
-  const productCategories: CategoryDetail[] = categoryRes?.data?.children || [];
-  const themeCategory = themeRes?.data || null;
-
-  // 开发环境：输出调试信息
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[BlogPage] Data loaded:', {
-      carouselCount: slides.length,
-      productCategoriesCount: productCategories.length,
-      hasThemeCategory: !!themeCategory,
-      categoryRes: categoryRes
-        ? {
-            hasData: !!categoryRes.data,
-            hasChildren: !!categoryRes.data?.children,
-          }
-        : null,
-      themeRes: themeRes ? { hasData: !!themeRes.data } : null,
-    });
-  }
+  const productCategories: CategoryDetail[] =
+    categoryRes?.data?.[0]?.children || [];
+  const themeCategory = themeRes?.data[0] || null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">

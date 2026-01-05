@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import type { CategoryDetail, CategoryArticle } from '../api/types';
+import Link from 'next/link';
+import type { CategoryArticle, CategoryDetail } from '../api/types';
 
 interface ThemeCategoriesProps {
   category: CategoryDetail;
@@ -56,17 +56,11 @@ function ArticleCard({
 }
 
 export function ThemeCategories({ category }: ThemeCategoriesProps) {
-  if (!category.children || category.children.length === 0) {
-    return null;
-  }
-
   return (
     <div>
-      {category.children.map(childCategory => {
+      {category.children?.map((childCategory, index) => {
         const articles = childCategory.articles || [];
-        if (articles.length === 0) {
-          return null;
-        }
+        const gridColsClass = index === 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-5';
 
         return (
           <section key={childCategory.id} className="mb-12 last:mb-0">
@@ -85,7 +79,9 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
               </div>
 
               {/* Articles Grid */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${gridColsClass}`}
+              >
                 {articles.map(article => (
                   <ArticleCard
                     key={article.id}

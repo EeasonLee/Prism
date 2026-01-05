@@ -164,7 +164,7 @@ export interface CategoryDetail {
 }
 
 export interface CategoryBySlugResponse {
-  data: CategoryDetail;
+  data: CategoryDetail[];
 }
 
 export interface ArticleDetail {

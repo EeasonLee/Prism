@@ -13,8 +13,8 @@ export function PageContainer({
   fullWidth = false,
 }: PageContainerProps) {
   const baseClasses = fullWidth
-    ? 'w-full px-6 lg:px-8'
-    : 'mx-auto max-w-7xl px-6 lg:px-8';
+    ? 'w-full px-4 sm:px-6 lg:px-[50px]'
+    : 'mx-auto max-w-[1720px] px-4 sm:px-6 lg:px-[50px]';
 
   return <div className={cn(baseClasses, className)}>{children}</div>;
 }

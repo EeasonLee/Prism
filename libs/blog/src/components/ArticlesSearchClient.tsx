@@ -222,99 +222,96 @@ export function ArticlesSearchClient({
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Search section */}
-      <PageContainer fullWidth className="py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <aside className="w-full lg:w-80 lg:flex-shrink-0">
-            <FiltersPanel
-              categories={categories}
-              tags={tags}
-              selectedCategoryId={filters.categoryId}
-              selectedCategoryLevel={filters.categoryLevel}
-              selectedTagIds={filters.tagIds ?? []}
-              onCategorySelect={handleCategorySelect}
-              onTagToggle={handleTagToggle}
-              onClear={clearFilters}
-            />
-          </aside>
+    <PageContainer fullWidth className="py-8">
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <aside className="w-full lg:w-80 lg:flex-shrink-0">
+          <FiltersPanel
+            categories={categories}
+            tags={tags}
+            selectedCategoryId={filters.categoryId}
+            selectedCategoryLevel={filters.categoryLevel}
+            selectedTagIds={filters.tagIds ?? []}
+            onCategorySelect={handleCategorySelect}
+            onTagToggle={handleTagToggle}
+            onClear={clearFilters}
+          />
+        </aside>
 
-          <main className="min-w-0 flex-1">
-            {/* Header with Articles count and Sort by */}
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {formatNumber(pagination.total)} Articles
-                </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Showing {formatNumber(items.length)} of{' '}
-                  {formatNumber(pagination.total)}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">Sort by</span>
-                <Select
-                  value={filters.sort}
-                  onValueChange={val => handleSortChange(val as ArticleSort)}
-                >
-                  <SelectTrigger className="w-44">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <main className="min-w-0 flex-1">
+          {/* Header with Articles count and Sort by */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {formatNumber(pagination.total)} Articles
+              </h1>
+              <p className="mt-1 text-sm text-gray-600">
+                Showing {formatNumber(items.length)} of{' '}
+                {formatNumber(pagination.total)}
+              </p>
             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">Sort by</span>
+              <Select
+                value={filters.sort}
+                onValueChange={val => handleSortChange(val as ArticleSort)}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            {error ? (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
+          {error ? (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="relative">
+            {isLoading && (
+              <div className="pointer-events-auto absolute inset-0 z-10 flex items-start justify-center bg-white/60 backdrop-blur-[2px] pt-6">
+                <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-2 shadow-sm">
+                  <Loader size="sm" className="text-gray-700" />
+                  <span className="text-sm text-gray-700">
+                    Loading articles...
+                  </span>
+                </div>
               </div>
-            ) : null}
+            )}
 
-            <div className="relative">
-              {isLoading && (
-                <div className="pointer-events-auto absolute inset-0 z-10 flex items-start justify-center bg-white/60 backdrop-blur-[2px] pt-6">
-                  <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-2 shadow-sm">
-                    <Loader size="sm" className="text-gray-700" />
-                    <span className="text-sm text-gray-700">
-                      Loading articles...
-                    </span>
+            {items.length === 0 ? (
+              <div className="rounded-lg bg-gray-50 p-8 text-center">
+                <p className="text-gray-600">No articles found</p>
+              </div>
+            ) : (
+              <>
+                <ArticleGrid articles={items} />
+                {pagination && (
+                  <div className="mt-8">
+                    <Pagination
+                      page={pagination.page}
+                      pageCount={pagination.pageCount}
+                      onPageChange={handlePageChange}
+                      pageSize={pagination.pageSize}
+                      onPageSizeChange={handlePageSizeChange}
+                      isLoading={isLoading}
+                    />
                   </div>
-                </div>
-              )}
-
-              {items.length === 0 ? (
-                <div className="rounded-lg bg-gray-50 p-8 text-center">
-                  <p className="text-gray-600">No articles found</p>
-                </div>
-              ) : (
-                <>
-                  <ArticleGrid articles={items} />
-                  {pagination && (
-                    <div className="mt-8">
-                      <Pagination
-                        page={pagination.page}
-                        pageCount={pagination.pageCount}
-                        onPageChange={handlePageChange}
-                        pageSize={pagination.pageSize}
-                        onPageSizeChange={handlePageSizeChange}
-                        isLoading={isLoading}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </main>
-        </div>
-      </PageContainer>
-    </div>
+                )}
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+    </PageContainer>
   );
 }
 
