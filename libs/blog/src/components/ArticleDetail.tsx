@@ -1,5 +1,5 @@
-import type { ArticleDetail as ArticleDetailType } from '../api/types';
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import type { ArticleDetail as ArticleDetailType } from '../api/types';
 
 interface ArticleDetailProps {
   article: ArticleDetailType;
@@ -22,7 +22,7 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
   const category = article.categories?.[0];
 
   return (
-    <article className="mx-auto max-w-4xl">
+    <article className="w-full">
       {/* Header */}
       <header className="mb-8">
         {category && (

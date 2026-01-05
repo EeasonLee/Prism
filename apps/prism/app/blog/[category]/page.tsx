@@ -216,17 +216,15 @@ export default async function BlogCategoryPage({
         </PageContainer>
       </div>
 
-      <PageContainer fullWidth className="py-8">
-        <ArticlesSearchClient
-          initialCategorySlug={effectiveCategorySlug}
-          categories={mergedCategories}
-          tags={tags as TagOption[]}
-          initialFilters={finalFilters}
-          initialPage={page}
-          initialPageSize={pageSize}
-          initialData={initialData}
-        />
-      </PageContainer>
+      <ArticlesSearchClient
+        initialCategorySlug={effectiveCategorySlug}
+        categories={mergedCategories}
+        tags={tags as TagOption[]}
+        initialFilters={finalFilters}
+        initialPage={page}
+        initialPageSize={pageSize}
+        initialData={initialData}
+      />
     </div>
   );
 }
