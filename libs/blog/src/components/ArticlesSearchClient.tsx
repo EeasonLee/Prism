@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@prism/ui/components/select';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { searchArticles } from '../api/queries';
 import type {
@@ -78,7 +78,9 @@ export function ArticlesSearchClient({
     if (!initialCategorySlug) return null;
     const found = findCategoryBySlug(categories, initialCategorySlug);
     if (!found) return null;
-    const level = (found.level ?? 1) >= 2 ? 2 : 1;
+    // 判断分类级别：如果有 parent 且 parent 不为 null，则是二级分类；否则是一级分类
+    // 与服务端的逻辑保持一致
+    const level = found.parent && found.parent !== null ? 2 : 1;
     return { categoryId: found.id, categoryLevel: level as 1 | 2 };
   }, [categories, initialCategorySlug]);
 
@@ -113,11 +115,40 @@ export function ArticlesSearchClient({
       qs.set('sort', next.sort);
       qs.set('page', String(nextPage));
       qs.set('pageSize', String(nextPageSize));
-      router.replace(`/blog/${initialCategorySlug ?? 'all'}?${qs.toString()}`, {
+
+      // 根据 categoryId 查找对应的分类 slug
+      let targetSlug = 'all';
+      if (next.categoryId) {
+        const findCategoryById = (
+          list: CategoryWithCounts[],
+          id: number
+        ): CategoryWithCounts | undefined => {
+          for (const cat of list) {
+            if (cat.id === id) return cat;
+            if (cat.children) {
+              const found = findCategoryById(
+                cat.children as CategoryWithCounts[],
+                id
+              );
+              if (found) return found;
+            }
+          }
+          return undefined;
+        };
+        const selectedCategory = findCategoryById(categories, next.categoryId);
+        if (selectedCategory) {
+          targetSlug = selectedCategory.slug;
+        } else {
+          // 如果找不到分类，使用 initialCategorySlug 作为后备
+          targetSlug = initialCategorySlug ?? 'all';
+        }
+      }
+
+      router.replace(`/blog/${targetSlug}?${qs.toString()}`, {
         scroll: false,
       });
     },
-    [router, initialCategorySlug]
+    [router, initialCategorySlug, categories]
   );
 
   const fetchList = useCallback(
@@ -155,12 +186,21 @@ export function ArticlesSearchClient({
   useEffect(() => {
     const qsFilters = parseFiltersFromSearchParams(searchParams, filters.sort);
 
-    // 如果 URL 中没有 categoryId，但路由中有 initialCategorySlug，则保留初始筛选条件
-    // 这样可以避免从服务端传入的筛选条件被清除
-    if (!qsFilters.categoryId && categorySlugToSelection) {
+    // 如果 URL 中没有 categoryId，但路由中有 initialCategorySlug 且 URL 路由不是 'all'
+    // 则保留初始筛选条件（从特定分类路由进来时自动选中该分类）
+    // 如果 URL 路由已经是 'all'，则不再自动恢复分类筛选（用户已清除筛选）
+    const currentPath = window.location.pathname;
+    const isAllRoute =
+      currentPath === '/blog/all' || currentPath.endsWith('/all');
+
+    if (!qsFilters.categoryId && categorySlugToSelection && !isAllRoute) {
       qsFilters.categoryId = categorySlugToSelection.categoryId;
       qsFilters.categoryLevel = categorySlugToSelection.categoryLevel;
-    } else if (!qsFilters.categoryId && initialFilters.categoryId) {
+    } else if (
+      !qsFilters.categoryId &&
+      initialFilters.categoryId &&
+      !isAllRoute
+    ) {
       // 如果 URL 中没有 categoryId，但 initialFilters 中有，也保留它
       qsFilters.categoryId = initialFilters.categoryId;
       qsFilters.categoryLevel = initialFilters.categoryLevel;
@@ -218,6 +258,7 @@ export function ArticlesSearchClient({
     setFilters(next);
     setPage(1);
     setPageSize(10);
+    // fetchList 内部的 updateUrl 会自动处理 URL 跳转到 /blog/all
     fetchList(next, 1, 10);
   };
 
@@ -319,7 +360,7 @@ function FiltersPanel({
   categories,
   tags,
   selectedCategoryId,
-  selectedCategoryLevel,
+  selectedCategoryLevel: _selectedCategoryLevel,
   selectedTagIds,
   onCategorySelect,
   onTagToggle,
@@ -334,6 +375,16 @@ function FiltersPanel({
   onTagToggle: (id: number, checked: boolean) => void;
   onClear: () => void;
 }) {
+  // 从当前路径获取分类 slug（用于判断二级分类是否应该高亮）
+  const pathname = usePathname();
+  const currentCategorySlug = useMemo(() => {
+    // 路径格式：/blog/[category]
+    const match = pathname.match(/^\/blog\/([^/]+)$/);
+    if (match && match[1] && match[1] !== 'all') {
+      return match[1];
+    }
+    return undefined;
+  }, [pathname]);
   // 构建已选筛选项的 chips
   const chips: Array<{
     type: 'category' | 'tag';
@@ -450,9 +501,22 @@ function FiltersPanel({
                   <div className="max-h-64 space-y-2 overflow-y-auto pr-2">
                     {category.children && category.children.length > 0 ? (
                       category.children.map(child => {
-                        const childSelected =
+                        // 高亮判断逻辑：
+                        // 1. 如果 selectedCategoryId 存在且匹配，且是二级分类（selectedCategoryLevel === 2），则高亮（立即反馈）
+                        // 2. 如果 selectedCategoryId 不存在或不匹配，且当前路由的 slug 匹配二级分类的 slug，则高亮（从 URL 初始化）
+                        // 只高亮二级分类（确保不会高亮一级分类）
+                        const isSelectedById =
                           selectedCategoryId === child.id &&
-                          selectedCategoryLevel === 2;
+                          _selectedCategoryLevel === 2;
+                        const isSelectedBySlug =
+                          currentCategorySlug &&
+                          currentCategorySlug !== 'all' &&
+                          child.slug === currentCategorySlug &&
+                          // 如果 selectedCategoryId 存在但不匹配当前 child，不使用 slug 判断（避免旧分类高亮）
+                          (selectedCategoryId === undefined ||
+                            selectedCategoryId === child.id);
+                        const childSelected =
+                          isSelectedById || isSelectedBySlug;
                         return (
                           <button
                             key={child.id}
