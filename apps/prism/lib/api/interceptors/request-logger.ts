@@ -347,8 +347,8 @@ function logToServerConsole(data: RequestLogData): void {
     13
   )}...]`;
 
-  // 使用 console.group 创建可折叠的日志组（Node.js 支持分组，在支持的环境中可以折叠）
-  console.group(title);
+  // 使用 console.groupCollapsed 创建默认折叠的日志组
+  console.groupCollapsed(title);
 
   // 基本信息（类似表格格式）
   console.log('\x1b[90m┌─ Request Info ───────────\x1b[0m');
@@ -371,9 +371,9 @@ function logToServerConsole(data: RequestLogData): void {
     process.env.NODE_ENV === 'development';
 
   if (isDevelopment) {
-    // 请求详情（使用分组）
+    // 请求详情（使用分组，默认折叠）
     if (requestHeaders || requestBody !== undefined) {
-      console.group('\x1b[34m📤 Request Details\x1b[0m');
+      console.groupCollapsed('\x1b[34m📤 Request Details\x1b[0m');
       if (requestHeaders) {
         console.log('\x1b[90mHeaders:\x1b[0m');
         console.log(formatHeaders(requestHeaders));
@@ -393,7 +393,7 @@ function logToServerConsole(data: RequestLogData): void {
       console.groupEnd();
     }
 
-    // 响应详情（使用分组）
+    // 响应详情（使用分组，默认展开，这是最重要的信息）
     if (responseBody !== undefined && status) {
       const groupTitle =
         status >= 200 && status < 300
@@ -435,7 +435,7 @@ function logToServerConsole(data: RequestLogData): void {
       console.groupEnd();
     }
 
-    // 错误详情（使用分组）
+    // 错误详情（使用分组，默认展开，便于调试）
     if (error) {
       console.group('\x1b[31m❌ Error Details\x1b[0m');
       if (error instanceof Error) {
