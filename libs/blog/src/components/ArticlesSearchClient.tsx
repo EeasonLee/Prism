@@ -86,10 +86,10 @@ export function ArticlesSearchClient({
 
   useEffect(() => {
     // 如果 URL 未显式指定分类且路由带 slug，则用它初始化并更新 URL
-    if (!filters.categoryId && categorySlugToSelection) {
+    if (!filters.categoryIds && categorySlugToSelection) {
       const nextFilters = {
         ...filters,
-        ...categorySlugToSelection,
+        categoryIds: [categorySlugToSelection.categoryId],
       };
       setFilters(nextFilters);
       // 更新 URL 以保持同步
@@ -102,11 +102,8 @@ export function ArticlesSearchClient({
     (next: ArticlesFilters, nextPage: number, nextPageSize: number) => {
       const qs = new URLSearchParams();
       if (next.q) qs.set('q', next.q);
-      if (next.categoryId) {
-        qs.set('categoryId', String(next.categoryId));
-      }
-      if (next.categoryLevel) {
-        qs.set('categoryLevel', String(next.categoryLevel));
+      if (next.categoryIds && next.categoryIds.length > 0) {
+        qs.set('categoryIds', next.categoryIds.join(','));
       }
       if (next.tagIds && next.tagIds.length) {
         qs.set('tagIds', next.tagIds.join(','));
@@ -116,26 +113,12 @@ export function ArticlesSearchClient({
       qs.set('page', String(nextPage));
       qs.set('pageSize', String(nextPageSize));
 
-      // 根据 categoryId 查找对应的分类 slug
+      // 根据 categoryIds 查找对应的分类 slug
+      // 如果有多个分类，使用第一个分类的 slug（保持路由一致性）
       let targetSlug = 'all';
-      if (next.categoryId) {
-        const findCategoryById = (
-          list: CategoryWithCounts[],
-          id: number
-        ): CategoryWithCounts | undefined => {
-          for (const cat of list) {
-            if (cat.id === id) return cat;
-            if (cat.children) {
-              const found = findCategoryById(
-                cat.children as CategoryWithCounts[],
-                id
-              );
-              if (found) return found;
-            }
-          }
-          return undefined;
-        };
-        const selectedCategory = findCategoryById(categories, next.categoryId);
+      if (next.categoryIds && next.categoryIds.length > 0) {
+        const firstCategoryId = next.categoryIds[0];
+        const selectedCategory = findCategoryById(categories, firstCategoryId);
         if (selectedCategory) {
           targetSlug = selectedCategory.slug;
         } else {
@@ -186,24 +169,22 @@ export function ArticlesSearchClient({
   useEffect(() => {
     const qsFilters = parseFiltersFromSearchParams(searchParams, filters.sort);
 
-    // 如果 URL 中没有 categoryId，但路由中有 initialCategorySlug 且 URL 路由不是 'all'
+    // 如果 URL 中没有 categoryIds，但路由中有 initialCategorySlug 且 URL 路由不是 'all'
     // 则保留初始筛选条件（从特定分类路由进来时自动选中该分类）
     // 如果 URL 路由已经是 'all'，则不再自动恢复分类筛选（用户已清除筛选）
     const currentPath = window.location.pathname;
     const isAllRoute =
       currentPath === '/blog/all' || currentPath.endsWith('/all');
 
-    if (!qsFilters.categoryId && categorySlugToSelection && !isAllRoute) {
-      qsFilters.categoryId = categorySlugToSelection.categoryId;
-      qsFilters.categoryLevel = categorySlugToSelection.categoryLevel;
+    if (!qsFilters.categoryIds && categorySlugToSelection && !isAllRoute) {
+      qsFilters.categoryIds = [categorySlugToSelection.categoryId];
     } else if (
-      !qsFilters.categoryId &&
-      initialFilters.categoryId &&
+      !qsFilters.categoryIds &&
+      initialFilters.categoryIds &&
       !isAllRoute
     ) {
-      // 如果 URL 中没有 categoryId，但 initialFilters 中有，也保留它
-      qsFilters.categoryId = initialFilters.categoryId;
-      qsFilters.categoryLevel = initialFilters.categoryLevel;
+      // 如果 URL 中没有 categoryIds，但 initialFilters 中有，也保留它
+      qsFilters.categoryIds = initialFilters.categoryIds;
     }
 
     setFilters(qsFilters);
@@ -223,11 +204,28 @@ export function ArticlesSearchClient({
     fetchList(next, 1, pageSize);
   };
 
-  const handleCategorySelect = (cat: CategoryWithCounts, isChild: boolean) => {
+  const handleCategorySelect = (cat: CategoryWithCounts) => {
+    const currentIds = filters.categoryIds ?? [];
+    const isSelected = currentIds.includes(cat.id);
+
+    let nextIds: number[];
+
+    if (isSelected) {
+      // 取消选择：移除该分类
+      nextIds = currentIds.filter(id => id !== cat.id);
+    } else {
+      // 选择：移除同级分类，添加新分类
+      const siblingIds = currentIds.filter(id => {
+        const existingCat = findCategoryById(categories, id);
+        return existingCat && isSiblingCategory(cat, existingCat);
+      });
+      // 移除同级分类，添加新分类
+      nextIds = [...currentIds.filter(id => !siblingIds.includes(id)), cat.id];
+    }
+
     const next = {
       ...filters,
-      categoryId: cat.id,
-      categoryLevel: (isChild ? 2 : 1) as 1 | 2,
+      categoryIds: nextIds.length > 0 ? nextIds : undefined,
     };
     setFilters(next);
     setPage(1);
@@ -254,7 +252,11 @@ export function ArticlesSearchClient({
   };
 
   const clearFilters = () => {
-    const next: ArticlesFilters = { sort: 'publishedAt:desc' };
+    const next: ArticlesFilters = {
+      sort: 'publishedAt:desc',
+      categoryIds: undefined,
+      tagIds: undefined,
+    };
     setFilters(next);
     setPage(1);
     setPageSize(10);
@@ -269,8 +271,7 @@ export function ArticlesSearchClient({
           <FiltersPanel
             categories={categories}
             tags={tags}
-            selectedCategoryId={filters.categoryId}
-            selectedCategoryLevel={filters.categoryLevel}
+            selectedCategoryIds={filters.categoryIds ?? []}
             selectedTagIds={filters.tagIds ?? []}
             onCategorySelect={handleCategorySelect}
             onTagToggle={handleTagToggle}
@@ -359,8 +360,7 @@ export function ArticlesSearchClient({
 function FiltersPanel({
   categories,
   tags,
-  selectedCategoryId,
-  selectedCategoryLevel: _selectedCategoryLevel,
+  selectedCategoryIds,
   selectedTagIds,
   onCategorySelect,
   onTagToggle,
@@ -368,10 +368,9 @@ function FiltersPanel({
 }: {
   categories: CategoryWithCounts[];
   tags: TagOption[];
-  selectedCategoryId?: number;
-  selectedCategoryLevel?: 1 | 2;
+  selectedCategoryIds: number[];
   selectedTagIds: number[];
-  onCategorySelect: (cat: CategoryWithCounts, isChild: boolean) => void;
+  onCategorySelect: (cat: CategoryWithCounts) => void;
   onTagToggle: (id: number, checked: boolean) => void;
   onClear: () => void;
 }) {
@@ -393,7 +392,7 @@ function FiltersPanel({
   }> = [];
 
   // 添加已选分类
-  if (selectedCategoryId) {
+  selectedCategoryIds.forEach(categoryId => {
     const findCategory = (
       list: CategoryWithCounts[],
       id: number
@@ -407,7 +406,7 @@ function FiltersPanel({
       }
       return undefined;
     };
-    const selectedCat = findCategory(categories, selectedCategoryId);
+    const selectedCat = findCategory(categories, categoryId);
     if (selectedCat) {
       chips.push({
         type: 'category',
@@ -415,7 +414,7 @@ function FiltersPanel({
         label: selectedCat.name,
       });
     }
-  }
+  });
 
   // 添加已选标签
   selectedTagIds.forEach(tagId => {
@@ -451,10 +450,26 @@ function FiltersPanel({
               type="button"
               onClick={() => {
                 if (chip.type === 'category') {
-                  onCategorySelect(
-                    { id: chip.id } as CategoryWithCounts,
-                    false
-                  );
+                  const findCategory = (
+                    list: CategoryWithCounts[],
+                    id: number
+                  ): CategoryWithCounts | undefined => {
+                    for (const cat of list) {
+                      if (cat.id === id) return cat;
+                      if (cat.children) {
+                        const found = findCategory(
+                          cat.children as CategoryWithCounts[],
+                          id
+                        );
+                        if (found) return found;
+                      }
+                    }
+                    return undefined;
+                  };
+                  const category = findCategory(categories, chip.id);
+                  if (category) {
+                    onCategorySelect(category);
+                  }
                 } else {
                   onTagToggle(chip.id, false);
                 }
@@ -502,19 +517,17 @@ function FiltersPanel({
                     {category.children && category.children.length > 0 ? (
                       category.children.map(child => {
                         // 高亮判断逻辑：
-                        // 1. 如果 selectedCategoryId 存在且匹配，且是二级分类（selectedCategoryLevel === 2），则高亮（立即反馈）
-                        // 2. 如果 selectedCategoryId 不存在或不匹配，且当前路由的 slug 匹配二级分类的 slug，则高亮（从 URL 初始化）
+                        // 1. 如果 selectedCategoryIds 包含当前分类 ID，则高亮（立即反馈）
+                        // 2. 如果 selectedCategoryIds 为空，且当前路由的 slug 匹配二级分类的 slug，则高亮（从 URL 初始化）
                         // 只高亮二级分类（确保不会高亮一级分类）
-                        const isSelectedById =
-                          selectedCategoryId === child.id &&
-                          _selectedCategoryLevel === 2;
+                        const isSelectedById = selectedCategoryIds.includes(
+                          child.id
+                        );
                         const isSelectedBySlug =
+                          selectedCategoryIds.length === 0 &&
                           currentCategorySlug &&
                           currentCategorySlug !== 'all' &&
-                          child.slug === currentCategorySlug &&
-                          // 如果 selectedCategoryId 存在但不匹配当前 child，不使用 slug 判断（避免旧分类高亮）
-                          (selectedCategoryId === undefined ||
-                            selectedCategoryId === child.id);
+                          child.slug === currentCategorySlug;
                         const childSelected =
                           isSelectedById || isSelectedBySlug;
                         return (
@@ -522,10 +535,7 @@ function FiltersPanel({
                             key={child.id}
                             type="button"
                             onClick={() =>
-                              onCategorySelect(
-                                child as CategoryWithCounts,
-                                true
-                              )
+                              onCategorySelect(child as CategoryWithCounts)
                             }
                             className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                               childSelected
@@ -730,17 +740,64 @@ function findCategoryBySlug<T extends { slug: string; children?: T[] }>(
   return undefined;
 }
 
+/**
+ * 判断两个分类是否同级
+ * 如果两个分类的 parentId 相同，则为同级
+ */
+function isSiblingCategory(
+  cat1: CategoryWithCounts,
+  cat2: CategoryWithCounts
+): boolean {
+  const parentId1 = cat1.parent?.id ?? null;
+  const parentId2 = cat2.parent?.id ?? null;
+  return parentId1 === parentId2;
+}
+
+/**
+ * 根据 ID 查找分类
+ */
+function findCategoryById(
+  categories: CategoryWithCounts[],
+  id: number
+): CategoryWithCounts | undefined {
+  for (const cat of categories) {
+    if (cat.id === id) return cat;
+    if (cat.children) {
+      const found = findCategoryById(cat.children as CategoryWithCounts[], id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 function parseFiltersFromSearchParams(
   sp: ReturnType<typeof useSearchParams>,
   fallbackSort: ArticleSort
 ) {
   const tagIds = sp.get('tagIds');
+  const categoryIds = sp.get('categoryIds');
+  // 向后兼容：支持旧的 categoryId 和 categoryLevel 参数
+  const oldCategoryId = sp.get('categoryId');
+
+  let parsedCategoryIds: number[] | undefined;
+
+  if (categoryIds) {
+    // 新格式：categoryIds CSV
+    parsedCategoryIds = categoryIds
+      .split(',')
+      .map(id => Number(id))
+      .filter(Boolean);
+  } else if (oldCategoryId) {
+    // 向后兼容：旧的 categoryId 单个值
+    parsedCategoryIds = [Number(oldCategoryId)];
+  }
+
   return {
     q: sp.get('q') || undefined,
-    categoryId: sp.get('categoryId') ? Number(sp.get('categoryId')) : undefined,
-    categoryLevel: sp.get('categoryLevel')
-      ? (Number(sp.get('categoryLevel')) as 1 | 2)
-      : undefined,
+    categoryIds:
+      parsedCategoryIds && parsedCategoryIds.length > 0
+        ? parsedCategoryIds
+        : undefined,
     tagIds: tagIds
       ? tagIds
           .split(',')

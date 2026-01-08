@@ -1,3 +1,7 @@
+import type { HeroSlide } from '@/app/components/HeroCarousel';
+import { extractImageUrl } from '@prism/shared';
+import type { CarouselItemResponse } from '../../lib/api/carousel';
+import { getCarouselItems } from '../../lib/api/carousel';
 import { getFilterTypes, searchRecipes } from '../../lib/api/recipes';
 import { RecipesClient } from './RecipesClient';
 import type { SelectedFilters } from './types';
@@ -9,6 +13,35 @@ type RecipesPageProps = {
 };
 
 const DEFAULT_PAGE_SIZE = 12;
+
+/**
+ * 将 API 返回的数据转换为 HeroSlide 格式
+ */
+function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
+  return items
+    .filter(item => item.enabled) // 只显示启用的项
+    .sort((a, b) => a.order - b.order) // 按 order 排序
+    .map(item => {
+      // 提取图片 URL（优先使用 large 格式）
+      const imageUrl = extractImageUrl(item.coverImage, 'large');
+
+      // 构建链接 URL
+      let linkUrl: string | undefined;
+      if (item.linkType === 'internal' && item.linkUrl) {
+        linkUrl = item.linkUrl;
+      } else if (item.linkType === 'external' && item.linkUrl) {
+        linkUrl = item.linkUrl;
+      }
+
+      return {
+        image: imageUrl || '',
+        alt: item.coverImage.alternativeText || item.title,
+        title: item.title,
+        description: item.description || undefined,
+        link: linkUrl,
+      };
+    });
+}
 
 function parseNumber(value: string | string[] | undefined, fallback: number) {
   if (Array.isArray(value)) {
@@ -64,26 +97,34 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   const selectedFilters = buildSelectedFilters(resolvedSearchParams);
 
   // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
-  const [filterTypesResponse, recipesResponse] = await Promise.all([
-    getFilterTypes().catch(() => ({ data: [] })), // 构建时失败返回空数组
-    searchRecipes({
-      page,
-      pageSize,
-      includeFacets: true,
-      ...selectedFilters,
-    }).catch(() => ({
-      data: [],
-      meta: {
-        pagination: {
-          page,
-          pageSize,
-          pageCount: 0,
-          total: 0,
+  const [carouselRes, filterTypesResponse, recipesResponse] = await Promise.all(
+    [
+      getCarouselItems('recipe').catch(error => {
+        console.error('[RecipesPage] Failed to fetch carousel items:', error);
+        return { data: [] };
+      }),
+      getFilterTypes().catch(() => ({ data: [] })), // 构建时失败返回空数组
+      searchRecipes({
+        page,
+        pageSize,
+        includeFacets: true,
+        ...selectedFilters,
+      }).catch(() => ({
+        data: [],
+        meta: {
+          pagination: {
+            page,
+            pageSize,
+            pageCount: 0,
+            total: 0,
+          },
+          facets: null,
         },
-        facets: null,
-      },
-    })), // 构建时失败返回空数据
-  ]);
+      })), // 构建时失败返回空数据
+    ]
+  );
+
+  const slides = transformToHeroSlides(carouselRes.data);
 
   return (
     <RecipesClient
@@ -94,6 +135,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
       selectedFilters={selectedFilters}
       page={page}
       pageSize={pageSize}
+      carouselSlides={slides}
     />
   );
 }

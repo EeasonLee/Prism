@@ -1,7 +1,6 @@
 'use client';
 
 import { debounce } from '@prism/shared';
-import { Button } from '@prism/ui/components/button';
 import { Loader } from '@prism/ui/components/loader';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
@@ -86,33 +85,36 @@ export function ArticleSearchBox({
     }
   };
 
-  // 跳转到搜索结果页
-  const navigateToResults = useCallback(
-    (q: string) => {
-      const trimmed = q.trim();
-      if (!trimmed) return;
-      // 使用 /blog/all 作为 category，添加类型断言以支持 Next.js typedRoutes
-      const url = `/blog/all?q=${encodeURIComponent(trimmed)}` as Route;
+  // 跳转到文章详情页
+  const navigateToArticle = useCallback(
+    (item: SuggestionItem) => {
+      if (!item.slug) return;
+
+      // 获取文章的第一个分类 slug，如果没有分类则使用 'all'
+      const categorySlug = item.categories?.[0]?.slug || 'all';
+      const url = `/blog/${categorySlug}/${item.slug}` as Route;
       router.push(url);
+      setShowSuggestions(false);
+      setKeyword('');
     },
     [router]
   );
 
-  // 处理提交搜索
+  // 处理提交搜索（快速搜索：如果有建议，跳转到第一个建议）
   const handleSubmit = useCallback(() => {
-    navigateToResults(keyword);
-    setShowSuggestions(false);
-  }, [keyword, navigateToResults]);
+    if (suggestions.length > 0) {
+      // 如果有建议，跳转到第一个建议的文章详情页
+      navigateToArticle(suggestions[0]);
+    }
+    // 如果没有建议，不做任何操作（快速搜索模式）
+  }, [suggestions, navigateToArticle]);
 
-  // 处理选择建议项
+  // 处理选择建议项（直接跳转到文章详情页）
   const handleSelectSuggestion = useCallback(
     (item: SuggestionItem) => {
-      // 提取纯文本标题（去除 HTML 标签）
-      const cleanTitle = item.title.replace(/<[^>]+>/g, '').trim();
-      navigateToResults(cleanTitle);
-      setShowSuggestions(false);
+      navigateToArticle(item);
     },
-    [navigateToResults]
+    [navigateToArticle]
   );
 
   // 处理键盘事件
@@ -209,7 +211,7 @@ export function ArticleSearchBox({
                 setSuggestions([]);
                 setShowSuggestions(false);
               }}
-              className="mr-2 flex items-center justify-center rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              className="mr-4 flex items-center justify-center rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               aria-label="Clear search"
             >
               <svg
@@ -227,17 +229,6 @@ export function ArticleSearchBox({
               </svg>
             </button>
           )}
-
-          {/* 搜索按钮 */}
-          <div className="pr-2">
-            <Button
-              onClick={handleSubmit}
-              disabled={!keyword.trim()}
-              className="rounded-xl px-6 py-2.5 font-semibold shadow-md transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Search
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -313,7 +304,7 @@ export function ArticleSearchBox({
             <kbd className="rounded bg-white px-1.5 py-0.5 font-mono shadow">
               Enter
             </kbd>{' '}
-            to search,{' '}
+            to open the first result,{' '}
             <kbd className="rounded bg-white px-1.5 py-0.5 font-mono shadow">
               Esc
             </kbd>{' '}
