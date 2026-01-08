@@ -79,7 +79,7 @@ export function RecipeHeader({
 
     // 当输入框被清空（比如通过浏览器默认清除按钮）且之前有搜索内容时，自动触发搜索更新
     if (newValue === '' && lastSubmittedQueryRef.current !== '') {
-      handleClearSearch();
+      void handleClearSearch();
     }
   };
 

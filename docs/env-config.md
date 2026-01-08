@@ -116,27 +116,43 @@ NEXT_PUBLIC_API_URL=http://192.168.50.244:1337
 
 - 控制日志输出级别
 - 影响服务端和客户端的日志输出
+- **注意**：对于 API 请求日志有特殊处理（见下方说明）
 
 **可选值**：
 
-- `debug` - 最详细，包含所有日志（包括 API 请求日志）
+- `debug` - 最详细，包含所有日志
 - `info` - 默认级别，显示信息和警告
 - `warn` - 只显示警告和错误
 - `error` - 只显示错误
 
+**API 请求日志的特殊行为**：
+
+- **开发环境** (`NODE_ENV=development`)：
+
+  - 总是显示所有 API 请求日志（包括成功和错误）
+  - 不受 `NEXT_PUBLIC_LOG_LEVEL` 影响
+  - 便于开发调试
+
+- **生产环境** (`NODE_ENV=production`)：
+  - `debug`：显示所有 API 请求日志（包括成功和错误）
+  - `info/warn/error`：只显示错误请求日志（status >= 400）
+
 **推荐配置**：
 
-- 开发环境：`debug`（查看详细的 API 请求日志）
-- 生产环境：`error`（只记录错误）
+- 开发环境：`debug`（查看所有日志，但 API 请求日志总是显示）
+- 生产环境：`error`（只记录错误，包括错误 API 请求）
 
 **示例**：
 
 ```bash
-# 开发环境 - 查看所有日志
+# 开发环境 - API 请求日志总是显示，其他日志按级别过滤
 NEXT_PUBLIC_LOG_LEVEL=debug
 
-# 生产环境 - 只记录错误
+# 生产环境 - 只记录错误 API 请求和其他错误日志
 NEXT_PUBLIC_LOG_LEVEL=error
+
+# 生产环境 - 如果需要查看所有 API 请求日志
+NEXT_PUBLIC_LOG_LEVEL=debug
 ```
 
 ### `STRAPI_API_TOKEN`
@@ -283,3 +299,4 @@ STRAPI_API_TOKEN=your_production_token
 - 环境变量定义：`apps/prism/lib/env.ts`
 - 日志配置：`apps/prism/lib/observability/logger.ts`
 - API 配置：`apps/prism/lib/api/config.ts`
+- 请求日志：`apps/prism/lib/api/interceptors/request-logger.ts`

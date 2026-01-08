@@ -3,7 +3,7 @@ import type {
   ArticleTag,
   ArticleListItem,
   ArticleSort,
-} from '@/lib/api/articles';
+} from '@prism/blog';
 
 export type ArticleItem = ArticleListItem;
 
@@ -22,8 +22,7 @@ export interface ArticlesSearchInitialData {
 
 export interface ArticlesFilters {
   q?: string;
-  categoryId?: number;
-  categoryLevel?: 1 | 2;
+  categoryIds?: number[];
   tagIds?: number[];
   sort: ArticleSort;
   locale?: string;

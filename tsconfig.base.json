@@ -20,8 +20,14 @@
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@prism/*": ["libs/*"],
-      "@prism/prism/*": ["apps/prism/*"]
+      "@prism/blog": ["libs/blog/src/index.ts"],
+      "@prism/blog/*": ["libs/blog/src/*"],
+      "@prism/prism/*": ["apps/prism/*"],
+      "@prism/recipe/*": ["libs/recipe/*"],
+      "@prism/shared": ["libs/shared/src/index.ts"],
+      "@prism/shared/*": ["libs/shared/*"],
+      "@prism/ui": ["libs/ui/src/index.ts"],
+      "@prism/ui/*": ["libs/ui/src/*"]
     },
     "allowJs": false,
     "forceConsistentCasingInFileNames": true,
