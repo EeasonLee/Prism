@@ -1,5 +1,25 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+
+# 检测是否在 WSL 环境中（通过检查 /proc/version 或 WSL_DISTRO_NAME）
+# 如果在 WSL 中，过滤掉 Windows 路径（/mnt/ 开头），避免使用 Windows 的 pnpm
+if [ -n "$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/version 2>/dev/null; then
+  # WSL 环境：过滤掉 Windows 路径，优先使用 WSL 本地路径
+  export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/mnt/' | tr '\n' ':' | sed 's/:$//')
+  
+  # 确保 WSL 中的 pnpm 路径在 PATH 中（如果存在）
+  if [ -d "$HOME/.volta/bin" ] && ! echo "$PATH" | grep -q "$HOME/.volta/bin"; then
+    export PATH="$HOME/.volta/bin:$PATH"
+  fi
+fi
+
+# 如果 pnpm 仍然找不到，尝试使用常见的路径
+if ! command -v pnpm >/dev/null 2>&1; then
+  if [ -f "$HOME/.volta/bin/pnpm" ]; then
+    export PATH="$HOME/.volta/bin:$PATH"
+  elif [ -f "$HOME/.local/share/pnpm/pnpm" ]; then
+    export PATH="$HOME/.local/share/pnpm:$PATH"
+  fi
+fi
 
 # 运行 lint-staged（格式化代码）
 pnpm lint-staged
