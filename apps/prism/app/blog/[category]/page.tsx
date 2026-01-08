@@ -1,21 +1,21 @@
-import { PageContainer } from '@/app/components/PageContainer';
 import {
   fetchArticleCategories,
   fetchArticleTags,
   fetchCategoryCounts,
   searchArticles,
   type CategoryDetail,
-} from '@/lib/api/articles';
-import { redirect } from 'next/navigation';
-import { ArticleSearchBox } from '../components/ArticleSearchBox';
-import { ArticlesSearchClient } from '../components/ArticlesSearchClient';
-import { Breadcrumb } from '../components/Breadcrumb';
+} from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
 import type {
   ArticlesFilters,
   ArticlesSearchInitialData,
   CategoryWithCounts,
   TagOption,
-} from '../types';
+} from '@prism/blog';
+import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
+import { ArticlesSearchClient } from '@prism/blog/components/ArticlesSearchClient';
+import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import { redirect } from 'next/navigation';
 
 export const revalidate = 60;
 
@@ -52,15 +52,34 @@ function parseFilters(
   resolvedSearchParams: Record<string, string | string[] | undefined>,
   _categorySlug: string
 ): ArticlesFilters {
+  // 解析 categoryIds（CSV 格式）
+  const categoryIdsParam = Array.isArray(resolvedSearchParams.categoryIds)
+    ? resolvedSearchParams.categoryIds[0]
+    : resolvedSearchParams.categoryIds;
+  const categoryIds = categoryIdsParam
+    ? categoryIdsParam
+        .split(',')
+        .map(id => parseNumber(id))
+        .filter((id): id is number => id !== undefined)
+    : undefined;
+
+  // 向后兼容：支持旧的 categoryId 参数
+  const oldCategoryId = parseNumber(resolvedSearchParams.categoryId);
+
+  let finalCategoryIds: number[] | undefined;
+  if (categoryIds && categoryIds.length > 0) {
+    // 新格式：categoryIds CSV
+    finalCategoryIds = categoryIds;
+  } else if (oldCategoryId) {
+    // 向后兼容：旧的 categoryId 单个值
+    finalCategoryIds = [oldCategoryId];
+  }
+
   return {
     q: Array.isArray(resolvedSearchParams.q)
       ? resolvedSearchParams.q[0]
       : resolvedSearchParams.q,
-    categoryId: parseNumber(resolvedSearchParams.categoryId),
-    categoryLevel: parseNumber(resolvedSearchParams.categoryLevel) as
-      | 1
-      | 2
-      | undefined,
+    categoryIds: finalCategoryIds,
     tagIds: parseNumberArray(resolvedSearchParams.tagIds),
     sort: parseSort(resolvedSearchParams.sort),
     locale: Array.isArray(resolvedSearchParams.locale)
@@ -134,25 +153,16 @@ export default async function BlogCategoryPage({
       ? findCategory(mergedCategories, effectiveCategorySlug)
       : undefined;
 
-  // 判断分类级别：如果有 parent，则是二级分类；否则是一级分类
-  const determineCategoryLevel = (
-    category: CategoryWithCounts | undefined
-  ): 1 | 2 | undefined => {
-    if (!category) return undefined;
-    // 如果有 parent 且 parent 不为 null，则是二级分类
-    return category.parent && category.parent !== null ? 2 : 1;
-  };
-
   // 构建最终的筛选条件
   const finalFilters: ArticlesFilters = {
     ...filters,
-    // 如果 URL 参数中没有 categoryId，但路由中有分类 slug，则使用该分类
-    categoryId:
-      filters.categoryId ??
-      (categoryFromSlug ? categoryFromSlug.id : undefined),
-    categoryLevel:
-      filters.categoryLevel ??
-      (categoryFromSlug ? determineCategoryLevel(categoryFromSlug) : undefined),
+    // 如果 URL 参数中没有 categoryIds，但路由中有分类 slug，则使用该分类
+    categoryIds:
+      filters.categoryIds && filters.categoryIds.length > 0
+        ? filters.categoryIds
+        : categoryFromSlug
+        ? [categoryFromSlug.id]
+        : undefined,
   };
 
   // 获取文章数据
@@ -174,24 +184,25 @@ export default async function BlogCategoryPage({
     degraded: articlesRes.meta.degraded,
   };
 
+  // 构建面包屑项
+  const breadcrumbItems = [{ label: 'Blog', href: '/blog' }];
+  if (categorySlug === 'all') {
+    // 当路由是 /blog/all 时，显示 "Blog > All"
+    breadcrumbItems.push({ label: 'All', href: '/blog/all' });
+  } else if (currentCategory) {
+    // 当有具体分类时，显示分类名称
+    breadcrumbItems.push({
+      label: currentCategory.name,
+      href: `/blog/${currentCategory.slug}`,
+    });
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
         <PageContainer className="py-4">
-          <Breadcrumb
-            items={[
-              { label: 'Blog', href: '/blog' },
-              ...(currentCategory
-                ? [
-                    {
-                      label: currentCategory.name,
-                      href: `/blog/${currentCategory.slug}`,
-                    },
-                  ]
-                : []),
-            ]}
-          />
+          <Breadcrumb items={breadcrumbItems} />
         </PageContainer>
       </div>
 
@@ -216,17 +227,15 @@ export default async function BlogCategoryPage({
         </PageContainer>
       </div>
 
-      <PageContainer fullWidth className="py-8">
-        <ArticlesSearchClient
-          initialCategorySlug={effectiveCategorySlug}
-          categories={mergedCategories}
-          tags={tags as TagOption[]}
-          initialFilters={finalFilters}
-          initialPage={page}
-          initialPageSize={pageSize}
-          initialData={initialData}
-        />
-      </PageContainer>
+      <ArticlesSearchClient
+        initialCategorySlug={effectiveCategorySlug}
+        categories={mergedCategories}
+        tags={tags as TagOption[]}
+        initialFilters={finalFilters}
+        initialPage={page}
+        initialPageSize={pageSize}
+        initialData={initialData}
+      />
     </div>
   );
 }

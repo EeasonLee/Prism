@@ -1,2 +1,23 @@
-#!/bin/sh
-npx --no-install commitlint --edit $1
+#!/usr/bin/env sh
+# husky 9.x 不需要 source husky.sh
+
+# 切换到项目根目录（.husky 的父目录）
+PROJECT_ROOT="$(cd "$(dirname -- "$0")/.." && pwd)" || exit 1
+cd "$PROJECT_ROOT" || exit 1
+
+# 在 WSL 中过滤 Windows 路径，避免使用 Windows 的工具
+if [ -n "$WSL_DISTRO_NAME" ] || grep -qi microsoft /proc/version 2>/dev/null; then
+  export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/mnt/' | tr '\n' ':' | sed 's/:$//')
+  [ -d "$HOME/.volta/bin" ] && export PATH="$HOME/.volta/bin:$PATH"
+fi
+
+# 确保项目本地的 node_modules/.bin 在 PATH 中
+export PATH="$PROJECT_ROOT/node_modules/.bin:$PATH"
+
+# 直接使用绝对路径执行 commitlint
+if [ -f "$PROJECT_ROOT/node_modules/.bin/commitlint" ]; then
+  "$PROJECT_ROOT/node_modules/.bin/commitlint" --edit "$1"
+else
+  # 如果文件不存在，尝试使用 npx
+  npx --no-install commitlint --edit "$1"
+fi

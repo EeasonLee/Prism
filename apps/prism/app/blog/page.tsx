@@ -1,13 +1,14 @@
-import { PageContainer } from '@/app/components/PageContainer';
-import { extractImageUrl } from '@/lib/utils/image';
-import { fetchCategoryByType } from '../../lib/api/articles';
+import type { HeroSlide } from '@/app/components/HeroCarousel';
+import { HeroCarousel } from '@/app/components/HeroCarousel';
+import { fetchCategoryByType } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
+import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
+import { ProductCategories } from '@prism/blog/components/ProductCategories';
+import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
+import { extractImageUrl } from '@prism/shared';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
-import type { HeroSlide } from '../components/HeroCarousel';
-import { HeroCarousel } from '../components/HeroCarousel';
-import { ArticleSearchBox } from './components/ArticleSearchBox';
-import { ProductCategories } from './components/ProductCategories';
-import { ThemeCategories } from './components/ThemeCategories';
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
@@ -40,18 +41,27 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 
 export default async function BlogPage() {
   // 服务端获取轮播图数据、产品分类和主题分类
-  // 构建时如果 API 不可用或权限不足，返回空数据以允许构建继续
   const [carouselRes, categoryRes, themeRes] = await Promise.all([
-    getCarouselItems('article').catch(() => ({ data: [] })), // 构建时失败返回空数组
-    fetchCategoryByType('product').catch(() => null), // 如果获取失败，返回 null
-    fetchCategoryByType('theme', { includeChildrenArticles: true }).catch(
-      () => null
-    ), // 如果获取失败，返回 null
+    getCarouselItems('article').catch(error => {
+      console.error('[BlogPage] Failed to fetch carousel items:', error);
+      return { data: [] };
+    }),
+    fetchCategoryByType('product').catch(error => {
+      console.error('[BlogPage] Failed to fetch product categories:', error);
+      return null;
+    }),
+    fetchCategoryByType('theme', {
+      includeChildrenArticles: true,
+    }).catch(error => {
+      console.error('[BlogPage] Failed to fetch theme category:', error);
+      return null;
+    }),
   ]);
 
   const slides = transformToHeroSlides(carouselRes.data);
-  const productCategories = categoryRes?.data?.children || [];
-  const themeCategory = themeRes?.data || null;
+  const productCategories: CategoryDetail[] =
+    categoryRes?.data?.[0]?.children || [];
+  const themeCategory = themeRes?.data[0] || null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">

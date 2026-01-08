@@ -30,9 +30,15 @@ jobs:
 
       - name: Run ESLint
         run: pnpm lint
+        continue-on-error: false
 
       - name: Run TypeScript type check
         run: pnpm typecheck
+        continue-on-error: false
+
+      - name: Check module boundaries
+        run: pnpm nx graph --file=graph.json && pnpm nx lint prism
+        continue-on-error: false
 
   build:
     name: Build
