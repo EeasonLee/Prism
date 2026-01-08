@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import { fetchArticleBySlug, fetchArticleCategories } from '@prism/blog';
+import { fetchArticleBySlug, fetchArticleCategories } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
 import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
 import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
 

@@ -5,7 +5,7 @@ import {
   fetchCategoryCounts,
   searchArticles,
   type CategoryDetail,
-} from '@prism/blog';
+} from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
 import { redirect } from 'next/navigation';
 import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
 import { ArticlesSearchClient } from '@prism/blog/components/ArticlesSearchClient';
@@ -174,24 +174,25 @@ export default async function BlogCategoryPage({
     degraded: articlesRes.meta.degraded,
   };
 
+  // 构建面包屑项
+  const breadcrumbItems = [{ label: 'Blog', href: '/blog' }];
+  if (categorySlug === 'all') {
+    // 当路由是 /blog/all 时，显示 "Blog > All"
+    breadcrumbItems.push({ label: 'All', href: '/blog/all' });
+  } else if (currentCategory) {
+    // 当有具体分类时，显示分类名称
+    breadcrumbItems.push({
+      label: currentCategory.name,
+      href: `/blog/${currentCategory.slug}`,
+    });
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
         <PageContainer className="py-4">
-          <Breadcrumb
-            items={[
-              { label: 'Blog', href: '/blog' },
-              ...(currentCategory
-                ? [
-                    {
-                      label: currentCategory.name,
-                      href: `/blog/${currentCategory.slug}`,
-                    },
-                  ]
-                : []),
-            ]}
-          />
+          <Breadcrumb items={breadcrumbItems} />
         </PageContainer>
       </div>
 
