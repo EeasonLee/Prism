@@ -1,4 +1,5 @@
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import type { Route } from 'next';
 import Link from 'next/link';
 import type { ArticleDetail } from '../api/types';
 
@@ -133,7 +134,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                 return (
                   <Link
                     key={relatedArticle.id}
-                    href={articleUrl}
+                    href={articleUrl as Route}
                     className="group block transition-transform hover:scale-[1.02]"
                   >
                     <div className="flex gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50">
