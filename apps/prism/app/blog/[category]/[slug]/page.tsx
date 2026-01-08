@@ -1,8 +1,9 @@
-import { notFound, redirect } from 'next/navigation';
-import { PageContainer } from '@prism/ui/components/PageContainer';
 import { fetchArticleBySlug, fetchArticleCategories } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
-import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
 import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
+import { ArticleSidebar } from '@prism/blog/components/ArticleSidebar';
+import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import { notFound, redirect } from 'next/navigation';
 
 type ArticleDetailPageProps = {
   params: Promise<{
@@ -70,6 +71,14 @@ export default async function ArticleDetailPage({
       ? findCategory(categories, actualCategorySlug)
       : undefined;
 
+    // 检查是否有侧边栏内容
+    const hasProducts = article.products && article.products.length > 0;
+    const hasRelatedArticles =
+      article.relatedArticles &&
+      Array.isArray(article.relatedArticles) &&
+      article.relatedArticles.length > 0;
+    const hasSidebarContent = hasProducts || hasRelatedArticles;
+
     return (
       <div className="min-h-screen bg-white">
         {/* Breadcrumb */}
@@ -93,7 +102,25 @@ export default async function ArticleDetailPage({
         </div>
 
         <PageContainer className="py-8">
-          <ArticleDetail article={article} />
+          <div
+            className={
+              hasSidebarContent
+                ? 'grid gap-8 lg:grid-cols-[1fr,360px]'
+                : 'w-full'
+            }
+          >
+            {/* 文章内容 */}
+            <div className="min-w-0">
+              <ArticleDetail article={article} />
+            </div>
+
+            {/* 右侧固定栏 - 只在有内容时显示 */}
+            {hasSidebarContent && (
+              <div className="hidden lg:block">
+                <ArticleSidebar article={article} />
+              </div>
+            )}
+          </div>
         </PageContainer>
       </div>
     );

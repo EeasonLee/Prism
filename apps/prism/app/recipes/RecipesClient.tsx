@@ -1,10 +1,11 @@
 'use client';
 
+import type { HeroSlide } from '@/app/components/HeroCarousel';
+import { HeroCarousel } from '@/app/components/HeroCarousel';
 import { Loader } from '@prism/ui/components/loader';
-import Image from 'next/image';
+import { PageContainer } from '@prism/ui/components/PageContainer';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { PageContainer } from '@prism/ui/components/PageContainer';
 import { FiltersPanel } from './components/FiltersPanel';
 import { Pagination } from './components/Pagination';
 import { RecipeGrid } from './components/RecipeGrid';
@@ -26,6 +27,7 @@ interface RecipesClientProps {
   selectedFilters: SelectedFilters;
   page: number;
   pageSize: number;
+  carouselSlides?: HeroSlide[];
 }
 
 function parseFiltersFromSearchParams(
@@ -63,6 +65,7 @@ export function RecipesClient({
   selectedFilters: initialSelectedFilters,
   page: _initialPage,
   pageSize: initialPageSize,
+  carouselSlides = [],
 }: RecipesClientProps) {
   const searchParams = useSearchParams();
   const { recipes, facets, pagination, isLoading, refetch } = useRecipesData(
@@ -123,42 +126,20 @@ export function RecipesClient({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Static inspiration section */}
-      <div className="bg-[#f6f6f6]">
-        <PageContainer
-          fullWidth
-          className="flex flex-col gap-8 py-12 lg:flex-row lg:items-center lg:gap-12"
-        >
-          <div className="flex-1 space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-700">
-              Recipe Inspiration
-            </p>
-            <h1 className="text-3xl font-bold leading-tight text-gray-900">
-              Our recipe library is here to help you get the most out of your
-              Joydeem® appliances and cookware.
-            </h1>
-            <p className="text-base leading-relaxed text-gray-700">
-              Whether you need ideas for breakfast, lunch, dinner, dessert, or
-              snacks, we have.
-            </p>
-          </div>
-          <div className="flex-1">
-            <div className="overflow-hidden rounded-lg shadow-md">
-              <Image
-                src="https://www.cuisinart.com/dw/image/v2/ABAF_PRD/on/demandware.static/-/Sites-us-cuisinart-sfra-Library/default/dw75c0fcb3/images/recipe-Images/07_28_fusionfrittata.jpg?sw=704&sh=396&q=100"
-                alt="Recipe inspiration"
-                width={704}
-                height={396}
-                className="h-full w-full object-cover"
-                sizes="(max-width: 1024px) 100vw, 704px"
-                priority
-              />
-            </div>
-          </div>
-        </PageContainer>
-      </div>
+      {/* Hero Carousel */}
+      {carouselSlides.length > 0 && (
+        <div className="relative">
+          <HeroCarousel
+            slides={carouselSlides}
+            autoPlayInterval={5000}
+            showIndicators
+            showNavigation
+            showContent={false}
+          />
+        </div>
+      )}
 
-      <PageContainer fullWidth className="py-8">
+      <PageContainer className="py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           {hasAvailableFilters && (
             <aside className="w-full lg:w-64 lg:flex-shrink-0">

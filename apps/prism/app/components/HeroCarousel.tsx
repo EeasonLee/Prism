@@ -1,9 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import { cn } from '@prism/shared';
-import Autoplay from 'embla-carousel-autoplay';
-import { useEffect, useState } from 'react';
 import {
   Carousel,
   CarouselContent,
@@ -12,6 +9,9 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from '@prism/ui/components/carousel';
+import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import Autoplay from 'embla-carousel-autoplay';
+import { useEffect, useState } from 'react';
 
 export interface HeroSlide {
   image: string;
@@ -27,6 +27,7 @@ interface HeroCarouselProps {
   autoPlayInterval?: number; // 自动播放间隔（毫秒），默认 5000
   showIndicators?: boolean; // 是否显示指示器
   showNavigation?: boolean; // 是否显示导航箭头
+  showContent?: boolean; // 是否显示文字内容和遮罩，默认 true
 }
 
 export function HeroCarousel({
@@ -35,6 +36,7 @@ export function HeroCarousel({
   autoPlayInterval = 5000,
   showIndicators = true,
   showNavigation = true,
+  showContent = true,
 }: HeroCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
@@ -80,11 +82,11 @@ export function HeroCarousel({
                   sizes="100vw"
                 />
                 {/* 渐变遮罩，用于文字显示 */}
-                {(slide.title || slide.description) && (
+                {showContent && (slide.title || slide.description) && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 )}
                 {/* 文字内容 */}
-                {(slide.title || slide.description) && (
+                {showContent && (slide.title || slide.description) && (
                   <div className="absolute bottom-0 left-0 right-0 z-10 p-8 text-white md:p-16">
                     <div className="mx-auto max-w-7xl text-center">
                       {slide.title && (
@@ -102,7 +104,7 @@ export function HeroCarousel({
                           href={slide.link}
                           className="inline-block rounded-md bg-white px-6 py-3 text-gray-900 transition hover:bg-gray-100"
                         >
-                          了解更多
+                          Learn More
                         </a>
                       )}
                     </div>

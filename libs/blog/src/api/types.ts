@@ -177,7 +177,21 @@ export interface ArticleDetail {
   viewCount: number;
   helpful: number;
   notHelpful: number;
-  product: unknown | null;
+  products?: Array<{
+    id: number;
+    documentId?: string;
+    name: string;
+    sku?: string;
+    url?: string;
+    slug?: string;
+    shortDescription?: string;
+    description?: string;
+    price?: number;
+    isActive?: boolean;
+    isFeatured?: boolean;
+    stock?: number;
+    image?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -264,7 +278,44 @@ export interface ArticleDetail {
     locale: string | null;
   } | null;
   seo: unknown | null;
-  relatedArticles: unknown[];
+  relatedArticles?: Array<{
+    id: number;
+    documentId?: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    publishedAt: string;
+    viewCount?: number;
+    featuredImage?:
+      | {
+          id: number;
+          documentId: string;
+          name: string;
+          alternativeText: string | null;
+          caption: string | null;
+          width: number;
+          height: number;
+          formats?: {
+            small?: {
+              url: string;
+            };
+            medium?: {
+              url: string;
+            };
+            thumbnail?: {
+              url: string;
+            };
+          };
+          url: string;
+        }
+      | string
+      | null;
+    categories?: Array<{
+      id: number;
+      slug: string;
+      name: string;
+    }>;
+  }>;
 }
 
 export interface ArticleBySlugResponse {
@@ -289,8 +340,7 @@ export interface ArticlesSearchInitialData {
 
 export interface ArticlesFilters {
   q?: string;
-  categoryId?: number;
-  categoryLevel?: 1 | 2;
+  categoryIds?: number[];
   tagIds?: number[];
   sort: ArticleSort;
   locale?: string;

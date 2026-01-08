@@ -6,6 +6,7 @@
 
 export * from './ArticleDetail';
 export * from './ArticleSearchBox';
+export * from './ArticleSidebar';
 export * from './ArticlesSearchClient';
 export * from './Breadcrumb';
 export * from './ProductCategories';

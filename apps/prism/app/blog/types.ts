@@ -22,8 +22,7 @@ export interface ArticlesSearchInitialData {
 
 export interface ArticlesFilters {
   q?: string;
-  categoryId?: number;
-  categoryLevel?: 1 | 2;
+  categoryIds?: number[];
   tagIds?: number[];
   sort: ArticleSort;
   locale?: string;

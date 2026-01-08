@@ -54,8 +54,7 @@ export async function searchArticles(params: {
   q?: string;
   page?: number;
   pageSize?: number;
-  categoryId?: number;
-  categoryLevel?: 1 | 2;
+  categoryIds?: number[];
   tagIds?: number[];
   sort?: ArticleSort;
   locale?: string;
@@ -65,8 +64,10 @@ export async function searchArticles(params: {
     q: params.q,
     page: params.page ?? 1,
     pageSize: params.pageSize ?? 10,
-    categoryId: params.categoryId,
-    categoryLevel: params.categoryLevel,
+    categoryIds:
+      params.categoryIds && params.categoryIds.length > 0
+        ? params.categoryIds.join(',')
+        : undefined,
     tagIds:
       params.tagIds && params.tagIds.length > 0 ? params.tagIds : undefined,
     sort: params.sort ?? 'publishedAt:desc',
