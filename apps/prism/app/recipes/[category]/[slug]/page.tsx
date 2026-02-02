@@ -9,7 +9,7 @@ type RecipeDetailPageProps = {
   }>;
 };
 
-export const revalidate = 3600; // ISR: 重新验证时间 1 小时
+export const revalidate = 60; // ISR: 重新验证时间 1 分钟
 
 export default async function RecipeDetailPage({
   params,
