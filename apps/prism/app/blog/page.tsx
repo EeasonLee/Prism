@@ -5,7 +5,7 @@ import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
 import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
 import { ProductCategories } from '@prism/blog/components/ProductCategories';
 import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
-import { extractImageUrl } from '@prism/shared';
+import { processImageUrl } from '@prism/shared';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
@@ -18,8 +18,10 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     .filter(item => item.enabled) // 只显示启用的项
     .sort((a, b) => a.order - b.order) // 按 order 排序
     .map(item => {
-      // 提取图片 URL（优先使用 large 格式）
-      const imageUrl = extractImageUrl(item.coverImage, 'large');
+      // 轮播图使用原图以保证清晰度
+      const imageUrl = item.coverImage
+        ? processImageUrl(item.coverImage.url)
+        : '';
 
       // 构建链接 URL
       let linkUrl: string | undefined;
@@ -31,7 +33,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 
       return {
         image: imageUrl || '',
-        alt: item.coverImage.alternativeText || item.title,
+        alt: item.coverImage?.alternativeText || item.title,
         title: item.title,
         description: item.description || undefined,
         link: linkUrl,
