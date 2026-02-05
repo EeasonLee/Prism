@@ -13,6 +13,7 @@
 
 - [代码组织](./code-organization.md) - 代码文件组织方式和规范
 - [API 集成指南](./api-integration.md) - 如何集成新的 API 接口
+- [CMS 页面开发指南](./cms-page-development-guide.md) - CMS 页面配置系统实施清单与落位说明
 - [组件开发规范](./component-standards.md) - 组件开发的最佳实践
 - [业务逻辑组织](./business-logic.md) - 业务逻辑的提取和组织方式
 
