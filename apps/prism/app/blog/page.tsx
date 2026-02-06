@@ -41,6 +41,8 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     });
 }
 
+export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+
 export default async function BlogPage() {
   // 服务端获取轮播图数据、产品分类和主题分类
   const [carouselRes, categoryRes, themeRes] = await Promise.all([

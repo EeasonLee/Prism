@@ -6,7 +6,7 @@ import { getFilterTypes, searchRecipes } from '../../lib/api/recipes';
 import { RecipesClient } from './RecipesClient';
 import type { SelectedFilters } from './types';
 
-export const revalidate = 60;
+export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
 
 type RecipesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

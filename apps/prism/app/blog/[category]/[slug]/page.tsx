@@ -13,7 +13,7 @@ type ArticleDetailPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const revalidate = 60; // ISR: 重新验证时间 1 分钟
+export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
 
 export default async function ArticleDetailPage({
   params,
