@@ -90,7 +90,7 @@ export async function fetchArticleCategories(_params?: {
   // 直接使用 /api/categories，不添加任何查询参数
   const endpoint = `api/categories`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 60 } } as const)
+    ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
   return getApiClient().get<{ data: CategoryDetail[] }>(endpoint, options);
 }
@@ -103,7 +103,7 @@ export async function fetchCategoryCounts(params?: {
     queryString ? `?${queryString}` : ''
   }`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 60 }, skipLogging: true } as const)
+    ? ({ next: { revalidate: 3600 }, skipLogging: true } as const)
     : { skipLogging: true };
   return getApiClient().get<{ data: CategoryDetail[] }>(endpoint, options);
 }
@@ -114,7 +114,7 @@ export async function fetchArticleTags(params?: {
   const queryString = buildQuery({ locale: params?.locale });
   const endpoint = `api/tags${queryString ? `?${queryString}` : ''}`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 300 } } as const)
+    ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
   return getApiClient().get<{ data: ArticleTag[] }>(endpoint, options);
 }
@@ -135,7 +135,7 @@ export async function fetchCategoryBySlug(
     queryString ? `?${queryString}` : ''
   }`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 60 } } as const)
+    ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
   return getApiClient().get<CategoryBySlugResponse>(endpoint, options);
 }
@@ -155,7 +155,7 @@ export async function fetchCategoryByType(
   });
   const endpoint = `api/categories${queryString ? `?${queryString}` : ''}`;
   const options = isServerSide()
-    ? ({ next: { revalidate: 60 } } as const)
+    ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
   return getApiClient().get<CategoryBySlugResponse>(endpoint, options);
 }

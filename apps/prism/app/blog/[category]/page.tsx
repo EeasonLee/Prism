@@ -17,7 +17,7 @@ import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { redirect } from 'next/navigation';
 
-export const revalidate = 60;
+export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
 
 type PageProps = {
   params: Promise<{ category: string }>;

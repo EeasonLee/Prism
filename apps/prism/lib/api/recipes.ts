@@ -151,7 +151,8 @@ export async function searchRecipes(
 /**
  * 根据 slug 获取食谱详情
  * @param slug 食谱 slug
- * @param revalidate 重新验证时间（秒），用于 Next.js ISR 缓存（仅服务端有效）
+ * @param revalidate 重新验证时间（秒），用于 Next.js Data Cache（仅服务端有效）。
+ *   必须显式传入有效数值，否则 fetch 不缓存会导致 Full Route Cache 被禁用。与路由 revalidate 一致（3600 秒兜底）。
  */
 export async function getRecipeBySlug(
   slug: string,
