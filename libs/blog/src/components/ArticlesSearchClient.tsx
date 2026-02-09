@@ -9,7 +9,6 @@ import {
   AccordionTrigger,
 } from '@prism/ui/components/accordion';
 import { Button } from '@prism/ui/components/button';
-import { Checkbox } from '@prism/ui/components/checkbox';
 import { Loader } from '@prism/ui/components/loader';
 import {
   Select,
@@ -557,7 +556,7 @@ function FiltersPanel({
           ))}
 
         {/* Tags Section */}
-        {tags.length > 0 && (
+        {/* {tags.length > 0 && (
           <AccordionItem
             value="tags"
             className="rounded-md border border-gray-200 bg-white px-4"
@@ -590,7 +589,7 @@ function FiltersPanel({
               </div>
             </AccordionContent>
           </AccordionItem>
-        )}
+        )} */}
       </Accordion>
     </div>
   );
