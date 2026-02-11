@@ -9,8 +9,9 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "prism:build",
-        "port": 3000,
-        "dev": true
+        "port": 3010,
+        "dev": true,
+        "hostname": "0.0.0.0"
       }
     },
     "build": {

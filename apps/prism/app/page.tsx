@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import { HomePageClient } from './components/HomePageClient';
 
 export default function Page() {
-  // return <div>Hello World</div>;
-  redirect('https://www.joydeem.com/');
+  return <HomePageClient />;
 }
