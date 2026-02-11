@@ -12,4 +12,5 @@ export * from './loader';
 export * from './OptimizedImage';
 export * from './PageContainer';
 export * from './select';
+export * from './sheet';
 export * from './skeleton';

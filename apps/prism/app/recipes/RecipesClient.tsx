@@ -2,10 +2,12 @@
 
 import type { HeroSlide } from '@/app/components/HeroCarousel';
 import { HeroCarousel } from '@/app/components/HeroCarousel';
+import { Button } from '@prism/ui/components/button';
 import { Loader } from '@prism/ui/components/loader';
 import { PageContainer } from '@prism/ui/components/PageContainer';
+import { Sheet } from '@prism/ui/components/sheet';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiltersPanel } from './components/FiltersPanel';
 import { Pagination } from './components/Pagination';
 import { RecipeGrid } from './components/RecipeGrid';
@@ -83,8 +85,11 @@ export function RecipesClient({
 
   // 在客户端 hydration 后，同步 URL 参数（仅在 URL 变化时更新）
   useEffect(() => {
-    const urlFilters = parseFiltersFromSearchParams(searchParams);
-    const urlPageSize = Number(searchParams.get('pageSize')) || initialPageSize;
+    const urlFilters = parseFiltersFromSearchParams(
+      searchParams || new URLSearchParams()
+    );
+    const urlPageSize =
+      Number(searchParams?.get('pageSize')) || initialPageSize;
 
     // 只在 URL 参数与当前状态不同时更新
     if (JSON.stringify(urlFilters) !== JSON.stringify(currentFilters)) {
@@ -124,13 +129,43 @@ export function RecipesClient({
     void refetch(currentFilters, targetPage, currentPageSize);
   };
 
+  const [isLg, setIsLg] = useState(true);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = () => setIsLg(mq.matches);
+    handler();
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const activeFiltersCount = useMemo(() => {
+    let n = 0;
+    if (currentFilters.recipeTypes?.length)
+      n += currentFilters.recipeTypes.length;
+    if (currentFilters.ingredients?.length)
+      n += currentFilters.ingredients.length;
+    if (currentFilters.cuisines?.length) n += currentFilters.cuisines.length;
+    if (currentFilters.dishTypes?.length) n += currentFilters.dishTypes.length;
+    if (currentFilters.specialDiets?.length)
+      n += currentFilters.specialDiets.length;
+    if (currentFilters.holidaysEvents?.length)
+      n += currentFilters.holidaysEvents.length;
+    if (currentFilters.productTypes?.length)
+      n += currentFilters.productTypes.length;
+    return n;
+  }, [currentFilters]);
+
+  const closeFiltersSheet = useCallback(() => setFiltersSheetOpen(false), []);
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Carousel */}
+      {/* Hero Carousel：移动端压低高度 */}
       {carouselSlides.length > 0 && (
         <div className="relative">
           <HeroCarousel
             slides={carouselSlides}
+            height="h-[40vh] min-h-[240px] md:h-[500px] lg:h-[600px]"
             autoPlayInterval={5000}
             showIndicators
             showNavigation
@@ -139,11 +174,12 @@ export function RecipesClient({
         </div>
       )}
 
-      <PageContainer className="py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {hasAvailableFilters && (
+      <PageContainer className="py-6 md:py-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          {hasAvailableFilters && isLg && (
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
               <FiltersPanel
+                variant="sidebar"
                 filterTypes={filterTypes}
                 facets={facets}
                 selectedFilters={currentFilters}
@@ -156,6 +192,29 @@ export function RecipesClient({
           )}
 
           <main className="min-w-0 flex-1">
+            {hasAvailableFilters && !isLg && (
+              <div className="mb-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="min-h-[44px]"
+                  onClick={() => setFiltersSheetOpen(true)}
+                  aria-label={
+                    activeFiltersCount > 0
+                      ? `Filters (${activeFiltersCount} applied)`
+                      : 'Open filters'
+                  }
+                >
+                  Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-1.5 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            )}
             <RecipeHeader
               totalRecipes={pagination?.total ?? 0}
               showingRecipes={recipes.length}
@@ -201,6 +260,28 @@ export function RecipesClient({
             </div>
           </main>
         </div>
+
+        {hasAvailableFilters && !isLg && (
+          <Sheet
+            open={filtersSheetOpen}
+            onOpenChange={setFiltersSheetOpen}
+            title="Filters"
+            side="right"
+            className="p-4"
+          >
+            <FiltersPanel
+              variant="drawer"
+              filterTypes={filterTypes}
+              facets={facets}
+              selectedFilters={currentFilters}
+              pageSize={currentPageSize}
+              onFilterChange={async (filters, page, pageSize) => {
+                await refetch(filters, page, pageSize);
+                closeFiltersSheet();
+              }}
+            />
+          </Sheet>
+        )}
       </PageContainer>
     </div>
   );

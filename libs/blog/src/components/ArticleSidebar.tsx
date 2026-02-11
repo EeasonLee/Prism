@@ -29,7 +29,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
   }
 
   return (
-    <aside className="sticky top-8 h-fit space-y-8">
+    <aside className="h-fit space-y-8 lg:sticky lg:top-8">
       {/* 关联产品 */}
       {hasProducts && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

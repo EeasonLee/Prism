@@ -97,10 +97,10 @@ export function RecipeHeader({
   };
 
   return (
-    <div className="mb-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-6 md:mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
-          <h1 className="mb-2 text-4xl font-bold text-gray-900">
+          <h1 className="mb-1 text-2xl font-bold text-gray-900 md:mb-2 md:text-4xl">
             {formatNumber(totalRecipes)} Recipes
           </h1>
           <p className="text-sm text-gray-600">
@@ -108,10 +108,13 @@ export function RecipeHeader({
             {formatNumber(totalRecipes)} recipes
           </p>
         </div>
-        <form className="flex w-full sm:w-auto" onSubmit={handleSearchSubmit}>
-          <div className="flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 shadow-sm sm:w-80">
+        <form
+          className="flex w-full flex-nowrap items-center gap-2 sm:w-auto"
+          onSubmit={handleSearchSubmit}
+        >
+          <div className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 shadow-sm sm:w-80">
             <svg
-              className="h-5 w-5 text-gray-400"
+              className="h-5 w-5 shrink-0 text-gray-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -124,7 +127,7 @@ export function RecipeHeader({
               />
             </svg>
             <input
-              className="w-full border-none text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0"
+              className="min-w-0 flex-1 border-none text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 md:text-sm"
               type="search"
               placeholder="Search recipes..."
               value={searchText}
@@ -134,7 +137,7 @@ export function RecipeHeader({
           </div>
           <button
             type="submit"
-            className="ml-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-[44px] shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSearchDisabled}
           >
             Search

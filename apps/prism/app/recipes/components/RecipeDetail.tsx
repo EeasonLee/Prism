@@ -1,3 +1,4 @@
+import type { Route } from 'next';
 import Link from 'next/link';
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import { PageContainer } from '@prism/ui/components/PageContainer';
@@ -52,53 +53,71 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const categoryId = category?.id;
   const categoryName = category?.name || 'Recipe';
 
+  const parentHref = categoryId
+    ? `/recipes?categoryId=${categoryId}`
+    : '/recipes';
+  const parentLabel = category ? categoryName : 'Recipes';
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
+      {/* Breadcrumb：移动端 Back to + 当前页，桌面端完整路径 */}
       <div className="border-b border-gray-200 bg-white">
         <PageContainer className="py-4">
           <nav
-            className="flex items-center space-x-2 text-sm"
+            className="flex min-w-0 items-center overflow-hidden text-sm"
             aria-label="Breadcrumb"
           >
-            <Link
-              href="/recipes"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Recipes
-            </Link>
-            {category && (
-              <>
-                <span className="text-gray-400" aria-hidden="true">
-                  &gt;
-                </span>
-                <Link
-                  href={
-                    categoryId
-                      ? `/recipes?categoryId=${categoryId}`
-                      : '/recipes'
-                  }
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  {categoryName}
-                </Link>
-              </>
-            )}
-            <span className="text-gray-400" aria-hidden="true">
-              &gt;
-            </span>
-            <span className="text-gray-900 font-medium" aria-current="page">
-              {recipe.title}
-            </span>
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:hidden">
+              <Link
+                href={parentHref as Route}
+                className="min-w-0 flex-1 truncate text-gray-600 transition-colors hover:text-gray-900"
+                title={`Back to ${parentLabel}`}
+              >
+                Back to {parentLabel}
+              </Link>
+              <span
+                className="min-w-0 max-w-[55%] shrink-0 truncate text-gray-900 font-medium"
+                title={recipe.title}
+              >
+                {recipe.title}
+              </span>
+            </div>
+            <div className="hidden items-center space-x-2 md:flex">
+              <Link
+                href="/recipes"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Recipes
+              </Link>
+              {category && (
+                <>
+                  <span className="text-gray-400" aria-hidden="true">
+                    &gt;
+                  </span>
+                  <Link
+                    href={parentHref as Route}
+                    className="text-gray-600 transition-colors hover:text-gray-900"
+                  >
+                    {categoryName}
+                  </Link>
+                </>
+              )}
+              <span className="text-gray-400" aria-hidden="true">
+                &gt;
+              </span>
+              <span className="text-gray-900 font-medium" aria-current="page">
+                {recipe.title}
+              </span>
+            </div>
           </nav>
         </PageContainer>
       </div>
 
       {/* Hero */}
-      <PageContainer className="py-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
+      <PageContainer className="py-6 md:py-10">
+        <div className="grid min-w-0 gap-6 md:gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
           {recipe.featuredImage && (
-            <div className="relative aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
+            <div className="relative min-w-0 aspect-[7/5] overflow-hidden rounded-xl border border-gray-100 shadow-sm">
               <OptimizedImage
                 src={recipe.featuredImage}
                 alt={imageAlt}
@@ -110,14 +129,14 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             </div>
           )}
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-4 md:space-y-6">
             <div className="flex flex-wrap items-center gap-3">
-              {recipe.categories?.map(category => (
+              {recipe.categories?.map(cat => (
                 <span
-                  key={category.id}
+                  key={cat.id}
                   className="text-xs font-semibold uppercase tracking-wider text-gray-500"
                 >
-                  {category.name}
+                  {cat.name}
                 </span>
               ))}
               {recipe.difficulty && (
@@ -125,12 +144,12 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               )}
             </div>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl font-bold leading-tight text-gray-900">
+            <div className="space-y-3 md:space-y-4">
+              <h1 className="break-words text-2xl font-bold leading-tight text-gray-900 md:text-4xl">
                 {recipe.title}
               </h1>
               {recipe.description && (
-                <p className="text-lg leading-relaxed text-gray-600">
+                <p className="break-words text-base leading-relaxed text-gray-600 md:text-lg">
                   {recipe.description}
                 </p>
               )}
@@ -251,10 +270,10 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       </PageContainer>
 
       {/* Body */}
-      <PageContainer className="pb-12">
-        <div className="grid gap-10 lg:grid-cols-[0.8fr,1.6fr]">
+      <PageContainer className="pb-8 md:pb-12">
+        <div className="grid min-w-0 gap-8 md:gap-10 lg:grid-cols-[0.8fr,1.6fr]">
           {/* Left content - Ingredient Notes */}
-          <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-xl font-semibold text-gray-900">
@@ -283,12 +302,12 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             )}
 
             {recipe.ingredientsContent && (
-              <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:p-6">
                 <h3 className="mb-3 text-lg font-semibold text-gray-900">
                   Ingredient Notes
                 </h3>
                 <div
-                  className="recipe-content prose max-w-none text-gray-700 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-800 hover:prose-a:underline"
+                  className="recipe-content prose max-w-none break-words overflow-x-hidden text-gray-700 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-800 hover:prose-a:underline"
                   dangerouslySetInnerHTML={{
                     __html: recipe.ingredientsContent,
                   }}
@@ -373,26 +392,26 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             )}
           </aside>
 
-          {/* Right content - Preparation */}
-          <div className="space-y-10">
+          {/* Right content - Preparation：移动端防止溢出 */}
+          <div className="min-w-0 space-y-8 md:space-y-10">
             {recipe.content && (
               <section className="space-y-4">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 md:text-2xl">
                   Preparation
                 </h2>
                 <div
-                  className="recipe-content prose prose-lg max-w-none 
-                    prose-headings:text-gray-900 prose-headings:font-bold
+                  className="recipe-content prose prose-lg max-w-none break-words overflow-x-hidden
+                    prose-headings:text-gray-900 prose-headings:font-bold prose-headings:break-words
                     prose-p:text-gray-700 prose-p:leading-relaxed prose-p:my-4
                     prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-800 hover:prose-a:underline
                     prose-strong:text-gray-900 prose-strong:font-semibold
                     prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:my-4 prose-ol:my-4
                     prose-li:text-gray-700 prose-li:my-2
-                    prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full prose-img:h-auto
+                    prose-img:max-w-full prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:h-auto
                     prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-4
                     prose-code:text-sm prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                    prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:my-4
-                    prose-hr:my-8 prose-hr:border-gray-200"
+                    prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:my-4
+                    prose-table:block prose-table:max-w-full prose-table:overflow-x-auto prose-hr:my-8 prose-hr:border-gray-200"
                   dangerouslySetInnerHTML={{ __html: recipe.content }}
                 />
               </section>

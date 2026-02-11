@@ -109,17 +109,21 @@ export default async function ArticleDetailPage({
                 : 'w-full'
             }
           >
-            {/* 文章内容 */}
-            <div className="min-w-0">
+            {/* 文章内容：min-w-0 + overflow-x-hidden 防止 CMS 正文撑出视口 */}
+            <div className="min-w-0 overflow-x-hidden">
               <ArticleDetail article={article} />
             </div>
 
-            {/* 右侧固定栏 - 只在有内容时显示 */}
+            {/* 右侧固定栏 - 桌面显示 */}
             {hasSidebarContent && (
               <div className="hidden lg:block">
                 <ArticleSidebar article={article} />
               </div>
             )}
+          </div>
+          {/* 移动端：Related Products / Related Articles 在正文下方单列展示（始终渲染区块，由 ArticleSidebar 内部判断是否有内容） */}
+          <div className="mt-8 block w-full lg:hidden">
+            <ArticleSidebar article={article} />
           </div>
         </PageContainer>
       </div>

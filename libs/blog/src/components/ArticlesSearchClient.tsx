@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@prism/ui/components/select';
+import { Sheet } from '@prism/ui/components/sheet';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -72,6 +73,17 @@ export function ArticlesSearchClient({
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+
+  // Default true to match SSR / avoid hydration mismatch; then sync with lg breakpoint
+  const [isLg, setIsLg] = useState(true);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = () => setIsLg(mq.matches);
+    handler();
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const categorySlugToSelection = useMemo(() => {
     if (!initialCategorySlug) return null;
@@ -263,26 +275,55 @@ export function ArticlesSearchClient({
     fetchList(next, 1, 10);
   };
 
+  const activeFiltersCount =
+    (filters.categoryIds?.length ?? 0) + (filters.tagIds?.length ?? 0);
+  const closeFiltersSheet = useCallback(() => setFiltersSheetOpen(false), []);
+  const filtersPanelContent = (
+    <FiltersPanel
+      variant="drawer"
+      categories={categories}
+      tags={tags}
+      selectedCategoryIds={filters.categoryIds ?? []}
+      selectedTagIds={filters.tagIds ?? []}
+      onCategorySelect={cat => {
+        handleCategorySelect(cat);
+        closeFiltersSheet();
+      }}
+      onTagToggle={(id, checked) => {
+        handleTagToggle(id, checked);
+        closeFiltersSheet();
+      }}
+      onClear={() => {
+        clearFilters();
+        closeFiltersSheet();
+      }}
+    />
+  );
+
   return (
     <PageContainer fullWidth className="py-8">
       <div className="flex flex-col gap-8 lg:flex-row">
-        <aside className="w-full lg:w-80 lg:flex-shrink-0">
-          <FiltersPanel
-            categories={categories}
-            tags={tags}
-            selectedCategoryIds={filters.categoryIds ?? []}
-            selectedTagIds={filters.tagIds ?? []}
-            onCategorySelect={handleCategorySelect}
-            onTagToggle={handleTagToggle}
-            onClear={clearFilters}
-          />
-        </aside>
+        {/* Desktop: sidebar. Mobile: hidden (filters in Sheet) */}
+        {isLg && (
+          <aside className="w-full lg:w-80 lg:flex-shrink-0">
+            <FiltersPanel
+              variant="sidebar"
+              categories={categories}
+              tags={tags}
+              selectedCategoryIds={filters.categoryIds ?? []}
+              selectedTagIds={filters.tagIds ?? []}
+              onCategorySelect={handleCategorySelect}
+              onTagToggle={handleTagToggle}
+              onClear={clearFilters}
+            />
+          </aside>
+        )}
 
         <main className="min-w-0 flex-1">
-          {/* Header with Articles count and Sort by */}
-          <div className="mb-6 flex items-center justify-between">
+          {/* Header: Articles count + 操作区；移动端避免 Sort by 与下拉换行 */}
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 md:text-2xl">
                 {formatNumber(pagination.total)} Articles
               </h1>
               <p className="mt-1 text-sm text-gray-600">
@@ -290,23 +331,49 @@ export function ArticlesSearchClient({
                 {formatNumber(pagination.total)}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">Sort by</span>
-              <Select
-                value={filters.sort}
-                onValueChange={val => handleSortChange(val as ArticleSort)}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-nowrap items-center gap-2 sm:gap-3">
+              {!isLg && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="min-h-[44px] shrink-0"
+                  onClick={() => setFiltersSheetOpen(true)}
+                  aria-label={
+                    activeFiltersCount > 0
+                      ? `Filters (${activeFiltersCount} applied)`
+                      : 'Open filters'
+                  }
+                >
+                  Filters
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-1.5 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              )}
+              {/* Sort by 与下拉保持同一行，不换行 */}
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="whitespace-nowrap text-sm text-gray-600">
+                  Sort by
+                </span>
+                <Select
+                  value={filters.sort}
+                  onValueChange={val => handleSortChange(val as ArticleSort)}
+                >
+                  <SelectTrigger className="h-9 w-[7.5rem] min-w-0 sm:w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -352,11 +419,25 @@ export function ArticlesSearchClient({
           </div>
         </main>
       </div>
+
+      {/* Mobile: Filters in Sheet */}
+      {!isLg && (
+        <Sheet
+          open={filtersSheetOpen}
+          onOpenChange={setFiltersSheetOpen}
+          title="Filters"
+          side="right"
+          className="p-4"
+        >
+          {filtersPanelContent}
+        </Sheet>
+      )}
     </PageContainer>
   );
 }
 
 function FiltersPanel({
+  variant = 'sidebar',
   categories,
   tags,
   selectedCategoryIds,
@@ -365,6 +446,7 @@ function FiltersPanel({
   onTagToggle,
   onClear,
 }: {
+  variant?: 'sidebar' | 'drawer';
   categories: CategoryWithCounts[];
   tags: TagOption[];
   selectedCategoryIds: number[];
@@ -436,9 +518,12 @@ function FiltersPanel({
   });
   if (tags.length > 0) defaultOpenValues.push('tags');
 
+  const isDrawer = variant === 'drawer';
   return (
-    <div className="sticky top-8">
-      <h2 className="mb-4 text-3xl font-bold text-gray-800">Filters</h2>
+    <div className={isDrawer ? '' : 'sticky top-8'}>
+      <h2 className="mb-4 text-xl font-bold text-gray-800 md:text-3xl">
+        Filters
+      </h2>
 
       {/* 当前勾选的筛选项 */}
       {hasActiveFilters && (
@@ -555,7 +640,7 @@ function FiltersPanel({
             </AccordionItem>
           ))}
 
-        {/* Tags Section */}
+        {/* Tags Section - hidden in UI only */}
         {/* {tags.length > 0 && (
           <AccordionItem
             value="tags"

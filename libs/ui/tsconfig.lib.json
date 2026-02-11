@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc/libs/ui",
     "declaration": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
     "types": ["node", "react", "react-dom"],
     "skipLibCheck": true
   },
@@ -14,9 +15,5 @@
     "src/**/*.spec.tsx",
     "src/**/*.test.tsx"
   ],
-  "references": [
-    {
-      "path": "../shared/tsconfig.lib.json"
-    }
-  ]
+  "references": [{ "path": "../shared/tsconfig.lib.json" }]
 }
