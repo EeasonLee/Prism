@@ -1,3 +1,5 @@
+import { HomePageClient } from './components/HomePageClient';
+
 export default function Page() {
-  return <div>Hello World</div>;
+  return <HomePageClient />;
 }

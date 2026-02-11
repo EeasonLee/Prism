@@ -25,11 +25,11 @@
   },
   "engines": {
     "node": ">=20.11.0",
-    "pnpm": ">=9.12.0 <10"
+    "pnpm": ">=9.12.0"
   },
   "volta": {
     "node": "24.11.1",
-    "pnpm": "9.12.0"
+    "pnpm": "10.11.0"
   },
   "private": true,
   "dependencies": {
@@ -41,6 +41,7 @@
     "clsx": "^2.1.1",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "gsap": "^3.14.2",
     "eslint-config-next": "15.5.7",
     "lucide-react": "^0.561.0",
     "next": "15.5.7",
