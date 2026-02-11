@@ -55,7 +55,7 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
             className="object-cover"
             priority
             sizes="(max-width: 768px) 100vw, 896px"
-            preferredFormat="medium"
+            preferredFormat="original"
           />
         </div>
       )}
