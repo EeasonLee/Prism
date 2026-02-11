@@ -125,6 +125,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 className="object-cover"
                 priority
                 sizes="(max-width: 768px) 100vw, 520px"
+                preferredFormat="original"
               />
             </div>
           )}
@@ -454,6 +455,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                               fill
                               className="object-cover"
                               sizes="(max-width: 768px) 100vw, 600px"
+                              preferredFormat="original"
                             />
                           </div>
                         )}

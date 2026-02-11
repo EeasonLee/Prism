@@ -150,7 +150,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 bg-[#f2f2f2]">
       <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
-        <a href="/" className="flex items-center shrink-0">
+        <a
+          href="https://www.joydeem.com/"
+          className="flex items-center shrink-0"
+        >
           <Image
             src="/images/logo.png"
             alt="Joydeem"

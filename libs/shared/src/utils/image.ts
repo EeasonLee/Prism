@@ -85,21 +85,28 @@ export function processImageUrl(url: string | null | undefined): string | null {
 
 /**
  * 从 Strapi 图片对象中提取 URL
- * 优先使用指定格式，否则按优先级选择：medium -> small -> original
+ * 优先使用指定格式；original 表示直接用原图；若指定格式不存在则回退：large -> medium -> small -> original
  */
 export function extractImageUrl(
   image: StrapiImage | null | undefined,
-  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail'
+  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail' | 'original'
 ): string | null {
   if (!image) return null;
 
   let url: string | undefined;
 
-  if (preferredFormat && image.formats?.[preferredFormat]) {
+  if (preferredFormat === 'original') {
+    url = image.url;
+  } else if (preferredFormat && image.formats?.[preferredFormat]) {
     url = image.formats[preferredFormat].url;
-  } else {
-    // 按优先级自动选择
-    url = image.formats?.medium?.url || image.formats?.small?.url || image.url;
+  }
+  if (!url) {
+    // 指定格式不存在或未指定时，按优先级回退
+    url =
+      image.formats?.large?.url ||
+      image.formats?.medium?.url ||
+      image.formats?.small?.url ||
+      image.url;
   }
 
   return url || null;

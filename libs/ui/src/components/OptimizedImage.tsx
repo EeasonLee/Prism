@@ -37,7 +37,7 @@ export interface OptimizedImageProps
   /**
    * 优先使用的图片格式（仅当 src 是 StrapiImage 时有效）
    */
-  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail';
+  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail' | 'original';
   /**
    * 图片加载失败时的回调
    */
