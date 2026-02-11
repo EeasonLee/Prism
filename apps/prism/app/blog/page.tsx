@@ -74,25 +74,25 @@ export default async function BlogPage() {
         <div className="relative">
           <HeroCarousel
             slides={slides}
+            height="h-[40vh] min-h-[240px] md:h-[500px] lg:h-[600px]"
             autoPlayInterval={5000}
             showIndicators
             showNavigation
+            showContent={false}
           />
-          {/* 渐变遮罩，让内容更易读 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
         </div>
       ) : null}
 
-      {/* 搜索区域 */}
-      <section className="relative -mt-16 z-10">
+      {/* 搜索区域：移动端收紧重叠与内边距 */}
+      <section className="relative z-10 mt-4 md:-mt-16">
         <PageContainer>
           <div className="mx-auto max-w-4xl">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 lg:p-8">
-              <div className="mb-6 text-center">
-                <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-lg md:p-6 lg:p-8">
+              <div className="mb-4 text-center md:mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
                   Discover Your Next Read
                 </h2>
-                <p className="mt-3 text-lg text-gray-600">
+                <p className="mt-2 text-base text-gray-600 md:mt-3 md:text-lg">
                   Explore our curated collection of articles, guides, and
                   insights
                 </p>
@@ -109,7 +109,7 @@ export default async function BlogPage() {
 
       {/* 产品分类区域 */}
       {productCategories.length > 0 && (
-        <section className="py-12 lg:py-16">
+        <section className="py-8 md:py-12 lg:py-16">
           <ProductCategories
             categories={productCategories}
             title="By Product"
@@ -119,7 +119,7 @@ export default async function BlogPage() {
 
       {/* 主题分类区域 */}
       {themeCategory && (
-        <section className="py-12 lg:py-16 bg-white">
+        <section className="bg-white py-8 md:py-12 lg:py-16">
           <ThemeCategories category={themeCategory} />
         </section>
       )}

@@ -124,13 +124,13 @@ export function Pagination({
             </div>
           )}
           {pageCount > 1 && (
-            <nav aria-label="分页导航" className="flex items-center gap-1">
-              {/* 第一页按钮 */}
+            <nav aria-label="Pagination" className="flex items-center gap-1">
+              {/* First page */}
               <button
                 onClick={() => onPageChange(1)}
                 disabled={page === 1 || isLoading}
-                aria-label="第一页"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10"
+                aria-label="First page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
               >
                 <svg
                   className="h-4 w-4"
@@ -147,12 +147,12 @@ export function Pagination({
                 </svg>
               </button>
 
-              {/* 上一页按钮 */}
+              {/* Previous page */}
               <button
                 onClick={() => onPageChange(page - 1)}
                 disabled={page === 1 || isLoading}
-                aria-label="上一页"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10"
+                aria-label="Previous page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
               >
                 <svg
                   className="h-4 w-4"
@@ -191,7 +191,7 @@ export function Pagination({
                       key={pageNumber}
                       onClick={() => onPageChange(pageNumber)}
                       disabled={isLoading}
-                      aria-label={`第 ${pageNumber} 页`}
+                      aria-label={`Page ${pageNumber}`}
                       aria-current={isCurrentPage ? 'page' : undefined}
                       className={`relative inline-flex h-10 w-10 items-center justify-center rounded-md border px-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
                         isCurrentPage
@@ -205,19 +205,19 @@ export function Pagination({
                 })}
               </div>
 
-              {/* 移动端显示当前页 */}
+              {/* Mobile: current page indicator */}
               <div className="flex items-center gap-1 sm:hidden">
-                <span className="relative inline-flex h-9 w-auto min-w-[60px] items-center justify-center rounded-md border border-orange-500 bg-orange-50 px-3 text-sm font-medium text-orange-600">
+                <span className="relative inline-flex min-h-[44px] min-w-[60px] items-center justify-center rounded-md border border-orange-500 bg-orange-50 px-3 text-sm font-medium text-orange-600">
                   {page} / {pageCount}
                 </span>
               </div>
 
-              {/* 下一页按钮 */}
+              {/* Next page */}
               <button
                 onClick={() => onPageChange(page + 1)}
                 disabled={page === pageCount || isLoading}
-                aria-label="下一页"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10"
+                aria-label="Next page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
               >
                 <svg
                   className="h-4 w-4"
@@ -234,12 +234,12 @@ export function Pagination({
                 </svg>
               </button>
 
-              {/* 最后一页按钮 */}
+              {/* Last page */}
               <button
                 onClick={() => onPageChange(pageCount)}
                 disabled={page === pageCount || isLoading}
-                aria-label="最后一页"
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10"
+                aria-label="Last page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
               >
                 <svg
                   className="h-4 w-4"

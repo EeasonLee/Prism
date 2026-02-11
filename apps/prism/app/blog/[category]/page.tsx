@@ -206,15 +206,15 @@ export default async function BlogCategoryPage({
         </PageContainer>
       </div>
 
-      {/* 搜索区域 */}
-      <div className="bg-gradient-to-b from-white via-gray-50 to-white py-12 lg:py-16">
+      {/* 搜索区域：移动端收紧 */}
+      <div className="bg-gradient-to-b from-white via-gray-50 to-white py-8 md:py-12 lg:py-16">
         <PageContainer>
           <div className="mx-auto max-w-4xl">
-            <div className="mb-6 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
+            <div className="mb-4 text-center md:mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
                 Explore Great Content
               </h2>
-              <p className="mt-3 text-lg text-gray-600">
+              <p className="mt-2 text-base text-gray-600 md:mt-3 md:text-lg">
                 Search articles and keywords to discover more great content
               </p>
             </div>

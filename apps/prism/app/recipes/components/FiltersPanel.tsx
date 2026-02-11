@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Facets, FilterType, SelectedFilters } from '../types';
 
 interface FiltersPanelProps {
+  variant?: 'sidebar' | 'drawer';
   filterTypes: FilterType[];
   facets: Facets | null;
   selectedFilters: SelectedFilters;
@@ -40,6 +41,7 @@ function getFacetOptions(facets: Facets | null, type: string) {
 }
 
 export function FiltersPanel({
+  variant = 'sidebar',
   filterTypes,
   facets,
   selectedFilters,
@@ -161,9 +163,12 @@ export function FiltersPanel({
     return values.includes(id);
   };
 
+  const isDrawer = variant === 'drawer';
   return (
-    <div className="sticky top-8">
-      <h2 className="mb-4 text-3xl font-bold text-gray-800">Filters</h2>
+    <div className={isDrawer ? '' : 'sticky top-8'}>
+      <h2 className="mb-4 text-xl font-bold text-gray-800 md:text-3xl">
+        Filters
+      </h2>
 
       {/* 当前勾选的筛选项 */}
       {chips.length > 0 && (
@@ -173,7 +178,7 @@ export function FiltersPanel({
               key={`${chip.key}-${chip.id}`}
               type="button"
               onClick={() => removeFilter(chip.key, chip.id)}
-              className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
               disabled={isLoading}
             >
               <span>{chip.label}</span>
@@ -183,10 +188,10 @@ export function FiltersPanel({
           <button
             type="button"
             onClick={clearAll}
-            className="rounded-full border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
+            className="min-h-[44px] rounded-full border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
             disabled={isLoading}
           >
-            清除全部
+            Clear all
           </button>
         </div>
       )}

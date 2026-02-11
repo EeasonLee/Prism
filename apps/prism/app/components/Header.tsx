@@ -290,13 +290,33 @@ export function Header() {
 
         <div
           id="mobile-menu"
-          className={`md:hidden absolute left-0 right-0 top-full border-t border-slate-200 bg-white shadow-xl transition-[opacity,visibility,transform] duration-200 ${
+          className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-slate-200 bg-white shadow-xl transition-[opacity,visibility,transform] duration-200 ${
             isMobileMenuOpen
               ? 'visible translate-y-0 opacity-100'
               : 'invisible -translate-y-2 opacity-0'
           }`}
         >
           <div className="px-4 py-4 space-y-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-700">Menu</p>
+              <IconButton
+                label="Close menu"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </IconButton>
+            </div>
             <div>
               <p className="text-sm font-semibold text-slate-700">Products</p>
               <ul className="mt-2 space-y-2">
@@ -304,6 +324,7 @@ export function Header() {
                   <li key={item.href}>
                     <a
                       href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
                     >
                       {item.label}
@@ -318,6 +339,7 @@ export function Header() {
                 <a
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
                 >
                   {item.label}
@@ -331,6 +353,7 @@ export function Header() {
                     <li key={item.href}>
                       <a
                         href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
                         className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
                       >
                         {item.label}
@@ -342,6 +365,7 @@ export function Header() {
 
               <Link
                 href="/recipes"
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
               >
                 Recipes
@@ -349,6 +373,7 @@ export function Header() {
 
               <Link
                 href="/blog"
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
               >
                 Blog

@@ -40,8 +40,8 @@ function ArticleCard({
         />
       </div>
 
-      {/* Content area */}
-      <div className="p-4">
+      {/* Content area：移动端 p-3 */}
+      <div className="p-3 md:p-4">
         <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-gray-900 transition-colors group-hover:text-blue-600">
           {article.title}
         </h3>
@@ -63,16 +63,16 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
         const gridColsClass = index === 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-5';
 
         return (
-          <section key={childCategory.id} className="mb-12 last:mb-0">
+          <section key={childCategory.id} className="mb-8 last:mb-0 md:mb-12">
             <PageContainer>
-              {/* Section Header */}
-              <div className="mb-8 flex items-center justify-between">
-                <h2 className="text-3xl font-bold text-gray-900 lg:text-4xl">
+              {/* Section Header：移动端收紧，链接触控 ≥44px */}
+              <div className="mb-4 flex items-center justify-between gap-4 md:mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
                   {childCategory.name}
                 </h2>
                 <Link
                   href={`/blog/${childCategory.slug}`}
-                  className="text-sm font-medium text-gray-600 transition-colors hover:text-blue-600"
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center py-2 text-sm font-medium text-gray-600 transition-colors hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
                 >
                   Browse All →
                 </Link>
@@ -80,7 +80,7 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
 
               {/* Articles Grid */}
               <div
-                className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${gridColsClass}`}
+                className={`grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 ${gridColsClass}`}
               >
                 {articles.map(article => (
                   <ArticleCard
