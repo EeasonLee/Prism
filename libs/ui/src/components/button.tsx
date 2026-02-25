@@ -10,6 +10,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        // 品牌 CTA 按钮：圆角全宽，品牌橙背景，替代 .btn-primary 自定义类
+        brand:
+          'rounded-full bg-brand text-brand-foreground hover:bg-brand/90 active:scale-95 min-h-touch',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         outline:

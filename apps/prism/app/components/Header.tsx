@@ -39,11 +39,11 @@ function IconButton({
       aria-expanded={ariaExpanded}
       aria-controls={ariaControls}
       onClick={onClick}
-      className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+      className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border text-ink-muted transition hover:border-brand/30 hover:bg-brand/10 hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       {children}
       {typeof badge === 'number' && (
-        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold leading-none text-white">
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold leading-none text-brand-foreground">
           {badge}
         </span>
       )}
@@ -58,13 +58,13 @@ type DropdownNavProps = {
 
 function DropdownNav({ label, items }: DropdownNavProps) {
   const linkClassName =
-    'block px-4 py-3 text-sm font-medium text-[#1a1a1a] leading-none transition hover:bg-gray-100 hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500';
+    'block px-4 py-3 text-sm font-medium text-ink leading-none transition hover:bg-surface hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
 
   return (
     <div className="group relative">
       <button
         type="button"
-        className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+        className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         aria-expanded="false"
       >
         {label}
@@ -81,8 +81,8 @@ function DropdownNav({ label, items }: DropdownNavProps) {
           />
         </svg>
       </button>
-      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-slate-100 bg-white opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
-        <ul className="divide-y divide-slate-100 p-2">
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-border bg-background opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
+        <ul className="divide-y divide-border p-2">
           {items.map(item => {
             return (
               <li key={item.href}>
@@ -148,7 +148,7 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-30 bg-[#f2f2f2]">
+    <header className="sticky top-0 z-30 bg-surface-muted">
       <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
         <a
           href="https://www.joydeem.com/"
@@ -174,7 +174,7 @@ export function Header() {
             <a
               key={item.href}
               href={item.href}
-              className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+              className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               rel="noreferrer"
             >
               {item.label}
@@ -185,14 +185,14 @@ export function Header() {
 
           <Link
             href="/recipes"
-            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             Recipes
           </Link>
 
           <Link
             href="/blog"
-            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-[#1a1a1a] leading-none transition hover:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             Blog
           </Link>
@@ -293,7 +293,7 @@ export function Header() {
 
         <div
           id="mobile-menu"
-          className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-slate-200 bg-white shadow-xl transition-[opacity,visibility,transform] duration-200 ${
+          className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-border bg-background shadow-xl transition-[opacity,visibility,transform] duration-200 ${
             isMobileMenuOpen
               ? 'visible translate-y-0 opacity-100'
               : 'invisible -translate-y-2 opacity-0'
@@ -301,7 +301,7 @@ export function Header() {
         >
           <div className="px-4 py-4 space-y-4">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-700">Menu</p>
+              <p className="text-sm font-semibold text-ink-muted">Menu</p>
               <IconButton
                 label="Close menu"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -321,14 +321,14 @@ export function Header() {
               </IconButton>
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-700">Products</p>
+              <p className="text-sm font-semibold text-ink-muted">Products</p>
               <ul className="mt-2 space-y-2">
                 {productLinks.map(item => (
                   <li key={item.href}>
                     <a
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                      className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
                     >
                       {item.label}
                     </a>
@@ -343,21 +343,21 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
                 >
                   {item.label}
                 </a>
               ))}
 
               <div>
-                <p className="text-sm font-semibold text-slate-700">Support</p>
+                <p className="text-sm font-semibold text-ink-muted">Support</p>
                 <ul className="mt-2 space-y-2">
                   {supportLinks.map(item => (
                     <li key={item.href}>
                       <a
                         href={item.href}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="block rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                        className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
                       >
                         {item.label}
                       </a>
@@ -369,7 +369,7 @@ export function Header() {
               <Link
                 href="/recipes"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
               >
                 Recipes
               </Link>
@@ -377,7 +377,7 @@ export function Header() {
               <Link
                 href="/blog"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-md px-2 py-2 text-base font-medium text-[#1a1a1a] transition hover:bg-orange-50"
+                className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
               >
                 Blog
               </Link>

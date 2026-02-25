@@ -12,6 +12,13 @@
 - [导入规范](./import-rules.md) - Import 路径的使用规范和最佳实践
 - [TypeScript 规范](./typescript-standards.md) - TypeScript 类型定义和使用规范
 
+### 设计系统
+
+- [Design System 总览](../design-system/README.md) - Token 架构、快速上手
+- [Token 手册](../design-system/tokens.md) - 颜色 / 排版 / 间距 / 动效 Token 说明
+- [响应式规范](../design-system/responsive.md) - Mobile-First 与全尺寸适配
+- [开发规范](../design-system/contributing.md) - 开发 Checklist 与新增 Token 流程
+
 ### 设计决策
 
 - [架构决策记录（ADR）模板](./adr-template.md) - ADR 模板和使用说明

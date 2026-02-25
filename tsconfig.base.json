@@ -26,6 +26,8 @@
       "@prism/recipe/*": ["libs/recipe/*"],
       "@prism/shared": ["libs/shared/src/index.ts"],
       "@prism/shared/*": ["libs/shared/*"],
+      "@prism/tokens": ["libs/tokens/src/index.ts"],
+      "@prism/tokens/*": ["libs/tokens/src/*"],
       "@prism/ui": ["libs/ui/src/index.ts"],
       "@prism/ui/*": ["libs/ui/src/*"]
     },

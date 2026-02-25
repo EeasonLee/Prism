@@ -4,6 +4,14 @@ const { withNx } = require('@nx/next/plugins/with-nx');
 const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+console.log(
+  'useApiProxy:',
+  process.env.NEXT_PUBLIC_USE_API_PROXY,
+  '===',
+  process.env.NEXT_PUBLIC_USE_API_PROXY === 'true'
+);
+console.log('apiUrl:', process.env.NEXT_PUBLIC_API_URL);
+
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
@@ -29,6 +37,12 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: '192.168.50.244',
+        port: '1337',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '192.168.50.240',
         port: '1337',
         pathname: '/uploads/**',
       },
