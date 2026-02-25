@@ -1,0 +1,88 @@
+---
+description: Design System Token 规范 - 颜色、排版、布局、响应式的强制约束
+globs: **/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Design System 规范
+
+参考文档：`docs/design-system/`（README / tokens / responsive / contributing）
+
+## 颜色：必须用 Token，禁止硬编码
+
+```tsx
+// ❌ 禁止
+className="text-[#1a1a1a] bg-[#F6F6F2]"
+className="text-orange-600 bg-orange-50"
+style={{ color: '#D94F25', backgroundColor: '#F6F6F2' }}
+
+// ✅ 正确
+className="text-ink bg-surface"
+className="text-brand bg-brand/10"
+className="hover:text-brand focus-visible:outline-brand"
+```
+
+Token 速查：
+- 文字：`text-ink` / `text-ink-muted` / `text-ink-faint`
+- 背景：`bg-surface` / `bg-surface-muted` / `bg-background` / `bg-card`
+- 品牌色：`bg-brand text-brand-foreground` / `text-brand`
+- 交互：`hover:bg-brand/10` / `hover:text-brand`
+
+## 排版：用语义类，不用原子字号
+
+```tsx
+// ❌ 禁止
+<h1 className="text-5xl font-bold tracking-tight">
+<p className="text-base leading-relaxed">
+
+// ✅ 正确
+<h1 className="heading-1 text-ink">
+<p className="body-text text-ink-muted">
+```
+
+类名：`heading-1` `heading-2` `heading-3` `heading-4` `body-text` `micro-text`
+
+## 布局：用 PageContainer，不散写容器样式
+
+```tsx
+// ❌ 禁止
+<div className="mx-auto max-w-[1720px] px-4 sm:px-6 lg:px-[50px]">
+
+// ✅ 正确
+import { PageContainer } from '@prism/ui';
+<PageContainer>...</PageContainer>
+```
+
+## 响应式：Mobile-First，严禁 Desktop-First
+
+```tsx
+// ❌ 禁止（Desktop-First）
+className="grid-cols-3 max-md:grid-cols-1"
+
+// ✅ 正确（Mobile-First）
+className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+```
+
+断点顺序：无前缀（手机）→ `sm:` → `md:` → `lg:` → `xl:`
+
+## 组件：CVA + cn()
+
+```tsx
+// 新建 UI 组件必须用 CVA 定义变体
+import { cva } from 'class-variance-authority';
+import { cn } from '@prism/shared';
+
+const variants = cva('base-classes', {
+  variants: { variant: { default: '...', brand: 'bg-brand text-brand-foreground' } },
+});
+
+// className 合并必须用 cn()
+className={cn(variants({ variant }), className)}
+```
+
+## 触控：可点击元素 ≥ 44px
+
+```tsx
+// 图标按钮必须保证触控区域
+className="min-h-touch min-w-touch flex items-center justify-center"
+```

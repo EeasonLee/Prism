@@ -43,6 +43,8 @@
     "src/**/*.test.js",
     "src/**/*.spec.jsx",
     "src/**/*.test.jsx",
+    "tailwind.config.js",
+    "postcss.config.js",
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs",

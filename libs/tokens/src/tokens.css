@@ -1,0 +1,79 @@
+/**
+ * Prism Design Tokens
+ *
+ * 唯一真相源：所有 CSS 变量在此定义。
+ * Tailwind 主题通过 tailwind-preset.js 映射为工具类。
+ *
+ * 使用方式（app 的 globals.css 中）：
+ *   @import '../../../libs/tokens/src/tokens.css';
+ *
+ * 修改主题色：只改这里，全局自动生效，无需更新文档。
+ */
+
+:root {
+  /* ─── shadcn 系统色 ─────────────────────────────── */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%; /* 与 --ink 对齐 */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 0 0% 42%; /* 与 --ink-muted 对齐 */
+  --accent: 15 71% 95%; /* 与 --brand-light 对齐 */
+  --accent-foreground: 15 71% 40%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 15 71% 50%; /* 与 --brand 对齐，焦点环用品牌色 */
+  --radius: 0.5rem;
+
+  /* ─── 品牌色（Brand）#D94F25 ────────────────────── */
+  --primary: 15 71% 50%; /* 品牌橙，与 brand 统一 */
+  --primary-foreground: 0 0% 100%;
+  --brand: 15 71% 50%; /* #D94F25 */
+  --brand-foreground: 0 0% 100%; /* 品牌色上的文字（白色） */
+  --brand-light: 15 71% 95%; /* 浅橙，hover 背景 / 选中底色 */
+
+  /* ─── 背景层级（Surface）────────────────────────── */
+  --surface: 60 11% 96%; /* #F6F6F2 cream 内容区背景 */
+  --surface-muted: 0 0% 95%; /* #F2F2F2 Header/Nav 背景 */
+
+  /* ─── 文字层级（Ink）────────────────────────────── */
+  --ink: 0 0% 10%; /* #1a1a1a 主文字 */
+  --ink-muted: 0 0% 42%; /* #6B6B6B 次要文字 */
+  --ink-faint: 0 0% 60%; /* #999    占位/禁用文字 */
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 15 71% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 15 71% 60%;
+  --brand: 15 71% 60%;
+  --brand-foreground: 0 0% 100%;
+  --brand-light: 15 71% 20%;
+  --surface: 222.2 20% 12%;
+  --surface-muted: 222.2 20% 8%;
+  --ink: 210 40% 95%;
+  --ink-muted: 215 20% 65%;
+  --ink-faint: 215 15% 45%;
+}
