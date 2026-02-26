@@ -9,6 +9,8 @@ import {
   useMemo,
 } from 'react';
 import { apiClient } from '../lib/api/client';
+import { AuthProvider } from '../lib/auth/context';
+import { CartProvider } from '../lib/cart/context';
 import { logger } from '../lib/observability/logger';
 
 type AppConfig = {
@@ -21,7 +23,7 @@ export function useAppConfig() {
   return useContext(AppConfigContext);
 }
 
-export function AppProviders({ children }: PropsWithChildren) {
+function AppConfigProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppConfig>(() => ({ appName: 'Prism' }), []);
 
   useEffect(() => {
@@ -37,5 +39,15 @@ export function AppProviders({ children }: PropsWithChildren) {
     <AppConfigContext.Provider value={value}>
       {children}
     </AppConfigContext.Provider>
+  );
+}
+
+export function AppProviders({ children }: PropsWithChildren) {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <AppConfigProvider>{children}</AppConfigProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
