@@ -1,7 +1,5 @@
-// import { HomePageClient } from './components/HomePageClient';
-import { redirect } from 'next/navigation';
+import { HomePageClient } from './components/HomePageClient';
 
 export default function Page() {
-  redirect('https://www.joydeem.com');
-  // return <HomePageClient />;
+  return <HomePageClient />;
 }
