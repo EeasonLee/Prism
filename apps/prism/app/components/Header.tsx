@@ -3,7 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useAuth } from '../../lib/auth/context';
+import { useCart } from '../../lib/cart/context';
+import { CartDrawer } from './CartDrawer';
+import { LoginModal } from './LoginModal';
 
 type NavLink = {
   label: string;
@@ -102,8 +106,25 @@ function DropdownNav({ label, items }: DropdownNavProps) {
   );
 }
 
+function UserAvatar({ name, email }: { name: string; email: string }) {
+  const initial = name ? name[0].toUpperCase() : email[0].toUpperCase();
+  return (
+    <span
+      className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-[13px] font-bold text-brand-foreground select-none"
+      aria-hidden="true"
+    >
+      {initial}
+    </span>
+  );
+}
+
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { itemCount, openCart, isCartOpen } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const navLinks: NavLink[] = [
     { label: 'About Us', href: 'https://www.joydeem.com/aboutus' },
@@ -148,58 +169,69 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-30 bg-surface-muted">
-      <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
-        <a
-          href="https://www.joydeem.com/"
-          className="flex items-center shrink-0"
-        >
-          <Image
-            src="/images/logo.png"
-            alt="Joydeem"
-            width={170}
-            height={57}
-            className="h-[57px] w-auto"
-            priority
-          />
-        </a>
+    <>
+      <CartDrawer />
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <header className="sticky top-0 z-30 bg-surface-muted">
+        <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
+          <a
+            // href="https://www.joydeem.com/"
+            href="/"
+            className="flex items-center shrink-0"
+          >
+            <Image
+              src="/images/logo.png"
+              alt="Joydeem"
+              width={170}
+              height={57}
+              className="h-[57px] w-auto"
+              priority
+            />
+          </a>
 
-        <nav
-          aria-label="主导航"
-          className="hidden h-[55px] flex-1 items-center justify-center gap-9 md:flex"
-        >
-          <DropdownNav label="Products" items={productLinks} />
+          <nav
+            aria-label="主导航"
+            className="hidden h-[55px] flex-1 items-center justify-center gap-9 md:flex"
+          >
+            <DropdownNav label="Products" items={productLinks} />
 
-          {navLinks.map(item => (
-            <a
-              key={item.href}
-              href={item.href}
+            {navLinks.map(item => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                rel="noreferrer"
+              >
+                {item.label}
+              </a>
+            ))}
+
+            <DropdownNav label="Support" items={supportLinks} />
+
+            <Link
+              href="/shop"
               className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              rel="noreferrer"
             >
-              {item.label}
-            </a>
-          ))}
+              Shop
+            </Link>
 
-          <DropdownNav label="Support" items={supportLinks} />
+            <Link
+              href="/recipes"
+              className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Recipes
+            </Link>
 
-          <Link
-            href="/recipes"
-            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            Recipes
-          </Link>
+            <Link
+              href="/blog"
+              className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Blog
+            </Link>
+          </nav>
 
-          <Link
-            href="/blog"
-            className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            Blog
-          </Link>
-        </nav>
-
-        <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
-          {/* <IconButton label="Search">
+          <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
+            {/* <IconButton label="Search">
             <svg
               aria-hidden="true"
               className="h-5 w-5"
@@ -215,28 +247,75 @@ export function Header() {
             </svg>
           </IconButton> */}
 
-          <a
-            href="https://www.joydeem.com/customer/account/"
-            rel="noopener noreferrer"
-          >
-            <IconButton label="Account">
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c1.5-3 4.5-4.5 8-4.5s6.5 1.5 8 4.5" />
-              </svg>
-            </IconButton>
-          </a>
+            {isAuthenticated && user ? (
+              <div ref={userMenuRef} className="relative">
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  aria-expanded={isUserMenuOpen}
+                  onClick={() => setIsUserMenuOpen(open => !open)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border transition hover:border-brand/30 hover:bg-brand/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                >
+                  <UserAvatar
+                    name={user.first_name ?? user.username}
+                    email={user.email}
+                  />
+                </button>
 
-          {/* <IconButton label="Favorites" badge={0}>
+                {isUserMenuOpen && (
+                  <>
+                    {/* 点击遮罩关闭 */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+                      <div className="border-b border-border px-4 py-3">
+                        {(user.first_name || user.last_name) && (
+                          <p className="truncate text-sm font-semibold text-ink">
+                            {[user.first_name, user.last_name]
+                              .filter(Boolean)
+                              .join(' ')}
+                          </p>
+                        )}
+                        <p className="truncate text-xs text-ink-muted">
+                          {user.email}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          logout();
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <IconButton label="Sign in" onClick={() => setIsLoginOpen(true)}>
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c1.5-3 4.5-4.5 8-4.5s6.5 1.5 8 4.5" />
+                </svg>
+              </IconButton>
+            )}
+
+            {/* <IconButton label="Favorites" badge={0}>
             <svg
               aria-hidden="true"
               className="h-5 w-5"
@@ -251,29 +330,12 @@ export function Header() {
             </svg>
           </IconButton> */}
 
-          {/* <IconButton label="Cart" badge={0}>
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="9" cy="20" r="1.5" />
-              <circle cx="17" cy="20" r="1.5" />
-              <path d="M3 4h2l1.5 12.5h11l1-9H6.2" />
-            </svg>
-          </IconButton> */}
-
-          <div className="md:hidden">
             <IconButton
-              label="Menu"
-              onClick={() => setIsMobileMenuOpen(open => !open)}
-              ariaExpanded={isMobileMenuOpen}
-              ariaControls="mobile-menu"
+              label="Cart"
+              badge={itemCount > 0 ? itemCount : undefined}
+              onClick={openCart}
+              ariaExpanded={isCartOpen}
+              ariaControls="cart-drawer"
             >
               <svg
                 aria-hidden="true"
@@ -285,26 +347,18 @@ export function Header() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M4 6h16M4 12h16M4 18h16" />
+                <circle cx="9" cy="20" r="1.5" />
+                <circle cx="17" cy="20" r="1.5" />
+                <path d="M3 4h2l1.5 12.5h11l1-9H6.2" />
               </svg>
             </IconButton>
-          </div>
-        </div>
 
-        <div
-          id="mobile-menu"
-          className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-border bg-background shadow-xl transition-[opacity,visibility,transform] duration-200 ${
-            isMobileMenuOpen
-              ? 'visible translate-y-0 opacity-100'
-              : 'invisible -translate-y-2 opacity-0'
-          }`}
-        >
-          <div className="px-4 py-4 space-y-4">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-ink-muted">Menu</p>
+            <div className="md:hidden">
               <IconButton
-                label="Close menu"
-                onClick={() => setIsMobileMenuOpen(false)}
+                label="Menu"
+                onClick={() => setIsMobileMenuOpen(open => !open)}
+                ariaExpanded={isMobileMenuOpen}
+                ariaControls="mobile-menu"
               >
                 <svg
                   aria-hidden="true"
@@ -316,43 +370,45 @@ export function Header() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M6 6l12 12M18 6L6 18" />
+                  <path d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </IconButton>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-ink-muted">Products</p>
-              <ul className="mt-2 space-y-2">
-                {productLinks.map(item => (
-                  <li key={item.href}>
-                    <a
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          </div>
 
-            <div className="flex flex-col gap-2">
-              {navLinks.map(item => (
-                <a
-                  key={item.href}
-                  href={item.href}
+          <div
+            id="mobile-menu"
+            className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-border bg-background shadow-xl transition-[opacity,visibility,transform] duration-200 ${
+              isMobileMenuOpen
+                ? 'visible translate-y-0 opacity-100'
+                : 'invisible -translate-y-2 opacity-0'
+            }`}
+          >
+            <div className="px-4 py-4 space-y-4">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-semibold text-ink-muted">Menu</p>
+                <IconButton
+                  label="Close menu"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
                 >
-                  {item.label}
-                </a>
-              ))}
-
+                  <svg
+                    aria-hidden="true"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </IconButton>
+              </div>
               <div>
-                <p className="text-sm font-semibold text-ink-muted">Support</p>
+                <p className="text-sm font-semibold text-ink-muted">Products</p>
                 <ul className="mt-2 space-y-2">
-                  {supportLinks.map(item => (
+                  {productLinks.map(item => (
                     <li key={item.href}>
                       <a
                         href={item.href}
@@ -366,25 +422,111 @@ export function Header() {
                 </ul>
               </div>
 
-              <Link
-                href="/recipes"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-              >
-                Recipes
-              </Link>
+              <div className="flex flex-col gap-2">
+                {navLinks.map(item => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
+                  >
+                    {item.label}
+                  </a>
+                ))}
 
-              <Link
-                href="/blog"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-              >
-                Blog
-              </Link>
+                <div>
+                  <p className="text-sm font-semibold text-ink-muted">
+                    Support
+                  </p>
+                  <ul className="mt-2 space-y-2">
+                    {supportLinks.map(item => (
+                      <li key={item.href}>
+                        <a
+                          href={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <Link
+                  href="/shop"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
+                >
+                  Shop
+                </Link>
+
+                <Link
+                  href="/recipes"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
+                >
+                  Recipes
+                </Link>
+
+                <Link
+                  href="/blog"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
+                >
+                  Blog
+                </Link>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                {isAuthenticated && user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 px-2 py-2">
+                      <UserAvatar
+                        name={user.first_name ?? user.username}
+                        email={user.email}
+                      />
+                      <div className="min-w-0">
+                        {(user.first_name || user.last_name) && (
+                          <p className="truncate text-sm font-semibold text-ink">
+                            {[user.first_name, user.last_name]
+                              .filter(Boolean)
+                              .join(' ')}
+                          </p>
+                        )}
+                        <p className="truncate text-xs text-ink-muted">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full rounded-md px-2 py-2 text-left text-base font-medium text-ink transition hover:bg-brand/10"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsLoginOpen(true);
+                    }}
+                    className="w-full rounded-md px-2 py-2 text-left text-base font-medium text-ink transition hover:bg-brand/10"
+                  >
+                    Sign in / Create account
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

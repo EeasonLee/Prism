@@ -3,6 +3,7 @@ const { withNx } = require('@nx/next/plugins/with-nx');
 // 读取环境变量
 const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const magentoApiUrl = process.env.NEXT_PUBLIC_MAGENTO_API_URL;
 
 const nextConfig = {
   reactStrictMode: true,
@@ -40,20 +41,36 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'magento.test',
+      },
+      {
+        protocol: 'http',
+        hostname: 'magento.test',
+      },
+      {
+        protocol: 'https',
         hostname: '**', // 允许所有 HTTPS 域名（生产环境建议限制具体域名）
       },
     ],
   },
   // 配置 API 代理（仅当启用代理时）
-  ...(useApiProxy && apiUrl
+  ...(useApiProxy
     ? {
         async rewrites() {
-          return [
-            {
+          const rules = [];
+          if (apiUrl) {
+            rules.push({
               source: '/api-proxy/:path*',
               destination: `${apiUrl}/:path*`,
-            },
-          ];
+            });
+          }
+          if (magentoApiUrl) {
+            rules.push({
+              source: '/magento-proxy/:path*',
+              destination: `${magentoApiUrl}/:path*`,
+            });
+          }
+          return rules;
         },
       }
     : {}),

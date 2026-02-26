@@ -371,15 +371,17 @@ function logToServerConsole(data: RequestLogData): void {
     process.env.NODE_ENV === 'development';
 
   if (isDevelopment) {
-    // 请求详情（使用分组，默认折叠）
+    // 请求详情（平铺，避免 group 转发到浏览器后内容丢失）
     if (requestHeaders || requestBody !== undefined) {
-      console.groupCollapsed('\x1b[34m📤 Request Details\x1b[0m');
+      console.log('  \x1b[34m📤 Request Details\x1b[0m');
       if (requestHeaders) {
-        console.log('\x1b[90mHeaders:\x1b[0m');
-        console.log(formatHeaders(requestHeaders));
+        console.log(
+          '\x1b[90m    Headers:\x1b[0m',
+          formatHeaders(requestHeaders)
+        );
       }
       if (requestBody !== undefined) {
-        console.log('\x1b[90mBody:\x1b[0m');
+        console.log('\x1b[90m    Body:\x1b[0m');
         try {
           const parsed =
             typeof requestBody === 'string'
@@ -390,63 +392,47 @@ function logToServerConsole(data: RequestLogData): void {
           console.log(requestBody);
         }
       }
-      console.groupEnd();
     }
 
-    // 响应详情（使用分组，默认展开，这是最重要的信息）
+    // 响应详情 —— 用平铺 console.log 而非 console.group，
+    // 确保 Next.js 转发到浏览器 DevTools 时内容可见（group 内层日志转发后会丢失）
     if (responseBody !== undefined && status) {
-      const groupTitle =
-        status >= 200 && status < 300
-          ? '\x1b[32m📥 Response Details\x1b[0m'
-          : '\x1b[31m📥 Response Details\x1b[0m';
-      console.group(groupTitle);
+      const isSuccess = status >= 200 && status < 300;
+      const sectionLabel = isSuccess
+        ? '\x1b[32m📥 Response Details\x1b[0m'
+        : '\x1b[31m📥 Response Details\x1b[0m';
+
+      console.log(`  ${sectionLabel}`);
+      console.log('\x1b[90m    Body:\x1b[0m');
 
       const bodyStr = formatJSON(responseBody, 2);
-      console.log('\x1b[90mBody:\x1b[0m');
-      if (status >= 200 && status < 300 && bodyStr.length > 500) {
-        // 成功响应且内容较长：显示摘要
-        try {
-          const parsed =
-            typeof responseBody === 'string'
-              ? JSON.parse(responseBody)
-              : responseBody;
-          console.log(parsed);
-          console.log(
-            `\x1b[90m... (response truncated, full length: ${bodyStr.length} chars)\x1b[0m`
-          );
-        } catch {
-          console.log(
-            bodyStr.substring(0, 500) +
-              `\x1b[90m... (truncated, full length: ${bodyStr.length} chars)\x1b[0m`
-          );
-        }
-      } else {
-        // 错误响应或短内容：显示完整内容
-        try {
-          const parsed =
-            typeof responseBody === 'string'
-              ? JSON.parse(responseBody)
-              : responseBody;
-          console.log(parsed);
-        } catch {
-          console.log(responseBody);
-        }
+      try {
+        const parsed =
+          typeof responseBody === 'string'
+            ? JSON.parse(responseBody)
+            : responseBody;
+        console.log(parsed);
+      } catch {
+        console.log(responseBody);
       }
-      console.groupEnd();
+      if (bodyStr.length > 500) {
+        console.log(
+          `\x1b[90m    ... (response truncated, full length: ${bodyStr.length} chars)\x1b[0m`
+        );
+      }
     }
 
-    // 错误详情（使用分组，默认展开，便于调试）
+    // 错误详情（平铺，避免 group 转发到浏览器后内容丢失）
     if (error) {
-      console.group('\x1b[31m❌ Error Details\x1b[0m');
+      console.log('  \x1b[31m❌ Error Details\x1b[0m');
       if (error instanceof Error) {
-        console.error('\x1b[31mMessage:\x1b[0m', error.message);
+        console.error('\x1b[31m    Message:\x1b[0m', error.message);
         if (error.stack) {
-          console.error('\x1b[31mStack:\x1b[0m', error.stack);
+          console.error('\x1b[31m    Stack:\x1b[0m', error.stack);
         }
       } else {
-        console.error('\x1b[31mError:\x1b[0m', error);
+        console.error('\x1b[31m    Error:\x1b[0m', error);
       }
-      console.groupEnd();
     }
   }
 
