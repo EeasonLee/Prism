@@ -16,33 +16,21 @@ const DEFAULT_PAGE_SIZE = 12;
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
+ * 每个 carousel item 包含多个 slides，flatMap 展开后每张图对应一个独立链接
  */
 function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
   return items
-    .filter(item => item.enabled) // 只显示启用的项
-    .sort((a, b) => a.order - b.order) // 按 order 排序
-    .map(item => {
-      // 轮播图使用原图以保证清晰度
-      const imageUrl = item.coverImage
-        ? processImageUrl(item.coverImage.url)
-        : '';
-
-      // 构建链接 URL
-      let linkUrl: string | undefined;
-      if (item.linkType === 'internal' && item.linkUrl) {
-        linkUrl = item.linkUrl;
-      } else if (item.linkType === 'external' && item.linkUrl) {
-        linkUrl = item.linkUrl;
-      }
-
-      return {
-        image: imageUrl || '',
-        alt: item.coverImage?.alternativeText || item.title,
-        title: item.title,
-        description: item.description || undefined,
-        link: linkUrl,
-      };
-    });
+    .filter(item => item.enabled)
+    .sort((a, b) => a.order - b.order)
+    .flatMap(item =>
+      (item.slides ?? [])
+        .filter(slide => slide.enabled && slide.image)
+        .map(slide => ({
+          image: processImageUrl(slide.image?.url ?? '') ?? '',
+          alt: slide.image?.alternativeText || item.title,
+          link: slide.linkUrl || undefined,
+        }))
+    );
 }
 
 function parseNumber(value: string | string[] | undefined, fallback: number) {
