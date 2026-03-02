@@ -71,6 +71,56 @@ export interface MagentoConfigurableOption {
   }>;
 }
 
+export interface MagentoGroupedItem {
+  id: number;
+  sku: string;
+  name: string;
+  price: number;
+  default_qty: number;
+  position: number;
+  stock_qty: number;
+  is_in_stock: boolean;
+  thumbnail_url?: string;
+}
+
+export interface MagentoBundleSelection {
+  selection_id: number;
+  sku: string;
+  name: string;
+  price: number;
+  price_type: 'fixed' | 'percent';
+  default_qty: number;
+  is_default: boolean;
+  can_change_qty: boolean;
+  stock_qty: number;
+  is_in_stock: boolean;
+}
+
+export interface MagentoBundleOption {
+  option_id: number;
+  title: string;
+  required: boolean;
+  type: 'select' | 'radio' | 'checkbox' | 'multi';
+  position: number;
+  selections: MagentoBundleSelection[];
+}
+
+export interface MagentoDownloadableLink {
+  link_id: number;
+  title: string;
+  price: number;
+  sort_order: number;
+  number_of_downloads: number;
+  sample_url?: string | null;
+}
+
+export interface MagentoDownloadableSample {
+  sample_id: number;
+  title: string;
+  sort_order: number;
+  sample_url: string;
+}
+
 export interface MagentoCustomAttribute {
   attribute_code: string;
   value: string | string[];
@@ -84,7 +134,13 @@ export interface MagentoProduct {
   price: number;
   status: number;
   visibility: number;
-  type_id: 'simple' | 'configurable' | 'virtual' | 'bundle' | 'grouped';
+  type_id:
+    | 'simple'
+    | 'configurable'
+    | 'virtual'
+    | 'bundle'
+    | 'grouped'
+    | 'downloadable';
   created_at: string;
   updated_at: string;
   weight?: number;
@@ -113,6 +169,26 @@ export interface MagentoProduct {
   review_count?: number;
   has_reviews?: boolean;
   category_ids?: number[];
+  // grouped
+  grouped_items?: MagentoGroupedItem[];
+  // bundle
+  bundle_price_type?: 'fixed' | 'dynamic';
+  bundle_options?: MagentoBundleOption[];
+  // downloadable
+  links_purchased_separately?: boolean;
+  downloadable_links?: MagentoDownloadableLink[];
+  downloadable_samples?: MagentoDownloadableSample[];
+  // configurable children
+  children?: Array<{
+    id: number;
+    sku: string;
+    name: string;
+    price: number;
+    stock_qty: number;
+    is_in_stock: boolean;
+    attributes: Record<string, string>;
+    media_gallery?: MagentoMediaGalleryItem[];
+  }>;
 }
 
 export interface MagentoProductListResponse {
@@ -148,12 +224,11 @@ export interface CartItem {
   quote_id: string;
 }
 
-/** /magento/cart/items 实际响应结构 */
+/** /api/cart/items 实际响应结构 */
 export interface CartItemsResponse {
   cart_id: string;
   items_count: number;
-  /** 每条是序列化的 JSON 字符串 */
-  items: string[];
+  items: CartItem[];
   redirect_link?: string;
   link_expires_at?: string;
 }
@@ -193,5 +268,10 @@ export interface AuthTokens {
 
 export interface AuthResponse {
   user: AuthUser;
+  tokens: AuthTokens;
+}
+
+export interface GuestAuthResponse {
+  guest_id: string;
   tokens: AuthTokens;
 }

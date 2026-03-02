@@ -4,7 +4,7 @@
  */
 
 import { env } from '../../env';
-import type { AuthResponse } from './types';
+import type { AuthResponse, GuestAuthResponse } from './types';
 
 function getBaseUrl(): string {
   // 浏览器端走 Next.js 代理，避免跨域；服务端直连
@@ -42,7 +42,7 @@ async function authFetch<T>(
 }
 
 export function login(email: string, password: string): Promise<AuthResponse> {
-  return authFetch<AuthResponse>('/auth/login', {
+  return authFetch<AuthResponse>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
@@ -54,7 +54,7 @@ export function register(
   firstName?: string,
   lastName?: string
 ): Promise<AuthResponse> {
-  return authFetch<AuthResponse>('/auth/register', {
+  return authFetch<AuthResponse>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({
       email,
@@ -66,15 +66,21 @@ export function register(
 }
 
 export function logout(accessToken: string): Promise<void> {
-  return authFetch<void>('/auth/logout', {
+  return authFetch<void>('/api/auth/logout', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
 export function refreshToken(refreshToken: string): Promise<AuthResponse> {
-  return authFetch<AuthResponse>('/auth/refresh', {
+  return authFetch<AuthResponse>('/api/auth/refresh', {
     method: 'POST',
     body: JSON.stringify({ refreshToken }),
+  });
+}
+
+export function guestLogin(): Promise<GuestAuthResponse> {
+  return authFetch<GuestAuthResponse>('/api/auth/guest', {
+    method: 'POST',
   });
 }
