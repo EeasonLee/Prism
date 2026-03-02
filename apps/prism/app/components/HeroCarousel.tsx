@@ -114,7 +114,7 @@ export function HeroCarousel({
             </CarouselItem>
           ))}
         </CarouselContent>
-        {showNavigation && (
+        {showNavigation && slides.length > 1 && (
           <>
             <CarouselPrevious className="left-2 flex min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:left-8 md:h-14 md:w-14" />
             <CarouselNext className="right-2 flex min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:right-8 md:h-14 md:w-14" />
@@ -122,7 +122,7 @@ export function HeroCarousel({
         )}
       </Carousel>
       {/* 指示器 */}
-      {showIndicators && (
+      {showIndicators && slides.length > 1 && (
         <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 md:bottom-8">
           {slides.map((_, index) => (
             <button
