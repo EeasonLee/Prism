@@ -6,14 +6,16 @@ import { getCartItems, getCartRedirectLink } from '../../lib/api/magento/cart';
 import type { CartItem } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
+import { LoginModal } from './LoginModal';
 
 export function CartDrawer() {
   const { isCartOpen, closeCart, itemCount } = useCart();
-  const { accessToken, isAuthenticated } = useAuth();
+  const { accessToken, isGuest } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // 打开抽屉时加载购物车详情
   useEffect(() => {
@@ -35,6 +37,13 @@ export function CartDrawer() {
 
   const handleCheckout = useCallback(async () => {
     if (!accessToken) return;
+
+    // 游客直接弹出登录引导，无需请求接口
+    if (isGuest) {
+      setShowLoginModal(true);
+      return;
+    }
+
     setCheckoutLoading(true);
     setServiceError(null);
     try {
@@ -42,17 +51,23 @@ export function CartDrawer() {
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      setServiceError(
-        msg.includes('unavailable')
-          ? 'Shop service is temporarily unavailable, please try again later.'
-          : 'Failed to generate checkout link. Please try again.'
-      );
+      // 服务端拦截游客结账的兜底处理
+      if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
+        setShowLoginModal(true);
+      } else {
+        setServiceError(
+          msg.includes('unavailable')
+            ? 'Shop service is temporarily unavailable, please try again later.'
+            : 'Failed to generate checkout link. Please try again.'
+        );
+      }
     } finally {
       setCheckoutLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, isGuest]);
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const hasItems = items.length > 0;
 
   return (
     <>
@@ -94,13 +109,7 @@ export function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {!isAuthenticated && (
-            <p className="text-center text-sm text-ink-muted">
-              Sign in to view your cart.
-            </p>
-          )}
-
-          {isAuthenticated && loadingItems && (
+          {loadingItems && (
             <div className="space-y-3">
               {[1, 2].map(n => (
                 <div
@@ -111,7 +120,7 @@ export function CartDrawer() {
             </div>
           )}
 
-          {isAuthenticated && !loadingItems && items.length === 0 && (
+          {!loadingItems && !hasItems && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingCart className="mb-3 h-10 w-10 text-ink-muted/40" />
               <p className="text-sm font-medium text-ink-muted">
@@ -120,7 +129,7 @@ export function CartDrawer() {
             </div>
           )}
 
-          {!loadingItems && items.length > 0 && (
+          {!loadingItems && hasItems && (
             <ul className="space-y-3">
               {items.map(item => (
                 <li
@@ -153,14 +162,19 @@ export function CartDrawer() {
           )}
         </div>
 
-        {isAuthenticated && items.length > 0 && (
-          <div className="border-t border-border px-5 py-4 space-y-3">
+        {hasItems && (
+          <div className="space-y-3 border-t border-border px-5 py-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Subtotal</span>
               <span className="font-semibold text-ink">
                 ${subtotal.toFixed(2)}
               </span>
             </div>
+            {isGuest && (
+              <p className="text-center text-xs text-ink-muted">
+                Sign in or create an account to checkout.
+              </p>
+            )}
             <button
               type="button"
               onClick={handleCheckout}
@@ -172,6 +186,13 @@ export function CartDrawer() {
           </div>
         )}
       </aside>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => setShowLoginModal(false)}
+        defaultTab="register"
+      />
     </>
   );
 }

@@ -164,7 +164,7 @@ function logToBrowserConsole(data: RequestLogData): void {
     statusText,
     duration,
     requestHeaders,
-    responseHeaders,
+    responseHeaders: _responseHeaders,
     requestBody,
     responseBody,
     error,
@@ -207,10 +207,10 @@ function logToBrowserConsole(data: RequestLogData): void {
     styles.push('color: #ef4444; font-weight: bold; font-size: 11px');
   }
 
-  // 使用 console.groupCollapsed 创建默认折叠的日志组
-  console.groupCollapsed(title, ...styles);
+  // 使用 console.group（默认展开），确保 Response Body 直接可见
+  console.group(title, ...styles);
 
-  // 请求详情（默认折叠，需要时才查看）
+  // 请求详情（折叠，需要时展开查看）
   if (requestHeaders || requestBody !== undefined) {
     console.groupCollapsed(
       '%c📤 Request Details',
@@ -222,7 +222,6 @@ function logToBrowserConsole(data: RequestLogData): void {
     }
     if (requestBody !== undefined) {
       console.log('%cBody:', 'color: #6b7280; font-weight: bold');
-      // 如果已经是对象，直接显示；如果是字符串，尝试解析
       if (typeof requestBody === 'string') {
         try {
           console.log(JSON.parse(requestBody));
@@ -236,40 +235,26 @@ function logToBrowserConsole(data: RequestLogData): void {
     console.groupEnd();
   }
 
-  // 响应详情（默认展开，直接显示返回数据，这是最重要的信息）
-  if (status && (responseHeaders || responseBody !== undefined)) {
-    // 使用 console.group 而不是 groupCollapsed，这样在展开外层后自动展开
-    console.group(
-      '%c📥 Response Details',
+  // 响应 Body 直接平铺打印，不放在折叠 group 里，确保可见
+  if (status && responseBody !== undefined) {
+    const bodyLabel = `%c📥 Response Body`;
+    const bodyLabelStyle =
       statusColor === '#10b981'
         ? 'color: #10b981; font-weight: bold'
-        : 'color: #ef4444; font-weight: bold'
-    );
-    if (responseHeaders) {
-      const formattedHeaders: Record<string, string> = {};
-      responseHeaders.forEach((value, key) => {
-        formattedHeaders[key] = value;
-      });
-      console.log('%cHeaders:', 'color: #6b7280; font-weight: bold');
-      console.table(formattedHeaders);
-    }
-    if (responseBody !== undefined) {
-      console.log('%cBody:', 'color: #6b7280; font-weight: bold');
-      // 如果已经是对象，直接显示；如果是字符串，尝试解析
-      if (typeof responseBody === 'string') {
-        try {
-          console.log(JSON.parse(responseBody));
-        } catch {
-          console.log(responseBody);
-        }
-      } else {
+        : 'color: #ef4444; font-weight: bold';
+    console.log(bodyLabel, bodyLabelStyle);
+    if (typeof responseBody === 'string') {
+      try {
+        console.log(JSON.parse(responseBody));
+      } catch {
         console.log(responseBody);
       }
+    } else {
+      console.log(responseBody);
     }
-    console.groupEnd();
   }
 
-  // 错误详情（默认展开，便于调试）
+  // 错误详情（展开，便于调试）
   if (error) {
     console.group('%c❌ Error Details', 'color: #ef4444; font-weight: bold');
     if (error instanceof Error) {

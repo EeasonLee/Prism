@@ -22,7 +22,7 @@ function buildQuery(params: Record<string, unknown>): string {
 
 /** 获取完整分类树 */
 export function fetchCategoryTree(): Promise<MagentoCategoryTree> {
-  return magentoClient.get<MagentoCategoryTree>('/magento/categories/tree');
+  return magentoClient.get<MagentoCategoryTree>('/api/categories/tree');
 }
 
 /** 获取单个分类详情 */
@@ -30,7 +30,7 @@ export function fetchCategoryById(
   categoryId: number
 ): Promise<MagentoCategoryDetail> {
   return magentoClient.get<MagentoCategoryDetail>(
-    `/magento/categories/${categoryId}`
+    `/api/categories/${categoryId}`
   );
 }
 
@@ -49,13 +49,13 @@ export function fetchProducts(
     order: params.order ?? 'desc',
   });
   return magentoClient.get<MagentoProductListResponse>(
-    `/magento/products${qs ? `?${qs}` : ''}`
+    `/api/products${qs ? `?${qs}` : ''}`
   );
 }
 
 /** 根据 SKU 获取商品详情 */
 export function fetchProductBySku(sku: string): Promise<MagentoProduct> {
   return magentoClient.get<MagentoProduct>(
-    `/magento/products/${encodeURIComponent(sku)}`
+    `/api/products/${encodeURIComponent(sku)}`
   );
 }
