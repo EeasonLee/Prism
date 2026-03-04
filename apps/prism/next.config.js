@@ -1,11 +1,21 @@
 const { withNx } = require('@nx/next/plugins/with-nx');
+const { readFileSync } = require('fs');
+const { join } = require('path');
 
 // 读取环境变量
 const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const magentoApiUrl = process.env.NEXT_PUBLIC_MAGENTO_API_URL;
 
+// 构建时注入版本号，单一来源：apps/prism/package.json（用 fs 读取避免 tsconfig 将 package.json 纳入项目）
+const prismPkg = JSON.parse(
+  readFileSync(join(__dirname, 'package.json'), 'utf-8')
+);
+
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: prismPkg.version,
+  },
   reactStrictMode: true,
   typedRoutes: true,
   eslint: {
