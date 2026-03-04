@@ -158,7 +158,7 @@ export function Footer() {
           <p className="text-center text-sm text-gray-600">
             © {new Date().getFullYear()} Joydeem. All rights reserved.
             {env.NEXT_PUBLIC_APP_VERSION && (
-              <span className="ml-2 text-gray-400">
+              <span className="ml-2 text-gray-400 hidden">
                 v{env.NEXT_PUBLIC_APP_VERSION}
               </span>
             )}
