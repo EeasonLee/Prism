@@ -17,6 +17,7 @@ const clientSchema = z.object({
     .string()
     .transform(val => val === 'true')
     .optional(),
+  NEXT_PUBLIC_APP_VERSION: z.string().optional(),
 });
 
 const mergedSchema = serverSchema.merge(clientSchema);
@@ -28,6 +29,7 @@ export const env = mergedSchema.parse({
   NEXT_PUBLIC_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_IMAGE_BASE_URL,
   NEXT_PUBLIC_LOG_LEVEL: process.env.NEXT_PUBLIC_LOG_LEVEL,
   NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
+  NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
   STRAPI_API_TOKEN: process.env.STRAPI_API_TOKEN,
 });
 
