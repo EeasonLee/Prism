@@ -18,7 +18,10 @@
     "check:fix": "pnpm lint:fix",
     "e2e": "nx run prism:e2e",
     "storybook": "storybook dev -p 6006 -c .storybook",
-    "storybook:build": "storybook build -c .storybook -o storybook-static"
+    "storybook:build": "storybook build -c .storybook -o storybook-static",
+    "version:patch": "cd apps/prism && pnpm version patch",
+    "version:minor": "cd apps/prism && pnpm version minor",
+    "version:major": "cd apps/prism && pnpm version major"
   },
   "config": {
     "commitizen": {

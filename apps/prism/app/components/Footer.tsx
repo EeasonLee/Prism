@@ -1,4 +1,5 @@
 import { PageContainer } from '@prism/ui/components/PageContainer';
+import { env } from '../../lib/env';
 
 export function Footer() {
   return (
@@ -156,6 +157,11 @@ export function Footer() {
         <div className="mt-12 border-t border-gray-200 pt-8">
           <p className="text-center text-sm text-gray-600">
             © {new Date().getFullYear()} Joydeem. All rights reserved.
+            {env.NEXT_PUBLIC_APP_VERSION && (
+              <span className="ml-2 text-gray-400">
+                v{env.NEXT_PUBLIC_APP_VERSION}
+              </span>
+            )}
           </p>
         </div>
       </PageContainer>
