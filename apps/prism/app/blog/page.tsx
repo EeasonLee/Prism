@@ -13,6 +13,7 @@ import { getCarouselItems } from '../../lib/api/carousel';
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
  * 每个 carousel item 包含多个 slides，flatMap 展开后每张图对应一个独立链接
+ * 每个 carousel item 包含多个 slides，flatMap 展开后每张图对应一个独立链接
  */
 function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
   return items
@@ -20,9 +21,9 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     .sort((a, b) => a.order - b.order)
     .flatMap(item =>
       (item.slides ?? [])
-        .filter(slide => slide.image)
+        .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url ?? ''),
+          image: processImageUrl(slide.image?.url) ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

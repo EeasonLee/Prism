@@ -19,6 +19,7 @@ export interface CarouselSlide {
   } | null;
   linkType: 'internal' | 'external';
   linkUrl: string | null;
+  enabled: boolean;
 }
 
 export interface CarouselItemResponse {
@@ -36,7 +37,7 @@ export interface CarouselItemsResponse {
 }
 
 export async function getCarouselItems(
-  pageType: 'article' | 'recipe' = 'article'
+  pageType: 'article' | 'recipe' | 'home' = 'article'
 ): Promise<CarouselItemsResponse> {
   const endpoint = `api/carousel-items?filters[pageType][$eq]=${pageType}`;
 

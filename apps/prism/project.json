@@ -5,6 +5,13 @@
   "sourceRoot": "apps/prism/app",
   "tags": ["type:app", "scope:frontend"],
   "targets": {
+    "print-build-info": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/print-build-info.mjs",
+        "cwd": "{workspaceRoot}"
+      }
+    },
     "dev": {
       "executor": "@nx/next:server",
       "options": {
@@ -12,14 +19,16 @@
         "port": 3010,
         "dev": true,
         "hostname": "0.0.0.0"
-      }
+      },
+      "dependsOn": ["print-build-info"]
     },
     "build": {
       "executor": "@nx/next:build",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/prism"
-      }
+      },
+      "dependsOn": ["print-build-info"]
     },
     "start": {
       "executor": "@nx/next:server",

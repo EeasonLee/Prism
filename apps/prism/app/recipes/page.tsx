@@ -24,9 +24,9 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     .sort((a, b) => a.order - b.order)
     .flatMap(item =>
       (item.slides ?? [])
-        .filter(slide => slide.image)
+        .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url ?? ''),
+          image: processImageUrl(slide.image?.url ?? '') ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

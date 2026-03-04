@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 全新访客，获取 guest token
-    initGuest();
+    void initGuest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           clearGuestStorage();
           setAccessToken(null);
           setRefreshTokenStr(null);
-          initGuest();
+          void initGuest();
         } else {
           setUser(null);
           setAccessToken(null);
@@ -238,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setIsGuest(false);
     // 登出后重新初始化 guest 身份
-    initGuest();
+    void initGuest();
   }, [accessToken, isGuest, initGuest]);
 
   const value = useMemo<AuthContextValue>(
