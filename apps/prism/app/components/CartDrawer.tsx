@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingCart, X } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { getCartItems, getCartRedirectLink } from '../../lib/api/magento/cart';
 import type { CartItem } from '../../lib/api/magento/types';
@@ -9,11 +9,20 @@ import { useCart } from '../../lib/cart/context';
 import { LoginModal } from './LoginModal';
 
 export function CartDrawer() {
-  const { isCartOpen, closeCart, itemCount } = useCart();
+  const {
+    isCartOpen,
+    closeCart,
+    itemCount,
+    removeFromCart,
+    clearCart,
+    updateItemQty,
+  } = useCart();
   const { accessToken, isGuest } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
+  const [mutatingItemId, setMutatingItemId] = useState<number | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -65,6 +74,69 @@ export function CartDrawer() {
       setCheckoutLoading(false);
     }
   }, [accessToken, isGuest]);
+
+  const handleRemoveItem = useCallback(
+    async (itemId: number) => {
+      setMutatingItemId(itemId);
+      setServiceError(null);
+      try {
+        await removeFromCart(itemId);
+        setItems(prev => prev.filter(i => i.item_id !== itemId));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        setServiceError(
+          msg.includes('unavailable')
+            ? 'Shop service is temporarily unavailable, please try again later.'
+            : 'Failed to remove item. Please try again.'
+        );
+      } finally {
+        setMutatingItemId(null);
+      }
+    },
+    [removeFromCart]
+  );
+
+  const handleClearCart = useCallback(async () => {
+    setClearLoading(true);
+    setServiceError(null);
+    try {
+      await clearCart();
+      setItems([]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setServiceError(
+        msg.includes('unavailable')
+          ? 'Shop service is temporarily unavailable, please try again later.'
+          : 'Failed to clear cart. Please try again.'
+      );
+    } finally {
+      setClearLoading(false);
+    }
+  }, [clearCart]);
+
+  const handleUpdateQty = useCallback(
+    async (itemId: number, newQty: number) => {
+      if (newQty < 1) return;
+      setMutatingItemId(itemId);
+      setServiceError(null);
+      try {
+        await updateItemQty(itemId, newQty);
+        setItems(prev =>
+          prev.map(i => (i.item_id === itemId ? { ...i, qty: newQty } : i))
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        setServiceError(
+          msg.includes('unavailable')
+            ? 'Shop service is temporarily unavailable, please try again later.'
+            : 'Failed to update quantity. Please try again.'
+        );
+      } finally {
+        setMutatingItemId(null);
+      }
+    },
+    [updateItemQty]
+  );
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const hasItems = items.length > 0;
@@ -134,7 +206,7 @@ export function CartDrawer() {
               {items.map(item => (
                 <li
                   key={item.item_id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border p-3"
+                  className="flex items-start gap-3 rounded-lg border border-border p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-ink">
@@ -143,12 +215,49 @@ export function CartDrawer() {
                     <p className="mt-0.5 text-xs text-ink-muted">
                       SKU: {item.sku}
                     </p>
+                    <div className="mt-2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        onClick={() =>
+                          handleUpdateQty(item.item_id, item.qty - 1)
+                        }
+                        disabled={
+                          mutatingItemId === item.item_id || item.qty <= 1
+                        }
+                        className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="min-w-6 text-center text-sm text-ink">
+                        {item.qty}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Increase quantity"
+                        onClick={() =>
+                          handleUpdateQty(item.item_id, item.qty + 1)
+                        }
+                        disabled={mutatingItemId === item.item_id}
+                        className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="flex shrink-0 flex-col items-end gap-1">
                     <p className="text-sm font-semibold text-ink">
                       ${(item.price * item.qty).toFixed(2)}
                     </p>
-                    <p className="text-xs text-ink-muted">× {item.qty}</p>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${item.name} from cart`}
+                      onClick={() => handleRemoveItem(item.item_id)}
+                      disabled={mutatingItemId === item.item_id}
+                      className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </li>
               ))}
@@ -175,6 +284,14 @@ export function CartDrawer() {
                 Sign in or create an account to checkout.
               </p>
             )}
+            <button
+              type="button"
+              onClick={handleClearCart}
+              disabled={clearLoading}
+              className="w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
+            >
+              {clearLoading ? 'Clearing…' : 'Clear cart'}
+            </button>
             <button
               type="button"
               onClick={handleCheckout}

@@ -41,19 +41,42 @@ async function authFetch<T>(
   return json as T;
 }
 
-export function login(email: string, password: string): Promise<AuthResponse> {
+export interface LoginParams {
+  email: string;
+  password: string;
+  /** 游客 SSO 用户 ID，登录时合并游客购物车 */
+  guestSsoUserId?: string;
+  /** Magento 店铺 ID，不传则使用后端默认 */
+  storeId?: number;
+}
+
+export function login(params: LoginParams): Promise<AuthResponse> {
+  const { email, password, guestSsoUserId, storeId } = params;
   return authFetch<AuthResponse>('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      ...(guestSsoUserId ? { guestSsoUserId } : {}),
+      ...(storeId != null ? { storeId } : {}),
+    }),
   });
 }
 
-export function register(
-  email: string,
-  password: string,
-  firstName?: string,
-  lastName?: string
-): Promise<AuthResponse> {
+export interface RegisterParams {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  /** 游客 SSO 用户 ID，注册时合并游客购物车 */
+  guestSsoUserId?: string;
+  /** Magento 店铺 ID，不传则使用后端默认 */
+  storeId?: number;
+}
+
+export function register(params: RegisterParams): Promise<AuthResponse> {
+  const { email, password, firstName, lastName, guestSsoUserId, storeId } =
+    params;
   return authFetch<AuthResponse>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({
@@ -61,6 +84,8 @@ export function register(
       password,
       ...(firstName ? { first_name: firstName } : {}),
       ...(lastName ? { last_name: lastName } : {}),
+      ...(guestSsoUserId ? { guestSsoUserId } : {}),
+      ...(storeId != null ? { storeId } : {}),
     }),
   });
 }
@@ -82,5 +107,6 @@ export function refreshToken(refreshToken: string): Promise<AuthResponse> {
 export function guestLogin(): Promise<GuestAuthResponse> {
   return authFetch<GuestAuthResponse>('/api/auth/guest', {
     method: 'POST',
+    body: JSON.stringify({}),
   });
 }

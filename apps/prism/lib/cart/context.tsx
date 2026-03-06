@@ -9,11 +9,15 @@ import {
   useRef,
   useState,
 } from 'react';
-import { addCartItem, createCart, getCartItems } from '../api/magento/cart';
+import {
+  addCartItem,
+  clearCart as clearCartApi,
+  deleteCartItem as deleteCartItemApi,
+  getCartItems,
+  updateCartItemQty as updateCartItemQtyApi,
+} from '../api/magento/cart';
 import type { AddCartItemParams } from '../api/magento/types';
 import { useAuth } from '../auth/context';
-
-const CART_CREATED_KEY = 'magento_cart_created';
 
 export class GuestCheckoutError extends Error {
   readonly code = 'GUEST_CHECKOUT_NOT_ALLOWED';
@@ -28,8 +32,14 @@ interface CartContextValue {
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  /** 加购：自动处理「创建购物车 → 加购」流程，游客和注册用户均可使用 */
+  /** 加购：游客和注册用户均可使用 */
   addToCart: (params: AddCartItemParams) => Promise<void>;
+  /** 删除购物车中的单个商品 */
+  removeFromCart: (itemId: number) => Promise<void>;
+  /** 清空购物车 */
+  clearCart: () => Promise<void>;
+  /** 更新购物车商品数量 */
+  updateItemQty: (itemId: number, qty: number) => Promise<void>;
   /** 重新从服务器同步购物车数量 */
   syncCart: () => Promise<void>;
 }
@@ -60,9 +70,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (accessToken === prevTokenRef.current) return;
 
-    // 身份切换时重置购物车创建标记
+    // 身份切换时重置购物车数量
     if (prevTokenRef.current !== null && accessToken !== prevTokenRef.current) {
-      localStorage.removeItem(CART_CREATED_KEY);
       setItemCount(0);
     }
     prevTokenRef.current = accessToken;
@@ -73,34 +82,65 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
-  const ensureCart = useCallback(async (): Promise<void> => {
-    if (!accessToken) return;
-    if (localStorage.getItem(CART_CREATED_KEY) === 'true') return;
-    try {
-      await createCart(accessToken);
-      localStorage.setItem(CART_CREATED_KEY, 'true');
-    } catch {
-      // 可能已创建，忽略错误
-      localStorage.setItem(CART_CREATED_KEY, 'true');
-    }
-  }, [accessToken]);
-
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {
       if (!accessToken) throw new Error('No active session, please try again.');
-      await ensureCart();
       await addCartItem(params, accessToken);
       await syncCart();
     },
-    [accessToken, ensureCart, syncCart]
+    [accessToken, syncCart]
   );
 
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
+  const removeFromCart = useCallback(
+    async (itemId: number) => {
+      if (!accessToken) return;
+      await deleteCartItemApi(itemId, accessToken);
+      await syncCart();
+    },
+    [accessToken, syncCart]
+  );
+
+  const clearCart = useCallback(async () => {
+    if (!accessToken) return;
+    await clearCartApi(accessToken);
+    await syncCart();
+  }, [accessToken, syncCart]);
+
+  const updateItemQty = useCallback(
+    async (itemId: number, qty: number) => {
+      if (!accessToken || qty < 1) return;
+      await updateCartItemQtyApi(itemId, qty, accessToken);
+      await syncCart();
+    },
+    [accessToken, syncCart]
+  );
+
   const value = useMemo<CartContextValue>(
-    () => ({ itemCount, isCartOpen, openCart, closeCart, addToCart, syncCart }),
-    [itemCount, isCartOpen, openCart, closeCart, addToCart, syncCart]
+    () => ({
+      itemCount,
+      isCartOpen,
+      openCart,
+      closeCart,
+      addToCart,
+      removeFromCart,
+      clearCart,
+      updateItemQty,
+      syncCart,
+    }),
+    [
+      itemCount,
+      isCartOpen,
+      openCart,
+      closeCart,
+      addToCart,
+      removeFromCart,
+      clearCart,
+      updateItemQty,
+      syncCart,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

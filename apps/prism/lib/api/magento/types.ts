@@ -269,6 +269,8 @@ export interface AuthTokens {
 export interface AuthResponse {
   user: AuthUser;
   tokens: AuthTokens;
+  /** 购物车合并状态：success / failed / skipped */
+  cartMergeStatus?: 'success' | 'failed' | 'skipped';
 }
 
 export interface GuestAuthResponse {
