@@ -188,10 +188,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [accessToken, refreshTokenStr, isGuest, initGuest]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await apiLogin(email, password);
-    // 清除 guest 状态和购物车标记
+    const storedGuest = readGuestStorage();
+    const res = await apiLogin({
+      email,
+      password,
+      guestSsoUserId: storedGuest?.guestId,
+      storeId: 1,
+    });
+    // 清除 guest 状态（无论 cartMergeStatus 成功与否都清除）
     clearGuestStorage();
-    localStorage.removeItem('magento_cart_created');
     setUser(res.user);
     setAccessToken(res.tokens.accessToken);
     setRefreshTokenStr(res.tokens.refreshToken);
@@ -201,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       accessToken: res.tokens.accessToken,
       refreshToken: res.tokens.refreshToken,
     });
+    // cartMergeStatus: success/failed/skipped 已通过 clearGuestStorage 处理
   }, []);
 
   const register = useCallback(
@@ -210,8 +216,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName?: string,
       lastName?: string
     ) => {
-      const res = await apiRegister(email, password, firstName, lastName);
-      // 清除 guest 状态和购物车标记
+      const storedGuest = readGuestStorage();
+      const res = await apiRegister({
+        email,
+        password,
+        firstName,
+        lastName,
+        guestSsoUserId: storedGuest?.guestId,
+        storeId: 1,
+      });
+      // 清除 guest 状态和购物车标记（无论 cartMergeStatus 成功与否都清除）
       clearGuestStorage();
       localStorage.removeItem('magento_cart_created');
       setUser(res.user);
@@ -223,6 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken: res.tokens.accessToken,
         refreshToken: res.tokens.refreshToken,
       });
+      // cartMergeStatus: success/failed/skipped 已通过 clearGuestStorage 处理
     },
     []
   );
@@ -234,7 +249,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
     clearUserStorage();
-    localStorage.removeItem('magento_cart_created');
     setUser(null);
     setIsGuest(false);
     // 登出后重新初始化 guest 身份

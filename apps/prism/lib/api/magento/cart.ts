@@ -11,13 +11,6 @@ import type {
   CartRedirectResponse,
 } from './types';
 
-/** 创建购物车（同时在 Magento 中创建/绑定客户账号） */
-export function createCart(accessToken: string): Promise<unknown> {
-  return magentoClient.post('/api/cart/create', undefined, {
-    accessToken,
-  });
-}
-
 /** 添加商品到购物车 */
 export function addCartItem(
   params: AddCartItemParams,
@@ -35,6 +28,32 @@ export async function getCartItems(accessToken: string): Promise<CartItem[]> {
     { accessToken }
   );
   return res.items ?? [];
+}
+
+/** 删除购物车中的单个商品 */
+export function deleteCartItem(
+  itemId: number,
+  accessToken: string
+): Promise<unknown> {
+  return magentoClient.delete(`/api/cart/items/${itemId}`, { accessToken });
+}
+
+/** 清空购物车 */
+export function clearCart(accessToken: string): Promise<unknown> {
+  return magentoClient.delete('/api/cart/clear', { accessToken });
+}
+
+/** 更新购物车商品数量 */
+export function updateCartItemQty(
+  itemId: number,
+  qty: number,
+  accessToken: string
+): Promise<CartItem> {
+  return magentoClient.put<CartItem>(
+    `/api/cart/items/${itemId}`,
+    { qty },
+    { accessToken }
+  );
 }
 
 /** 生成购物车跳转链接（有效期 10 分钟，自动登录 Magento 并跳转结账页） */

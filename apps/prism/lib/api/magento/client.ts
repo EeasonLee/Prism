@@ -57,10 +57,13 @@ async function magentoFetch<T>(
   const startTime = Date.now();
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
     ...options.headers,
   };
+  // 有 body 时才设置 Content-Type，否则部分服务端会拒绝空 body + application/json
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   // 注入 Bearer token（优先使用显式传入的，否则从 tokenGetter 获取）
   const token = options.accessToken ?? tokenGetter?.();
@@ -195,5 +198,17 @@ export const magentoClient = {
       method: 'POST',
       body: data !== undefined ? JSON.stringify(data) : undefined,
     });
+  },
+
+  put<T>(path: string, data?: unknown, opts?: Omit<RequestOptions, 'method'>) {
+    return magentoFetch<T>(path, {
+      ...opts,
+      method: 'PUT',
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  delete<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'body'>) {
+    return magentoFetch<T>(path, { ...opts, method: 'DELETE' });
   },
 };
