@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { env } from '../lib/env';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
+import { PromoBar } from './components/PromoBar';
 import './globals.css';
 import { AppProviders } from './providers';
 
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" data-app={env.NODE_ENV}>
       <body>
         <AppProviders>
+          <PromoBar />
           <Header />
           {children}
           <Footer />

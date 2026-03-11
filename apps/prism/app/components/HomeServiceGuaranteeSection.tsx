@@ -1,11 +1,4 @@
-'use client';
-
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Headphones, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
-import { useLayoutEffect, useRef } from 'react';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const services = [
   {
@@ -35,60 +28,35 @@ const services = [
 ];
 
 export function HomeServiceGuaranteeSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const cards = cardsRef.current;
-
-    if (!section || !cards) return;
-
-    const ctx = gsap.context(() => {
-      const cardElements = cards.querySelectorAll('.service-card');
-      gsap.fromTo(
-        cardElements,
-        { y: '6vh', opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        }
-      );
-    }, section);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
     <section
-      ref={sectionRef}
-      className="relative w-full overflow-hidden bg-[#F6F6F2] py-16 lg:py-20"
+      aria-labelledby="peace-of-mind-heading"
+      className="relative w-full overflow-hidden bg-surface py-12 lg:py-20"
     >
       <div className="w-full px-6 lg:px-[8vw]">
-        <div
-          ref={cardsRef}
-          className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6"
+        {/* 导语版块 */}
+        <h2
+          id="peace-of-mind-heading"
+          className="heading-3 mb-8 text-center text-ink"
         >
+          Peace of Mind
+        </h2>
+
+        {/* 服务项：扁平布局，无卡片 */}
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-12">
           {services.map(service => (
             <div
               key={service.id}
-              className="service-card flex flex-col items-center rounded-[24px] bg-white p-6 text-center card-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-xl lg:p-8"
+              className="flex flex-col items-center text-center"
             >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#D94F25]/10">
-                <service.icon className="h-7 w-7 text-[#D94F25]" />
-              </div>
-              <h3 className="mb-2 text-base font-semibold text-[#111] lg:text-lg">
+              <service.icon
+                className="mb-4 h-10 w-10 text-brand lg:h-12 lg:w-12"
+                strokeWidth={1.5}
+              />
+              <h3 className="mb-2 text-base font-semibold text-ink lg:text-lg">
                 {service.title}
               </h3>
-              <p className="text-sm text-[#6B6B6B]">{service.description}</p>
+              <p className="text-sm text-ink-muted">{service.description}</p>
             </div>
           ))}
         </div>

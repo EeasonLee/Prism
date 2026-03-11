@@ -2,6 +2,7 @@
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
 import { Sliders, Sparkles, Volume2 } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutEffect, useRef } from 'react';
@@ -39,6 +40,7 @@ export function HomeModernLivingSection() {
     const image = imageRef.current;
 
     if (!section || !headline || !featuresEl || !image) return;
+    if (!HOME_ANIMATIONS_ENABLED) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(

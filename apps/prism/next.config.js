@@ -61,6 +61,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**', // 允许所有 HTTPS 域名（生产环境建议限制具体域名）
       },
+      {
+        protocol: 'https',
+        hostname: 'fellowproducts.com',
+      },
     ],
   },
   // 配置 API 代理（仅当启用代理时）

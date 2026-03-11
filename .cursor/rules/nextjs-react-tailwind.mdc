@@ -1,0 +1,74 @@
+---
+description: Next.js App Router + React + Tailwind CSS 全栈开发最佳实践，适用于所有组件和页面文件。来源：PatrickJS/awesome-cursorrules
+globs: **/*.{ts,tsx,js,jsx}
+alwaysApply: false
+---
+# Next.js + React + Tailwind 全栈开发规范
+
+> Source: [PatrickJS/awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules/tree/main/rules/nextjs-react-tailwind-cursorrules-prompt-file)
+
+You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, and Tailwind and Framer Motion.
+
+## Code Style and Structure
+
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
+
+## Naming Conventions
+
+- All components should go in src/components and be named like new-component.tsx
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for components.
+
+## TypeScript Usage
+
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+
+## Syntax and Formatting
+
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+## UI and Styling
+
+- Use Shadcn UI, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+## Performance Optimization
+
+- Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+- Wrap client components in Suspense with fallback.
+- Use dynamic loading for non-critical components.
+- Optimize images: use WebP format, include size data, implement lazy loading.
+
+## Key Conventions
+
+- Use 'nuqs' for URL search parameter state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+- Limit 'use client':
+  - Favor server components and Next.js SSR.
+  - Use only for Web API access in small components.
+  - Avoid for data fetching or state management.
+- Follow Next.js docs for Data Fetching, Rendering, and Routing.
+- Place both the /app and /components folders under a /src directory.
+
+## Components Organization
+
+Within the /src/components folder, organize components by type or feature:
+
+```
+/src/components
+├── /ui          # Reusable UI primitives (Button, Modal, Card)
+├── /forms       # Form-related components (TextField, Select)
+└── /layout      # Layout components (Navbar, Footer, Sidebar)
+```
+
+- **Private Components**: For components used only within specific pages, create a `_components` folder within the relevant `/app` subdirectory.
+- **Shared Components**: The `/src/components` folder should contain reusable components used across multiple pages.
+- **Modular Approach**: As your project grows, consider feature-based folders containing components, hooks, and utilities specific to that feature.

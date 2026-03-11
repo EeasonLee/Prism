@@ -1,0 +1,89 @@
+---
+description: Nx Monorepo 项目结构规范，模块组织、依赖管理和任务执行最佳实践。适用于本项目的 Nx 工作区配置。
+globs: **/*.{ts,tsx,json}
+alwaysApply: true
+---
+# Nx Monorepo 项目规范（Prism 专属）
+
+本文档定义了 Prism 项目的 Nx Monorepo 结构规范。
+
+## 项目结构
+
+```
+prism/                          # 工作区根目录
+├── apps/
+│   ├── prism/                  # Next.js 主应用
+│   ├── blog/                   # 博客应用
+│   └── shared/                 # 共享应用配置
+├── libs/
+│   ├── tokens/                 # 设计令牌（颜色、间距等）
+│   └── ui/                     # 共享 UI 组件库
+├── .cursor/rules/              # Cursor AI 规则
+└── docs/                       # 项目文档
+```
+
+## 模块边界规范
+
+**在正确的位置创建代码：**
+- `apps/prism/` - 仅应用级别的页面、路由和配置
+- `libs/ui/` - 跨应用复用的 UI 组件
+- `libs/tokens/` - 设计系统令牌（颜色、字体、间距）
+- `apps/shared/` - 跨应用共享的业务逻辑和工具
+
+**导入规则：**
+```typescript
+// ✅ GOOD: 通过公共 API 导入库
+import { Button } from '@./ui';
+import { tokens } from '@./tokens';
+
+// ❌ BAD: 直接导入库的内部路径
+import { Button } from '../../libs/ui/src/components/Button';
+```
+
+## Nx 常用命令
+
+```bash
+# 开发
+pnpm dev                    # 启动主应用开发服务器
+pnpm nx dev prism           # 等同于上面
+
+# 构建
+pnpm build                  # 构建主应用
+pnpm nx build prism         # 同上
+
+# 测试
+pnpm test                   # 运行测试
+pnpm nx test prism          # 运行主应用测试
+
+# 代码质量
+pnpm lint                   # 运行 ESLint
+pnpm typecheck              # TypeScript 类型检查
+pnpm check                  # 类型检查 + Lint
+
+# Storybook
+pnpm storybook              # 启动组件文档
+
+# 查看项目依赖图
+pnpm nx graph               # 可视化模块依赖
+```
+
+## 新增功能开发流程
+
+1. 评估代码属于哪个层级（app / lib）
+2. 在正确的位置创建文件
+3. 遵循对应的命名规范
+4. 添加对应的测试和类型声明
+5. 确保 `pnpm check` 通过后提交
+
+## 提交规范（Conventional Commits）
+
+本项目使用 Commitizen，通过 `pnpm commit` 交互式创建提交：
+
+```bash
+feat: 新增用户认证功能
+fix: 修复登录页面样式问题
+refactor: 重构用户列表组件
+docs: 更新 API 文档
+test: 添加用户服务单元测试
+chore: 升级依赖版本
+```

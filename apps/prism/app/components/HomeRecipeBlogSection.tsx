@@ -2,6 +2,7 @@
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
 import { ArrowRight, Clock, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -96,6 +97,7 @@ export function HomeRecipeBlogSection() {
     const content = contentRef.current;
 
     if (!section || !header || !content) return;
+    if (!HOME_ANIMATIONS_ENABLED) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -138,31 +140,31 @@ export function HomeRecipeBlogSection() {
     <section
       ref={sectionRef}
       id="recipes"
-      className="relative w-full overflow-hidden bg-[#F6F6F2] py-20 lg:py-28"
+      className="relative w-full overflow-hidden bg-surface py-12 lg:py-20"
     >
       <div className="w-full px-6 lg:px-[8vw]">
-        <div ref={headerRef} className="mb-12">
+        <div ref={headerRef} className="mb-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="micro-text mb-3 block text-[#D94F25]">
+              <span className="micro-text mb-3 block text-brand">
                 Inspiration
               </span>
               <h2
-                className="text-3xl font-bold text-[#111] lg:text-4xl"
+                className="heading-3 text-ink"
                 style={{ fontFamily: 'Montserrat, sans-serif' }}
               >
                 Recipes & Blog
               </h2>
             </div>
 
-            <div className="flex gap-2 rounded-full bg-white p-1">
+            <div className="flex gap-2 rounded-full border border-border bg-card p-1">
               <button
                 type="button"
                 onClick={() => setActiveTab('recipes')}
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
                   activeTab === 'recipes'
-                    ? 'bg-[#D94F25] text-white'
-                    : 'text-[#6B6B6B] hover:text-[#111]'
+                    ? 'bg-brand text-brand-foreground'
+                    : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 Recipes
@@ -172,8 +174,8 @@ export function HomeRecipeBlogSection() {
                 onClick={() => setActiveTab('blog')}
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
                   activeTab === 'blog'
-                    ? 'bg-[#D94F25] text-white'
-                    : 'text-[#6B6B6B] hover:text-[#111]'
+                    ? 'bg-brand text-brand-foreground'
+                    : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 Blog
@@ -189,7 +191,7 @@ export function HomeRecipeBlogSection() {
                 <Link
                   key={recipe.id}
                   href="/recipes"
-                  className="group block overflow-hidden rounded-[24px] bg-white card-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     <Image
@@ -201,13 +203,13 @@ export function HomeRecipeBlogSection() {
                     />
                   </div>
                   <div className="p-5">
-                    <h3 className="mb-2 line-clamp-1 text-lg font-semibold text-[#111] transition-colors group-hover:text-[#D94F25]">
+                    <h3 className="mb-2 line-clamp-1 text-lg font-semibold text-ink transition-colors group-hover:text-brand">
                       {recipe.title}
                     </h3>
-                    <p className="mb-4 line-clamp-2 text-sm text-[#6B6B6B]">
+                    <p className="mb-4 line-clamp-2 text-sm text-ink-muted">
                       {recipe.description}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-[#999]">
+                    <div className="flex items-center gap-4 text-xs text-ink-faint">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
                         {recipe.time}
@@ -227,7 +229,7 @@ export function HomeRecipeBlogSection() {
                 <Link
                   key={blog.id}
                   href="/blog"
-                  className="group block overflow-hidden rounded-[24px] bg-white card-shadow transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <div className="aspect-[16/10] overflow-hidden">
                     <Image
@@ -239,15 +241,15 @@ export function HomeRecipeBlogSection() {
                     />
                   </div>
                   <div className="p-5">
-                    <div className="mb-3 flex items-center gap-3 text-xs text-[#999]">
+                    <div className="mb-3 flex items-center gap-3 text-xs text-ink-faint">
                       <span>{blog.date}</span>
                       <span>•</span>
                       <span>{blog.readTime}</span>
                     </div>
-                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-[#111] transition-colors group-hover:text-[#D94F25]">
+                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-ink transition-colors group-hover:text-brand">
                       {blog.title}
                     </h3>
-                    <p className="line-clamp-2 text-sm text-[#6B6B6B]">
+                    <p className="line-clamp-2 text-sm text-ink-muted">
                       {blog.excerpt}
                     </p>
                   </div>
@@ -259,7 +261,7 @@ export function HomeRecipeBlogSection() {
           <div className="mt-10 text-center">
             <Link
               href={activeTab === 'recipes' ? '/recipes' : '/blog'}
-              className="inline-flex items-center gap-2 font-medium text-[#D94F25] transition-all hover:gap-3"
+              className="inline-flex items-center gap-2 font-medium text-brand transition-all hover:gap-3"
             >
               View All {activeTab === 'recipes' ? 'Recipes' : 'Articles'}
               <ArrowRight className="h-5 w-5" />

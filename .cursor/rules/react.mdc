@@ -1,0 +1,236 @@
+---
+description: React 19 + Next.js 15 最佳实践，组件架构、hooks 规范、性能优化和测试规范。
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+# React 最佳实践
+
+> Source: [sanjeed5/awesome-cursor-rules-mdc](https://github.com/sanjeed5/awesome-cursor-rules-mdc/blob/main/rules-mdc/react.mdc)
+
+## 1. 核心原则
+
+**组件必须是纯函数：** 相同的 props 必须返回相同的输出，不产生渲染时副作用。
+
+**Hooks 规则（严格遵守）：**
+- 只在函数组件或自定义 Hook 顶层调用 Hooks
+- 不在条件语句、循环或嵌套函数中调用 Hooks
+- 不在普通 JavaScript 函数中调用 Hooks
+
+## 2. 组件架构
+
+**Smart vs Dumb 组件分离：**
+```tsx
+// ✅ GOOD: Smart 容器组件（数据获取/逻辑）
+async function UserListPage() {
+  const users = await userService.getAll();
+  return <UserList users={users} />;
+}
+
+// ✅ GOOD: Dumb 展示组件（纯 UI）
+interface UserListProps {
+  users: User[];
+}
+function UserList({ users }: UserListProps) {
+  return (
+    <ul>
+      {users.map((user) => <UserItem key={user.id} user={user} />)}
+    </ul>
+  );
+}
+```
+
+**单文件单组件：** 每个组件独立文件，除非子组件只在父组件内使用（可以共存）。
+
+## 3. 状态管理层次
+
+按复杂度递进选择状态方案：
+
+```
+useState  →  useReducer  →  Context API  →  Zustand
+（本地状态）  （复杂本地状态）  （轻量全局状态）  （复杂全局状态）
+```
+
+```tsx
+// 1. 简单本地状态
+const [isOpen, setIsOpen] = useState(false);
+
+// 2. 复杂本地状态
+const [state, dispatch] = useReducer(formReducer, initialState);
+
+// 3. 避免 Prop Drilling - 用 Context
+const ThemeContext = createContext<Theme>('light');
+
+// 4. 复杂全局状态 - 用 Zustand
+const user = useUserStore((state) => state.user);
+```
+
+## 4. 自定义 Hooks
+
+将可复用逻辑抽取为自定义 Hook：
+
+```tsx
+// ✅ GOOD: 可复用的数据获取 Hook
+function useUsers(filter?: UserFilter) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+
+    userService.getAll(filter)
+      .then((data) => {
+        if (!cancelled) {
+          setUsers(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err);
+          setIsLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; }; // 清理函数
+  }, [filter]);
+
+  return { users, isLoading, error };
+}
+```
+
+## 5. 性能优化
+
+**只在性能分析确认瓶颈后才优化：**
+
+```tsx
+// React.memo - 防止不必要的重渲染
+const UserCard = React.memo(function UserCard({ user }: { user: User }) {
+  return <div>{user.name}</div>;
+});
+
+// useCallback - 稳定化传递给子组件的函数引用
+const handleDelete = useCallback((id: string) => {
+  deleteUser(id);
+}, []); // 依赖数组要准确
+
+// useMemo - 缓存昂贵计算
+const sortedUsers = useMemo(
+  () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
+  [users]
+);
+```
+
+**React 19 新特性（use 函数 / 并发特性）：**
+```tsx
+// use() 直接在组件中消费 Promise
+import { use, Suspense } from 'react';
+
+function UserProfile({ userPromise }: { userPromise: Promise<User> }) {
+  const user = use(userPromise); // 自动与 Suspense 集成
+  return <div>{user.name}</div>;
+}
+
+// 包装在 Suspense 中
+<Suspense fallback={<UserSkeleton />}>
+  <UserProfile userPromise={fetchUser(id)} />
+</Suspense>
+```
+
+## 6. 避免常见陷阱
+
+```tsx
+// ❌ BAD: 直接修改 state
+state.items.push(newItem);
+
+// ✅ GOOD: 不可变更新
+setItems((prev) => [...prev, newItem]);
+
+// ❌ BAD: 调用组件函数
+const element = UserCard(props);
+
+// ✅ GOOD: 使用 JSX
+const element = <UserCard {...props} />;
+
+// ❌ BAD: 遗漏 useEffect 清理
+useEffect(() => {
+  const subscription = subscribe(handler);
+  // 忘记清理！
+}, []);
+
+// ✅ GOOD: 提供清理函数
+useEffect(() => {
+  const subscription = subscribe(handler);
+  return () => subscription.unsubscribe();
+}, []);
+
+// ❌ BAD: 不准确的依赖数组
+useEffect(() => {
+  fetchData(userId); // userId 未在依赖中
+}, []); // ESLint 会警告
+
+// ✅ GOOD: 准确的依赖数组
+useEffect(() => {
+  fetchData(userId);
+}, [userId]);
+```
+
+## 7. 错误边界
+
+```tsx
+'use client';
+
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, info);
+    // 可以上报到错误监控服务
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? <ErrorFallback error={this.state.error} />;
+    }
+    return this.props.children;
+  }
+}
+```
+
+## 8. 文件命名规范
+
+```
+components/
+  UserCard.tsx        # PascalCase 组件
+  UserCard.test.tsx   # 对应测试文件
+  UserCard.stories.tsx # Storybook 故事
+
+hooks/
+  useUsers.ts         # camelCase，以 use 开头
+
+utils/
+  formatDate.ts       # camelCase 工具函数
+
+types/
+  user.ts             # camelCase 类型文件
+```
