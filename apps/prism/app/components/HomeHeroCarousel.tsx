@@ -92,7 +92,7 @@ export function HomeHeroCarousel() {
                 </p>
                 <a
                   href={slide.link}
-                  className={`inline-flex items-center gap-2 rounded-full bg-[#D94F25] px-8 py-4 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#c2441f] ${
+                  className={`inline-flex items-center gap-2 rounded-full bg-brand px-8 py-4 font-medium text-brand-foreground transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand/90 ${
                     index === currentSlide
                       ? 'translate-y-0 opacity-100'
                       : 'translate-y-8 opacity-0'

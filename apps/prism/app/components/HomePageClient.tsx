@@ -5,12 +5,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect } from 'react';
 import { HomeCategorySection } from './HomeCategorySection';
 import { HomeFeaturedProduct } from './HomeFeaturedProduct';
-import { HomeFeaturedProduct2 } from './HomeFeaturedProduct2';
 import { HomeFirstHeroSection } from './HomeFirstHeroSection';
 import { HomeHeroCarousel } from './HomeHeroCarousel';
-import { HomeModernLivingSection } from './HomeModernLivingSection';
+// import { HomeModernLivingSection } from './HomeModernLivingSection';
 import { HomeProductListSection } from './HomeProductListSection';
 import { HomeRecipeBlogSection } from './HomeRecipeBlogSection';
+import { HomeVideoShowcase } from './HomeVideoShowcase';
 import { HomeServiceGuaranteeSection } from './HomeServiceGuaranteeSection';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -26,14 +26,14 @@ export function HomePageClient() {
     <div className="grain-overlay">
       <main className="relative">
         <HomeHeroCarousel />
+        <HomeCategorySection />
         <HomeFirstHeroSection />
         <HomeFeaturedProduct />
-        <HomeFeaturedProduct2 />
-        <HomeCategorySection />
-        <HomeRecipeBlogSection />
         <HomeProductListSection />
+        <HomeRecipeBlogSection />
+        <HomeVideoShowcase />
         <HomeServiceGuaranteeSection />
-        <HomeModernLivingSection />
+        {/* <HomeModernLivingSection /> */}
       </main>
     </div>
   );

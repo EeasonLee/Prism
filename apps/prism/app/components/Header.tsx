@@ -5,9 +5,9 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useAuth } from '../../lib/auth/context';
+import { useAuthModal } from '../../lib/auth-modal/context';
 import { useCart } from '../../lib/cart/context';
 import { CartDrawer } from './CartDrawer';
-import { LoginModal } from './LoginModal';
 
 type NavLink = {
   label: string;
@@ -120,8 +120,8 @@ function UserAvatar({ name, email }: { name: string; email: string }) {
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { openLogin } = useAuthModal();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { itemCount, openCart, isCartOpen } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
@@ -171,7 +171,6 @@ export function Header() {
   return (
     <>
       <CartDrawer />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
       <header className="sticky top-0 z-30 bg-surface-muted">
         <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
           <a
@@ -298,7 +297,7 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <IconButton label="Sign in" onClick={() => setIsLoginOpen(true)}>
+              <IconButton label="Sign in" onClick={() => openLogin('signin')}>
                 <svg
                   aria-hidden="true"
                   className="h-5 w-5"
@@ -515,7 +514,7 @@ export function Header() {
                     type="button"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      setIsLoginOpen(true);
+                      openLogin('signin');
                     }}
                     className="w-full rounded-md px-2 py-2 text-left text-base font-medium text-ink transition hover:bg-brand/10"
                   >

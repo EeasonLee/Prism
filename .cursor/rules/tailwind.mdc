@@ -1,0 +1,144 @@
+---
+description: Tailwind CSS 最佳实践，设计系统配置、组件抽象、响应式设计和可访问性规范。
+globs: **/*.{css,html,jsx,tsx}
+alwaysApply: false
+---
+# Tailwind CSS 最佳实践
+
+> Source: [sanjeed5/awesome-cursor-rules-mdc](https://github.com/sanjeed5/awesome-cursor-rules-mdc/blob/main/rules-mdc/tailwind.mdc)
+
+## 1. 设计系统配置
+
+始终在 `tailwind.config.js` 中定义设计系统，避免在标记中使用任意值：
+
+```typescript
+// tailwind.config.ts
+export default {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#f0f9ff',
+          500: '#0ea5e9',
+          900: '#0c4a6e',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+    },
+  },
+} satisfies Config;
+```
+
+## 2. 组件抽象
+
+**将可复用的 UI 模式提取为组件，使用 `clsx` / `cva` 实现动态 class：**
+
+```tsx
+// ✅ GOOD: 可复用组件使用 cva
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+      },
+      size: {
+        sm: 'h-9 px-3 text-sm',
+        md: 'h-10 px-4',
+        lg: 'h-11 px-8 text-lg',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'md',
+    },
+  }
+);
+
+interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
+
+export function Button({ variant, size, className, ...props }: ButtonProps) {
+  return (
+    <button className={cn(buttonVariants({ variant, size }), className)} {...props} />
+  );
+}
+```
+
+**避免使用 `@apply` 做通用组件样式** — 优先用 React/Vue 组件封装。
+
+## 3. Class 排序规范
+
+按逻辑分组排列 utility classes，提高可读性：
+
+`Layout` > `Flexbox/Grid` > `Box Model (p, m, w, h)` > `Typography` > `Backgrounds` > `Borders` > `Effects` > `交互状态 (hover, focus)`
+
+```html
+<!-- ✅ GOOD: 有序排列 -->
+<div class="flex items-center gap-4 p-4 w-full bg-white rounded-lg shadow-md text-gray-900 hover:shadow-lg transition-shadow">
+
+<!-- ❌ BAD: 无序排列 -->
+<div class="text-gray-900 flex shadow-md p-4 rounded-lg items-center bg-white gap-4">
+```
+
+## 4. 移动优先响应式设计
+
+```html
+<!-- 默认移动端，逐步扩展到大屏 -->
+<div class="flex flex-col md:flex-row items-center md:items-start gap-4">
+  <img class="w-24 h-24 rounded-full md:w-32 md:h-32" src="..." alt="Profile">
+  <div class="text-center md:text-left">
+    <h2 class="text-xl md:text-2xl font-bold">标题</h2>
+    <p class="text-gray-600 md:text-lg">描述</p>
+  </div>
+</div>
+```
+
+## 5. 可访问性
+
+**`outline-hidden` vs `outline-none`（Tailwind v4）：**
+- `outline-hidden`：设置不可见轮廓，**强制颜色模式下仍然可见**，优先用于交互元素
+- `outline-none`：完全移除轮廓，**仅在提供自定义焦点指示器时使用**
+
+```html
+<!-- ❌ BAD: 完全移除焦点 -->
+<button class="focus:outline-none">点击</button>
+
+<!-- ✅ GOOD: 可访问的焦点状态 -->
+<button class="focus:outline-hidden focus:ring-2 focus:ring-brand-500/50">点击</button>
+```
+
+## 6. 深色模式
+
+```tsx
+// tailwind.config.ts
+darkMode: 'class',
+
+// 使用方式
+<div class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <button class="bg-brand-500 dark:bg-brand-400 text-white">
+    操作按钮
+  </button>
+</div>
+```
+
+## 7. 性能优化
+
+确保 `content` 配置覆盖所有使用 Tailwind classes 的文件，实现 PurgeCSS tree-shaking：
+
+```typescript
+content: [
+  './src/**/*.{js,jsx,ts,tsx}',
+  './apps/**/*.{js,jsx,ts,tsx}',
+  './libs/**/*.{js,jsx,ts,tsx}',
+],
+```

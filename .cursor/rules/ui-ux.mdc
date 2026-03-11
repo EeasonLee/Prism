@@ -1,0 +1,214 @@
+---
+description: Shadcn UI + Radix UI + React 可访问性最佳实践，UI/UX 设计规范，适用于所有 TSX 组件文件。
+globs: **/*.tsx
+alwaysApply: false
+---
+# UI/UX 设计规范（Shadcn UI + Radix UI + Accessibility）
+
+> Sources: [jacobparis/shadcn-ui cursorrules](https://gist.github.com/jacobparis/ee4d1659896d24130651bca780a3fbbb) | [cursor.directory/rules/shadcn-ui](https://cursor.directory/rules/shadcn-ui)
+
+## 1. Shadcn UI 组件使用
+
+本项目使用 **Shadcn UI** 作为组件库，基于 Radix UI 和 Tailwind CSS 构建。
+
+**从 ui 目录导入组件：**
+```tsx
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+```
+
+**安装新组件：**
+```bash
+npx shadcn@latest add [component-name]
+# 例如：
+npx shadcn@latest add dialog
+npx shadcn@latest add data-table
+npx shadcn@latest add date-picker
+```
+
+## 2. 组件设计原则
+
+**组合优于继承：**
+```tsx
+// ✅ GOOD: 使用 Shadcn 的组合 API
+<Card>
+  <CardHeader>
+    <CardTitle>标题</CardTitle>
+    <CardDescription>描述</CardDescription>
+  </CardHeader>
+  <CardContent>内容区域</CardContent>
+  <CardFooter className="flex justify-end gap-2">
+    <Button variant="outline">取消</Button>
+    <Button>确认</Button>
+  </CardFooter>
+</Card>
+```
+
+**变体系统（使用 cva）：**
+```tsx
+// 扩展 Shadcn 组件时遵循相同的 variant 模式
+const cardVariants = cva('rounded-lg border bg-card text-card-foreground shadow-sm', {
+  variants: {
+    variant: {
+      default: '',
+      elevated: 'shadow-lg',
+      ghost: 'border-transparent shadow-none',
+    },
+  },
+  defaultVariants: { variant: 'default' },
+});
+```
+
+## 3. 可访问性规范（WCAG 2.1 AA）
+
+**语义化 HTML：**
+```tsx
+// ✅ GOOD: 语义化结构
+<main>
+  <section aria-labelledby="section-title">
+    <h2 id="section-title">章节标题</h2>
+    <article>...</article>
+  </section>
+</main>
+
+// ❌ BAD: div 滥用
+<div>
+  <div>
+    <div>章节标题</div>
+    <div>...</div>
+  </div>
+</div>
+```
+
+**交互元素可访问性：**
+```tsx
+// ✅ GOOD: 完整的 ARIA 属性
+<button
+  aria-label="删除用户 John Doe"
+  aria-busy={isDeleting}
+  aria-disabled={isDeleting}
+  onClick={handleDelete}
+>
+  {isDeleting ? <Spinner /> : <TrashIcon />}
+</button>
+
+// ✅ GOOD: 图片 alt 文本
+<img src={user.avatar} alt={`${user.name} 的头像`} />
+<img src={decorative} alt="" role="presentation" /> // 装饰性图片
+```
+
+**键盘导航：**
+- 所有交互元素必须支持键盘访问
+- 使用 Radix UI 的 Dialog、DropdownMenu 等组件时，键盘支持已内置
+- 焦点陷阱（Focus Trap）在模态框中自动启用
+
+## 4. 表单设计
+
+```tsx
+// ✅ GOOD: 完整的表单可访问性
+<div className="space-y-2">
+  <Label htmlFor="email">
+    邮箱地址
+    <span aria-label="必填" className="text-destructive ml-1">*</span>
+  </Label>
+  <Input
+    id="email"
+    type="email"
+    placeholder="you@example.com"
+    aria-required="true"
+    aria-invalid={!!errors.email}
+    aria-describedby={errors.email ? 'email-error' : undefined}
+  />
+  {errors.email && (
+    <p id="email-error" role="alert" className="text-sm text-destructive">
+      {errors.email.message}
+    </p>
+  )}
+</div>
+```
+
+## 5. 加载状态和骨架屏
+
+```tsx
+// ✅ GOOD: 使用 Shadcn Skeleton
+import { Skeleton } from '@/components/ui/skeleton';
+
+function UserCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[150px]" />
+          <Skeleton className="h-4 w-[100px]" />
+        </div>
+      </CardHeader>
+    </Card>
+  );
+}
+
+// 配合 Suspense 使用
+<Suspense fallback={<UserCardSkeleton />}>
+  <UserCard userId={id} />
+</Suspense>
+```
+
+## 6. 颜色和对比度
+
+使用 CSS 变量实现主题颜色，确保满足 WCAG AA 对比度（4.5:1 正文，3:1 大文字）：
+
+```tsx
+// ✅ GOOD: 使用语义化颜色变量
+<p className="text-foreground">主要文字</p>
+<p className="text-muted-foreground">次要文字</p>
+<div className="bg-background">背景</div>
+<div className="bg-muted">轻微背景</div>
+<div className="bg-card border">卡片</div>
+
+// ❌ BAD: 硬编码颜色（无法适配深色模式）
+<p className="text-gray-900">文字</p>
+```
+
+## 7. 响应式布局模式
+
+```tsx
+// ✅ GOOD: 移动优先响应式布局
+function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* 移动端: 顶部导航; 桌面端: 侧边栏 */}
+      <nav className="flex md:hidden h-16 items-center border-b px-4">
+        <MobileNav />
+      </nav>
+      <div className="hidden md:flex">
+        <Sidebar className="w-64 shrink-0" />
+      </div>
+      <main className="md:ml-64 p-4 md:p-8">
+        {children}
+      </main>
+    </div>
+  );
+}
+```
+
+## 8. Toast 通知规范
+
+```tsx
+import { toast } from 'sonner'; // 或 Shadcn toast
+
+// ✅ GOOD: 明确的操作反馈
+toast.success('用户已成功创建');
+toast.error('创建失败，请重试');
+toast.loading('正在处理...');
+
+// 带操作的 Toast
+toast.success('文件已删除', {
+  action: {
+    label: '撤销',
+    onClick: () => restoreFile(),
+  },
+});
+```

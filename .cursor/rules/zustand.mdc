@@ -1,0 +1,236 @@
+---
+description: Zustand 状态管理最佳实践，包括类型安全、分片组织、中间件使用和性能优化。
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+# Zustand 状态管理最佳实践
+
+> Source: [sanjeed5/awesome-cursor-rules-mdc](https://github.com/sanjeed5/awesome-cursor-rules-mdc/blob/main/rules-mdc/zustand.mdc)
+
+## 1. 类型化 Store 结构
+
+始终为 state 和 actions 定义明确的 TypeScript 接口：
+
+```typescript
+import { create } from 'zustand';
+
+interface UserState {
+  // State
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  // Actions
+  setUser: (user: User) => void;
+  clearUser: () => void;
+  fetchUser: (userId: string) => Promise<void>;
+}
+
+export const useUserStore = create<UserState>((set) => ({
+  user: null,
+  isLoading: false,
+  error: null,
+  setUser: (user) => set({ user }),
+  clearUser: () => set({ user: null, error: null }),
+  fetchUser: async (userId) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch user');
+      const user = await response.json();
+      set({ user, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
+  },
+}));
+```
+
+## 2. 分片化组织（Slice Pattern）
+
+将大型 store 拆分为逻辑分片，然后组合：
+
+```typescript
+// store/slices/auth-slice.ts
+import type { StateCreator } from 'zustand';
+
+export interface AuthSlice {
+  isAuthenticated: boolean;
+  token: string | null;
+  login: (token: string) => void;
+  logout: () => void;
+}
+
+export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
+  isAuthenticated: false,
+  token: null,
+  login: (token) => set({ isAuthenticated: true, token }),
+  logout: () => set({ isAuthenticated: false, token: null }),
+});
+
+// store/slices/ui-slice.ts
+export interface UISlice {
+  sidebarOpen: boolean;
+  theme: 'light' | 'dark';
+  toggleSidebar: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+}
+
+export const createUISlice: StateCreator<UISlice> = (set) => ({
+  sidebarOpen: false,
+  theme: 'light',
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+  setTheme: (theme) => set({ theme }),
+});
+
+// store/index.ts - 组合所有 slices
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+
+type RootStore = AuthSlice & UISlice;
+
+export const useStore = create<RootStore>()(
+  devtools(
+    persist(
+      (...args) => ({
+        ...createAuthSlice(...args),
+        ...createUISlice(...args),
+      }),
+      { name: 'prism-store' }
+    )
+  )
+);
+```
+
+## 3. 命名规范
+
+- Store hooks 命名：`use[Feature]Store` → `useUserStore`, `useUIStore`
+- Actions 使用动词开头：`setUser`, `fetchData`, `toggleModal`, `resetForm`
+- Store 文件放在 `src/store/` 目录下
+
+## 4. 函数式更新（Functional Updates）
+
+**始终使用函数式更新处理依赖当前状态的更新，避免异步操作的过期闭包问题：**
+
+```typescript
+// ❌ BAD: 直接引用可能过期的状态
+const addItem = (item: Item) => set({ items: [...items, item] });
+
+// ✅ GOOD: 函数式更新，始终获取最新状态
+const addItem = (item: Item) =>
+  set((state) => ({ items: [...state.items, item] }));
+
+// ✅ GOOD: 嵌套对象的不可变更新
+const updateUserName = (name: string) =>
+  set((state) => ({
+    user: { ...state.user, name },
+  }));
+```
+
+## 5. Selectors 和浅比较优化性能
+
+**使用 selectors 只订阅组件需要的 state，防止不必要的重渲染：**
+
+```typescript
+import { useShallow } from 'zustand/react/shallow';
+
+// ❌ BAD: 订阅整个 store，任何变化都触发重渲染
+function UserAvatar() {
+  const store = useUserStore();
+  return <img src={store.user?.avatar} />;
+}
+
+// ✅ GOOD: 只订阅需要的字段
+function UserAvatar() {
+  const avatar = useUserStore((state) => state.user?.avatar);
+  return <img src={avatar} />;
+}
+
+// ✅ GOOD: 多个字段时使用 useShallow
+function UserCard() {
+  const { name, email } = useUserStore(
+    useShallow((state) => ({ name: state.user?.name, email: state.user?.email }))
+  );
+  return <div>{name} - {email}</div>;
+}
+```
+
+## 6. 必要的中间件
+
+```typescript
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+
+export const useStore = create<StoreState>()(
+  devtools(           // Redux DevTools 集成（仅开发环境）
+    persist(          // 持久化到 localStorage
+      immer(          // 简化嵌套对象的不可变更新
+        (set) => ({
+          // state and actions...
+          updateNested: (id: string, value: string) =>
+            set((state) => {
+              // immer 允许直接 "mutate" - 实际上是不可变的
+              state.items[id].value = value;
+            }),
+        })
+      ),
+      {
+        name: 'prism-storage',
+        version: 1,
+        // 只持久化部分 state
+        partialize: (state) => ({ theme: state.theme, token: state.token }),
+      }
+    ),
+    { name: 'Prism Store' }
+  )
+);
+```
+
+## 7. Store 初始化规范
+
+```typescript
+// ✅ GOOD: 在模块级别声明 store（不在组件内部）
+export const useUserStore = create<UserState>()(...);
+
+// ❌ BAD: 在组件内创建 store（每次渲染都会创建新实例）
+function MyComponent() {
+  const useStore = create<State>()(...); // 错误！
+}
+```
+
+## 8. 异步 Actions 处理
+
+```typescript
+const useProductStore = create<ProductState>()((set, get) => ({
+  products: [],
+  isLoading: false,
+  error: null,
+
+  fetchProducts: async () => {
+    if (get().isLoading) return; // 防止重复请求
+    set({ isLoading: true, error: null });
+    try {
+      const data = await productService.getAll();
+      set({ products: data, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
+  },
+
+  // 乐观更新
+  updateProduct: async (id: string, updates: Partial<Product>) => {
+    const previous = get().products;
+    // 先乐观更新 UI
+    set((state) => ({
+      products: state.products.map((p) => p.id === id ? { ...p, ...updates } : p),
+    }));
+    try {
+      await productService.update(id, updates);
+    } catch (error) {
+      // 失败时回滚
+      set({ products: previous, error: (error as Error).message });
+    }
+  },
+}));
+```

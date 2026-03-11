@@ -1,0 +1,143 @@
+---
+description: TypeScript 严格模式最佳实践，类型安全、泛型使用和代码组织规范。
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+# TypeScript 最佳实践
+
+> Source: [sanjeed5/awesome-cursor-rules-mdc](https://github.com/sanjeed5/awesome-cursor-rules-mdc/blob/main/rules-mdc/typescript.mdc)
+
+## 1. 启用严格模式
+
+始终在 `tsconfig.json` 中开启严格检查：
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
+```
+
+## 2. 明确定义类型契约
+
+**使用 interface 描述对象形状：**
+```typescript
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: Date;
+}
+```
+
+**使用 type 定义联合类型和别名：**
+```typescript
+type UserRole = 'admin' | 'editor' | 'viewer';
+type ID = string | number;
+```
+
+## 3. 避免 `any`，优先使用 `unknown`
+
+```typescript
+// ❌ BAD: any 绕过类型检查
+function processData(data: any) {
+  return data.value; // 运行时可能崩溃
+}
+
+// ✅ GOOD: unknown 强制运行时验证
+function processData(data: unknown) {
+  if (typeof data === 'object' && data !== null && 'value' in data) {
+    return (data as { value: unknown }).value;
+  }
+  throw new Error('Invalid data shape');
+}
+```
+
+## 4. 运行时类型验证
+
+使用类型守卫保护运行时安全：
+```typescript
+function isProduct(value: unknown): value is Product {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'name' in value &&
+    'price' in value
+  );
+}
+```
+
+## 5. 联合类型代替枚举
+
+```typescript
+// ❌ BAD: 数字枚举
+enum Status { Active = 0, Inactive = 1, Pending = 2 }
+
+// ✅ GOOD: 字符串字面量联合类型
+type Status = 'active' | 'inactive' | 'pending';
+
+// ✅ GOOD: 常量对象（需要遍历时）
+const STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  PENDING: 'pending',
+} as const;
+type Status = typeof STATUS[keyof typeof STATUS];
+```
+
+## 6. 泛型实现可复用类型安全
+
+```typescript
+// 通用 API 响应类型
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message: string;
+}
+
+// 通用异步操作状态
+interface AsyncState<T> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
+}
+```
+
+## 7. 代码组织规范
+
+- 优先使用命名导出（named exports）而非默认导出
+- 按逻辑分组导入：外部依赖 → 内部模块 → 类型导入
+- 使用 `import type` 导入纯类型，避免运行时开销
+
+```typescript
+// ✅ GOOD: 分组导入
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import { userService } from '@/services/user';
+
+import type { UserProfile } from '@/types/user';
+```
+
+## 8. Props 类型规范
+
+```typescript
+// ✅ GOOD: 使用 interface 定义组件 Props
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}
+
+export function Button({ variant = 'primary', size = 'md', ...props }: ButtonProps) {
+  // ...
+}
+```

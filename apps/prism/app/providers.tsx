@@ -8,8 +8,10 @@ import {
   useEffect,
   useMemo,
 } from 'react';
+import { SignupPromoController } from './components/SignupPromoController';
 import { apiClient } from '../lib/api/client';
 import { AuthProvider } from '../lib/auth/context';
+import { AuthModalProvider } from '../lib/auth-modal/context';
 import { CartProvider } from '../lib/cart/context';
 import { logger } from '../lib/observability/logger';
 
@@ -45,9 +47,14 @@ function AppConfigProvider({ children }: PropsWithChildren) {
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppConfigProvider>{children}</AppConfigProvider>
-      </CartProvider>
+      <AuthModalProvider>
+        <CartProvider>
+          <AppConfigProvider>
+            <SignupPromoController />
+            {children}
+          </AppConfigProvider>
+        </CartProvider>
+      </AuthModalProvider>
     </AuthProvider>
   );
 }

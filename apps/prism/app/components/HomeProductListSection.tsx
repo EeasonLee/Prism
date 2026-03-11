@@ -2,7 +2,8 @@
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, ShoppingCart, Star } from 'lucide-react';
+import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
+import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutEffect, useRef } from 'react';
 
@@ -11,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 const products = [
   {
     id: 1,
-    name: 'Joydeem Soy Milk Maker Pro',
+    name: 'Soy Milk Maker Pro',
     category: 'Soy Milk Makers',
     price: 149.99,
     originalPrice: 199.99,
@@ -19,10 +20,11 @@ const products = [
     reviews: 256,
     image: '/images/product_soymilk_card.jpg',
     badge: 'Best Seller',
+    badgeStyle: 'brand' as const,
   },
   {
     id: 2,
-    name: 'Joydeem Stand Mixer Deluxe',
+    name: 'Stand Mixer Deluxe',
     category: 'Stand Mixers',
     price: 299.99,
     originalPrice: 349.99,
@@ -30,10 +32,11 @@ const products = [
     reviews: 189,
     image: '/images/product_mixer_card.jpg',
     badge: 'New',
+    badgeStyle: 'dark' as const,
   },
   {
     id: 3,
-    name: 'Joydeem Power Blender',
+    name: 'Power Blender',
     category: 'Blenders',
     price: 129.99,
     originalPrice: 159.99,
@@ -41,10 +44,11 @@ const products = [
     reviews: 324,
     image: '/images/product_blender_card.jpg',
     badge: null,
+    badgeStyle: null,
   },
   {
     id: 4,
-    name: 'Joydeem Smart Rice Cooker',
+    name: 'Smart Rice Cooker',
     category: 'Rice Cookers',
     price: 89.99,
     originalPrice: 119.99,
@@ -52,8 +56,38 @@ const products = [
     reviews: 412,
     image: '/images/product_ricecooker_card.jpg',
     badge: 'Sale',
+    badgeStyle: 'brand' as const,
+  },
+  {
+    id: 5,
+    name: 'Air Fryer Oven XL',
+    category: 'Air Fryers',
+    price: 179.99,
+    originalPrice: 229.99,
+    rating: 4.6,
+    reviews: 287,
+    image: '/images/product_soymilk_card.jpg',
+    badge: 'New',
+    badgeStyle: 'dark' as const,
+  },
+  {
+    id: 6,
+    name: 'Espresso Machine',
+    category: 'Coffee Makers',
+    price: 249.99,
+    originalPrice: 299.99,
+    rating: 4.9,
+    reviews: 143,
+    image: '/images/product_mixer_card.jpg',
+    badge: null,
+    badgeStyle: null,
   },
 ];
+
+const BADGE_CLASSES = {
+  brand: 'bg-brand text-white',
+  dark: 'bg-ink text-white',
+};
 
 export function HomeProductListSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -66,6 +100,7 @@ export function HomeProductListSection() {
     const cards = cardsRef.current;
 
     if (!section || !header || !cards) return;
+    if (!HOME_ANIMATIONS_ENABLED) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -92,7 +127,7 @@ export function HomeProductListSection() {
           y: 0,
           opacity: 1,
           duration: 0.6,
-          stagger: 0.1,
+          stagger: 0.08,
           ease: 'power2.out',
           scrollTrigger: {
             trigger: cards,
@@ -109,19 +144,20 @@ export function HomeProductListSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden bg-white py-20 lg:py-28"
+      className="relative w-full bg-white py-12 lg:py-20"
     >
       <div className="w-full px-6 lg:px-[8vw]">
+        {/* Header */}
         <div
           ref={headerRef}
-          className="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+          className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
           <div>
-            <span className="micro-text mb-3 block text-[#D94F25]">
+            <span className="micro-text mb-2 block text-brand">
               Recommended
             </span>
             <h2
-              className="text-3xl font-bold text-[#111] lg:text-4xl"
+              className="heading-3 text-ink"
               style={{ fontFamily: 'Montserrat, sans-serif' }}
             >
               Popular Products
@@ -131,79 +167,72 @@ export function HomeProductListSection() {
             href="https://www.joydeem.com/kitchen-appliances/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 font-medium text-[#D94F25] transition-all hover:gap-3"
+            className="group flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
           >
-            View All Products
-            <ArrowRight className="h-5 w-5" />
+            View All
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </a>
         </div>
 
+        {/* Grid — 2 列 mobile，3 列 md，6 列 lg（每张卡 1fr） */}
         <div
           ref={cardsRef}
-          className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6"
+          className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 lg:gap-4"
         >
           {products.map(product => (
             <div
               key={product.id}
-              className="product-card group overflow-hidden rounded-[24px] bg-[#F6F6F2] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="product-card group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card"
             >
-              <div className="relative aspect-square bg-white p-4 lg:p-6">
+              {/* 图片区 — 铺满，aspect-[3/4] 竖版卡片 */}
+              <div className="relative aspect-[3/4] overflow-hidden bg-surface">
                 <Image
                   src={product.image}
                   alt={product.name}
-                  width={400}
-                  height={400}
-                  className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
                 />
-                {product.badge && (
+
+                {/* 渐变遮罩 — 底部信息叠加层 */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+                {/* 徽章 */}
+                {product.badge && product.badgeStyle && (
                   <div
-                    className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${
-                      product.badge === 'Sale'
-                        ? 'bg-[#D94F25] text-white'
-                        : product.badge === 'New'
-                        ? 'bg-[#111] text-white'
-                        : 'bg-[#D94F25]/10 text-[#D94F25]'
+                    className={`absolute left-2.5 top-2.5 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      BADGE_CLASSES[product.badgeStyle]
                     }`}
                   >
                     {product.badge}
                   </div>
                 )}
+
+                {/* 加购按钮 */}
                 <button
                   type="button"
-                  className="absolute bottom-3 right-3 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-white text-[#111] shadow-lg opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100 hover:bg-[#D94F25] hover:text-white"
+                  className="absolute right-2.5 top-2.5 flex h-8 w-8 -translate-y-1 items-center justify-center rounded-full bg-white/90 text-ink opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-brand hover:text-white"
                   aria-label="Add to cart"
                 >
-                  <ShoppingCart className="h-5 w-5" />
+                  <ShoppingCart className="h-3.5 w-3.5" />
                 </button>
-              </div>
 
-              <div className="p-4 lg:p-5">
-                <span className="mb-1 block text-xs text-[#999]">
-                  {product.category}
-                </span>
-                <h3 className="mb-2 line-clamp-1 text-sm font-semibold text-[#111] transition-colors group-hover:text-[#D94F25] lg:text-base">
-                  {product.name}
-                </h3>
-
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-[#FFB800] text-[#FFB800]" />
-                    <span className="text-sm font-medium text-[#111]">
-                      {product.rating}
+                {/* 底部叠加信息 */}
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-white/60">
+                    {product.category}
+                  </p>
+                  <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-white">
+                    {product.name}
+                  </h3>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold text-white">
+                      ${product.price}
+                    </span>
+                    <span className="text-xs text-white/50 line-through">
+                      ${product.originalPrice}
                     </span>
                   </div>
-                  <span className="text-xs text-[#999]">
-                    ({product.reviews})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-[#D94F25]">
-                    ${product.price}
-                  </span>
-                  <span className="text-sm text-[#999] line-through">
-                    ${product.originalPrice}
-                  </span>
                 </div>
               </div>
             </div>
