@@ -56,12 +56,23 @@ export function updateCartItemQty(
   );
 }
 
-/** 生成购物车跳转链接（有效期 10 分钟，自动登录 Magento 并跳转结账页） */
+/** 生成购物车跳转链接（有效期 10 分钟，跳转到 /checkout/cart） */
 export function getCartRedirectLink(
   accessToken: string
 ): Promise<CartRedirectResponse> {
   return magentoClient.post<CartRedirectResponse>(
     '/api/cart/redirect-link',
+    { storeId: 1 },
+    { accessToken }
+  );
+}
+
+/** 生成结账重定向链接（有效期 10 分钟，跳转到 /checkout） */
+export function getCheckoutRedirectLink(
+  accessToken: string
+): Promise<CartRedirectResponse> {
+  return magentoClient.post<CartRedirectResponse>(
+    '/api/cart/checkout-redirect-link',
     { storeId: 1 },
     { accessToken }
   );
