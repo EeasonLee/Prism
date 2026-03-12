@@ -2,7 +2,11 @@
 
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { getCartItems, getCartRedirectLink } from '../../lib/api/magento/cart';
+import {
+  getCartItems,
+  getCartRedirectLink,
+  getCheckoutRedirectLink,
+} from '../../lib/api/magento/cart';
 import type { CartItem } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
@@ -20,6 +24,7 @@ export function CartDrawer() {
   const { accessToken, isGuest } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  const [viewCartLoading, setViewCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
   const [mutatingItemId, setMutatingItemId] = useState<number | null>(null);
@@ -44,10 +49,29 @@ export function CartDrawer() {
       .finally(() => setLoadingItems(false));
   }, [isCartOpen, accessToken, itemCount]);
 
+  const handleViewCart = useCallback(async () => {
+    if (!accessToken) return;
+    setViewCartLoading(true);
+    setServiceError(null);
+    try {
+      const { redirect_url } = await getCartRedirectLink(accessToken);
+      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setServiceError(
+        msg.includes('unavailable')
+          ? 'Shop service is temporarily unavailable, please try again later.'
+          : 'Failed to generate cart link. Please try again.'
+      );
+    } finally {
+      setViewCartLoading(false);
+    }
+  }, [accessToken]);
+
   const handleCheckout = useCallback(async () => {
     if (!accessToken) return;
 
-    // 游客直接弹出登录引导，无需请求接口
+    // 游客直接弹出登录引导
     if (isGuest) {
       setShowLoginModal(true);
       return;
@@ -56,11 +80,10 @@ export function CartDrawer() {
     setCheckoutLoading(true);
     setServiceError(null);
     try {
-      const { redirect_url } = await getCartRedirectLink(accessToken);
+      const { redirect_url } = await getCheckoutRedirectLink(accessToken);
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      // 服务端拦截游客结账的兜底处理
       if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
         setShowLoginModal(true);
       } else {
@@ -292,14 +315,24 @@ export function CartDrawer() {
             >
               {clearLoading ? 'Clearing…' : 'Clear cart'}
             </button>
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={checkoutLoading}
-              className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
-            >
-              {checkoutLoading ? 'Redirecting…' : 'Checkout'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleViewCart}
+                disabled={viewCartLoading || checkoutLoading}
+                className="flex-1 rounded-full border border-border bg-transparent py-3 text-sm font-semibold text-ink transition hover:bg-surface disabled:opacity-60"
+              >
+                {viewCartLoading ? 'Redirecting…' : 'View cart'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={checkoutLoading || viewCartLoading}
+                className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-60"
+              >
+                {checkoutLoading ? 'Redirecting…' : 'Checkout'}
+              </button>
+            </div>
           </div>
         )}
       </aside>
