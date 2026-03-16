@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation';
 import {
   fetchCategoryById,
   fetchCategoryTree,
-  fetchProducts,
 } from '../../../lib/api/magento/catalog';
+import { fetchUnifiedProducts } from '../../../lib/api/unified-product';
 import { CategorySidebar } from '../components/CategorySidebar';
 import { ProductCard } from '../components/ProductCard';
 
@@ -19,12 +19,12 @@ export async function generateMetadata({ params }: Props) {
 
   const [category, productList] = await Promise.all([
     fetchCategoryById(id).catch(() => null),
-    fetchProducts({ categoryId: id, pageSize: 1 }).catch(() => null),
+    fetchUnifiedProducts({ categoryId: id, pageSize: 1 }).catch(() => null),
   ]);
   const fallbackCategoryName =
     productList?.items
       .flatMap(product => product.categories ?? [])
-      .find(category => category.id === id)?.name ?? `Category ${id}`;
+      .find(cat => cat.id === id)?.name ?? `Category ${id}`;
 
   return {
     title: `${category?.name ?? fallbackCategoryName} - Shop - Joydeem`,
@@ -46,7 +46,7 @@ export default async function ShopCategoryPage({
   const [tree, category, productList] = await Promise.all([
     fetchCategoryTree().catch(() => null),
     fetchCategoryById(categoryIdNum).catch(() => null),
-    fetchProducts({
+    fetchUnifiedProducts({
       categoryId: categoryIdNum,
       page,
       pageSize: 24,

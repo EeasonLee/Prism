@@ -1,7 +1,5 @@
-import {
-  fetchCategoryTree,
-  fetchProducts,
-} from '../../lib/api/magento/catalog';
+import { fetchCategoryTree } from '../../lib/api/magento/catalog';
+import { fetchUnifiedProducts } from '../../lib/api/unified-product';
 import { CategorySidebar } from './components/CategorySidebar';
 import { ProductCard } from './components/ProductCard';
 
@@ -15,8 +13,7 @@ export const metadata = {
 export default async function ShopPage() {
   const [tree, productList] = await Promise.all([
     fetchCategoryTree().catch(() => null),
-    // 新 catalog 接口当前至少需要一个过滤条件，根分类 2 可作为“全部商品”入口。
-    fetchProducts({
+    fetchUnifiedProducts({
       categoryId: SHOP_ROOT_CATEGORY_ID,
       pageSize: 24,
       sort: 'created_at',
