@@ -16,9 +16,18 @@ export async function generateMetadata({ params }: Props) {
   const { categoryId } = await params;
   const id = Number(categoryId);
   if (isNaN(id)) return {};
-  const category = await fetchCategoryById(id).catch(() => null);
+
+  const [category, productList] = await Promise.all([
+    fetchCategoryById(id).catch(() => null),
+    fetchProducts({ categoryId: id, pageSize: 1 }).catch(() => null),
+  ]);
+  const fallbackCategoryName =
+    productList?.items
+      .flatMap(product => product.categories ?? [])
+      .find(category => category.id === id)?.name ?? `Category ${id}`;
+
   return {
-    title: category ? `${category.name} - Shop - Joydeem` : 'Shop - Joydeem',
+    title: `${category?.name ?? fallbackCategoryName} - Shop - Joydeem`,
   };
 }
 
@@ -46,17 +55,23 @@ export default async function ShopCategoryPage({
     }).catch(() => null),
   ]);
 
-  if (!category) notFound();
+  if (!category && !productList) notFound();
 
   const products = productList?.items ?? [];
   const totalCount = productList?.total_count ?? 0;
   const pageSize = 24;
   const totalPages = Math.ceil(totalCount / pageSize);
+  const fallbackCategoryName =
+    products
+      .flatMap(product => product.categories ?? [])
+      .find(item => item.id === categoryIdNum)?.name ??
+    `Category ${categoryId}`;
+  const categoryName = category?.name ?? fallbackCategoryName;
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 sm:px-6 lg:px-[50px]">
       <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">
-        {category.name}
+        {categoryName}
       </h1>
 
       <div className="flex gap-8 lg:gap-12">

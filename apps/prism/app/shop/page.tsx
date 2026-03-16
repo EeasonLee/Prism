@@ -5,6 +5,8 @@ import {
 import { CategorySidebar } from './components/CategorySidebar';
 import { ProductCard } from './components/ProductCard';
 
+const SHOP_ROOT_CATEGORY_ID = 2;
+
 export const metadata = {
   title: 'Shop - Joydeem',
   description: 'Browse Joydeem kitchen appliances',
@@ -13,9 +15,13 @@ export const metadata = {
 export default async function ShopPage() {
   const [tree, productList] = await Promise.all([
     fetchCategoryTree().catch(() => null),
-    fetchProducts({ pageSize: 24, sort: 'created_at', order: 'desc' }).catch(
-      () => null
-    ),
+    // 新 catalog 接口当前至少需要一个过滤条件，根分类 2 可作为“全部商品”入口。
+    fetchProducts({
+      categoryId: SHOP_ROOT_CATEGORY_ID,
+      pageSize: 24,
+      sort: 'created_at',
+      order: 'desc',
+    }).catch(() => null),
   ]);
 
   const products = productList?.items ?? [];
