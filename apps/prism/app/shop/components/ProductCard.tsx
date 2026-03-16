@@ -1,10 +1,10 @@
 import type { Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { MagentoProduct } from '../../../lib/api/magento/types';
+import type { UnifiedProduct } from '../../../lib/api/unified-product';
 
 interface ProductCardProps {
-  product: MagentoProduct;
+  product: UnifiedProduct;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -78,13 +78,14 @@ function StarRating({ percentage }: { percentage: number }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const imageUrl = product.thumbnail_url;
-
   const hasDiscount =
     product.special_price != null && product.special_price < product.price;
   const typeLabel = TYPE_LABEL[product.type_id] ?? product.type_id;
   const typeStyle = TYPE_STYLE[product.type_id] ?? 'bg-surface text-ink-muted';
   const hasRating = (product.rating_percentage ?? 0) > 0;
+
+  // 优先使用 Strapi 统一缩略图，其次 Magento 原始缩略图
+  const imageUrl = product.unified_thumbnail;
 
   return (
     <Link
@@ -96,7 +97,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={product.name}
+            alt={product.display_name}
             fill
             unoptimized
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -121,9 +122,14 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        {/* 左上角：Sale 或 Bundle 等类型标签 */}
+        {/* 左上角标签：促销 > Sale > 商品类型 */}
         <div className="absolute left-2 top-2 flex flex-col gap-1">
-          {hasDiscount && (
+          {product.promotion_label && (
+            <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
+              {product.promotion_label}
+            </span>
+          )}
+          {!product.promotion_label && hasDiscount && (
             <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
               Sale
             </span>
@@ -145,8 +151,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* 信息区域 */}
       <div className="flex flex-1 flex-col p-4">
+        {/* 使用 display_name（Strapi 优化标题 > Magento 原始名称） */}
         <p className="mb-2 line-clamp-2 text-sm font-medium text-ink leading-snug group-hover:text-brand">
-          {product.name}
+          {product.display_name}
         </p>
 
         {/* 评分 */}
@@ -161,7 +168,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="mb-2 h-4" />
         )}
 
-        {/* 价格 */}
+        {/* 价格（永远使用 Magento 原始价格） */}
         <div className="mt-auto flex items-baseline gap-2">
           {product.special_price != null && (
             <span className="text-base font-bold text-ink">

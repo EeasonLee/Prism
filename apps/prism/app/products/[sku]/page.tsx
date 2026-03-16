@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { fetchProductBySku } from '../../../lib/api/magento/catalog';
+import { fetchUnifiedProductBySku } from '../../../lib/api/unified-product';
 import { ProductDetailClient } from './ProductDetailClient';
 
 interface Props {
@@ -27,7 +27,6 @@ function StarRating({
 }) {
   return (
     <div className="flex items-center gap-2">
-      {/* 用叠层 + overflow hidden 实现精确百分比填充 */}
       <div className="relative flex gap-0.5" aria-hidden="true">
         {Array.from({ length: 5 }, (_, i) => (
           <svg
@@ -70,38 +69,39 @@ function StarRating({
 
 export async function generateMetadata({ params }: Props) {
   const { sku } = await params;
-  const product = await fetchProductBySku(decodeURIComponent(sku)).catch(
+  const product = await fetchUnifiedProductBySku(decodeURIComponent(sku)).catch(
     () => null
   );
   return {
-    title: product ? `${product.name} - Joydeem` : 'Product - Joydeem',
-    description: product?.name,
+    title: product
+      ? `${product.seo_title ?? product.display_name} - Joydeem`
+      : 'Product - Joydeem',
+    description: product?.seo_description ?? product?.display_name,
   };
 }
 
 export default async function ProductDetailPage({ params }: Props) {
   const { sku } = await params;
-  const product = await fetchProductBySku(decodeURIComponent(sku)).catch(
+  const product = await fetchUnifiedProductBySku(decodeURIComponent(sku)).catch(
     () => null
   );
 
   if (!product) notFound();
 
-  // media_gallery 优先，回退到旧字段
+  // 图片优先级：Strapi unified_images > Magento media_gallery > Magento media_gallery_entries
   const galleryImages =
-    product.media_gallery?.filter(e => e.media_type === 'image') ??
-    product.media_gallery_entries
-      ?.filter(e => !e.disabled)
-      .map(e => ({
-        url: e.url,
-        label: e.label,
-        position: e.position,
-        media_type: e.media_type,
-      })) ??
-    [];
+    product.unified_images.length > 0
+      ? product.unified_images
+      : product.media_gallery?.filter(e => e.media_type === 'image') ??
+        product.media_gallery_entries
+          ?.filter(e => !e.disabled)
+          .map(e => ({
+            url: e.url,
+            alt: e.label ?? product.display_name,
+          })) ??
+        [];
 
-  const mainImage =
-    galleryImages[0]?.url ?? product.image_url ?? product.thumbnail_url;
+  const mainImage = product.unified_thumbnail ?? galleryImages[0]?.url;
 
   const hasDiscount =
     product.special_price != null && product.special_price < product.price;
@@ -119,7 +119,7 @@ export default async function ProductDetailPage({ params }: Props) {
           Shop
         </a>
         <span aria-hidden="true">/</span>
-        <span className="text-ink">{product.name}</span>
+        <span className="text-ink">{product.display_name}</span>
       </nav>
 
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
@@ -129,7 +129,7 @@ export default async function ProductDetailPage({ params }: Props) {
             {mainImage ? (
               <Image
                 src={mainImage}
-                alt={product.name}
+                alt={product.display_name}
                 fill
                 priority
                 unoptimized
@@ -166,7 +166,11 @@ export default async function ProductDetailPage({ params }: Props) {
                 >
                   <Image
                     src={entry.url}
-                    alt={entry.label ?? product.name}
+                    alt={
+                      'alt' in entry
+                        ? entry.alt ?? product.display_name
+                        : entry.label ?? product.display_name
+                    }
                     fill
                     unoptimized
                     sizes="64px"
@@ -180,18 +184,24 @@ export default async function ProductDetailPage({ params }: Props) {
 
         {/* 右列：商品信息 */}
         <div className="flex flex-col">
-          {/* SKU + 类型 */}
-          <div className="mb-3 flex items-center gap-2">
+          {/* SKU + 类型 + 促销标签 */}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
               SKU: {product.sku}
             </span>
             <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold text-ink-muted ring-1 ring-border">
               {typeLabel}
             </span>
+            {product.promotion_label && (
+              <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
+                {product.promotion_label}
+              </span>
+            )}
           </div>
 
+          {/* 商品标题（Strapi display_name 优先） */}
           <h1 className="mb-3 text-2xl font-bold leading-tight text-ink sm:text-3xl">
-            {product.name}
+            {product.display_name}
           </h1>
 
           {/* 评分 */}
@@ -224,7 +234,7 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 价格 */}
+          {/* 价格（永远使用 Magento 价格） */}
           <div className="mb-6 flex items-baseline gap-3">
             {product.special_price != null && (
               <span className="text-2xl font-bold text-ink">
@@ -250,18 +260,18 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 属性选择 + 加购（Client Component） */}
+          {/* 属性选择 + 加购（Client Component，MagentoProduct 接口兼容 UnifiedProduct） */}
           <ProductDetailClient product={product} />
 
-          {/* 商品描述 */}
-          {product.description && (
+          {/* 商品描述（Strapi 富文本 > Magento description） */}
+          {product.description_html && (
             <div className="mt-8 border-t border-border pt-6">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-muted">
                 Description
               </h2>
               <div
                 className="prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4"
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: product.description_html }}
               />
             </div>
           )}
