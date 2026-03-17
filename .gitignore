@@ -61,3 +61,5 @@ apps/prism/.env.production
 
 # Deployment scripts
 ecosystem.config.js
+
+.nx/polygraph
