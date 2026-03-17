@@ -1,5 +1,73 @@
 {
   "permissions": {
-    "allow": ["WebFetch(domain:ui-ux-pro-max-skill.nextlevelbuilder.io)"]
+    "allow": [
+      // WebFetch permissions
+      "WebFetch(domain:ui-ux-pro-max-skill.nextlevelbuilder.io)",
+
+      // File finding - Shop and Products
+      "Bash(find /mnt/d/WORK/prism/apps/prism/app/shop -type f -name \"*.tsx\" -o -name \"*.ts\" 2>/dev/null | head -20)",
+      "Bash(find /mnt/d/WORK/prism/apps/prism/app/products -type f -name \"*.tsx\" -o -name \"*.ts\" 2>/dev/null | head -20)",
+      "Bash(find /mnt/d/WORK/prism -path \"*/.next\" -prune -o -type f \\( -name \"*product*\" -o -name \"*shop*\" \\) -print 2>/dev/null | grep -E \"\\.\\(ts|tsx\\)$\" | grep -v node_modules | grep -v \".next\")",
+      "Bash(find /mnt/d/WORK/prism/libs -type f -name \"*product*\" -o -name \"*shop*\" 2>/dev/null | grep -E \"\\.\\(ts|tsx\\)$\")",
+
+      // TypeScript type checking
+      "Bash(pnpm typecheck 2>&1 | head -100)",
+      "Bash(npx tsc --noEmit --project apps/prism/tsconfig.app.json 2>&1 | grep -E \"\\(error|warning\\)\" | head -40)",
+      "Bash(npx tsc --noEmit --project apps/prism/tsconfig.app.json 2>&1 | grep \"products/\\[sku\\]\" | head -20)",
+      "Bash(npx tsc --noEmit --project apps/prism/tsconfig.app.json 2>&1 | grep -E \"\\(ProductImageCarousel|ProductDetailSections|RelatedContent|page\\.tsx\\)\" | grep \"products/\\[sku\\]\")",
+
+      // Development and build commands
+      "Bash(pnpm dev)",
+      "Bash(pnpm build 2>&1 | tail -50)",
+      "Bash(pnpm lint 2>&1 | head -50)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm check 2>&1 | head -50)",
+      "Bash(pnpm check:fix)",
+
+      // Testing commands
+      "Bash(pnpm test 2>&1 | head -100)",
+      "Bash(pnpm e2e 2>&1 | head -100)",
+      "Bash(pnpm nx affected:test 2>&1 | head -50)",
+
+      // Git commands
+      "Bash(git status)",
+      "Bash(git diff)",
+      "Bash(git diff --staged)",
+      "Bash(git log --oneline -20)",
+      "Bash(git branch -a)",
+      "Bash(git diff main...HEAD --stat)",
+
+      // File statistics
+      "Bash(wc -l /mnt/d/WORK/prism/**/*.ts /mnt/d/WORK/prism/**/*.tsx 2>/dev/null | tail -1)",
+      "Bash(find /mnt/d/WORK/prism/apps/prism -type f \\( -name '*.tsx' -o -name '*.ts' \\) | wc -l)",
+      "Bash(find /mnt/d/WORK/prism/libs -type f \\( -name '*.tsx' -o -name '*.ts' \\) | wc -l)",
+      "Bash(ls -la /mnt/d/WORK/prism/apps/prism/app)",
+
+      // Nx commands
+      "Bash(pnpm nx graph --file=graph.html)",
+      "Bash(pnpm nx affected:apps)",
+      "Bash(pnpm nx affected:libs)",
+      "Bash(pnpm nx show projects)",
+
+      // Process management
+      "Bash(ps aux | grep -E '(node|pnpm|next)' | grep -v grep)",
+      "Bash(lsof -ti:3000)",
+
+      // Log viewing
+      "Bash(tail -50 /tmp/claude-*/*.output 2>/dev/null)",
+
+      // API and types finding
+      "Bash(find /mnt/d/WORK/prism -path '*/node_modules' -prune -o -path '*/.next' -prune -o -type f -name '*api*' -print | grep -E '\\.(ts|tsx)$' | head -30)",
+      "Bash(find /mnt/d/WORK/prism -path '*/node_modules' -prune -o -path '*/.next' -prune -o -type f -name '*types*' -print | grep -E '\\.(ts|tsx)$' | head -30)",
+      "Bash(find /mnt/d/WORK/prism/apps/prism/lib/api -type f -name '*.ts' | head -30)",
+
+      // Strapi and Magento related
+      "Bash(find /mnt/d/WORK/prism -path '*/node_modules' -prune -o -path '*/.next' -prune -o -type f -name '*strapi*' -print | grep -E '\\.(ts|tsx)$')",
+      "Bash(find /mnt/d/WORK/prism -path '*/node_modules' -prune -o -path '*/.next' -prune -o -type f -name '*magento*' -print | grep -E '\\.(ts|tsx)$')",
+
+      // Package management
+      "Bash(pnpm list --depth=0)",
+      "Bash(pnpm outdated)"
+    ]
   }
 }
