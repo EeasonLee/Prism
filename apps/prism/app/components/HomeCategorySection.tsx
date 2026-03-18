@@ -481,7 +481,7 @@ export function HomeCategorySection() {
           {products.map(product => (
             <Link
               key={product.id}
-              href={product.href}
+              href={product.href as never}
               target="_blank"
               rel="noopener noreferrer"
               className="group block"
