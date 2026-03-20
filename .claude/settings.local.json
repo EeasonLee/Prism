@@ -43,7 +43,8 @@
       "Bash(find /mnt/d/WORK/prism -path '*/node_modules' -prune -o -path '*/.next' -prune -o -type f -name '*magento*' -print | grep -E '\\.(ts|tsx)$')",
       "Bash(pnpm list --depth=0)",
       "Bash(pnpm outdated)",
-      "Bash(grep -r \"ADMIN_SECRET\\\\|REVALIDATE_SECRET\" /mnt/d/WORK/prism/apps/prism/.env* 2>/dev/null | head -10)"
+      "Bash(grep -r \"ADMIN_SECRET\\\\|REVALIDATE_SECRET\" /mnt/d/WORK/prism/apps/prism/.env* 2>/dev/null | head -10)",
+      "Bash(cd \"/mnt/d/WORK/helpcenter/backend\" && npm run build)"
     ]
   }
 }

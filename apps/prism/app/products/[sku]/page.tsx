@@ -2,7 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageContainer } from '@prism/ui';
 import { fetchUnifiedProductBySku } from '../../../lib/api/unified-product';
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
+import {
+  fetchReviewsBySku,
+  fetchReviewSummaryBySku,
+  type ProductReviewListResult,
+  type ProductReviewSummary,
+} from '../../../lib/api/strapi/reviews';
 import { ProductDetailClient } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ProductSectionNav } from './ProductSectionNav';
@@ -14,12 +19,11 @@ import { ProductReviews } from './ProductReviews';
 import { RecommendedProducts } from './RecommendedProducts';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
+import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
 import {
-  MOCK_PRODUCT_SKU,
-  mockProduct,
-  mockProductExtras,
-  type ProductPageExtras,
-} from './mock-data';
+  buildPdpSectionNav,
+  type ProductDetailPageData,
+} from './product-detail-data';
 
 interface Props {
   params: Promise<{ sku: string }>;
@@ -77,6 +81,33 @@ function StarRating({
   );
 }
 
+function emptyReviewsResult(): ProductReviewListResult {
+  return {
+    items: [],
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      pageCount: 0,
+      total: 0,
+    },
+  };
+}
+
+function emptyReviewSummary(sku: string): ProductReviewSummary {
+  return {
+    sku,
+    average: 0,
+    total: 0,
+    distribution: {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    },
+  };
+}
+
 export async function generateMetadata({ params }: Props) {
   const { sku } = await params;
   const decodedSku = decodeURIComponent(sku);
@@ -101,22 +132,31 @@ export default async function ProductDetailPage({ params }: Props) {
   const { sku } = await params;
   const decodedSku = decodeURIComponent(sku);
 
-  // Mock 数据分支：命中 mock SKU 时跳过 API 调用
-  let product: UnifiedProduct;
-  let extras: ProductPageExtras | null = null;
+  let data: ProductDetailPageData;
+  let reviewSummary: ProductReviewSummary | null = null;
+  let reviewList = emptyReviewsResult();
 
   if (decodedSku === MOCK_PRODUCT_SKU) {
-    product = mockProduct;
-    extras = mockProductExtras;
+    data = { product: mockProduct, cms: mockProductExtras };
   } else {
-    const fetched = await fetchUnifiedProductBySku(decodedSku).catch(
-      () => null
-    );
-    if (!fetched) notFound();
-    product = fetched;
+    const [fetchedProduct, fetchedSummary, fetchedReviews] = await Promise.all([
+      fetchUnifiedProductBySku(decodedSku).catch(() => null),
+      fetchReviewSummaryBySku(decodedSku).catch(() =>
+        emptyReviewSummary(decodedSku)
+      ),
+      fetchReviewsBySku(decodedSku, 1, 10).catch(() => emptyReviewsResult()),
+    ]);
+
+    if (!fetchedProduct) notFound();
+
+    data = { product: fetchedProduct, cms: null };
+    reviewSummary = fetchedSummary;
+    reviewList = fetchedReviews;
   }
 
-  // 图片优先级：unified_images > media_gallery > media_gallery_entries
+  const { product, cms } = data;
+  const sectionNavItems = buildPdpSectionNav(cms, product, reviewSummary);
+
   const galleryImages =
     product.unified_images.length > 0
       ? product.unified_images
@@ -139,7 +179,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <PageContainer className="py-6">
-      {/* 面包屑 */}
       <nav
         aria-label="Breadcrumb"
         className="mb-5 flex items-center gap-2 text-sm text-ink-muted"
@@ -162,9 +201,7 @@ export default async function ProductDetailPage({ params }: Props) {
         <span className="text-ink">{product.display_name}</span>
       </nav>
 
-      {/* Hero: 图片 + 商品信息 */}
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-        {/* 左列：sticky 图片走廊 */}
         <div className="lg:sticky lg:top-[89px]">
           <ProductImageGallery
             images={galleryImages}
@@ -172,9 +209,7 @@ export default async function ProductDetailPage({ params }: Props) {
           />
         </div>
 
-        {/* 右列：商品信息（可滚动） */}
         <div className="flex flex-col gap-0">
-          {/* SKU + 促销标签 */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
               SKU: {product.sku}
@@ -186,17 +221,14 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 商品主标题 */}
           <h1 className="mb-2 text-2xl font-bold leading-tight text-ink sm:text-3xl">
             {product.display_name}
           </h1>
 
-          {/* 副标题：Strapi product-enrichment；mock 同步写在 mockProduct.subtitle */}
           {product.subtitle && (
             <p className="mb-3 text-base text-ink-muted">{product.subtitle}</p>
           )}
 
-          {/* 评分 */}
           {(product.rating_percentage ?? 0) > 0 && (
             <div className="mb-3">
               <StarRating
@@ -206,7 +238,6 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* 库存状态 */}
           <div className="mb-3">
             {product.is_in_stock ? (
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
@@ -226,7 +257,6 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 价格区 */}
           <div className="mb-4 flex items-baseline gap-3">
             {product.special_price != null && (
               <span className="text-2xl font-bold text-ink">
@@ -252,19 +282,17 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 促销信息提示条 */}
           {product.promotion_label && (
             <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
               <span className="text-sm font-medium text-brand">
                 {product.promotion_label}
               </span>
               <span className="text-sm text-ink-muted">
-                — Save big while offer lasts
+                Save big while offer lasts
               </span>
             </div>
           )}
 
-          {/* 短描述 */}
           {product.short_description_html && (
             <div
               className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
@@ -274,21 +302,18 @@ export default async function ProductDetailPage({ params }: Props) {
             />
           )}
 
-          {/* 属性选择 + 加购（Client Component） */}
           <ProductDetailClient product={product} />
 
-          {/* 超值加购 add-ons */}
-          {extras && extras.cross_sell_addons.length > 0 && (
+          {cms && cms.cross_sell_addons.length > 0 && (
             <CrossSellAddons
-              addons={extras.cross_sell_addons}
+              addons={cms.cross_sell_addons}
               mainProductPrice={product.special_price ?? product.price}
             />
           )}
 
-          {/* 套装捆绑优惠 */}
-          {extras && extras.bundle_deals.length > 0 && (
+          {cms && cms.bundle_deals.length > 0 && (
             <BundleDeals
-              deals={extras.bundle_deals}
+              deals={cms.bundle_deals}
               mainProduct={{
                 name: product.display_name,
                 image: product.unified_thumbnail ?? product.thumbnail_url ?? '',
@@ -297,7 +322,6 @@ export default async function ProductDetailPage({ params }: Props) {
             />
           )}
 
-          {/* 完整描述 */}
           {product.description_html && (
             <div className="mt-6 border-t border-border pt-5">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-muted">
@@ -312,69 +336,90 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* ── Sticky Section Nav（hero 滚出后出现） ── */}
-      {extras && (
-        <ProductSectionNav
-          sections={[
-            { id: 'section-features', label: 'Features' },
-            { id: 'section-details', label: 'Details' },
-            {
-              id: 'section-reviews',
-              label: `Reviews (${extras.review_summary.total.toLocaleString()})`,
-            },
-            { id: 'section-recipes', label: 'Recipes' },
-            { id: 'section-blog', label: 'Blog' },
-          ]}
-        />
+      {sectionNavItems.length > 0 && (
+        <ProductSectionNav sections={sectionNavItems} />
       )}
 
-      {/* ── 商品买点 ── */}
-      <div id="section-features">
-        {extras && <SellingPoints points={extras.key_points} />}
-        {/* ── 产品保障 ── */}
-        {extras && <ProductGuarantees guarantees={extras.guarantees} />}
-      </div>
+      {cms && (cms.key_points.length > 0 || cms.guarantees.length > 0) && (
+        <div id="section-features">
+          {cms.key_points.length > 0 && (
+            <SellingPoints points={cms.key_points} />
+          )}
+          {cms.guarantees.length > 0 && (
+            <ProductGuarantees guarantees={cms.guarantees} />
+          )}
+        </div>
+      )}
 
-      {/* ── 图文详情 ── */}
-      {extras && extras.detail_sections.length > 0 && (
+      {product.product_detail_html && (
         <div id="section-details">
           <div className="my-10 border-t border-border" />
-          <RichDetailSections sections={extras.detail_sections} />
+          <section
+            aria-labelledby="product-detail-heading"
+            className="pb-10 lg:pb-16"
+          >
+            <h2
+              id="product-detail-heading"
+              className="heading-3 mb-8 text-center text-ink"
+            >
+              Product details
+            </h2>
+            <div
+              className="prose prose-sm mx-auto max-w-3xl text-ink [&_li]:my-0.5 [&_ul]:pl-4"
+              dangerouslySetInnerHTML={{
+                __html: product.product_detail_html,
+              }}
+            />
+          </section>
         </div>
       )}
 
-      {/* ── 评价 ── */}
-      {extras && extras.reviews.length > 0 && (
-        <div id="section-reviews">
-          <div className="border-t border-border" />
+      {cms &&
+        cms.detail_sections.length > 0 &&
+        !product.product_detail_html && (
+          <div id="section-details">
+            <div className="my-10 border-t border-border" />
+            <RichDetailSections sections={cms.detail_sections} />
+          </div>
+        )}
+
+      <div id="section-reviews">
+        <div className="border-t border-border" />
+        {decodedSku === MOCK_PRODUCT_SKU ? (
           <ProductReviews
-            summary={extras.review_summary}
-            reviews={extras.reviews}
+            sku={decodedSku}
+            mockSummary={mockProductExtras.review_summary}
+            mockReviews={mockProductExtras.reviews}
+            allowSubmit={false}
           />
-        </div>
-      )}
+        ) : (
+          <ProductReviews
+            sku={decodedSku}
+            summary={reviewSummary ?? emptyReviewSummary(decodedSku)}
+            initialReviews={reviewList.items}
+            initialPagination={reviewList.pagination}
+          />
+        )}
+      </div>
 
-      {/* ── 推荐商品 ── */}
-      {extras && extras.recommended_products.length > 0 && (
+      {cms && cms.recommended_products.length > 0 && (
         <>
           <div className="border-t border-border" />
-          <RecommendedProducts products={extras.recommended_products} />
+          <RecommendedProducts products={cms.recommended_products} />
         </>
       )}
 
-      {/* ── 食谱 ── */}
-      {extras && extras.recipes.length > 0 && (
+      {cms && cms.recipes.length > 0 && (
         <div id="section-recipes">
           <div className="border-t border-border" />
-          <RecipesSection recipes={extras.recipes} />
+          <RecipesSection recipes={cms.recipes} />
         </div>
       )}
 
-      {/* ── Blog ── */}
-      {extras && extras.blog_posts.length > 0 && (
+      {cms && cms.blog_posts.length > 0 && (
         <div id="section-blog">
           <div className="border-t border-border" />
-          <BlogSection posts={extras.blog_posts} />
+          <BlogSection posts={cms.blog_posts} />
         </div>
       )}
     </PageContainer>

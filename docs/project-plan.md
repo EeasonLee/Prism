@@ -31,13 +31,12 @@
 - Strapi 已完成商品分层基础建模：`magento-products`、`magento-categories`、`product-enrichments`
 - `product-enrichments` 已具备基础商品维护字段，并扩展了主图、轮播图、角度图、视频、SEO、内容状态等内容字段
 - Strapi 侧已存在直接从 Magento 拉取并写入本地模型的早期同步脚本，可作为现状参考，但尚未与当前系统边界统一
-- Mock 商品详情页 `/products/JD-AF550` 作为参考原型
+- Mock 商品详情页 `/products/JD-AF550` 作为参考原型（Mock 与真实字段对照见 [pdp-mock-vs-real.md](./pdp-mock-vs-real.md)）
 - 博客和食谱已在 Strapi 中实现，并接入 Meilisearch 搜索
 
 ### 待完成 ⏳
 
 - Magento → Strapi 正式同步方案收口（以 SSO / Strapi / Magento 官方字段为依据统一最终边界）
-- 商品评价功能模块
 - 完整商品详情页（食谱、文章、评论模块全部打通）
 - 商品列表多维度筛选（分类、商品属性、价格等）
 - 超级搜索（商品 + 博客 + 食谱全局搜索）
@@ -104,16 +103,14 @@
 - 将所有商品详情区块接入真实 `UnifiedProduct` 数据
 - 接入食谱模块（通过商品 SKU 或分类关联）
 - 接入相关文章模块（通过商品 SKU 或标签关联）
-- 接入商品评价模块（见阶段二）
 
 ### 阶段二：商品评价模块（优先级：高）
 
-- 确定评价存储方案：Magento 原生评价 vs Strapi vs 独立服务
-- 设计评价数据模型（评分、标题、内容、作者、是否已购买、日期）
-- 实现评价提交 API
-- 实现评价列表（分页）
-- 在商品详情页展示评价汇总（平均分、分布图）
-- 审核流程（在 Strapi admin 或 Magento admin 中审批/拒绝）
+- 已完成：采用 Strapi 独立 `product-review` / `product-review-summary` 模型承接商品评价与汇总
+- 已完成：Next.js 新增 `/api/reviews/[sku]` BFF 路由，支持登录用户提交评价
+- 已完成：商品详情页接入真实评价列表、评分汇总与分页展示
+- 已完成：评价默认以 `pending` 状态写入，并在 Strapi Admin 中通过 `review_status` 完成审批
+- 暂未完成：`verified purchase` 仍为预留字段，一期未接 Magento 订单校验
 
 ### 阶段三：商品列表与筛选（优先级：高）
 
@@ -144,17 +141,20 @@
 
 ## 关键文件索引
 
-| 功能               | 文件路径                                          |
-| ------------------ | ------------------------------------------------- |
-| 商品数据融合       | `apps/prism/lib/api/unified-product.ts`           |
-| Magento API 客户端 | `apps/prism/lib/api/magento/client.ts`            |
-| Strapi 商品富文本  | `apps/prism/lib/api/strapi/product-enrichment.ts` |
-| Mock 商品详情数据  | `apps/prism/app/products/[sku]/mock-data.ts`      |
-| 商品详情页         | `apps/prism/app/products/[sku]/page.tsx`          |
-| 商品分类列表页     | `apps/prism/app/shop/[categoryId]/page.tsx`       |
-| 认证上下文         | `apps/prism/lib/auth/context.tsx`                 |
-| 购物车上下文       | `apps/prism/lib/cart/context.tsx`                 |
-| 环境变量配置       | `apps/prism/lib/env.ts`                           |
+| 功能                | 文件路径                                          |
+| ------------------- | ------------------------------------------------- |
+| 商品数据融合        | `apps/prism/lib/api/unified-product.ts`           |
+| Magento API 客户端  | `apps/prism/lib/api/magento/client.ts`            |
+| Strapi 商品富文本   | `apps/prism/lib/api/strapi/product-enrichment.ts` |
+| Mock 商品详情数据   | `apps/prism/app/products/[sku]/mock-data.ts`      |
+| 商品详情页          | `apps/prism/app/products/[sku]/page.tsx`          |
+| 商品评价表单        | `apps/prism/app/products/[sku]/ReviewForm.tsx`    |
+| 商品评价 BFF        | `apps/prism/app/api/reviews/[sku]/route.ts`       |
+| 商品评价 Strapi API | `apps/prism/lib/api/strapi/reviews.ts`            |
+| 商品分类列表页      | `apps/prism/app/shop/[categoryId]/page.tsx`       |
+| 认证上下文          | `apps/prism/lib/auth/context.tsx`                 |
+| 购物车上下文        | `apps/prism/lib/cart/context.tsx`                 |
+| 环境变量配置        | `apps/prism/lib/env.ts`                           |
 
 ---
 

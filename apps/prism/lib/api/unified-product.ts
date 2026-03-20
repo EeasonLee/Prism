@@ -54,6 +54,11 @@ export interface UnifiedProduct extends MagentoProduct {
   short_description_html: string | null;
   /** 详情描述 HTML：Strapi.description_html ?? Magento.description */
   description_html: string | null;
+  /**
+   * 商品详情区 HTML（仅 Strapi product_detail_html）
+   * PDP「Details」锚点区块；与主描述 description_html 独立，无 Magento 回退
+   */
+  product_detail_html: string | null;
 
   // ── 媒体字段 ──
 
@@ -129,6 +134,11 @@ export function mergeProduct(
   const subtitleRaw = enrichment?.subtitle?.trim();
   const subtitle = subtitleRaw ? subtitleRaw : null;
 
+  const productDetailRaw = enrichment?.product_detail_html?.trim();
+  const product_detail_html = productDetailRaw
+    ? enrichment?.product_detail_html ?? null
+    : null;
+
   return {
     ...magento,
     _enriched: !!enrichment,
@@ -138,6 +148,7 @@ export function mergeProduct(
       enrichment?.short_description_html ?? magento.short_description ?? null,
     description_html:
       enrichment?.description_html ?? magento.description ?? null,
+    product_detail_html,
     unified_images,
     unified_thumbnail,
     promotion_label,
