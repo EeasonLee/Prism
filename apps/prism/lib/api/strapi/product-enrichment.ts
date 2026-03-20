@@ -77,6 +77,7 @@ interface StrapiProductEnrichmentRaw {
   subtitle?: string | null;
   short_description_html?: string | null;
   description_html?: string | null;
+  product_detail_html?: string | null;
   base_image?: StrapiImage | null;
   carousel_images?: StrapiCarouselImageRaw[] | null;
   angle_images?: StrapiAngleImageRaw[] | null;
@@ -119,6 +120,8 @@ export interface StrapiProductEnrichment {
   short_description_html?: string;
   /** 详情描述 HTML（覆盖 Magento description） */
   description_html?: string;
+  /** 商品详情区 HTML（仅 Strapi；PDP Details 区块，与 description_html 独立） */
+  product_detail_html?: string;
   /** 高质量商品图片列表（覆盖 Magento media_gallery） */
   images?: ProductEnrichmentImage[];
   /** 主缩略图 URL（覆盖 unified_images[0]） */
@@ -248,6 +251,7 @@ function normalizeEnrichment(
     subtitle: raw.subtitle ?? undefined,
     short_description_html: raw.short_description_html ?? undefined,
     description_html: raw.description_html ?? undefined,
+    product_detail_html: raw.product_detail_html ?? undefined,
     images: images.length > 0 ? images : undefined,
     thumbnail_url: baseImage?.url ?? images[0]?.url ?? undefined,
     videos: normalizeVideos(raw.videos),

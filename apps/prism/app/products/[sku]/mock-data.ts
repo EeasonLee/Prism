@@ -115,6 +115,9 @@ export interface ProductPageExtras {
   bundle_deals: BundleDeal[];
 }
 
+/** PDP 中非 UnifiedProduct 的 CMS / 营销区块；与下方组件 props 对齐，未来由 Strapi 等填充 */
+export type ProductPageCms = ProductPageExtras;
+
 // ─── Mock SKU 常量 ────────────────────────────────────────────────────────────
 
 export const MOCK_PRODUCT_SKU = 'JD-AF550';
@@ -294,6 +297,8 @@ export const mockProduct: UnifiedProduct = {
     '<p>Cook up to <strong>75% less oil</strong> with 12 preset cooking programs, a smart touch display, and 5.5L family-size capacity. Healthy meals in minutes.</p>',
   description_html:
     '<p>The JoyDeem Smart Air Fryer Pro redefines healthy cooking at home. Equipped with Rapid Air Technology™, it circulates super-heated air at high speed to deliver crispy, golden results with up to 75% less fat than traditional frying.</p><ul><li>5.5L capacity – perfect for families of 4–6</li><li>12 pre-programmed cooking modes: fry, roast, bake, grill, dehydrate & more</li><li>360° airflow for even cooking without flipping</li><li>Non-stick, dishwasher-safe basket & tray</li><li>Temperature range: 80°C – 200°C (176°F – 392°F)</li></ul>',
+  /** Mock 仍用 cms.detail_sections + RichDetailSections，此处留空 */
+  product_detail_html: null,
   unified_images: [
     {
       url: 'https://images.unsplash.com/photo-1585515320310-259814833e62?w=1200&q=80',
