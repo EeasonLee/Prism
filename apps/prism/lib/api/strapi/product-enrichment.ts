@@ -25,6 +25,37 @@ interface StrapiImage {
   } | null;
 }
 
+interface StrapiCarouselImageRaw {
+  image?: StrapiImage | null;
+  alt?: string | null;
+  sort_order?: number | null;
+  is_primary?: boolean | null;
+  enabled?: boolean | null;
+}
+
+interface StrapiAngleImageRaw {
+  image?: StrapiImage | null;
+  angle?: 'thumbnail' | 'scene' | 'hover_image' | null;
+  alt?: string | null;
+  sort_order?: number | null;
+  enabled?: boolean | null;
+}
+
+interface StrapiVideoRaw {
+  video_url?: string | null;
+  provider?: 'youtube' | 'vimeo' | 'mp4' | 'other' | null;
+  poster?: StrapiImage | null;
+  title?: string | null;
+  description?: string | null;
+  sort_order?: number | null;
+  enabled?: boolean | null;
+}
+
+interface StrapiSeoRaw {
+  title?: string | null;
+  description?: string | null;
+}
+
 interface StrapiListResponse<T> {
   data: T[];
   meta: {
@@ -41,16 +72,22 @@ interface StrapiProductEnrichmentRaw {
   id: number;
   documentId: string;
   sku: string;
+  store_view_code?: string | null;
   display_name?: string | null;
+  subtitle?: string | null;
   short_description_html?: string | null;
   description_html?: string | null;
-  images?: StrapiImage[] | null;
-  thumbnail?: StrapiImage | null;
+  base_image?: StrapiImage | null;
+  carousel_images?: StrapiCarouselImageRaw[] | null;
+  angle_images?: StrapiAngleImageRaw[] | null;
+  videos?: StrapiVideoRaw[] | null;
   promotion_label?: string | null;
   promotion_expires_at?: string | null;
   is_featured?: boolean | null;
-  seo_title?: string | null;
-  seo_description?: string | null;
+  seo?: StrapiSeoRaw | null;
+  content_status?: 'draft' | 'reviewed' | 'published' | null;
+  content_version?: number | null;
+  last_synced_at?: string | null;
 }
 
 // ─── 对外暴露的类型 ───────────────────────────────────────────────────────────
@@ -72,8 +109,12 @@ export interface ProductEnrichmentImage {
 export interface StrapiProductEnrichment {
   /** 联结键，必须与 Magento SKU 完全一致 */
   sku: string;
+  /** Magento store view 标识，用于多站点内容区分 */
+  store_view_code?: string;
   /** 展示名称（覆盖 Magento name，用于本地化或营销优化） */
   display_name?: string;
+  /** 商品副标题 */
+  subtitle?: string;
   /** 短描述 HTML（覆盖 Magento short_description） */
   short_description_html?: string;
   /** 详情描述 HTML（覆盖 Magento description） */
@@ -82,6 +123,15 @@ export interface StrapiProductEnrichment {
   images?: ProductEnrichmentImage[];
   /** 主缩略图 URL（覆盖 unified_images[0]） */
   thumbnail_url?: string;
+  /** 商品视频列表，供后续页面扩展使用 */
+  videos?: Array<{
+    video_url: string;
+    provider?: 'youtube' | 'vimeo' | 'mp4' | 'other';
+    poster_url?: string;
+    title?: string;
+    description?: string;
+    sort_order?: number;
+  }>;
   /** 促销标签，如 "New Arrival"、"Buy 2 Get 1"、"Limited Edition" */
   promotion_label?: string;
   /** 促销截止日期（ISO 8601），用于前端自动隐藏过期标签 */
@@ -92,6 +142,12 @@ export interface StrapiProductEnrichment {
   seo_title?: string;
   /** SEO 描述 */
   seo_description?: string;
+  /** 内容状态 */
+  content_status?: 'draft' | 'reviewed' | 'published';
+  /** 内容版本号 */
+  content_version?: number;
+  /** 最近同步时间 */
+  last_synced_at?: string;
 }
 
 // ─── 内部工具函数 ─────────────────────────────────────────────────────────────
@@ -110,30 +166,99 @@ function resolveStrapiUrl(url: string | null | undefined): string | null {
   return `${base}${url}`;
 }
 
-function normalizeImage(img: StrapiImage): ProductEnrichmentImage {
+function normalizeImage(
+  img: StrapiImage,
+  altOverride?: string | null
+): ProductEnrichmentImage {
   return {
     url: resolveStrapiUrl(img.url) ?? img.url,
-    alt: img.alternativeText ?? '',
+    alt: altOverride ?? img.alternativeText ?? '',
     width: img.width ?? undefined,
     height: img.height ?? undefined,
   };
 }
 
+function normalizeCarouselImages(
+  images: StrapiCarouselImageRaw[] | null | undefined
+): ProductEnrichmentImage[] {
+  if (!images) return [];
+
+  return images
+    .filter(item => item.enabled !== false && item.image?.url)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(item => normalizeImage(item.image as StrapiImage, item.alt));
+}
+
+function normalizeAngleImages(
+  images: StrapiAngleImageRaw[] | null | undefined
+): ProductEnrichmentImage[] {
+  if (!images) return [];
+
+  return images
+    .filter(item => item.enabled !== false && item.image?.url)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(item => normalizeImage(item.image as StrapiImage, item.alt));
+}
+
+function normalizeVideos(
+  videos: StrapiVideoRaw[] | null | undefined
+): NonNullable<StrapiProductEnrichment['videos']> | undefined {
+  if (!videos) return undefined;
+
+  const normalized = videos
+    .filter(video => video.enabled !== false && video.video_url)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(video => ({
+      video_url: video.video_url as string,
+      provider: video.provider ?? undefined,
+      poster_url: resolveStrapiUrl(video.poster?.url) ?? undefined,
+      title: video.title ?? undefined,
+      description: video.description ?? undefined,
+      sort_order: video.sort_order ?? undefined,
+    }));
+
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function normalizeEnrichment(
   raw: StrapiProductEnrichmentRaw
 ): StrapiProductEnrichment {
+  const carouselImages = normalizeCarouselImages(raw.carousel_images);
+  const angleImages = normalizeAngleImages(raw.angle_images);
+  const baseImage = raw.base_image
+    ? normalizeImage(
+        raw.base_image,
+        raw.display_name ?? raw.base_image.alternativeText
+      )
+    : undefined;
+
+  const images = [
+    ...carouselImages,
+    ...angleImages,
+    ...(baseImage ? [baseImage] : []),
+  ].filter(
+    (image, index, arr) =>
+      arr.findIndex(item => item.url === image.url) === index
+  );
+
   return {
     sku: raw.sku,
+    store_view_code: raw.store_view_code ?? undefined,
     display_name: raw.display_name ?? undefined,
+    subtitle: raw.subtitle ?? undefined,
     short_description_html: raw.short_description_html ?? undefined,
     description_html: raw.description_html ?? undefined,
-    images: raw.images?.map(normalizeImage) ?? undefined,
-    thumbnail_url: resolveStrapiUrl(raw.thumbnail?.url) ?? undefined,
+    images: images.length > 0 ? images : undefined,
+    thumbnail_url: baseImage?.url ?? images[0]?.url ?? undefined,
+    videos: normalizeVideos(raw.videos),
     promotion_label: raw.promotion_label ?? undefined,
     promotion_expires_at: raw.promotion_expires_at ?? undefined,
     is_featured: raw.is_featured ?? undefined,
-    seo_title: raw.seo_title ?? undefined,
-    seo_description: raw.seo_description ?? undefined,
+    seo_title: raw.seo?.title ?? undefined,
+    seo_description: raw.seo?.description ?? undefined,
+    content_status: raw.content_status ?? undefined,
+    content_version: raw.content_version ?? undefined,
+    last_synced_at: raw.last_synced_at ?? undefined,
   };
 }
 
@@ -158,7 +283,13 @@ export async function fetchProductEnrichments(
     .join('&');
 
   // Strapi v5 populate 语法：populate[field]=true，不支持逗号分隔
-  const populateParams = 'populate[images]=true&populate[thumbnail]=true';
+  const populateParams = [
+    'populate[base_image]=true',
+    'populate[carousel_images][populate][image]=true',
+    'populate[angle_images][populate][image]=true',
+    'populate[videos][populate][poster]=true',
+    'populate[seo]=true',
+  ].join('&');
 
   const data = await apiClient.get<
     StrapiListResponse<StrapiProductEnrichmentRaw>

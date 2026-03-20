@@ -48,6 +48,8 @@ export interface UnifiedProduct extends MagentoProduct {
 
   /** 展示名称：Strapi.display_name ?? Magento.name */
   display_name: string;
+  /** 副标题（仅 Strapi product-enrichment，Magento 无对应字段） */
+  subtitle: string | null;
   /** 短描述 HTML：Strapi.short_description_html ?? Magento.short_description */
   short_description_html: string | null;
   /** 详情描述 HTML：Strapi.description_html ?? Magento.description */
@@ -124,10 +126,14 @@ export function mergeProduct(
       ? enrichment.promotion_label
       : null;
 
+  const subtitleRaw = enrichment?.subtitle?.trim();
+  const subtitle = subtitleRaw ? subtitleRaw : null;
+
   return {
     ...magento,
     _enriched: !!enrichment,
     display_name: enrichment?.display_name ?? magento.name,
+    subtitle,
     short_description_html:
       enrichment?.short_description_html ?? magento.short_description ?? null,
     description_html:
