@@ -31,16 +31,21 @@ export function BlogSection({ posts }: BlogSectionProps) {
             className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:border-brand/30 hover:shadow-md"
           >
             {/* 图片 */}
-            <div className="relative aspect-[16/9] overflow-hidden bg-surface">
-              <Image
-                src={post.image}
-                alt={post.title}
-                fill
-                unoptimized
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover transition group-hover:scale-105"
-              />
-            </div>
+            <Link
+              href={post.href}
+              className="relative block aspect-[16/9] overflow-hidden bg-surface"
+            >
+              {post.image ? (
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition group-hover:scale-105"
+                />
+              ) : null}
+            </Link>
 
             {/* 内容 */}
             <div className="flex flex-1 flex-col p-5">
@@ -55,7 +60,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
               </div>
 
               <h3 className="mb-2 text-sm font-semibold leading-snug text-ink transition group-hover:text-brand">
-                {post.title}
+                <Link href={post.href}>{post.title}</Link>
               </h3>
 
               <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-ink-muted">

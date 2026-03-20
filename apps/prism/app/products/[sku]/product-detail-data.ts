@@ -1,15 +1,38 @@
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
+import type {
+  UnifiedProduct,
+  UnifiedProductContent,
+} from '../../../lib/api/unified-product';
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
 import type { ProductPageCms } from './mock-data';
+
+export type RealProductPageCms = Pick<ProductPageCms, 'recipes' | 'blog_posts'>;
+
+export function buildRealProductPageCms(
+  content: UnifiedProductContent | undefined
+): RealProductPageCms | null {
+  const recipes = content?.recipes ?? [];
+  const blog_posts = content?.blog_posts ?? [];
+
+  if (recipes.length === 0 && blog_posts.length === 0) {
+    return null;
+  }
+
+  return {
+    recipes,
+    blog_posts,
+  };
+}
 
 /**
  * 商品详情页服务端组装结果。
  * - product：Magento + Strapi 融合（UnifiedProduct）
  * - cms：卖点、保障、图文块、评论列表等；真实 SKU 在 Strapi 扩展前为 null
  */
+export type ProductDetailCms = ProductPageCms | RealProductPageCms;
+
 export interface ProductDetailPageData {
   product: UnifiedProduct;
-  cms: ProductPageCms | null;
+  cms: ProductDetailCms | null;
 }
 
 /** Sticky 导航：仅包含页面上实际存在的锚点区块 */

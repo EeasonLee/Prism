@@ -22,6 +22,7 @@ import { BlogSection } from './BlogSection';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
 import {
   buildPdpSectionNav,
+  buildRealProductPageCms,
   type ProductDetailPageData,
 } from './product-detail-data';
 
@@ -149,7 +150,15 @@ export default async function ProductDetailPage({ params }: Props) {
 
     if (!fetchedProduct) notFound();
 
-    data = { product: fetchedProduct, cms: null };
+    data = {
+      product: fetchedProduct,
+      cms: buildRealProductPageCms({
+        recipes: fetchedProduct._enriched ? fetchedProduct.recipes : undefined,
+        blog_posts: fetchedProduct._enriched
+          ? fetchedProduct.blog_posts
+          : undefined,
+      }),
+    };
     reviewSummary = fetchedSummary;
     reviewList = fetchedReviews;
   }
@@ -304,14 +313,14 @@ export default async function ProductDetailPage({ params }: Props) {
 
           <ProductDetailClient product={product} />
 
-          {cms && cms.cross_sell_addons.length > 0 && (
+          {(cms?.cross_sell_addons?.length ?? 0) > 0 && (
             <CrossSellAddons
               addons={cms.cross_sell_addons}
               mainProductPrice={product.special_price ?? product.price}
             />
           )}
 
-          {cms && cms.bundle_deals.length > 0 && (
+          {(cms?.bundle_deals?.length ?? 0) > 0 && (
             <BundleDeals
               deals={cms.bundle_deals}
               mainProduct={{
@@ -340,16 +349,18 @@ export default async function ProductDetailPage({ params }: Props) {
         <ProductSectionNav sections={sectionNavItems} />
       )}
 
-      {cms && (cms.key_points.length > 0 || cms.guarantees.length > 0) && (
-        <div id="section-features">
-          {cms.key_points.length > 0 && (
-            <SellingPoints points={cms.key_points} />
-          )}
-          {cms.guarantees.length > 0 && (
-            <ProductGuarantees guarantees={cms.guarantees} />
-          )}
-        </div>
-      )}
+      {cms &&
+        ((cms?.key_points?.length ?? 0) > 0 ||
+          (cms?.guarantees?.length ?? 0) > 0) && (
+          <div id="section-features">
+            {(cms?.key_points?.length ?? 0) > 0 && (
+              <SellingPoints points={cms.key_points} />
+            )}
+            {(cms?.guarantees?.length ?? 0) > 0 && (
+              <ProductGuarantees guarantees={cms.guarantees} />
+            )}
+          </div>
+        )}
 
       {product.product_detail_html && (
         <div id="section-details">
@@ -374,8 +385,7 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       )}
 
-      {cms &&
-        cms.detail_sections.length > 0 &&
+      {(cms?.detail_sections?.length ?? 0) > 0 &&
         !product.product_detail_html && (
           <div id="section-details">
             <div className="my-10 border-t border-border" />
@@ -402,21 +412,21 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
       </div>
 
-      {cms && cms.recommended_products.length > 0 && (
+      {(cms?.recommended_products?.length ?? 0) > 0 && (
         <>
           <div className="border-t border-border" />
           <RecommendedProducts products={cms.recommended_products} />
         </>
       )}
 
-      {cms && cms.recipes.length > 0 && (
+      {(cms?.recipes?.length ?? 0) > 0 && (
         <div id="section-recipes">
           <div className="border-t border-border" />
           <RecipesSection recipes={cms.recipes} />
         </div>
       )}
 
-      {cms && cms.blog_posts.length > 0 && (
+      {(cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <div className="border-t border-border" />
           <BlogSection posts={cms.blog_posts} />

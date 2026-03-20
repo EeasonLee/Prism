@@ -56,6 +56,7 @@ export interface Recipe {
   id: number;
   title: string;
   image: string;
+  href?: string;
   time: string;
   servings: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
