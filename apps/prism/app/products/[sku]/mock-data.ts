@@ -98,7 +98,6 @@ export interface BundleDeal {
 }
 
 export interface ProductPageExtras {
-  subtitle: string;
   promotion_countdown_to: string; // ISO 8601
   key_points: KeyPoint[];
   guarantees: Guarantee[];
@@ -290,6 +289,7 @@ export const mockProduct: UnifiedProduct = {
   // UnifiedProduct 融合字段
   _enriched: true,
   display_name: 'JoyDeem Smart Air Fryer Pro 5.5L',
+  subtitle: 'Crispy. Healthy. Effortless.',
   short_description_html:
     '<p>Cook up to <strong>75% less oil</strong> with 12 preset cooking programs, a smart touch display, and 5.5L family-size capacity. Healthy meals in minutes.</p>',
   description_html:
@@ -339,8 +339,6 @@ export const mockProduct: UnifiedProduct = {
 // ─── 扩展页面区块数据 ─────────────────────────────────────────────────────────
 
 export const mockProductExtras: ProductPageExtras = {
-  subtitle: 'Crispy. Healthy. Effortless.',
-
   // 促销倒计时截止
   promotion_countdown_to: '2026-04-01T00:00:00Z',
 

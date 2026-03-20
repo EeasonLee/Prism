@@ -191,9 +191,9 @@ export default async function ProductDetailPage({ params }: Props) {
             {product.display_name}
           </h1>
 
-          {/* 副标题 */}
-          {extras?.subtitle && (
-            <p className="mb-3 text-base text-ink-muted">{extras.subtitle}</p>
+          {/* 副标题：Strapi product-enrichment；mock 同步写在 mockProduct.subtitle */}
+          {product.subtitle && (
+            <p className="mb-3 text-base text-ink-muted">{product.subtitle}</p>
           )}
 
           {/* 评分 */}

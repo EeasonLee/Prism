@@ -13,6 +13,8 @@ pnpm typecheck        # TypeScript type check
 pnpm check            # typecheck + lint together
 pnpm check:fix        # Auto-fix all issues
 pnpm test             # Run Vitest unit tests
+pnpm nx test prism -- --run  # Run tests once (no watch mode)
+pnpm nx test prism -- --run --reporter=verbose  # Run tests with verbose output
 pnpm e2e              # Run Playwright E2E tests (install browsers first with: pnpm exec playwright install)
 pnpm storybook        # Start Storybook
 pnpm commit           # Interactive Conventional Commit (via Commitizen)
@@ -22,6 +24,33 @@ pnpm nx graph         # Visualize project dependency graph
 All commands run via Nx under the hood, enabling build caching and affected-project analysis.
 
 ## Architecture
+
+### 多系统集成
+
+本项目是**跨境电商重构**的一部分，集成了多个系统：
+
+- **Magento 2.4.6**（`https://magento.test` / `192.168.50.4`）— 核心商务逻辑（订单、支付、库存、购物车）
+- **Strapi**（`D:\WORK\helpcenter\backend`）— 内容管理（商品富文本、博客、食谱、SEO）
+- **SSO**（`D:\WORK\Sso`）— 认证聚合层（Fastify + OAuth 2.0 + OIDC），代理 Magento API
+- **Next.js**（本仓库）— 前端渲染与用户体验
+
+**数据流向：**
+
+- 商品数据：Magento（经 SSO）+ Strapi → Next.js 统一商品层（`lib/api/unified-product.ts`）
+- 内容数据：Strapi → Next.js（博客、食谱、商品富文本）
+- 认证：SSO → Next.js（登录状态同步、购物车合并）
+- 结算：Next.js → Magento（跳转 Magento 结算页）
+
+**关键集成点：**
+
+- `lib/api/magento/client.ts` — Magento/SSO HTTP 客户端，支持 token 自动刷新
+- `lib/api/unified-product.ts` — 融合 Magento 核心字段 + Strapi 内容字段
+- `lib/api/strapi/product-enrichment.ts` — 按 SKU 获取 Strapi 商品富文本
+- 环境变量：`NEXT_PUBLIC_MAGENTO_API_URL`（SSO 地址）、`NEXT_PUBLIC_API_URL`（Strapi 地址）
+
+详细项目计划见 `docs/project-plan.md`。
+
+### Monorepo Structure
 
 This is an **Nx monorepo** with a layered dependency hierarchy that flows strictly one direction:
 
