@@ -101,8 +101,8 @@
 - 在 `product-enrichments` 中落地基础商品维护字段，并补充主图、轮播图、角度图、视频、SEO、内容状态等内容字段 （已完成）
 - 梳理 `/products/JD-AF550` mock 数据，找出哪些字段尚未对接真实数据（`product-enrichments 中还没有实现的`）
 - 将所有商品详情区块接入真实 `UnifiedProduct` 数据
-- 接入食谱模块（通过商品 SKU 或分类关联）
-- 接入相关文章模块（通过商品 SKU 或标签关联）
+- 已完成：接入食谱模块。保留旧 `products -> api::product.product` 关系不动，在 `recipe` 中新增 `magento_products -> api::magento-product.magento-product` 关系，并通过 `GET /api/recipes/by-product-sku/:sku` 向 PDP 提供卡片数据
+- 已完成：接入相关文章模块。保留旧 `products -> api::product.product` 关系不动，在 `article` 中新增 `magento_products -> api::magento-product.magento-product` 关系，并通过 `GET /api/articles/by-product-sku/:sku?locale=en` 向 PDP 提供卡片数据
 
 ### 阶段二：商品评价模块（优先级：高）
 

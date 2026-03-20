@@ -23,6 +23,11 @@ import {
 } from './strapi/product-enrichment';
 import type { StrapiProductEnrichment } from './strapi/product-enrichment';
 
+export type UnifiedProductContent = Pick<
+  StrapiProductEnrichment,
+  'recipes' | 'blog_posts'
+>;
+
 // ─── 统一图片类型 ─────────────────────────────────────────────────────────────
 
 export interface UnifiedProductImage {
@@ -82,6 +87,10 @@ export interface UnifiedProduct extends MagentoProduct {
   seo_title: string | null;
   /** SEO 描述 */
   seo_description: string | null;
+  /** PDP 关联食谱 */
+  recipes?: StrapiProductEnrichment['recipes'];
+  /** PDP 关联文章 */
+  blog_posts?: StrapiProductEnrichment['blog_posts'];
 }
 
 // ─── 融合函数 ─────────────────────────────────────────────────────────────────
@@ -156,6 +165,8 @@ export function mergeProduct(
     is_featured: enrichment?.is_featured ?? false,
     seo_title: enrichment?.seo_title ?? null,
     seo_description: enrichment?.seo_description ?? null,
+    recipes: enrichment?.recipes,
+    blog_posts: enrichment?.blog_posts,
   };
 }
 

@@ -10,6 +10,7 @@
 
 import { apiClient } from '../client';
 import { env } from '../../env';
+import { fetchPdpArticlesBySku, fetchPdpRecipesBySku } from './product-content';
 
 // ─── Strapi 响应原始结构 ──────────────────────────────────────────────────────
 
@@ -110,6 +111,26 @@ export interface ProductEnrichmentImage {
 export interface StrapiProductEnrichment {
   /** 联结键，必须与 Magento SKU 完全一致 */
   sku: string;
+  /** PDP 关联的食谱卡片数据 */
+  recipes?: Array<{
+    id: number;
+    title: string;
+    image: string;
+    time: string;
+    servings: number;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    tags: string[];
+  }>;
+  /** PDP 关联的文章卡片数据 */
+  blog_posts?: Array<{
+    id: number;
+    title: string;
+    image: string;
+    date: string;
+    excerpt: string;
+    href: string;
+    readTime: string;
+  }>;
   /** Magento store view 标识，用于多站点内容区分 */
   store_view_code?: string;
   /** 展示名称（覆盖 Magento name，用于本地化或营销优化） */
@@ -224,7 +245,11 @@ function normalizeVideos(
 }
 
 function normalizeEnrichment(
-  raw: StrapiProductEnrichmentRaw
+  raw: StrapiProductEnrichmentRaw,
+  relatedContent?: {
+    recipes: NonNullable<StrapiProductEnrichment['recipes']>;
+    blog_posts: NonNullable<StrapiProductEnrichment['blog_posts']>;
+  }
 ): StrapiProductEnrichment {
   const carouselImages = normalizeCarouselImages(raw.carousel_images);
   const angleImages = normalizeAngleImages(raw.angle_images);
@@ -246,6 +271,8 @@ function normalizeEnrichment(
 
   return {
     sku: raw.sku,
+    recipes: relatedContent?.recipes,
+    blog_posts: relatedContent?.blog_posts,
     store_view_code: raw.store_view_code ?? undefined,
     display_name: raw.display_name ?? undefined,
     subtitle: raw.subtitle ?? undefined,
@@ -305,9 +332,22 @@ export async function fetchProductEnrichments(
   );
 
   const result = new Map<string, StrapiProductEnrichment>();
-  for (const item of data.data) {
-    result.set(item.sku, normalizeEnrichment(item));
-  }
+  await Promise.all(
+    data.data.map(async item => {
+      const [recipes, blog_posts] = await Promise.all([
+        fetchPdpRecipesBySku(item.sku).catch(() => []),
+        fetchPdpArticlesBySku(item.sku).catch(() => []),
+      ]);
+
+      result.set(
+        item.sku,
+        normalizeEnrichment(item, {
+          recipes,
+          blog_posts,
+        })
+      );
+    })
+  );
   return result;
 }
 

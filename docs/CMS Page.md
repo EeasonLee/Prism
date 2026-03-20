@@ -191,7 +191,26 @@ return <Block {...section.props} />
     ● 架构可长期演进
     ● 为 AI / 个性化推荐预留空间
 
-12. 结论
+12. 与商品详情页（PDP）内容接入的关系
+    本方案主要解决首页 / 活动页 / 内容落地页的 Page Schema 问题，不直接等同于商品详情页的内容增强模型。
+    需要明确区分两类能力：
+    ● Page Schema：解决“页面如何由多个 section 组合”
+    ● Product Enrichment：解决“单个商品详情页需要补充哪些内容字段与内容关联”
+
+    对当前 Prism 项目而言：
+    ● article 与 recipe 内容类型已经在 Strapi 中存在
+    ● Next 侧也已经完成 blog / recipes 的内容域对接
+    ● 因此 PDP 中的相关文章与食谱接入，不应再新建一套 Blog / Recipe 内容模型
+    ● 实际落地时，旧 `products -> api::product.product` 关系保留不动
+    ● 为了适配新 Magento 商品链路，在 `article` / `recipe` 中新增 `magento_products -> api::magento-product.magento-product` 关系
+    ● Next 通过 `by-product-sku` 接口按 SKU 读取内容，再映射成 `BlogSection` / `RecipesSection` 所需卡片数据
+
+    这件事虽然不属于通用 Page Schema 本体，但它可以作为二期 `Page Schema + Blog` 的前置验证：
+    ● 验证现有内容源是否足够稳定
+    ● 验证 Next 侧卡片级 View Model 如何抽象
+    ● 验证未来 Blog / Recipe section 应该配置“内容来源”而不是复制内容本体
+
+13. 结论
     本方案不是低代码工具，而是一套：
     “受控自由度的 CMS 页面配置系统”
     在保证运营效率的同时，最大限度降低技术复杂度与长期维护风险。

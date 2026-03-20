@@ -254,6 +254,36 @@ Q15：在什么阶段可以简化版本机制？
 当前 Section Schema 能否直接复用？能 → 架构是对的
 不能 → Schema 已经腐烂
 
+Q16：PDP 里的相关文章和食谱，算不算 `Page Schema + Blog` 的一部分？
+结论
+有关联，但不是同一个层级。
+
+正确理解
+● PDP 的相关文章 / 食谱属于 `product-enrichment` 范畴
+● 首页 / 活动页 / 专题页的 Blog section 属于 `Page Schema` 范畴
+● 两者共享同一个内容源（现有 `article` / `recipe`），但不应该强行共用同一套页面建模
+
+对 Prism 当前项目的具体判断
+● Strapi 中已经存在 `article` / `recipe` 内容类型
+● Next 中也已经有对应内容域 API 与页面消费链路
+● 因此 PDP 一期任务不应该新增 Blog 组件去复制文章标题、摘要、图片
+● 旧 `products -> api::product.product` 关系需要保留，避免影响旧内容模块
+● 实际落地采用并行双关系：新增 `magento_products -> api::magento-product.magento-product` 供新 PDP / Magento 商品链路使用
+● Next 通过 `GET /api/articles/by-product-sku/:sku?locale=en` 与 `GET /api/recipes/by-product-sku/:sku` 拉取数据
+● Next 的 adapter 层负责把关联内容裁剪为 `BlogSection` / `RecipesSection` 所需卡片结构
+
+为什么这件事仍然能为二期 `Page Schema + Blog` 提前踩坑
+因为它能先验证三个真正关键的问题：
+
+1. 内容源模型是否稳定
+2. Next 的 View Model / adapter 应该如何抽象
+3. 将来的 Blog section 应该配置“内容来源规则”还是“手工复制内容字段”
+
+工程纪律
+● 不要把 PDP enrichment 误做成 page builder
+● 不要为了复用 UI，在 Strapi 中重复造一套 blog / recipe 卡片内容
+● 可复用的是内容源、查询能力、adapter 思路，不一定是同一个 section schema
+
 最终系统级总结
 维护成本不是来自多版本，
 而是来自你不愿意放弃让旧东西继续进化。
