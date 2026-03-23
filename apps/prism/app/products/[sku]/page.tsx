@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageContainer } from '@prism/ui';
 import { fetchUnifiedProductBySku } from '../../../lib/api/unified-product';
+import { fetchProductEnrichment } from '../../../lib/api/strapi/product-enrichment';
 import {
   fetchReviewsBySku,
   fetchReviewSummaryBySku,
@@ -11,12 +12,9 @@ import {
 import { ProductDetailClient } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ProductSectionNav } from './ProductSectionNav';
-import { CrossSellAddons, BundleDeals } from './CrossSellSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
-import { RichDetailSections } from './RichDetailSections';
 import { ProductReviews } from './ProductReviews';
-import { RecommendedProducts } from './RecommendedProducts';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
@@ -140,24 +138,21 @@ export default async function ProductDetailPage({ params }: Props) {
   if (decodedSku === MOCK_PRODUCT_SKU) {
     data = { product: mockProduct, cms: mockProductExtras };
   } else {
-    const [fetchedProduct, fetchedSummary, fetchedReviews] = await Promise.all([
-      fetchUnifiedProductBySku(decodedSku).catch(() => null),
-      fetchReviewSummaryBySku(decodedSku).catch(() =>
-        emptyReviewSummary(decodedSku)
-      ),
-      fetchReviewsBySku(decodedSku, 1, 10).catch(() => emptyReviewsResult()),
-    ]);
+    const [fetchedProduct, fetchedEnrichment, fetchedSummary, fetchedReviews] =
+      await Promise.all([
+        fetchUnifiedProductBySku(decodedSku).catch(() => null),
+        fetchProductEnrichment(decodedSku).catch(() => undefined),
+        fetchReviewSummaryBySku(decodedSku).catch(() =>
+          emptyReviewSummary(decodedSku)
+        ),
+        fetchReviewsBySku(decodedSku, 1, 10).catch(() => emptyReviewsResult()),
+      ]);
 
     if (!fetchedProduct) notFound();
 
     data = {
       product: fetchedProduct,
-      cms: buildRealProductPageCms({
-        recipes: fetchedProduct._enriched ? fetchedProduct.recipes : undefined,
-        blog_posts: fetchedProduct._enriched
-          ? fetchedProduct.blog_posts
-          : undefined,
-      }),
+      cms: buildRealProductPageCms(fetchedEnrichment),
     };
     reviewSummary = fetchedSummary;
     reviewList = fetchedReviews;
@@ -315,24 +310,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
           <ProductDetailClient product={product} />
 
-          {(cms?.cross_sell_addons?.length ?? 0) > 0 && (
-            <CrossSellAddons
-              addons={cms.cross_sell_addons}
-              mainProductPrice={product.special_price ?? product.price}
-            />
-          )}
-
-          {(cms?.bundle_deals?.length ?? 0) > 0 && (
-            <BundleDeals
-              deals={cms.bundle_deals}
-              mainProduct={{
-                name: product.display_name,
-                image: product.unified_thumbnail ?? product.thumbnail_url ?? '',
-                price: product.special_price ?? product.price,
-              }}
-            />
-          )}
-
           {product.description_html && (
             <div className="mt-6 border-t border-border pt-5">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-muted">
@@ -387,14 +364,6 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       )}
 
-      {(cms?.detail_sections?.length ?? 0) > 0 &&
-        !product.product_detail_html && (
-          <div id="section-details">
-            <div className="my-10 border-t border-border" />
-            <RichDetailSections sections={cms.detail_sections} />
-          </div>
-        )}
-
       <div id="section-reviews">
         <div className="border-t border-border" />
         {decodedSku === MOCK_PRODUCT_SKU ? (
@@ -413,13 +382,6 @@ export default async function ProductDetailPage({ params }: Props) {
           />
         )}
       </div>
-
-      {(cms?.recommended_products?.length ?? 0) > 0 && (
-        <>
-          <div className="border-t border-border" />
-          <RecommendedProducts products={cms.recommended_products} />
-        </>
-      )}
 
       {(cms?.recipes?.length ?? 0) > 0 && (
         <div id="section-recipes">
