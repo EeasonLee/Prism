@@ -23,6 +23,31 @@ import {
 } from './strapi/product-enrichment';
 import type { StrapiProductEnrichment } from './strapi/product-enrichment';
 
+function normalizeHtmlContent(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    if ('html' in value && typeof value.html === 'string') {
+      const trimmed = value.html.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+
+    if ('rendered' in value && typeof value.rendered === 'string') {
+      const trimmed = value.rendered.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  }
+
+  return null;
+}
+
 export type UnifiedProductContent = Pick<
   StrapiProductEnrichment,
   'recipes' | 'blog_posts'
@@ -143,20 +168,23 @@ export function mergeProduct(
   const subtitleRaw = enrichment?.subtitle?.trim();
   const subtitle = subtitleRaw ? subtitleRaw : null;
 
-  const productDetailRaw = enrichment?.product_detail_html?.trim();
-  const product_detail_html = productDetailRaw
-    ? enrichment?.product_detail_html ?? null
-    : null;
+  const short_description_html =
+    normalizeHtmlContent(enrichment?.short_description_html) ??
+    normalizeHtmlContent(magento.short_description);
+  const description_html =
+    normalizeHtmlContent(enrichment?.description_html) ??
+    normalizeHtmlContent(magento.description);
+  const product_detail_html = normalizeHtmlContent(
+    enrichment?.product_detail_html
+  );
 
   return {
     ...magento,
     _enriched: !!enrichment,
     display_name: enrichment?.display_name ?? magento.name,
     subtitle,
-    short_description_html:
-      enrichment?.short_description_html ?? magento.short_description ?? null,
-    description_html:
-      enrichment?.description_html ?? magento.description ?? null,
+    short_description_html,
+    description_html,
     product_detail_html,
     unified_images,
     unified_thumbnail,

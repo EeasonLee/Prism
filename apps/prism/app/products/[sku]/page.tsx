@@ -185,6 +185,14 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const hasDiscount =
     product.special_price != null && product.special_price < product.price;
+  const summaryAverage = reviewSummary?.average ?? 0;
+  const summaryTotal = reviewSummary?.total ?? 0;
+  const ratingPercentage =
+    summaryTotal > 0
+      ? Math.max(0, Math.min(100, (summaryAverage / 5) * 100))
+      : product.rating_percentage ?? 0;
+  const ratingCount =
+    summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
   return (
     <PageContainer className="py-6">
@@ -238,16 +246,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <p className="mb-3 text-base text-ink-muted">{product.subtitle}</p>
           )}
 
-          {(product.rating_percentage ?? 0) > 0 && (
-            <div className="mb-3">
-              <StarRating
-                percentage={product.rating_percentage ?? 0}
-                count={product.review_count ?? 0}
-              />
-            </div>
-          )}
-
-          <div className="mb-3">
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             {product.is_in_stock ? (
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -263,6 +262,9 @@ export default async function ProductDetailPage({ params }: Props) {
                 <span className="h-2 w-2 rounded-full bg-red-400" />
                 Out of Stock
               </span>
+            )}
+            {ratingCount > 0 && (
+              <StarRating percentage={ratingPercentage} count={ratingCount} />
             )}
           </div>
 
