@@ -31,13 +31,12 @@
 - Strapi 已完成商品分层基础建模：`magento-products`、`magento-categories`、`product-enrichments`
 - `product-enrichments` 已具备基础商品维护字段，并扩展了主图、轮播图、角度图、视频、SEO、内容状态等内容字段
 - Strapi 侧已存在直接从 Magento 拉取并写入本地模型的早期同步脚本，可作为现状参考，但尚未与当前系统边界统一
-- Mock 商品详情页 `/products/JD-AF550` 作为参考原型（Mock 与真实字段对照见 [pdp-mock-vs-real.md](./pdp-mock-vs-real.md)）
+- Mock 商品详情页 `/products/JD-AF550` 作为参考原型，并已实现部分模块
 - 博客和食谱已在 Strapi 中实现，并接入 Meilisearch 搜索
 
 ### 待完成 ⏳
 
 - Magento → Strapi 正式同步方案收口（以 SSO / Strapi / Magento 官方字段为依据统一最终边界）
-- 完整商品详情页（食谱、文章、评论模块全部打通）
 - 商品列表多维度筛选（分类、商品属性、价格等）
 - 超级搜索（商品 + 博客 + 食谱全局搜索）
 
@@ -96,15 +95,14 @@
 - 结合 `SSO` 现状与 Strapi 已有同步脚本，决定正式同步方向是“SSO 推送”还是“Strapi 定时拉取”
 - 将现有手动/脚本同步能力收敛为开发联调工具，不作为正式生产方案
 
-#### 1.2 商品详情页 — 完整打通
+#### 1.2 商品详情页 — 完整打通 ✅
 
 - 在 `product-enrichments` 中落地基础商品维护字段，并补充主图、轮播图、角度图、视频、SEO、内容状态等内容字段 （已完成）
-- 梳理 `/products/JD-AF550` mock 数据，找出哪些字段尚未对接真实数据（`product-enrichments 中还没有实现的`）
-- 将所有商品详情区块接入真实 `UnifiedProduct` 数据
+- strapi 已实现 `/products/JD-AF550` mock 里面的部分模块
 - 已完成：接入食谱模块。保留旧 `products -> api::product.product` 关系不动，在 `recipe` 中新增 `magento_products -> api::magento-product.magento-product` 关系，并通过 `GET /api/recipes/by-product-sku/:sku` 向 PDP 提供卡片数据
 - 已完成：接入相关文章模块。保留旧 `products -> api::product.product` 关系不动，在 `article` 中新增 `magento_products -> api::magento-product.magento-product` 关系，并通过 `GET /api/articles/by-product-sku/:sku?locale=en` 向 PDP 提供卡片数据
 
-### 阶段二：商品评价模块（优先级：高）
+### 阶段二：商品评价模块（优先级：高）✅
 
 - 已完成：采用 Strapi 独立 `product-review` / `product-review-summary` 模型承接商品评价与汇总
 - 已完成：Next.js 新增 `/api/reviews/[sku]` BFF 路由，支持登录用户提交评价

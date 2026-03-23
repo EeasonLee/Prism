@@ -1,16 +1,21 @@
 import { getPageBySlug } from '@/lib/api/cms-pages';
-import { renderSections } from './components/sections/blockMap';
-import { HomePageClient } from './components/HomePageClient';
+import { renderSections } from '../components/sections/blockMap';
+import { notFound } from 'next/navigation';
 
 export const revalidate = 60; // ISR 60s 缓存
 
-export async function generateMetadata() {
-  const page = await getPageBySlug('home');
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const page = await getPageBySlug(slug);
 
   if (!page || !page.seo) {
     return {
-      title: 'Joydeem - Smart Kitchen Appliances',
-      description: 'Discover innovative kitchen appliances for modern living',
+      title: 'Page Not Found',
+      description: 'The requested page could not be found',
     };
   }
 
@@ -26,13 +31,17 @@ export async function generateMetadata() {
   };
 }
 
-export default async function Page() {
-  const page = await getPageBySlug('home');
+export default async function DynamicPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const page = await getPageBySlug(slug);
 
-  // Fallback：CMS 数据不可用时使用现有硬编码首页
+  // 如果页面不存在或没有 sections，返回 404
   if (!page || page.sections.length === 0) {
-    console.warn('CMS page not found, using fallback');
-    return <HomePageClient />;
+    notFound();
   }
 
   return (
