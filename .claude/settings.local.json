@@ -45,7 +45,9 @@
       "Bash(pnpm outdated)",
       "Bash(grep -r \"ADMIN_SECRET\\\\|REVALIDATE_SECRET\" /mnt/d/WORK/prism/apps/prism/.env* 2>/dev/null | head -10)",
       "Bash(cd \"/mnt/d/WORK/helpcenter/backend\" && npm run build)",
-      "Bash(pnpm nx lint prism)"
+      "Bash(pnpm nx lint prism)",
+      "Bash(pnpm nx typecheck prism)",
+      "Bash(find /mnt/d/WORK/prism/apps/prism/app/products/[sku] -type f -name \"*.tsx\" | head -20)"
     ]
   }
 }
