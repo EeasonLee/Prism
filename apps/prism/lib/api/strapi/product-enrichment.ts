@@ -57,6 +57,18 @@ interface StrapiSeoRaw {
   description?: string | null;
 }
 
+interface StrapiKeyPointRaw {
+  icon?: string | null;
+  title?: string | null;
+  description?: string | null;
+}
+
+interface StrapiGuaranteeRaw {
+  icon?: string | null;
+  title?: string | null;
+  description?: string | null;
+}
+
 interface StrapiListResponse<T> {
   data: T[];
   meta: {
@@ -83,6 +95,8 @@ interface StrapiProductEnrichmentRaw {
   carousel_images?: StrapiCarouselImageRaw[] | null;
   angle_images?: StrapiAngleImageRaw[] | null;
   videos?: StrapiVideoRaw[] | null;
+  key_points?: StrapiKeyPointRaw[] | null;
+  guarantees?: StrapiGuaranteeRaw[] | null;
   promotion_label?: string | null;
   promotion_expires_at?: string | null;
   is_featured?: boolean | null;
@@ -100,6 +114,18 @@ export interface ProductEnrichmentImage {
   alt: string;
   width?: number;
   height?: number;
+}
+
+export interface ProductEnrichmentKeyPoint {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface ProductEnrichmentGuarantee {
+  icon: string;
+  title: string;
+  description: string;
 }
 
 /**
@@ -156,6 +182,10 @@ export interface StrapiProductEnrichment {
     description?: string;
     sort_order?: number;
   }>;
+  /** 商品卖点卡片 */
+  key_points?: ProductEnrichmentKeyPoint[];
+  /** 商品保障卡片 */
+  guarantees?: ProductEnrichmentGuarantee[];
   /** 促销标签，如 "New Arrival"、"Buy 2 Get 1"、"Limited Edition" */
   promotion_label?: string;
   /** 促销截止日期（ISO 8601），用于前端自动隐藏过期标签 */
@@ -208,9 +238,12 @@ function normalizeCarouselImages(
   if (!images) return [];
 
   return images
-    .filter(item => item.enabled !== false && item.image?.url)
+    .filter(
+      (item): item is StrapiCarouselImageRaw & { image: StrapiImage } =>
+        item.enabled !== false && !!item.image?.url
+    )
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map(item => normalizeImage(item.image as StrapiImage, item.alt));
+    .map(item => normalizeImage(item.image, item.alt));
 }
 
 function normalizeAngleImages(
@@ -219,9 +252,12 @@ function normalizeAngleImages(
   if (!images) return [];
 
   return images
-    .filter(item => item.enabled !== false && item.image?.url)
+    .filter(
+      (item): item is StrapiAngleImageRaw & { image: StrapiImage } =>
+        item.enabled !== false && !!item.image?.url
+    )
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map(item => normalizeImage(item.image as StrapiImage, item.alt));
+    .map(item => normalizeImage(item.image, item.alt));
 }
 
 function normalizeVideos(
@@ -240,6 +276,46 @@ function normalizeVideos(
       description: video.description ?? undefined,
       sort_order: video.sort_order ?? undefined,
     }));
+
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeKeyPoints(
+  items: StrapiKeyPointRaw[] | null | undefined
+): StrapiProductEnrichment['key_points'] {
+  const normalized = (items ?? [])
+    .map(item => {
+      const icon = item.icon?.trim() ?? '';
+      const title = item.title?.trim() ?? '';
+      const description = item.description?.trim() ?? '';
+
+      if (!icon || !title || !description) {
+        return null;
+      }
+
+      return { icon, title, description };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeGuarantees(
+  items: StrapiGuaranteeRaw[] | null | undefined
+): StrapiProductEnrichment['guarantees'] {
+  const normalized = (items ?? [])
+    .map(item => {
+      const icon = item.icon?.trim() ?? '';
+      const title = item.title?.trim() ?? '';
+      const description = item.description?.trim() ?? '';
+
+      if (!icon || !title || !description) {
+        return null;
+      }
+
+      return { icon, title, description };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   return normalized.length > 0 ? normalized : undefined;
 }
@@ -282,6 +358,8 @@ function normalizeEnrichment(
     images: images.length > 0 ? images : undefined,
     thumbnail_url: baseImage?.url ?? images[0]?.url ?? undefined,
     videos: normalizeVideos(raw.videos),
+    key_points: normalizeKeyPoints(raw.key_points),
+    guarantees: normalizeGuarantees(raw.guarantees),
     promotion_label: raw.promotion_label ?? undefined,
     promotion_expires_at: raw.promotion_expires_at ?? undefined,
     is_featured: raw.is_featured ?? undefined,

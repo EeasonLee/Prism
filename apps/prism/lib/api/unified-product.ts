@@ -50,7 +50,7 @@ function normalizeHtmlContent(value: unknown): string | null {
 
 export type UnifiedProductContent = Pick<
   StrapiProductEnrichment,
-  'recipes' | 'blog_posts'
+  'key_points' | 'guarantees' | 'recipes' | 'blog_posts'
 >;
 
 // ─── 统一图片类型 ─────────────────────────────────────────────────────────────

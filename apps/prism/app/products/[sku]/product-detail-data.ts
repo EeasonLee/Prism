@@ -5,19 +5,31 @@ import type {
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
 import type { ProductPageCms } from './mock-data';
 
-export type RealProductPageCms = Pick<ProductPageCms, 'recipes' | 'blog_posts'>;
+export type RealProductPageCms = Pick<
+  ProductPageCms,
+  'key_points' | 'guarantees' | 'recipes' | 'blog_posts'
+>;
 
 export function buildRealProductPageCms(
   content: UnifiedProductContent | undefined
 ): RealProductPageCms | null {
+  const key_points = content?.key_points ?? [];
+  const guarantees = content?.guarantees ?? [];
   const recipes = content?.recipes ?? [];
   const blog_posts = content?.blog_posts ?? [];
 
-  if (recipes.length === 0 && blog_posts.length === 0) {
+  if (
+    key_points.length === 0 &&
+    guarantees.length === 0 &&
+    recipes.length === 0 &&
+    blog_posts.length === 0
+  ) {
     return null;
   }
 
   return {
+    key_points,
+    guarantees,
     recipes,
     blog_posts,
   };
