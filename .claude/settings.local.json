@@ -47,7 +47,8 @@
       "Bash(cd \"/mnt/d/WORK/helpcenter/backend\" && npm run build)",
       "Bash(pnpm nx lint prism)",
       "Bash(pnpm nx typecheck prism)",
-      "Bash(find /mnt/d/WORK/prism/apps/prism/app/products/[sku] -type f -name \"*.tsx\" | head -20)"
+      "Bash(find /mnt/d/WORK/prism/apps/prism/app/products/[sku] -type f -name \"*.tsx\" | head -20)",
+      "Bash(pnpm exec eslint \"apps/prism/app/products/[sku]/ProductDetailClient.tsx\")"
     ]
   }
 }
