@@ -8,6 +8,7 @@ import { useAuth } from '../../lib/auth/context';
 import { useAuthModal } from '../../lib/auth-modal/context';
 import { useCart } from '../../lib/cart/context';
 import { CartDrawer } from './CartDrawer';
+import { MobileNavBar } from './MobileNavBar';
 
 type NavLink = {
   label: string;
@@ -107,7 +108,7 @@ function DropdownNav({ label, items }: DropdownNavProps) {
 }
 
 function UserAvatar({ name, email }: { name: string; email: string }) {
-  const initial = name ? name[0].toUpperCase() : email[0].toUpperCase();
+  const initial = (name.trim()[0] ?? email[0] ?? '?').toUpperCase();
   return (
     <span
       className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-[13px] font-bold text-brand-foreground select-none"
@@ -119,7 +120,6 @@ function UserAvatar({ name, email }: { name: string; email: string }) {
 }
 
 export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { openLogin } = useAuthModal();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -176,7 +176,7 @@ export function Header() {
           <a
             // href="https://www.joydeem.com/"
             href="/"
-            className="flex items-center shrink-0"
+            className="hidden shrink-0 items-center md:flex"
           >
             <Image
               src="/images/logo.png"
@@ -229,7 +229,7 @@ export function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
+          <div className="hidden shrink-0 items-center justify-end gap-1 sm:gap-2 md:flex">
             {/* <IconButton label="Search">
             <svg
               aria-hidden="true"
@@ -352,178 +352,11 @@ export function Header() {
               </svg>
             </IconButton>
 
-            <div className="md:hidden">
-              <IconButton
-                label="Menu"
-                onClick={() => setIsMobileMenuOpen(open => !open)}
-                ariaExpanded={isMobileMenuOpen}
-                ariaControls="mobile-menu"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </IconButton>
-            </div>
           </div>
+        </div>
 
-          <div
-            id="mobile-menu"
-            className={`md:hidden absolute left-0 right-0 top-full max-h-[calc(100vh-73px)] overflow-y-auto border-t border-border bg-background shadow-xl transition-[opacity,visibility,transform] duration-200 ${
-              isMobileMenuOpen
-                ? 'visible translate-y-0 opacity-100'
-                : 'invisible -translate-y-2 opacity-0'
-            }`}
-          >
-            <div className="px-4 py-4 space-y-4">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-ink-muted">Menu</p>
-                <IconButton
-                  label="Close menu"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </IconButton>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-ink-muted">Products</p>
-                <ul className="mt-2 space-y-2">
-                  {productLinks.map(item => (
-                    <li key={item.href}>
-                      <a
-                        href={item.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {navLinks.map(item => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                  >
-                    {item.label}
-                  </a>
-                ))}
-
-                <div>
-                  <p className="text-sm font-semibold text-ink-muted">
-                    Support
-                  </p>
-                  <ul className="mt-2 space-y-2">
-                    {supportLinks.map(item => (
-                      <li key={item.href}>
-                        <a
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="block rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                        >
-                          {item.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Link
-                  href="/shop"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                >
-                  Shop
-                </Link>
-
-                <Link
-                  href="/recipes"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                >
-                  Recipes
-                </Link>
-
-                <Link
-                  href="/blog"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-md px-2 py-2 text-base font-medium text-ink transition hover:bg-brand/10"
-                >
-                  Blog
-                </Link>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                {isAuthenticated && user ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 px-2 py-2">
-                      <UserAvatar
-                        name={user.first_name ?? user.username}
-                        email={user.email}
-                      />
-                      <div className="min-w-0">
-                        {(user.first_name || user.last_name) && (
-                          <p className="truncate text-sm font-semibold text-ink">
-                            {[user.first_name, user.last_name]
-                              .filter(Boolean)
-                              .join(' ')}
-                          </p>
-                        )}
-                        <p className="truncate text-xs text-ink-muted">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        logout();
-                      }}
-                      className="w-full rounded-md px-2 py-2 text-left text-base font-medium text-ink transition hover:bg-brand/10"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      openLogin('signin');
-                    }}
-                    className="w-full rounded-md px-2 py-2 text-left text-base font-medium text-ink transition hover:bg-brand/10"
-                  >
-                    Sign in / Create account
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="md:hidden">
+          <MobileNavBar />
         </div>
       </header>
     </>
