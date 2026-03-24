@@ -26,6 +26,8 @@
   }
   html {
     scroll-behavior: smooth;
+    --mobile-tabbar-height: 64px;
+    --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -127,6 +129,14 @@
 
 .btn-primary:active {
   transform: scale(0.98);
+}
+
+@media (max-width: 767px) {
+  body.mobile-tabbar-safe-padding {
+    padding-bottom: calc(
+      var(--mobile-tabbar-height) + var(--mobile-safe-area-bottom)
+    );
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
