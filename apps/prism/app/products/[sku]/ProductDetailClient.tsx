@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   MagentoConfigurableOption,
   MagentoProduct,
@@ -67,19 +68,172 @@ function SimpleOptions({ product }: { product: MagentoProduct }) {
 // ─── Configurable ─────────────────────────────────────────────────────────────
 
 function ConfigurableOptions({ product }: { product: MagentoProduct }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const configurableOptions: MagentoConfigurableOption[] =
     product.configurable_options ??
     product.extension_attributes?.configurable_product_options ??
     [];
+
+  const children = product.children ?? [];
 
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, number>
   >({});
   const [qty, setQty] = useState(1);
 
+  const findChildSku = (attrs: Record<string, number>): string | null => {
+    const child = children.find(item =>
+      configurableOptions.every(option => {
+        const selectedValue = attrs[option.attribute_id];
+        if (selectedValue === undefined) {
+          return false;
+        }
+
+        const childValueById = item.attributes[option.attribute_id];
+        if (childValueById != null) {
+          return childValueById === String(selectedValue);
+        }
+
+        if (!option.attribute_code) {
+          return false;
+        }
+
+        const childValueByCode = item.attributes[option.attribute_code];
+        if (childValueByCode != null) {
+          if (childValueByCode === String(selectedValue)) {
+            return true;
+          }
+
+          const selectedOption = option.values.find(
+            value => value.value_index === selectedValue
+          );
+          return selectedOption?.label === childValueByCode;
+        }
+
+        return false;
+      })
+    );
+
+    return child?.sku ?? null;
+  };
+
+  const findAttributesBySku = (
+    childSku: string
+  ): Record<string, number> | null => {
+    const child = children.find(item => item.sku === childSku);
+    if (!child) {
+      return null;
+    }
+
+    const attrs: Record<string, number> = {};
+
+    for (const option of configurableOptions) {
+      const childValueById = child.attributes[option.attribute_id];
+      if (childValueById != null) {
+        const selectedValue = Number(childValueById);
+        const hasMatchingValue = option.values.some(
+          value => value.value_index === selectedValue
+        );
+
+        if (!hasMatchingValue) {
+          return null;
+        }
+
+        attrs[option.attribute_id] = selectedValue;
+        continue;
+      }
+
+      if (!option.attribute_code) {
+        return null;
+      }
+
+      const childValueByCode = child.attributes[option.attribute_code];
+      if (!childValueByCode) {
+        return null;
+      }
+
+      const selectedByValueIndex = option.values.find(
+        value => String(value.value_index) === childValueByCode
+      );
+      if (selectedByValueIndex) {
+        attrs[option.attribute_id] = selectedByValueIndex.value_index;
+        continue;
+      }
+
+      const selectedByLabel = option.values.find(
+        value => value.label === childValueByCode
+      );
+      if (!selectedByLabel) {
+        return null;
+      }
+
+      attrs[option.attribute_id] = selectedByLabel.value_index;
+    }
+
+    return attrs;
+  };
+
+  useEffect(() => {
+    if (children.length === 0) {
+      return;
+    }
+
+    const variantSku = searchParams?.get('variant');
+    if (!variantSku) {
+      return;
+    }
+
+    const attrs = findAttributesBySku(variantSku);
+    if (!attrs) {
+      return;
+    }
+
+    setSelectedAttributes(prev => {
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(attrs);
+      const isSameSelection =
+        prevKeys.length === nextKeys.length &&
+        nextKeys.every(key => prev[key] === attrs[key]);
+
+      return isSameSelection ? prev : attrs;
+    });
+  }, [children, configurableOptions, searchParams]);
+
   const allSelected = configurableOptions.every(
-    opt => selectedAttributes[opt.attribute_id] !== undefined
+    option => selectedAttributes[option.attribute_id] !== undefined
   );
+
+  useEffect(() => {
+    if (!allSelected || children.length === 0) {
+      return;
+    }
+
+    const childSku = findChildSku(selectedAttributes);
+    if (!childSku) {
+      return;
+    }
+
+    const currentVariant = searchParams?.get('variant');
+    if (currentVariant === childSku) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams?.toString() ?? '');
+    nextParams.set('variant', childSku);
+    const nextUrl = `/products/${encodeURIComponent(
+      product.sku
+    )}?${nextParams.toString()}`;
+    router.replace(nextUrl, { scroll: false });
+  }, [
+    allSelected,
+    children,
+    product.sku,
+    router,
+    searchParams,
+    selectedAttributes,
+  ]);
 
   const productOptionsJson = allSelected
     ? JSON.stringify({ super_attribute: selectedAttributes })

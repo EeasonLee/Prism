@@ -110,7 +110,9 @@ type RawConfigurableOption = {
 type RawChildAttribute =
   | Array<{
       code?: string | null;
+      label?: string | null;
       value?: string | null;
+      value_index?: number | null;
     }>
   | Record<string, string | null>
   | null
@@ -136,6 +138,19 @@ type RawChildProduct = {
   attributes?: RawChildAttribute;
   media_gallery?: RawMediaGalleryItem[] | null;
 };
+
+interface RawVariant {
+  product?: {
+    id?: number | null;
+    uid?: string | null;
+    sku?: string | null;
+    name?: string | null;
+    stock_status?: 'IN_STOCK' | 'OUT_OF_STOCK' | null;
+    media_gallery?: RawMediaGalleryItem[] | null;
+    price_range?: RawPriceRange;
+  } | null;
+  attributes?: RawChildAttribute;
+}
 
 type RawGroupedItem = {
   id?: number | null;
@@ -223,6 +238,7 @@ type RawMagentoProduct = {
   categories?: RawCategoryRef[] | null;
   configurable_options?: RawConfigurableOption[] | null;
   children?: RawChildProduct[] | null;
+  variants?: RawVariant[] | null;
   grouped_items?: RawGroupedItem[] | null;
   bundle_price_type?: 'fixed' | 'dynamic' | null;
   bundle_options?: RawBundleOption[] | null;
@@ -367,9 +383,24 @@ function normalizeChildAttributes(
 ): Record<string, string> {
   if (Array.isArray(attributes)) {
     return attributes.reduce<Record<string, string>>((acc, item) => {
-      if (item.code && item.value != null) {
-        acc[item.code] = item.value;
+      if (!item.code) {
+        return acc;
       }
+
+      if (item.value_index != null) {
+        acc[item.code] = String(item.value_index);
+        return acc;
+      }
+
+      if (item.value != null) {
+        acc[item.code] = item.value;
+        return acc;
+      }
+
+      if (item.label != null) {
+        acc[item.code] = item.label;
+      }
+
       return acc;
     }, {});
   }
@@ -387,6 +418,46 @@ function normalizeChildAttributes(
     },
     {}
   );
+}
+
+function normalizeChildren(
+  raw: RawMagentoProduct,
+  priceFallback: number
+): MagentoProduct['children'] {
+  const rawChildren = raw.children ?? [];
+  if (rawChildren.length > 0) {
+    return rawChildren.map(child => ({
+      id: child.id ?? 0,
+      uid: child.uid ?? null,
+      sku: child.sku ?? '',
+      name: child.name ?? '',
+      price: child.price ?? priceFallback,
+      special_price: child.special_price ?? null,
+      stock_qty: child.stock_qty ?? null,
+      stock_status: child.stock_status ?? null,
+      is_in_stock:
+        child.is_in_stock ??
+        (child.stock_status ? child.stock_status === 'IN_STOCK' : true),
+      attributes: normalizeChildAttributes(child.attributes),
+      media_gallery: normalizeMediaGallery(child.media_gallery),
+    }));
+  }
+
+  return (raw.variants ?? []).map(variant => ({
+    id: variant.product?.id ?? 0,
+    uid: variant.product?.uid ?? null,
+    sku: variant.product?.sku ?? '',
+    name: variant.product?.name ?? '',
+    price:
+      variant.product?.price_range?.minimum_price?.final_price?.value ??
+      priceFallback,
+    special_price: null,
+    stock_qty: null,
+    stock_status: variant.product?.stock_status ?? null,
+    is_in_stock: variant.product?.stock_status === 'IN_STOCK',
+    attributes: normalizeChildAttributes(variant.attributes),
+    media_gallery: normalizeMediaGallery(variant.product?.media_gallery),
+  }));
 }
 
 function normalizeMediaGallery(
@@ -505,21 +576,7 @@ function normalizeProduct(raw: RawMagentoProduct): MagentoProduct {
     configurable_options: normalizeConfigurableOptions(
       raw.configurable_options
     ),
-    children: (raw.children ?? []).map(child => ({
-      id: child.id ?? 0,
-      uid: child.uid ?? null,
-      sku: child.sku ?? '',
-      name: child.name ?? '',
-      price: child.price ?? 0,
-      special_price: child.special_price ?? null,
-      stock_qty: child.stock_qty ?? null,
-      stock_status: child.stock_status ?? null,
-      is_in_stock:
-        child.is_in_stock ??
-        (child.stock_status ? child.stock_status === 'IN_STOCK' : true),
-      attributes: normalizeChildAttributes(child.attributes),
-      media_gallery: normalizeMediaGallery(child.media_gallery),
-    })),
+    children: normalizeChildren(raw, finalPrice),
     grouped_items: normalizeGroupedItems(raw.grouped_items),
     bundle_price_type: raw.bundle_price_type ?? undefined,
     bundle_options: (raw.bundle_options ?? []).map(option => ({
