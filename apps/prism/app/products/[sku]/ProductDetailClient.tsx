@@ -1,16 +1,33 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type {
   MagentoConfigurableOption,
+  MagentoMediaGalleryItem,
   MagentoProduct,
 } from '../../../lib/api/magento/types';
 import { AddToCartButton } from '../../components/AddToCartButton';
 
+export interface SelectedVariantProduct {
+  sku: string;
+  price: number;
+  special_price?: number | null;
+  stock_qty?: number | null;
+  stock_status?: 'IN_STOCK' | 'OUT_OF_STOCK' | null;
+  is_in_stock?: boolean;
+  media_gallery?: MagentoMediaGalleryItem[];
+}
+
+export interface ProductDetailSelection {
+  selectedVariant: SelectedVariantProduct | null;
+  allSelected: boolean;
+}
+
 interface ProductDetailClientProps {
   product: MagentoProduct;
+  onSelectionChange?: (selection: ProductDetailSelection) => void;
 }
 
 // ─── 数量输入框 ───────────────────────────────────────────────────────────────
@@ -67,8 +84,13 @@ function SimpleOptions({ product }: { product: MagentoProduct }) {
 
 // ─── Configurable ─────────────────────────────────────────────────────────────
 
-function ConfigurableOptions({ product }: { product: MagentoProduct }) {
-  const router = useRouter();
+function ConfigurableOptions({
+  product,
+  onSelectionChange,
+}: {
+  product: MagentoProduct;
+  onSelectionChange?: (selection: ProductDetailSelection) => void;
+}) {
   const searchParams = useSearchParams();
 
   const configurableOptions: MagentoConfigurableOption[] =
@@ -77,6 +99,7 @@ function ConfigurableOptions({ product }: { product: MagentoProduct }) {
     [];
 
   const children = product.children ?? [];
+  const variantSku = searchParams?.get('variant') ?? null;
 
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, number>
@@ -176,12 +199,7 @@ function ConfigurableOptions({ product }: { product: MagentoProduct }) {
   };
 
   useEffect(() => {
-    if (children.length === 0) {
-      return;
-    }
-
-    const variantSku = searchParams?.get('variant');
-    if (!variantSku) {
+    if (children.length === 0 || !variantSku) {
       return;
     }
 
@@ -199,41 +217,48 @@ function ConfigurableOptions({ product }: { product: MagentoProduct }) {
 
       return isSameSelection ? prev : attrs;
     });
-  }, [children, configurableOptions, searchParams]);
+  }, [children, configurableOptions, variantSku]);
 
   const allSelected = configurableOptions.every(
     option => selectedAttributes[option.attribute_id] !== undefined
   );
 
+  const selectedChild = useMemo(() => {
+    if (!allSelected) {
+      return null;
+    }
+
+    return (
+      children.find(item => item.sku === findChildSku(selectedAttributes)) ?? null
+    );
+  }, [allSelected, children, selectedAttributes]);
+
   useEffect(() => {
-    if (!allSelected || children.length === 0) {
+    if (!allSelected) {
       return;
     }
 
     const childSku = findChildSku(selectedAttributes);
-    if (!childSku) {
+    if (!childSku || childSku === variantSku) {
       return;
     }
 
-    const currentVariant = searchParams?.get('variant');
-    if (currentVariant === childSku) {
-      return;
-    }
-
-    const nextParams = new URLSearchParams(searchParams?.toString() ?? '');
+    const nextParams = new URLSearchParams(window.location.search);
     nextParams.set('variant', childSku);
-    const nextUrl = `/products/${encodeURIComponent(
-      product.sku
-    )}?${nextParams.toString()}`;
-    router.replace(nextUrl, { scroll: false });
-  }, [
-    allSelected,
-    children,
-    product.sku,
-    router,
-    searchParams,
-    selectedAttributes,
-  ]);
+    const nextQuery = nextParams.toString();
+    const nextUrl = `${window.location.pathname}${
+      nextQuery ? `?${nextQuery}` : ''
+    }${window.location.hash}`;
+
+    window.history.replaceState(window.history.state, '', nextUrl);
+  }, [allSelected, selectedAttributes, variantSku]);
+
+  useEffect(() => {
+    onSelectionChange?.({
+      selectedVariant: selectedChild,
+      allSelected,
+    });
+  }, [allSelected, onSelectionChange, selectedChild]);
 
   const productOptionsJson = allSelected
     ? JSON.stringify({ super_attribute: selectedAttributes })
@@ -278,7 +303,7 @@ function ConfigurableOptions({ product }: { product: MagentoProduct }) {
       </div>
 
       <AddToCartButton
-        sku={product.sku}
+        sku={selectedChild?.sku ?? product.sku}
         qty={qty}
         productOptionsJson={productOptionsJson}
         disabled={!allSelected}
@@ -697,10 +722,18 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
 
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 
-export function ProductDetailClient({ product }: ProductDetailClientProps) {
+export function ProductDetailClient({
+  product,
+  onSelectionChange,
+}: ProductDetailClientProps) {
   switch (product.type_id) {
     case 'configurable':
-      return <ConfigurableOptions product={product} />;
+      return (
+        <ConfigurableOptions
+          product={product}
+          onSelectionChange={onSelectionChange}
+        />
+      );
     case 'grouped':
       return <GroupedOptions product={product} />;
     case 'bundle':

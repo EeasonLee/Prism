@@ -11,7 +11,7 @@ export type RealProductPageCms = Pick<
 >;
 
 export function buildRealProductPageCms(
-  content: UnifiedProductContent | undefined
+  content: UnifiedProduct | UnifiedProductContent | undefined
 ): RealProductPageCms | null {
   const key_points = content?.key_points ?? [];
   const guarantees = content?.guarantees ?? [];

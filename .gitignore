@@ -63,3 +63,5 @@ apps/prism/.env.production
 ecosystem.config.js
 
 .nx/polygraph
+
+.claude/worktrees
