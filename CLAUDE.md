@@ -23,6 +23,13 @@ pnpm nx graph         # Visualize project dependency graph
 
 All commands run via Nx under the hood, enabling build caching and affected-project analysis.
 
+## Agent Workflow
+
+- Claude 默认不主动运行 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm e2e`、`pnpm check`，也不主动触发或验证 git hook。
+- 代码修改任务以实现需求为优先；完成改动后，Claude 只说明“尚未执行代码检查/测试”，由用户后续统一执行校验。
+- 仅当用户明确要求运行某项检查，或该检查是定位当前问题所必需时，Claude 才执行对应命令。
+- 如需执行 Nx 任务，仍优先使用 `pnpm nx ...` 形式，而不是直接调用底层工具。
+
 ## Architecture
 
 ### 多系统集成
