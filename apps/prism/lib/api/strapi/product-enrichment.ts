@@ -397,6 +397,8 @@ export async function fetchProductEnrichments(
     'populate[carousel_images][populate][image]=true',
     'populate[angle_images][populate][image]=true',
     'populate[videos][populate][poster]=true',
+    'populate[key_points]=true',
+    'populate[guarantees]=true',
     'populate[seo]=true',
   ].join('&');
 

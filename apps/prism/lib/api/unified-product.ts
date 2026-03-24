@@ -23,29 +23,103 @@ import {
 } from './strapi/product-enrichment';
 import type { StrapiProductEnrichment } from './strapi/product-enrichment';
 
-function normalizeHtmlContent(value: unknown): string | null {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
+const HTML_TAG_PATTERN = /<\/?[a-z][^>]*>/i;
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderPlainTextRichContent(value: string): string {
+  const blocks: string[] = [];
+  const paragraphLines: string[] = [];
+  let listType: 'ul' | 'ol' | null = null;
+  let listItems: string[] = [];
+
+  const flushParagraph = () => {
+    if (paragraphLines.length === 0) return;
+    blocks.push(`<p>${escapeHtml(paragraphLines.join(' '))}</p>`);
+    paragraphLines.length = 0;
+  };
+
+  const flushList = () => {
+    if (!listType || listItems.length === 0) {
+      listType = null;
+      listItems = [];
+      return;
+    }
+
+    blocks.push(
+      `<${listType}>${listItems
+        .map(item => `<li>${item}</li>`)
+        .join('')}</${listType}>`
+    );
+    listType = null;
+    listItems = [];
+  };
+
+  for (const line of value.split(/\r?\n/)) {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+
+    if (unorderedMatch || orderedMatch) {
+      flushParagraph();
+
+      const nextListType = unorderedMatch ? 'ul' : 'ol';
+      if (listType && listType !== nextListType) {
+        flushList();
+      }
+
+      listType = nextListType;
+      listItems.push(
+        escapeHtml((unorderedMatch ?? orderedMatch)?.[1].trim() ?? '')
+      );
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(trimmed);
   }
 
-  if (value == null) {
+  flushParagraph();
+  flushList();
+
+  return blocks.length > 0 ? blocks.join('') : `<p>${escapeHtml(value)}</p>`;
+}
+
+function normalizeHtmlContent(value: unknown): string | null {
+  let raw: string | null = null;
+
+  if (typeof value === 'string') {
+    raw = value;
+  } else if (value != null && typeof value === 'object') {
+    if ('html' in value && typeof value.html === 'string') {
+      raw = value.html;
+    } else if ('rendered' in value && typeof value.rendered === 'string') {
+      raw = value.rendered;
+    }
+  }
+
+  const trimmed = raw?.trim();
+  if (!trimmed) {
     return null;
   }
 
-  if (typeof value === 'object') {
-    if ('html' in value && typeof value.html === 'string') {
-      const trimmed = value.html.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    }
-
-    if ('rendered' in value && typeof value.rendered === 'string') {
-      const trimmed = value.rendered.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    }
-  }
-
-  return null;
+  return HTML_TAG_PATTERN.test(trimmed)
+    ? trimmed
+    : renderPlainTextRichContent(trimmed);
 }
 
 export type UnifiedProductContent = Pick<
