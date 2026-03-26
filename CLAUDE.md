@@ -23,13 +23,6 @@ pnpm nx graph         # Visualize project dependency graph
 
 All commands run via Nx under the hood, enabling build caching and affected-project analysis.
 
-## Agent Workflow
-
-- Claude 默认不主动运行 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm e2e`、`pnpm check`，也不主动触发或验证 git hook。
-- 代码修改任务以实现需求为优先；完成改动后，Claude 只说明“尚未执行代码检查/测试”，由用户后续统一执行校验。
-- 仅当用户明确要求运行某项检查，或该检查是定位当前问题所必需时，Claude 才执行对应命令。
-- 如需执行 Nx 任务，仍优先使用 `pnpm nx ...` 形式，而不是直接调用底层工具。
-
 ## Architecture
 
 ### 多系统集成
@@ -62,16 +55,16 @@ All commands run via Nx under the hood, enabling build caching and affected-proj
 This is an **Nx monorepo** with a layered dependency hierarchy that flows strictly one direction:
 
 ```
-apps/prism  →  libs/blog, libs/recipe, libs/ui  →  libs/shared
+apps/prism  →  libs/blog, libs/ui  →  libs/shared
 ```
 
 ### Key Packages
 
-- **`apps/prism/`** — Next.js 15 app with App Router. Pages live under `app/`, app-specific components under `app/components/`, API wrappers under `lib/api/`.
-- **`libs/shared/`** (`@prism/shared`) — Shared base: API types, utility functions, type guards. Cannot depend on anything else.
-- **`libs/ui/`** (`@prism/ui`) — Reusable UI components (Button, PageContainer, etc.) using shadcn/ui pattern. No business logic.
-- **`libs/blog/`** (`@prism/blog`) — Blog domain: components, API adapters, hooks.
-- **`libs/tokens/`** (`@prism/tokens`) — Design tokens (colors, spacing, typography) as Tailwind preset.
+- `**apps/prism/**` — Next.js 15 app with App Router. Pages live under `app/`, app-specific components under `app/components/`, API wrappers under `lib/api/`. Recipe domain is handled entirely within this app (no separate lib).
+- `**libs/shared/**` (`@prism/shared`) — Shared base: API types, utility functions, type guards. Cannot depend on anything else.
+- `**libs/ui/**` (`@prism/ui`) — Reusable UI components (Button, PageContainer, etc.) using shadcn/ui pattern. No business logic.
+- `**libs/blog/**` (`@prism/blog`) — Blog domain: components, API adapters, hooks.
+- `**libs/tokens/**` (`@prism/tokens`) — Design tokens (colors, spacing, typography) as Tailwind preset.
 
 ### Module Boundary Rules (enforced by ESLint `@nx/enforce-module-boundaries`)
 
@@ -91,13 +84,23 @@ Defined in `tsconfig.base.json` (cross-project):
 
 Defined in `apps/prism/tsconfig.app.json` (app-only):
 
-- `@/app/*`, `@/components/*`, `@/lib/*` → corresponding paths under `apps/prism/`
+- `@/app/`_, `@/components/_`, `@/lib/\*`→ corresponding paths under`apps/prism/`
 
 Within the same library, use relative imports. Never use deep path imports like `../../libs/ui/src/components/button`—always go through the alias.
 
 ### API Client
 
 `apps/prism/lib/api/client.ts` exports a singleton `apiClient` that auto-selects server or client adapters based on environment. Error types (`ApiError`, `AuthenticationError`, etc.) come from `@prism/shared`. Business-domain API functions (blog articles, etc.) live in `libs/blog/src/api/` and accept the `apiClient` as a parameter to avoid circular deps.
+
+### Product Discovery System
+
+`lib/api/discovery/` — 商品发现体系（Phase 3A 已完成）：
+
+- `types.ts` — 所有类型定义：`DiscoveryCategory`、`ProductDiscoveryQuery`、`ProductDiscoveryResult`、`ProductCardItem` 等
+- `service.ts` — 核心服务层：将前台分类 slug 映射到 Magento 分类 ID，聚合多个分类的商品结果，返回统一 `ProductDiscoveryResult`
+- `lib/api/strapi/discovery.ts` — Strapi 侧：获取 discovery-category、category-mapping、filter-config
+
+路由：`app/shop/[categoryId]/` — 分类列表页；`app/products/[sku]/` — 商品详情页（含 blog、recipe cross-sell 区块）
 
 ### Observability
 
@@ -191,9 +194,6 @@ fix(api): resolve type error in endpoint
 
 Use `pnpm commit` for interactive guided commit creation.
 
-<!-- nx configuration start-->
-<!-- Leave the start & end comments to automatically receive updates. -->
-
 ## General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
@@ -212,5 +212,3 @@ Use `pnpm commit` for interactive guided commit creation.
 - USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
 - DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
-
-<!-- nx configuration end-->

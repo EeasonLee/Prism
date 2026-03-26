@@ -38,6 +38,7 @@
 
 - Magento → Strapi 正式同步方案收口（以 SSO / Strapi / Magento 官方字段为依据统一最终边界）
 - 建立 Strapi 驱动的商品发现体系（前台分类、筛选配置、类目落地页）
+  - Phase 3A 基础建模已完成：Strapi 已新增 `discovery-category`、`discovery-category-mapping`、`discovery-filter-config` 三个 Content Type，Next.js 已新增 discovery 类型定义、Strapi 客户端与 service 层骨架
 - 超级搜索（商品 + 博客 + 食谱全局搜索）
 
 ---
@@ -135,6 +136,28 @@
 - 商品列表采用移动端优先的瀑布流布局，支持分页或无限滚动
 - 统一商品发现查询契约：分类标识、筛选参数、排序键、分页语义、商品卡片字段，确保后续可平滑切换到底层检索引擎
 
+_当前完成情况：_
+
+- Phase 3A 已完成基础建模与 BFF 骨架：
+  - Strapi 已新增前台分类模型 `discovery-category`
+  - Strapi 已新增前台分类映射模型 `discovery-category-mapping`
+  - Strapi 已新增筛选配置模型 `discovery-filter-config`
+  - Next.js 已新增 `apps/prism/lib/api/discovery/types.ts`
+  - Next.js 已新增 `apps/prism/lib/api/strapi/discovery.ts`
+  - Next.js 已新增 `apps/prism/lib/api/discovery/service.ts`
+- 当前边界：商品结果事实仍由 Magento / SSO 提供，Strapi discovery 仅作为前台配置中心
+- 当前实现限制：SSO `/api/products` 仍仅支持单个 `categoryId`，因此 Phase 3A 在 service 层采用多分类逐个查询 + 去重聚合
+- 当前已完成并验证：
+  - Strapi 重启与 discovery 接口验证
+  - Route Handler：`/api/discovery/[slug]`
+  - 页面迁移：`/shop/[slug]` 已可加载并渲染商品
+  - 基础筛选面板、排序面板与类目页商品网格已接通
+- 下一步继续完成：
+  - 初始前台分类与筛选配置录入
+  - 移动端分类导航与类目落地页完善
+  - Search 页与 discovery 共用契约继续收口
+  - 在 SSO 增量同步链路上线后，再执行 Magento fallback / mapping 技术债清理
+
 ### 阶段四：超级搜索（优先级：中）
 
 - 将商品数据接入 Meilisearch 索引（目前仅博客 + 食谱）
@@ -156,20 +179,23 @@
 
 ## 关键文件索引
 
-| 功能                | 文件路径                                          |
-| ------------------- | ------------------------------------------------- |
-| 商品数据融合        | `apps/prism/lib/api/unified-product.ts`           |
-| Magento API 客户端  | `apps/prism/lib/api/magento/client.ts`            |
-| Strapi 商品富文本   | `apps/prism/lib/api/strapi/product-enrichment.ts` |
-| Mock 商品详情数据   | `apps/prism/app/products/[sku]/mock-data.ts`      |
-| 商品详情页          | `apps/prism/app/products/[sku]/page.tsx`          |
-| 商品评价表单        | `apps/prism/app/products/[sku]/ReviewForm.tsx`    |
-| 商品评价 BFF        | `apps/prism/app/api/reviews/[sku]/route.ts`       |
-| 商品评价 Strapi API | `apps/prism/lib/api/strapi/reviews.ts`            |
-| 商品分类列表页      | `apps/prism/app/shop/[categoryId]/page.tsx`       |
-| 认证上下文          | `apps/prism/lib/auth/context.tsx`                 |
-| 购物车上下文        | `apps/prism/lib/cart/context.tsx`                 |
-| 环境变量配置        | `apps/prism/lib/env.ts`                           |
+| 功能                 | 文件路径                                          |
+| -------------------- | ------------------------------------------------- |
+| 商品数据融合         | `apps/prism/lib/api/unified-product.ts`           |
+| Magento API 客户端   | `apps/prism/lib/api/magento/client.ts`            |
+| Strapi 商品富文本    | `apps/prism/lib/api/strapi/product-enrichment.ts` |
+| Mock 商品详情数据    | `apps/prism/app/products/[sku]/mock-data.ts`      |
+| 商品详情页           | `apps/prism/app/products/[sku]/page.tsx`          |
+| 商品评价表单         | `apps/prism/app/products/[sku]/ReviewForm.tsx`    |
+| 商品评价 BFF         | `apps/prism/app/api/reviews/[sku]/route.ts`       |
+| 商品评价 Strapi API  | `apps/prism/lib/api/strapi/reviews.ts`            |
+| 商品分类列表页       | `apps/prism/app/shop/[categoryId]/page.tsx`       |
+| 商品发现类型定义     | `apps/prism/lib/api/discovery/types.ts`           |
+| 商品发现 Service     | `apps/prism/lib/api/discovery/service.ts`         |
+| Strapi Discovery API | `apps/prism/lib/api/strapi/discovery.ts`          |
+| 认证上下文           | `apps/prism/lib/auth/context.tsx`                 |
+| 购物车上下文         | `apps/prism/lib/cart/context.tsx`                 |
+| 环境变量配置         | `apps/prism/lib/env.ts`                           |
 
 ---
 

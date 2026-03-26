@@ -8,7 +8,9 @@ interface DiscoveryProductCardProps {
 }
 
 export function DiscoveryProductCard({ item }: DiscoveryProductCardProps) {
-  const hasDiscount = item.price !== (item.price_range?.min ?? item.price);
+  const hasPrice = item.price != null;
+  const hasDiscount =
+    hasPrice && item.price !== (item.price_range?.min ?? item.price);
 
   return (
     <Link
@@ -80,7 +82,7 @@ export function DiscoveryProductCard({ item }: DiscoveryProductCardProps) {
               ${item.price_range.min.toFixed(2)} – $
               {item.price_range.max.toFixed(2)}
             </span>
-          ) : (
+          ) : hasPrice ? (
             <>
               {hasDiscount && (
                 <span className="text-base font-bold text-ink">
@@ -97,6 +99,10 @@ export function DiscoveryProductCard({ item }: DiscoveryProductCardProps) {
                 ${item.price.toFixed(2)}
               </span>
             </>
+          ) : (
+            <span className="text-sm font-medium text-ink-muted">
+              Price unavailable
+            </span>
           )}
         </div>
       </div>

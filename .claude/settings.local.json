@@ -48,7 +48,17 @@
       "Bash(pnpm nx lint prism)",
       "Bash(pnpm nx typecheck prism)",
       "Bash(find /mnt/d/WORK/prism/apps/prism/app/products/[sku] -type f -name \"*.tsx\" | head -20)",
-      "Bash(pnpm exec eslint \"apps/prism/app/products/[sku]/ProductDetailClient.tsx\")"
+      "Bash(pnpm exec eslint \"apps/prism/app/products/[sku]/ProductDetailClient.tsx\")",
+      "Bash(ls D:/WORK/prism/apps/prism/app/shop/[categoryId]/)",
+      "Bash(ls D:/WORK/prism/apps/prism/app/products/[sku]/)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm nx:*)",
+      "Bash(cd:*)",
+      "Bash(curl:*)"
     ]
   }
 }

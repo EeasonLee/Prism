@@ -5,6 +5,7 @@
 > **适用范围**：商品分类页、类目落地页、商品筛选、商品列表、后续 Meilisearch 搜索衔接。
 >
 > **当前结论**：
+>
 > - 前台分类模型必须独立于 `magento-category`
 > - 商品必须保留 Magento 原始分类集合，而不是单个分类 ID
 > - PLP 第一阶段先由 `Strapi 管发现配置 + Next/BFF 聚合 + Magento/SSO 提供商品结果事实`
@@ -68,10 +69,12 @@
 #### PLP 现状
 
 - `apps/prism/app/shop/[categoryId]/page.tsx`
-  - 当前页面参数为 Magento `categoryId`
-  - 通过 `fetchCategoryTree()` 获取 Magento 分类树
-  - 通过 `fetchCategoryById()` 获取 Magento 分类信息
-  - 通过 `fetchUnifiedProducts({ categoryId })` 获取分类商品列表
+
+当前页面参数为 Magento `categoryId`
+
+- 通过 `fetchCategoryTree()` 获取 Magento 分类树
+- 通过 `fetchCategoryById()` 获取 Magento 分类信息
+- 通过 `fetchUnifiedProducts({ categoryId })` 获取分类商品列表
 
 当前 PLP 的核心问题：
 
@@ -282,7 +285,7 @@ Meilisearch 在后续阶段承担：
 建议字段方向：
 
 - `discovery_category`
-- `filter_groups`
+- `enabled_filters`
 - `sort_options`
 - `default_sort`
 - `price_ranges`
@@ -312,12 +315,14 @@ Meilisearch 在后续阶段承担：
 
 建议统一为以下语义：
 
-- `category`
-  - 前台分类标识，使用 `slug` 或稳定 ID，不使用 Magento `categoryId` 作为前台主语义
-- `filters`
-  - 结构化筛选参数，如品牌、颜色、容量等
+- `slug`
+  - 前台分类标识，使用前台分类 `slug`，不使用 Magento `categoryId` 作为前台主语义
+- `brand`
+  - 第一阶段已落地筛选项之一
+- `price_min` / `price_max`
+  - 第一阶段价格区间筛选输入
 - `sort`
-  - 稳定排序键，如 `featured`、`price_asc`、`price_desc`、`newest`、`best_selling`
+  - 第一阶段稳定排序键：`featured`、`price_asc`、`price_desc`、`newest`
 - `page` / `pageSize`
   - 分页模式时使用
 - `cursor`
@@ -384,6 +389,15 @@ URL 设计原则：
 - 明确类目落地页与筛选配置归属
 - 不立即替换底层商品结果事实源
 
+当前完成情况（2026-03-24）：
+
+- Strapi 已新增 `discovery-category` Content Type，包含前台分类树、自关联、图标、Banner、SEO、默认排序、布局类型等字段
+- Strapi 已新增 `discovery-category-mapping` Content Type，用 JSON 数组承接前台分类到 Magento 分类 ID 集合的映射
+- Strapi 已新增 `discovery-filter-config` Content Type，承接 `enabled_filters`、`sort_options`、`default_sort`、`price_ranges` 等配置
+- Next.js 已新增 `apps/prism/lib/api/discovery/types.ts`，定义 `DiscoveryCategory`、`DiscoveryFilterConfig`、`ProductDiscoveryQuery`、`ProductDiscoveryResult` 等契约
+- Next.js 已新增 `apps/prism/lib/api/strapi/discovery.ts`，实现分类树、按 slug 查分类、分类映射、筛选配置读取
+- Next.js 已新增 `apps/prism/lib/api/discovery/service.ts`，实现 `resolveDiscoveryQuery()` 与 `fetchDiscoveryResult()` 骨架
+
 实施重点：
 
 - 在 Strapi 中新增前台分类模型
@@ -396,6 +410,7 @@ URL 设计原则：
 
 - 商品结果事实继续优先由 Magento / SSO 提供
 - 商品内容增强继续由 Strapi 提供
+- 当前由于 SSO `/api/products` 仍仅支持单个 `categoryId`，多分类并集查询暂在 Next.js discovery service 层逐个查询后去重聚合
 
 ### 阶段 3B：分类页和筛选页完整打通
 
@@ -571,7 +586,7 @@ URL 设计原则：
 
 推荐结构：
 
-- `apps/prism/lib/api/discovery/*`：商品发现领域逻辑与统一查询契约
+- `apps/prism/lib/api/discovery/`\*：商品发现领域逻辑与统一查询契约
 - `apps/prism/app/api/discovery/*/route.ts`：标准 API 入口
 - `apps/prism/app/shop/[slug]/page.tsx`：首屏页面入口
 
