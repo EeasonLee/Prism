@@ -8,7 +8,9 @@
 >
 > - 前台分类模型必须独立于 `magento-category`
 > - 商品必须保留 Magento 原始分类集合，而不是单个分类 ID
-> - PLP 第一阶段先由 `Strapi 管发现配置 + Next/BFF 聚合 + Magento/SSO 提供商品结果事实`
+> - 当前 discovery 链路已进入 **Meilisearch 优先、Magento fallback 仅保底** 的过渡态
+> - `discovery-category-mapping` 仍作为过渡结构存在，待商品索引稳定且增量同步上线后清理
+> - 下一阶段重点不再是页面骨架，而是商品索引覆盖率、初始配置数据与统一搜索页
 
 ---
 
@@ -25,12 +27,13 @@
 - `apps/prism/lib/api/unified-product.ts`
 - `apps/prism/lib/api/strapi/product-enrichment.ts`
 
-但商品列表页（PLP）仍然主要依赖 Magento 原始分类体系：
+商品列表页（PLP）已经从原先直接依赖 Magento 分类 ID 的页面实现，迁移到以前台 `slug` 为主语义的 discovery 链路：
 
-- `apps/prism/app/shop/[categoryId]/page.tsx` 直接读取 Magento 分类树与分类 ID
-- 分类导航结构、类目落地页、筛选配置尚未由 Strapi 承接
+- `apps/prism/app/shop/[slug]/page.tsx` 负责首屏分类页渲染
+- `apps/prism/app/api/discovery/[slug]/route.ts` 负责分页与客户端追加加载
+- 分类导航结构、类目落地页与筛选配置已开始由 Strapi 承接
 
-这与项目下一阶段方向不一致。下一阶段的目标不是继续扩展 Magento 分类页，而是建立一套 **Strapi 驱动的商品发现体系**，使前台导航、类目页与筛选能力逐步摆脱 Magento 原始类目树的直接约束。
+当前真正需要解决的，不再是是否迁移页面入口，而是如何让 discovery 配置、商品索引与后续搜索阶段保持一致。
 
 ---
 
@@ -56,6 +59,38 @@
 
 ## 3. 当前现状
 
+### 3.0 当前实现状态（2026-03-26）
+
+当前已落地并验证的 discovery 实现如下：
+
+- `apps/prism/lib/api/discovery/meilisearch.ts`
+  - 已实现商品 Meilisearch 查询、排序、筛选与 facet 请求封装
+- `apps/prism/lib/api/discovery/service.ts`
+  - 已实现 `fetchDiscoveryResult()`，当前采用 Meilisearch 优先、Magento fallback 保底的过渡策略
+- `apps/prism/lib/api/strapi/discovery.ts`
+  - 已实现前台分类、筛选配置与过渡期 mapping 数据读取
+- `apps/prism/app/api/discovery/[slug]/route.ts`
+  - 已实现 Route Handler，返回统一 `ProductDiscoveryResult`
+- `apps/prism/app/shop/[slug]/page.tsx`
+  - 已完成前台分类页迁移与首屏 SSR
+- `apps/prism/app/shop/components/FilterPanel.tsx`
+  - 已提供基础筛选面板与 URL 状态同步
+- `apps/prism/app/shop/components/SortPanel.tsx`
+  - 已提供排序切换
+- `apps/prism/app/shop/components/ProductGrid.tsx`
+  - 已提供 Load more 分页交互
+- `apps/prism/app/shop/components/DiscoveryProductCard.tsx`
+  - 已用于 discovery 商品卡片渲染，并已修复空价格场景
+- `apps/prism/tests/DiscoveryProductCard.spec.tsx`
+  - 已覆盖 `price: null` 时卡片不崩溃的回归测试
+
+当前未完成但已明确的阻塞点：
+
+- Strapi 侧商品索引覆盖率仍需补齐
+- 初始 `discovery-category` / `discovery-filter-config` 数据仍需录入
+- SSO 增量同步链路未上线，暂不能删除 fallback / mapping 技术债
+- `/search` 商品搜索页与统一搜索结果仍待收口
+
 ### 3.1 Prism 现状
 
 #### PDP 已完成的分层
@@ -68,20 +103,22 @@
 
 #### PLP 现状
 
-- `apps/prism/app/shop/[categoryId]/page.tsx`
+- `apps/prism/app/shop/[slug]/page.tsx`
+- `apps/prism/app/api/discovery/[slug]/route.ts`
 
-当前页面参数为 Magento `categoryId`
+当前页面参数已切换为前台 `slug`，首屏页面与 API 入口共用 discovery service。
 
-- 通过 `fetchCategoryTree()` 获取 Magento 分类树
-- 通过 `fetchCategoryById()` 获取 Magento 分类信息
-- 通过 `fetchUnifiedProducts({ categoryId })` 获取分类商品列表
+当前运行方式：
 
-当前 PLP 的核心问题：
+- 通过 `fetchDiscoveryResult()` 聚合前台分类配置与商品结果
+- 默认优先查询 Meilisearch `products` 索引
+- 当分类页查询失败且存在 `slug` 时，临时降级到 Magento fallback
 
-- 前台分类结构仍绑定 Magento 分类树
-- 类目页没有独立配置层
-- 筛选配置未成体系
-- URL 语义仍偏向底层数据源，而非稳定前台契约
+当前 PLP 的主要剩余问题：
+
+- 前台配置数据与商品索引覆盖率仍不完整
+- 移动端分类导航与类目落地页配置仍待完善
+- fallback 仍然存在，文档和代码都需要在前提满足后清理
 
 ### 3.2 Strapi 现状
 
@@ -96,17 +133,23 @@
 - 已有 recipe/article 与 `magento-product` 的 SKU 关联能力
 - 已有博客、食谱的 Meilisearch 集成
 
-当前 Strapi 尚未明确落地的能力：
+当前 Strapi 已明确落地的能力：
 
-- 独立的前台分类模型
-- 类目落地页模型
-- 筛选配置模型
-- 前台分类与 Magento 分类映射模型
-- 面向 PLP 的统一商品发现 API
+- 独立的前台分类模型 `discovery-category`
+- 筛选配置模型 `discovery-filter-config`
+- 过渡期前台分类映射模型 `discovery-category-mapping`
+- `product-enrichment` 上的 `discovery_categories` 归类关系
+- 可供 Next/BFF 读取的 discovery 配置 API
+
+当前 Strapi 仍待补齐的能力：
+
+- 初始前台分类与筛选配置数据录入
+- 商品索引字段覆盖率与稳定性
+- 面向 Meilisearch 的增量同步链路
 
 结论：
 
-当前 Strapi 已具备作为“商品发现配置中心”的基础，但还没有完整商品发现模型，需要新增设计。
+当前 Strapi 已具备作为“商品发现配置中心 + 索引构建参与者”的基础，后续重点是数据与同步，而不是继续补建模。
 
 ---
 
@@ -158,15 +201,21 @@ Next.js 作为上层 BFF，负责：
 
 ### 4.4 Meilisearch 负责什么
 
-Meilisearch 在后续阶段承担：
+Meilisearch 当前已承担：
+
+- 商品分类页检索的主链路
+- `brand` facet 与基础筛选支持
+- 排序、分页与商品卡片字段返回
+
+Meilisearch 后续继续承担：
 
 - 商品、文章、食谱统一搜索
-- 商品 facet 计算与高性能筛选检索（视阶段评估逐步接管）
+- 更完整的 facet 统计与搜索结果聚合
 
 说明：
 
-- 阶段四优先承接全局搜索
-- 不要求在阶段三一开始就承担商品类目页全部检索职责
+- 当前代码已经是 Meilisearch 优先，并非仅停留在后续评估阶段
+- Magento 查询仅作为过渡期分类页保底，不应再被视为长期主方案
 
 ---
 
@@ -381,74 +430,76 @@ URL 设计原则：
 
 ## 7. 分阶段实施方案
 
-### 阶段 3A：前台发现配置先落地
+### 阶段 3A：前台发现配置与查询骨架落地
 
 目标：
 
 - 明确前台分类体系
 - 明确类目落地页与筛选配置归属
-- 不立即替换底层商品结果事实源
+- 建立统一 discovery 查询契约与页面入口
 
-当前完成情况（2026-03-24）：
+当前完成情况（2026-03-26）：
 
 - Strapi 已新增 `discovery-category` Content Type，包含前台分类树、自关联、图标、Banner、SEO、默认排序、布局类型等字段
-- Strapi 已新增 `discovery-category-mapping` Content Type，用 JSON 数组承接前台分类到 Magento 分类 ID 集合的映射
+- Strapi 已新增 `discovery-category-mapping` Content Type，作为过渡期前台分类到 Magento 分类 ID 集合的映射结构
 - Strapi 已新增 `discovery-filter-config` Content Type，承接 `enabled_filters`、`sort_options`、`default_sort`、`price_ranges` 等配置
+- `product-enrichment` 已具备 `discovery_categories` 关系，可承接前台商品归类
 - Next.js 已新增 `apps/prism/lib/api/discovery/types.ts`，定义 `DiscoveryCategory`、`DiscoveryFilterConfig`、`ProductDiscoveryQuery`、`ProductDiscoveryResult` 等契约
-- Next.js 已新增 `apps/prism/lib/api/strapi/discovery.ts`，实现分类树、按 slug 查分类、分类映射、筛选配置读取
-- Next.js 已新增 `apps/prism/lib/api/discovery/service.ts`，实现 `resolveDiscoveryQuery()` 与 `fetchDiscoveryResult()` 骨架
+- Next.js 已新增 `apps/prism/lib/api/strapi/discovery.ts`，实现前台分类、筛选配置与过渡期 mapping 读取
+- Next.js 已新增 `apps/prism/lib/api/discovery/meilisearch.ts`，实现商品检索客户端
+- Next.js 已新增 `apps/prism/lib/api/discovery/service.ts`，当前采用 Meilisearch 优先、Magento fallback 保底
+- Next.js 已完成 `/api/discovery/[slug]` 与 `/shop/[slug]` 落地，并已验证 `cookware` 分类页可返回并渲染商品
 
 实施重点：
 
-- 在 Strapi 中新增前台分类模型
-- 在 Strapi 中新增前台分类映射关系
-- 在 Strapi 中新增筛选配置模型
-- 在 Next.js 中将当前 `/shop/[categoryId]` 的前台语义逐步切换为前台分类标识
-- 在 BFF 中引入统一商品发现查询契约
+- 在 Strapi 中承接 discovery 配置与商品归类
+- 在 Next.js 中以 `slug` 作为前台主语义
+- 在 BFF 中统一查询契约，屏蔽底层检索差异
 
-底层数据来源：
+当前剩余重点：
 
-- 商品结果事实继续优先由 Magento / SSO 提供
-- 商品内容增强继续由 Strapi 提供
-- 当前由于 SSO `/api/products` 仍仅支持单个 `categoryId`，多分类并集查询暂在 Next.js discovery service 层逐个查询后去重聚合
+- 补齐初始前台分类与筛选配置数据
+- 提升商品索引覆盖率与稳定性
+- 为后续删除 fallback 做前提准备
 
 ### 阶段 3B：分类页和筛选页完整打通
 
 目标：
 
-- 交付移动端优先的分类导航与类目页体验
+- 在已跑通的 discovery 链路之上补齐移动端优先体验
 - 支持 URL 状态分享
-- 支持瀑布流、分页或无限滚动
+- 完成类目落地页配置与布局收口
 
 实施重点：
 
 - 左侧一级类目、右侧二级标题与三级图标入口的导航结构
-- 类目落地页视觉与运营配置
-- 筛选面板与排序面板
-- 商品卡片统一数据结构
+- 类目落地页 Banner / SEO / layout_type 的真实接入
+- 筛选面板与排序面板的移动端/PC 兼容收口
+- 商品卡片契约与展示细节统一
 - PC 端兼容布局
 
 说明：
 
-- 这一阶段应优先验证前台分类结构和筛选交互是否成立
-- 不要求此时就完成 Meilisearch 接入
+- Meilisearch 已经接入，不再是这一阶段的前提工作
+- 当前这阶段更偏向 UI、配置接入和交互 polish
 
-### 阶段 4A：超级搜索接入 Meilisearch
+### 阶段 4A：超级搜索与商品索引稳定化
 
 目标：
 
-- 商品 + 文章 + 食谱统一搜索
-- 先建立搜索结果页能力
+- 在现有商品 Meilisearch 链路基础上，建立统一搜索结果页能力
+- 同时补齐商品索引覆盖率、facet 与增量同步前提
 
 实施重点：
 
-- 商品索引进入 Meilisearch
+- 提升商品索引覆盖率与字段边界稳定性
 - 搜索结果与类目页共用商品卡片与查询契约
 - 输出统一搜索结果类型
+- 为后续清理 fallback 准备数据与同步前提
 
 说明：
 
-- 优先先做全局搜索，不强制同步替换阶段三底层查询逻辑
+- 这一阶段的重点已不再是“是否接 Meilisearch”，而是“让 Meilisearch 商品索引真正稳定可依赖”
 
 ### 阶段 4B：评估商品发现检索是否迁移到 Meilisearch
 
