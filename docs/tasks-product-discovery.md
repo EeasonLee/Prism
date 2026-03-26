@@ -23,15 +23,15 @@
 ### Strapi 侧
 
 - **3A-S1** 新增 `discovery-category` Content Type
-  - 已完成文件：`/mnt/d/WORK/helpcenter/backend/src/api/discovery-category/`
+  - 已完成文件：`D:\WORK\helpcenter\backend\src\api\discovery-category\`
   - 字段：`name`, `slug`, `parent`(self-relation), `children`, `level`(1/2/3), `icon`, `banner`, `seo`, `sort_order`, `is_visible`, `default_sort`, `layout_type`, `description`
   - 路由策略：使用 `createCoreRouter`，开放 `find` / `findOne` 无鉴权访问
 - **3A-S2** 新增 `discovery-category-mapping` Content Type
-  - 已完成文件：`/mnt/d/WORK/helpcenter/backend/src/api/discovery-category-mapping/`
+  - 已完成文件：`D:\WORK\helpcenter\backend\src\api\discovery-category-mapping\`
   - 字段：`discovery_category`(relation → discovery-category), `magento_category_ids`(JSON 数组), `is_active`
   - 第一阶段：一个前台分类可映射多个 Magento 分类 ID
 - **3A-S3** 新增 `discovery-filter-config` Content Type
-  - 已完成文件：`/mnt/d/WORK/helpcenter/backend/src/api/discovery-filter-config/`
+  - 已完成文件：`D:\WORK\helpcenter\backend\src\api\discovery-filter-config\`
   - 字段：`discovery_category`(relation), `enabled_filters`(JSON), `sort_options`(JSON), `default_sort`, `price_ranges`(JSON), `is_enabled`
   - 第一阶段启用项仍为 `brand` + `price`
 - **3A-S4** 录入初始数据
