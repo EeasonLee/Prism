@@ -127,45 +127,25 @@
 
 ### 阶段三：商品发现体系（优先级：高）
 
-- 在 Strapi 中建立前台分类体系，不直接复用 Magento 原始类目树作为前台导航结构
-- 分类导航按移动端优先设计：三级分类结构，左侧展示一级类目，右侧展示二级标题与三级图标入口，PC 端做兼容布局
-- 在 Strapi 中管理类目落地页配置：名称、slug、图标、Banner、SEO、排序、是否展示、默认排序等
-- 在 Strapi 中管理筛选配置：品牌、商品属性（尺寸、颜色等）、价格区间、排序项，以及各类目可见的筛选项与显示顺序
-- 商品侧保留 Magento 原始分类关系作为事实来源与同步依据，不以前台分类直接替代 Magento 商品归属
-- Next.js 实现分类页与类目落地页，筛选状态通过 URL 参数管理，支持分享
-- 商品列表采用移动端优先的瀑布流布局，支持分页或无限滚动
-- 统一商品发现查询契约：分类标识、筛选参数、排序键、分页语义、商品卡片字段，确保后续可平滑切换到底层检索引擎
+- 在 Strapi 中建立前台分类、筛选配置与商品前台归类体系
+- 在 Next.js 中以 `slug` 为前台主语义，统一分类页、筛选页与后续搜索页契约
+- 当前 discovery 已进入 Meilisearch-first 的过渡状态：分类页与 API 已可通过 Meilisearch 返回商品，Magento fallback 仅作为保底链路
+- 本阶段后续重点不再是页面骨架，而是配置录入、类目页 UI 收口、商品索引覆盖率与下阶段搜索衔接
 
-_当前完成情况：_
+_当前状态：_
 
-- Phase 3A 已完成基础建模与 BFF 骨架：
-  - Strapi 已新增前台分类模型 `discovery-category`
-  - Strapi 已新增前台分类映射模型 `discovery-category-mapping`
-  - Strapi 已新增筛选配置模型 `discovery-filter-config`
-  - Next.js 已新增 `apps/prism/lib/api/discovery/types.ts`
-  - Next.js 已新增 `apps/prism/lib/api/strapi/discovery.ts`
-  - Next.js 已新增 `apps/prism/lib/api/discovery/service.ts`
-- 当前边界：商品结果事实仍由 Magento / SSO 提供，Strapi discovery 仅作为前台配置中心
-- 当前实现限制：SSO `/api/products` 仍仅支持单个 `categoryId`，因此 Phase 3A 在 service 层采用多分类逐个查询 + 去重聚合
-- 当前已完成并验证：
-  - Strapi 重启与 discovery 接口验证
-  - Route Handler：`/api/discovery/[slug]`
-  - 页面迁移：`/shop/[slug]` 已可加载并渲染商品
-  - 基础筛选面板、排序面板与类目页商品网格已接通
-- 下一步继续完成：
-  - 初始前台分类与筛选配置录入
-  - 移动端分类导航与类目落地页完善
-  - Search 页与 discovery 共用契约继续收口
-  - 在 SSO 增量同步链路上线后，再执行 Magento fallback / mapping 技术债清理
+- `/api/discovery/[slug]` 与 `/shop/[slug]` 已实现并验证可用
+- 基础筛选、排序、Load more 与 discovery 商品卡片已接通
+- 当前仍待完成：初始 discovery 数据录入、移动端分类导航、类目落地页完善、商品索引稳定化
+- 详细执行项请查看 `docs/tasks-product-discovery.md`
 
 ### 阶段四：超级搜索（优先级：中）
 
-- 将商品数据接入 Meilisearch 索引（目前仅博客 + 食谱）
+- 在现有商品 Meilisearch 链路基础上，继续建设统一搜索页
 - 设计统一搜索结果类型（商品 | 文章 | 食谱）
 - 优先实现全局搜索能力，并与阶段三共用商品发现查询契约
-- 评估商品类目页与筛选结果是否逐步迁移到 Meilisearch 承担检索与 facet 计算，而不是推翻阶段三重做
-- 构建搜索 UI：统一结果展示，带类型标识
-- 键盘导航、最近搜索、搜索建议
+- 同步推进商品索引覆盖率、facet 与增量同步前提，为后续清理 fallback 做准备
+- 详细执行项请查看 `docs/tasks-product-discovery.md`
 
 ### 阶段五：BFF 整合（优先级：中）
 
@@ -189,7 +169,7 @@ _当前完成情况：_
 | 商品评价表单         | `apps/prism/app/products/[sku]/ReviewForm.tsx`    |
 | 商品评价 BFF         | `apps/prism/app/api/reviews/[sku]/route.ts`       |
 | 商品评价 Strapi API  | `apps/prism/lib/api/strapi/reviews.ts`            |
-| 商品分类列表页       | `apps/prism/app/shop/[categoryId]/page.tsx`       |
+| 商品分类列表页       | `apps/prism/app/shop/[slug]/page.tsx`             |
 | 商品发现类型定义     | `apps/prism/lib/api/discovery/types.ts`           |
 | 商品发现 Service     | `apps/prism/lib/api/discovery/service.ts`         |
 | Strapi Discovery API | `apps/prism/lib/api/strapi/discovery.ts`          |
