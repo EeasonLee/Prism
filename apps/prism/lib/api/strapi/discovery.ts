@@ -169,32 +169,34 @@ export async function fetchDiscoveryCategoryBySlug(
 export async function fetchDiscoveryCategoryMapping(
   discoveryCategoryId: string
 ): Promise<number[]> {
-  const encodedId = encodeURIComponent(discoveryCategoryId);
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryCategoryMappingRaw>
-  >(
-    `api/discovery-category-mappings?filters[discovery_category][id][$eq]=${encodedId}&filters[is_active][$eq]=true&populate[discovery_category]=true`,
-    {
-      next: { tags: ['discovery-category-mappings'], revalidate: 3600 },
-    } as Parameters<typeof apiClient.get>[1]
-  );
+  >('api/discovery-category-mappings?populate=*', {
+    next: { tags: ['discovery-category-mappings'], revalidate: 3600 },
+  } as Parameters<typeof apiClient.get>[1]);
 
-  return data.data.flatMap(item => item.magento_category_ids ?? []);
+  return data.data
+    .filter(
+      item =>
+        item.is_active !== false &&
+        String(item.discovery_category?.id ?? '') === discoveryCategoryId
+    )
+    .flatMap(item => item.magento_category_ids ?? []);
 }
 
 export async function fetchDiscoveryFilterConfig(
   discoveryCategoryId: string
 ): Promise<DiscoveryFilterConfig | null> {
-  const encodedId = encodeURIComponent(discoveryCategoryId);
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryFilterConfigRaw>
-  >(
-    `api/discovery-filter-configs?filters[discovery_category][id][$eq]=${encodedId}&filters[is_enabled][$eq]=true&populate[discovery_category]=true`,
-    {
-      next: { tags: ['discovery-filter-configs'], revalidate: 3600 },
-    } as Parameters<typeof apiClient.get>[1]
-  );
+  >('api/discovery-filter-configs?populate=*', {
+    next: { tags: ['discovery-filter-configs'], revalidate: 3600 },
+  } as Parameters<typeof apiClient.get>[1]);
 
-  const first = data.data[0];
+  const first = data.data.find(
+    item =>
+      item.is_enabled !== false &&
+      String(item.discovery_category?.id ?? '') === discoveryCategoryId
+  );
   return first ? normalizeFilterConfig(first) : null;
 }
