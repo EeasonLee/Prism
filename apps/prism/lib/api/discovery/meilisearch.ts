@@ -26,7 +26,7 @@ interface MeilisearchHit {
   discovery_category_slugs?: string[];
   thumbnail?: string | null;
   href?: string | null;
-  price: number;
+  price: number | null;
   special_price?: number | null;
   in_stock?: boolean;
   is_active?: boolean;

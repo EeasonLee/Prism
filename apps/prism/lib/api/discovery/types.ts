@@ -82,7 +82,7 @@ export interface ProductCardItem {
   name: string;
   subtitle?: string;
   thumbnail?: string;
-  price: number;
+  price: number | null;
   /** 价格区间（可配置商品） */
   price_range?: { min: number; max: number };
   currency?: string;
