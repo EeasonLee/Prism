@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { fetchDiscoveryResult } from '../../../lib/api/discovery/service';
-import { DiscoveryProductCard } from '../components/DiscoveryProductCard';
 import { FilterPanel } from '../components/FilterPanel';
+import { ProductGrid } from '../components/ProductGrid';
 import { SortPanel } from '../components/SortPanel';
 import type {
   DiscoverySortOption,
@@ -97,39 +97,17 @@ export default async function ShopCategoryPage({
               <p className="text-sm text-ink-muted">No products found.</p>
             </div>
           ) : (
-            <>
-              <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                {items.map(item => (
-                  <li key={item.sku}>
-                    <DiscoveryProductCard item={item} />
-                  </li>
-                ))}
-              </ul>
-
-              {pagination.totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  {pagination.page > 1 && (
-                    <a
-                      href={`/shop/${slug}?page=${pagination.page - 1}`}
-                      className="rounded-lg border border-border px-4 py-2 text-sm text-ink transition hover:bg-surface"
-                    >
-                      Previous
-                    </a>
-                  )}
-                  <span className="text-sm text-ink-muted">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </span>
-                  {pagination.page < pagination.totalPages && (
-                    <a
-                      href={`/shop/${slug}?page=${pagination.page + 1}`}
-                      className="rounded-lg border border-border px-4 py-2 text-sm text-ink transition hover:bg-surface"
-                    >
-                      Next
-                    </a>
-                  )}
-                </div>
+            <ProductGrid
+              slug={slug}
+              initialItems={items}
+              initialPagination={pagination}
+              searchParams={Object.fromEntries(
+                Object.entries(sp).filter(([, v]) => v !== undefined) as [
+                  string,
+                  string
+                ][]
               )}
-            </>
+            />
           )}
         </div>
       </div>
