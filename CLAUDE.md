@@ -27,28 +27,11 @@ All commands run via Nx under the hood, enabling build caching and affected-proj
 
 ### 多系统集成
 
-本项目是**跨境电商重构**的一部分，集成了多个系统：
+本项目是**跨境电商重构**的一部分，跨多个系统协同工作：Magento 负责核心商务事实，Strapi 负责内容与运营配置，SSO 负责认证聚合与 Magento 能力代理，Next.js 负责前端渲染与页面级聚合。
 
-- **Magento 2.4.6**（`https://magento.test` / `192.168.50.4`）— 核心商务逻辑（订单、支付、库存、购物车）
-- **Strapi**（`D:\WORK\helpcenter\backend`）— 内容管理（商品富文本、博客、食谱、SEO）
-- **SSO**（`D:\WORK\Sso`）— 认证聚合层（Fastify + OAuth 2.0 + OIDC），代理 Magento API
-- **Next.js**（本仓库）— 前端渲染与用户体验
+默认将商品富文本、discovery、SEO、blogs、recipes、category mapping 等需求视为跨系统任务，而不是单仓前端任务。
 
-**数据流向：**
-
-- 商品数据：Magento（经 SSO）+ Strapi → Next.js 统一商品层（`lib/api/unified-product.ts`）
-- 内容数据：Strapi → Next.js（博客、食谱、商品富文本）
-- 认证：SSO → Next.js（登录状态同步、购物车合并）
-- 结算：Next.js → Magento（跳转 Magento 结算页）
-
-**关键集成点：**
-
-- `lib/api/magento/client.ts` — Magento/SSO HTTP 客户端，支持 token 自动刷新
-- `lib/api/unified-product.ts` — 融合 Magento 核心字段 + Strapi 内容字段
-- `lib/api/strapi/product-enrichment.ts` — 按 SKU 获取 Strapi 商品富文本
-- 环境变量：`NEXT_PUBLIC_MAGENTO_API_URL`（SSO 地址）、`NEXT_PUBLIC_API_URL`（Strapi 地址）
-
-详细项目计划见 `docs/project-plan.md`。
+详细背景与集成参考见 `docs/architecture/integrations.md` 和 `docs/project-plan.md`。
 
 ### Monorepo Structure
 
@@ -90,22 +73,26 @@ Within the same library, use relative imports. Never use deep path imports like 
 
 ### API Client
 
-`apps/prism/lib/api/client.ts` exports a singleton `apiClient` that auto-selects server or client adapters based on environment. Error types (`ApiError`, `AuthenticationError`, etc.) come from `@prism/shared`. Business-domain API functions (blog articles, etc.) live in `libs/blog/src/api/` and accept the `apiClient` as a parameter to avoid circular deps.
-
-### Product Discovery System
-
-`lib/api/discovery/` — 商品发现体系（Phase 3A 已完成）：
-
-- `types.ts` — 所有类型定义：`DiscoveryCategory`、`ProductDiscoveryQuery`、`ProductDiscoveryResult`、`ProductCardItem` 等
-- `service.ts` — 核心服务层：将前台分类 slug 映射到 Magento 分类 ID，聚合多个分类的商品结果，返回统一 `ProductDiscoveryResult`
-- `lib/api/strapi/discovery.ts` — Strapi 侧：获取 discovery-category、category-mapping、filter-config
-
-路由：`app/shop/[categoryId]/` — 分类列表页；`app/products/[sku]/` — 商品详情页（含 blog、recipe cross-sell 区块）
+Use `apps/prism/lib/api/client.ts` as the default app-side API entry point unless the task explicitly requires bypassing it. Error types (`ApiError`, `AuthenticationError`, etc.) come from `@prism/shared`.
 
 ### Observability
 
-- `lib/observability/logger.ts` — `createLogger` / `logger` with `NEXT_PUBLIC_LOG_LEVEL`
-- `lib/observability/metrics.ts` + `app/reportWebVitals.ts` — Web Vitals buffered for Sentry/Datadog
+When editing request-path, API integration, or performance-sensitive code, check existing instrumentation in `lib/observability/logger.ts`, `lib/observability/metrics.ts`, and `app/reportWebVitals.ts` before adding new logging or metrics.
+
+### Cross-Repo Workflow
+
+This repository frequently coordinates with Strapi backend at `D:\WORK\helpcenter\backend`.
+
+When a task involves product enrichment, discovery, SEO, rich content, category mapping, recipes, blogs, or any Strapi-driven page section:
+
+- Treat it as a cross-repo task, not a frontend-only change
+- First inspect the Prism call site, consuming types, route, and rendering logic
+- Then inspect the corresponding Strapi content-type, controller, service, lifecycle hook, and response shape in `D:\WORK\helpcenter\backend`
+- Make contract changes explicit before editing: field names, nullable fields, slug rules, SKU mapping, category mapping, filter config, pagination, and localization assumptions
+- In analysis and implementation updates, separate findings into `Prism changes`, `Strapi changes`, `API/schema contract changes`, and `Verification steps`
+- Prefer the minimum viable cross-repo change; do not patch around backend contract mismatches purely in frontend unless the task explicitly asks for a frontend-only workaround
+- If current worktree is `D:\WORK\prism`, treat the Strapi repo as an external dependency to inspect when needed, while keeping Prisma/Next changes scoped to this repository unless asked to edit the backend too
+- For reusable task prompts and checklists, see `docs/claude-workflows.md`
 
 ## Coding Constraints
 
