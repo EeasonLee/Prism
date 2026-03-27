@@ -52,6 +52,10 @@ export function isServerSide(): boolean {
  *
  * 如果启用了代理（NEXT_PUBLIC_USE_API_PROXY=true），客户端请求使用代理路径
  */
+function trimTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+}
+
 export function getApiBaseUrl(): string {
   // 如果是客户端且启用了代理，使用代理路径
   if (!isServerSide() && env.NEXT_PUBLIC_USE_API_PROXY) {
@@ -63,8 +67,32 @@ export function getApiBaseUrl(): string {
     throw new Error('NEXT_PUBLIC_API_URL is required');
   }
 
-  // 移除末尾的斜杠，统一处理
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  return trimTrailingSlash(baseUrl);
+}
+
+export function getStrapiBaseUrl(): string {
+  const baseUrl = env.NEXT_PUBLIC_STRAPI_URL ?? env.NEXT_PUBLIC_API_URL;
+  if (!baseUrl) {
+    throw new Error(
+      'NEXT_PUBLIC_STRAPI_URL or NEXT_PUBLIC_API_URL is required'
+    );
+  }
+
+  return trimTrailingSlash(baseUrl);
+}
+
+export function getStrapiServerBaseUrl(): string {
+  const baseUrl =
+    env.STRAPI_INTERNAL_URL ??
+    env.NEXT_PUBLIC_STRAPI_URL ??
+    env.NEXT_PUBLIC_API_URL;
+  if (!baseUrl) {
+    throw new Error(
+      'STRAPI_INTERNAL_URL, NEXT_PUBLIC_STRAPI_URL, or NEXT_PUBLIC_API_URL is required'
+    );
+  }
+
+  return trimTrailingSlash(baseUrl);
 }
 
 /**

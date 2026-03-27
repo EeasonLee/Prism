@@ -1,15 +1,31 @@
 import { apiClient } from '../client';
 
+interface StrapiReviewMediaRaw {
+  id: number;
+  kind?: 'image' | 'video';
+  url?: string | null;
+  width?: number | null;
+  height?: number | null;
+  mime?: string | null;
+  alt?: string | null;
+  posterUrl?: string | null;
+}
+
 interface StrapiReviewRaw {
   id: number;
   documentId?: string;
   sku: string;
+  product_sku?: string;
+  purchased_sku?: string;
+  purchased_variant_label?: string | null;
   author_name: string;
   rating: number;
   title: string;
   content: string;
+  media?: StrapiReviewMediaRaw[];
   verified?: boolean | null;
   helpful_count?: number | null;
+  viewer_has_marked_helpful?: boolean | null;
   review_status?: 'pending' | 'approved' | 'rejected' | null;
   createdAt?: string;
   updatedAt?: string;
@@ -27,12 +43,23 @@ interface StrapiReviewListResponseRaw {
   };
 }
 
+export type ProductReviewDistributionKey =
+  | '1'
+  | '1.5'
+  | '2'
+  | '2.5'
+  | '3'
+  | '3.5'
+  | '4'
+  | '4.5'
+  | '5';
+
 interface StrapiReviewSummaryRaw {
   data?: {
     sku: string;
     average: number;
     total: number;
-    distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+    distribution: Partial<Record<ProductReviewDistributionKey, number>>;
   };
 }
 
@@ -43,16 +70,32 @@ interface SubmitReviewResponseRaw {
   };
 }
 
+export interface ProductReviewMedia {
+  id: number;
+  kind: 'image' | 'video';
+  url: string;
+  width: number | null;
+  height: number | null;
+  mime: string | null;
+  alt: string | null;
+  posterUrl: string | null;
+}
+
 export interface ProductReview {
   id: number;
   documentId?: string;
   sku: string;
+  productSku: string;
+  purchasedSku: string;
+  purchasedVariantLabel: string | null;
   authorName: string;
   rating: number;
   title: string;
   content: string;
+  media: ProductReviewMedia[];
   verified: boolean;
   helpfulCount: number;
+  viewerHasMarkedHelpful: boolean;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string | null;
   updatedAt: string | null;
@@ -62,7 +105,7 @@ export interface ProductReviewSummary {
   sku: string;
   average: number;
   total: number;
-  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+  distribution: Record<ProductReviewDistributionKey, number>;
 }
 
 export interface ProductReviewPagination {
@@ -79,12 +122,16 @@ export interface ProductReviewListResult {
 
 export interface SubmitProductReviewInput {
   sku: string;
+  productSku: string;
+  purchasedSku: string;
+  purchasedVariantLabel: string | null;
   authorName: string;
   authorEmail: string;
   magentoUserId: string;
   rating: number;
   title: string;
   content: string;
+  mediaIds: number[];
 }
 
 export interface SubmitProductReviewResult {
@@ -92,17 +139,35 @@ export interface SubmitProductReviewResult {
   message: string;
 }
 
+function normalizeReviewMedia(media: StrapiReviewMediaRaw): ProductReviewMedia {
+  return {
+    id: media.id,
+    kind: media.kind === 'video' ? 'video' : 'image',
+    url: media.url ?? '',
+    width: media.width ?? null,
+    height: media.height ?? null,
+    mime: media.mime ?? null,
+    alt: media.alt ?? null,
+    posterUrl: media.posterUrl ?? null,
+  };
+}
+
 function normalizeReview(review: StrapiReviewRaw): ProductReview {
   return {
     id: review.id,
     documentId: review.documentId,
     sku: review.sku,
+    productSku: review.product_sku ?? review.sku,
+    purchasedSku: review.purchased_sku ?? review.sku,
+    purchasedVariantLabel: review.purchased_variant_label ?? null,
     authorName: review.author_name,
     rating: Number(review.rating ?? 0),
     title: review.title,
     content: review.content,
+    media: (review.media ?? []).map(normalizeReviewMedia),
     verified: review.verified ?? false,
     helpfulCount: Number(review.helpful_count ?? 0),
+    viewerHasMarkedHelpful: review.viewer_has_marked_helpful ?? false,
     status: review.review_status ?? 'pending',
     createdAt: review.createdAt ?? null,
     updatedAt: review.updatedAt ?? null,
@@ -115,11 +180,15 @@ function emptySummary(sku: string): ProductReviewSummary {
     average: 0,
     total: 0,
     distribution: {
-      1: 0,
-      2: 0,
-      3: 0,
-      4: 0,
-      5: 0,
+      '1': 0,
+      '1.5': 0,
+      '2': 0,
+      '2.5': 0,
+      '3': 0,
+      '3.5': 0,
+      '4': 0,
+      '4.5': 0,
+      '5': 0,
     },
   };
 }
@@ -127,12 +196,23 @@ function emptySummary(sku: string): ProductReviewSummary {
 export async function fetchReviewsBySku(
   sku: string,
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  sort: 'newest' | 'highest_rating' | 'most_helpful' = 'newest',
+  dedupeKey?: string | null
 ): Promise<ProductReviewListResult> {
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+    sort,
+  });
+  if (dedupeKey) {
+    searchParams.set('dedupeKey', dedupeKey);
+  }
+
   const response = await apiClient.get<StrapiReviewListResponseRaw>(
     `api/product-reviews/by-sku/${encodeURIComponent(
       sku
-    )}?page=${page}&pageSize=${pageSize}`,
+    )}?${searchParams.toString()}`,
     {
       next: { tags: ['product-reviews'], revalidate: 300 },
     } as Parameters<typeof apiClient.get>[1]
@@ -163,11 +243,15 @@ export async function fetchReviewSummaryBySku(
     average: Number(response.data.average ?? 0),
     total: Number(response.data.total ?? 0),
     distribution: {
-      1: Number(response.data.distribution?.[1] ?? 0),
-      2: Number(response.data.distribution?.[2] ?? 0),
-      3: Number(response.data.distribution?.[3] ?? 0),
-      4: Number(response.data.distribution?.[4] ?? 0),
-      5: Number(response.data.distribution?.[5] ?? 0),
+      '1': Number(response.data.distribution?.['1'] ?? 0),
+      '1.5': Number(response.data.distribution?.['1.5'] ?? 0),
+      '2': Number(response.data.distribution?.['2'] ?? 0),
+      '2.5': Number(response.data.distribution?.['2.5'] ?? 0),
+      '3': Number(response.data.distribution?.['3'] ?? 0),
+      '3.5': Number(response.data.distribution?.['3.5'] ?? 0),
+      '4': Number(response.data.distribution?.['4'] ?? 0),
+      '4.5': Number(response.data.distribution?.['4.5'] ?? 0),
+      '5': Number(response.data.distribution?.['5'] ?? 0),
     },
   };
 }
@@ -181,12 +265,16 @@ export async function submitReview(
     {
       data: {
         sku: input.sku,
+        product_sku: input.productSku,
+        purchased_sku: input.purchasedSku,
+        purchased_variant_label: input.purchasedVariantLabel,
         author_name: input.authorName,
         author_email: input.authorEmail,
         magento_user_id: input.magentoUserId,
         rating: input.rating,
         title: input.title,
         content: input.content,
+        media: input.mediaIds,
       },
     },
     {

@@ -20,10 +20,11 @@
 
 这些变量只在服务端可用，不会暴露到客户端。
 
-| 变量名             | 类型                                    | 默认值 | 必需 | 说明                                  |
-| ------------------ | --------------------------------------- | ------ | ---- | ------------------------------------- |
-| `NODE_ENV`         | `development` \| `production` \| `test` | -      | 是   | Node.js 环境，通常由 Next.js 自动设置 |
-| `STRAPI_API_TOKEN` | string                                  | -      | 否   | 服务端请求后端 API 时使用的认证 Token |
+| 变量名                | 类型                                    | 默认值 | 必需 | 说明                                          |
+| --------------------- | --------------------------------------- | ------ | ---- | --------------------------------------------- |
+| `NODE_ENV`            | `development` \| `production` \| `test` | -      | 是   | Node.js 环境，通常由 Next.js 自动设置         |
+| `STRAPI_API_TOKEN`    | string                                  | -      | 否   | Prism 服务端请求 Strapi 时使用的认证 Token    |
+| `REVIEW_UPLOAD_TOKEN` | string                                  | -      | 否   | Strapi 后端专用的 review media 上传鉴权 Token |
 
 ## 配置示例
 
@@ -39,8 +40,11 @@ NEXT_PUBLIC_API_URL=http://192.168.50.244:1337
 # 日志级别（开发环境建议使用 debug）
 NEXT_PUBLIC_LOG_LEVEL=debug
 
-# 服务端认证 Token（可选）
+# Prism 服务端请求 Strapi 的认证 Token（可选）
 STRAPI_API_TOKEN=your_token_here
+
+# Strapi review media 上传入口使用的后端 Token（后端环境变量）
+REVIEW_UPLOAD_TOKEN=your_review_upload_token_here
 ```
 
 ### 生产环境 (`.env.production`)
@@ -55,8 +59,11 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com
 # 日志级别（生产环境建议使用 error）
 NEXT_PUBLIC_LOG_LEVEL=error
 
-# 服务端认证 Token
+# Prism 服务端请求 Strapi 的认证 Token
 STRAPI_API_TOKEN=your_production_token
+
+# Strapi review media 上传入口使用的后端 Token（后端环境变量）
+REVIEW_UPLOAD_TOKEN=your_production_review_upload_token
 ```
 
 ## 详细说明
@@ -159,7 +166,15 @@ NEXT_PUBLIC_LOG_LEVEL=debug
 
 **用途**：
 
-- 服务端请求后端 API 时使用的认证 Token
+- Prism 服务端请求 Strapi API 时使用的认证 Token
+- 只在服务端使用，不会暴露到客户端
+
+### `REVIEW_UPLOAD_TOKEN`
+
+**用途**：
+
+- Strapi 后端 `POST /api/review-media/upload` 使用的专用鉴权 Token
+- 建议在 Strapi 后端环境中单独配置，避免和其他服务端用途混用
 - 只在服务端使用，不会暴露到客户端
 
 **安全提示**：

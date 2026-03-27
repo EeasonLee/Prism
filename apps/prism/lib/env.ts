@@ -3,12 +3,14 @@ import { z } from 'zod';
 const serverSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']),
   STRAPI_API_TOKEN: z.string().optional(), // 服务端专用，不在客户端暴露
+  STRAPI_INTERNAL_URL: z.string().url().optional(), // 服务端访问 Strapi 的内部地址
   MEILISEARCH_API_KEY: z.string().optional(), // 服务端专用，Meilisearch Admin/Search API Key
 });
 
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  NEXT_PUBLIC_STRAPI_URL: z.string().url().optional(), // Strapi 对外基础地址，用于媒体 URL 与浏览器侧内容请求
   NEXT_PUBLIC_IMAGE_BASE_URL: z.string().url().optional(), // 图片基础 URL，用于处理相对路径
   NEXT_PUBLIC_LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'])
@@ -31,6 +33,7 @@ export const env = mergedSchema.parse({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_STRAPI_URL: process.env.NEXT_PUBLIC_STRAPI_URL,
   NEXT_PUBLIC_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_IMAGE_BASE_URL,
   NEXT_PUBLIC_LOG_LEVEL: process.env.NEXT_PUBLIC_LOG_LEVEL,
   NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
@@ -39,6 +42,7 @@ export const env = mergedSchema.parse({
   NEXT_PUBLIC_MEILISEARCH_HOST: process.env.NEXT_PUBLIC_MEILISEARCH_HOST,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   STRAPI_API_TOKEN: process.env.STRAPI_API_TOKEN,
+  STRAPI_INTERNAL_URL: process.env.STRAPI_INTERNAL_URL,
 });
 
 export const IS_DEVELOPMENT = env.NODE_ENV === 'development';

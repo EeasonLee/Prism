@@ -2,7 +2,7 @@ import type { ArticleListItem } from '@prism/blog';
 import type { Recipe } from '../../../app/recipes/types';
 import type { BlogPost } from '../../../app/products/[sku]/mock-data';
 import { apiClient } from '../client';
-import { env } from '../../env';
+import { getStrapiBaseUrl } from '../config';
 
 interface ArticleImageLike {
   url?: string | null;
@@ -46,11 +46,7 @@ interface PdpRecipeCard {
 function resolveStrapiUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = (env.NEXT_PUBLIC_API_URL ?? 'http://localhost:1337').replace(
-    /\/$/,
-    ''
-  );
-  return `${base}${url}`;
+  return `${getStrapiBaseUrl()}${url}`;
 }
 
 function pickImageUrl(image: StrapiImageLike | null | undefined): string {

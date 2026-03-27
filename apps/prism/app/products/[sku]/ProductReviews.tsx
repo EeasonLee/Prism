@@ -1,29 +1,76 @@
 'use client';
 
-import { BadgeCheck, ThumbsUp } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import Image from 'next/image';
+import { BadgeCheck, LoaderCircle, Star, ThumbsUp, Video } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   ProductReview,
+  ProductReviewDistributionKey,
   ProductReviewListResult,
   ProductReviewPagination,
   ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
 import { Pagination } from '../../recipes/components/Pagination';
+import { getReviewVisitorKey } from './review-visitor-key';
 import { ReviewForm } from './ReviewForm';
 import type { ProductPageExtras, Review as MockReview } from './mock-data';
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
+const DISTRIBUTION_KEYS: ProductReviewDistributionKey[] = [
+  '5',
+  '4.5',
+  '4',
+  '3.5',
+  '3',
+  '2.5',
+  '2',
+  '1.5',
+  '1',
+];
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'highest_rating', label: 'Highest rating' },
+  { value: 'most_helpful', label: 'Most helpful' },
+] as const;
 
-function StarRow({ rating, max = 5 }: { rating: number; max?: number }) {
+export interface ReviewTarget {
+  productSku: string;
+  purchasedSku: string | null;
+  purchasedVariantLabel: string | null;
+  requiresVariantSelection: boolean;
+}
+
+interface ProductReviewsProps {
+  sku: string;
+  target: ReviewTarget;
+  summary?: ProductReviewSummary;
+  initialReviews?: ProductReview[];
+  initialPagination?: ProductReviewPagination;
+  mockSummary?: ProductPageExtras['review_summary'];
+  mockReviews?: MockReview[];
+  allowSubmit?: boolean;
+}
+
+function StarRow({
+  rating,
+  size = 'md',
+}: {
+  rating: number;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const dimension =
+    size === 'lg' ? 'h-6 w-6' : size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+
   return (
-    <div className="flex gap-0.5" aria-label={`${rating} out of ${max} stars`}>
-      {Array.from({ length: max }, (_, i) => (
+    <div
+      className="relative flex gap-0.5"
+      aria-label={`${rating.toFixed(1)} out of 5 stars`}
+    >
+      {Array.from({ length: 5 }, (_, i) => (
         <svg
-          key={i}
-          className={`h-4 w-4 ${
-            i < rating ? 'text-amber-400' : 'text-ink-muted/20'
-          }`}
+          key={`base-${i}`}
+          className={`${dimension} text-ink-muted/20`}
           viewBox="0 0 20 20"
           fill="currentColor"
           aria-hidden="true"
@@ -31,34 +78,46 @@ function StarRow({ rating, max = 5 }: { rating: number; max?: number }) {
           <path d={STAR_PATH} />
         </svg>
       ))}
+      <div
+        className="absolute inset-0 flex gap-0.5 overflow-hidden text-amber-400"
+        style={{ width: `${Math.max(0, Math.min(100, (rating / 5) * 100))}%` }}
+      >
+        {Array.from({ length: 5 }, (_, i) => (
+          <svg
+            key={`fill-${i}`}
+            className={`${dimension} shrink-0`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d={STAR_PATH} />
+          </svg>
+        ))}
+      </div>
     </div>
   );
 }
 
 function RatingBar({
-  star,
+  label,
   count,
   total,
 }: {
-  star: number;
+  label: ProductReviewDistributionKey;
   count: number;
   total: number;
 }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="w-3 shrink-0 text-right text-xs text-ink-muted">
-        {star}
+      <span className="w-8 shrink-0 text-right text-xs font-medium text-ink-muted">
+        {label}
       </span>
-      <svg
-        className="h-3 w-3 shrink-0 text-amber-400"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+      <Star
+        className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400"
         aria-hidden="true"
-      >
-        <path d={STAR_PATH} />
-      </svg>
-      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
+      />
+      <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-amber-400"
           style={{ width: `${pct}%` }}
@@ -107,32 +166,80 @@ function normalizeMockSummary(
 function normalizeMockReviews(reviews: MockReview[]): ProductReview[] {
   return reviews.map(review => ({
     id: review.id,
+    documentId: String(review.id),
     sku: 'mock',
+    productSku: 'mock',
+    purchasedSku: 'mock',
+    purchasedVariantLabel: null,
     authorName: review.author,
     rating: review.rating,
     title: review.title,
     content: review.content,
+    media: [],
     verified: review.verified,
     helpfulCount: review.helpful,
+    viewerHasMarkedHelpful: false,
     status: 'approved',
     createdAt: review.date,
     updatedAt: review.date,
   }));
 }
 
-function ReviewCard({ review }: { review: ProductReview }) {
+function ReviewMediaStrip({ review }: { review: ProductReview }) {
+  if (review.media.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+      {review.media.map(media => (
+        <div
+          key={media.id}
+          className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-muted"
+        >
+          {media.kind === 'image' ? (
+            <Image
+              src={media.url}
+              alt={media.alt ?? review.title}
+              width={80}
+              height={80}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-ink-muted">
+              <Video className="h-5 w-5" />
+              <span className="text-[10px] font-medium uppercase tracking-[0.16em]">
+                Video
+              </span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReviewCard({
+  review,
+  onHelpful,
+  helpfulPending,
+}: {
+  review: ProductReview;
+  onHelpful: (review: ProductReview) => Promise<void>;
+  helpfulPending: boolean;
+}) {
   const displayDate =
     formatReviewDate(review.createdAt) || review.createdAt || '';
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-3 flex items-start justify-between gap-3">
+    <article className="rounded-[26px] border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
             {getInitials(review.authorName)}
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-semibold text-ink">
                 {review.authorName}
               </span>
@@ -143,39 +250,70 @@ function ReviewCard({ review }: { review: ProductReview }) {
                 />
               )}
             </div>
-            {displayDate && (
-              <span className="text-xs text-ink-muted">{displayDate}</span>
-            )}
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+              {displayDate && <span>{displayDate}</span>}
+              {review.purchasedVariantLabel && (
+                <span>{review.purchasedVariantLabel}</span>
+              )}
+              {!review.purchasedVariantLabel && review.purchasedSku && (
+                <span>SKU {review.purchasedSku}</span>
+              )}
+            </div>
           </div>
         </div>
-        <StarRow rating={review.rating} />
+        <div className="flex flex-col items-end gap-1">
+          <StarRow rating={review.rating} size="sm" />
+          <span className="text-xs font-medium text-ink-muted">
+            {review.rating.toFixed(1)} out of 5
+          </span>
+        </div>
       </div>
 
-      <h4 className="mb-2 text-sm font-semibold text-ink">{review.title}</h4>
-      <p className="text-sm leading-relaxed text-ink-muted">{review.content}</p>
+      <h4 className="mt-4 text-base font-semibold text-ink">{review.title}</h4>
+      <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+        {review.content}
+      </p>
 
-      {review.helpfulCount > 0 && (
-        <div className="mt-4 flex items-center gap-1.5 text-xs text-ink-muted">
-          <ThumbsUp className="h-3.5 w-3.5" />
-          <span>{review.helpfulCount} people found this helpful</span>
-        </div>
-      )}
+      <ReviewMediaStrip review={review} />
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+        <button
+          type="button"
+          onClick={() => {
+            void onHelpful(review);
+          }}
+          disabled={
+            helpfulPending ||
+            review.viewerHasMarkedHelpful ||
+            !review.documentId
+          }
+          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+            review.viewerHasMarkedHelpful
+              ? 'border-brand bg-brand/10 text-brand'
+              : 'border-border text-ink hover:border-brand hover:text-brand'
+          } disabled:cursor-not-allowed disabled:opacity-60`}
+        >
+          {helpfulPending ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : (
+            <ThumbsUp className="h-4 w-4" />
+          )}
+          Helpful ({review.helpfulCount})
+        </button>
+        {review.helpfulCount > 0 && (
+          <span className="text-xs text-ink-muted">
+            {review.helpfulCount}{' '}
+            {review.helpfulCount === 1 ? 'person' : 'people'} found this helpful
+          </span>
+        )}
+      </div>
     </article>
   );
 }
 
-interface ProductReviewsProps {
-  sku: string;
-  summary?: ProductReviewSummary;
-  initialReviews?: ProductReview[];
-  initialPagination?: ProductReviewPagination;
-  mockSummary?: ProductPageExtras['review_summary'];
-  mockReviews?: MockReview[];
-  allowSubmit?: boolean;
-}
-
 export function ProductReviews({
   sku,
+  target,
   summary,
   initialReviews,
   initialPagination,
@@ -184,6 +322,11 @@ export function ProductReviews({
   allowSubmit = true,
 }: ProductReviewsProps) {
   const isMock = !!mockSummary && !!mockReviews;
+  const [visitorKey, setVisitorKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setVisitorKey(getReviewVisitorKey());
+  }, []);
 
   const fallbackPagination = useMemo<ProductReviewPagination>(
     () => ({
@@ -211,19 +354,29 @@ export function ProductReviews({
   const [pagination, setPagination] = useState<ProductReviewPagination>(
     initialPagination ?? fallbackPagination
   );
+  const [sort, setSort] =
+    useState<(typeof SORT_OPTIONS)[number]['value']>('newest');
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [helpfulPendingId, setHelpfulPendingId] = useState<number | null>(null);
 
   const loadPage = useCallback(
-    async (page: number) => {
+    async (page: number, nextSort = sort) => {
       if (isMock) return;
       setIsLoading(true);
       setLoadError(null);
       try {
+        const params = new URLSearchParams({
+          page: String(page),
+          pageSize: String(pagination.pageSize),
+          sort: nextSort,
+        });
+        if (visitorKey) {
+          params.set('dedupeKey', visitorKey);
+        }
+
         const response = await fetch(
-          `/api/reviews/${encodeURIComponent(sku)}?page=${page}&pageSize=${
-            pagination.pageSize
-          }`,
+          `/api/reviews/${encodeURIComponent(sku)}?${params.toString()}`,
           {
             method: 'GET',
             cache: 'no-store',
@@ -252,7 +405,62 @@ export function ProductReviews({
         setIsLoading(false);
       }
     },
-    [isMock, pagination.pageSize, sku]
+    [isMock, pagination.pageSize, sku, sort, visitorKey]
+  );
+
+  const handleHelpful = useCallback(
+    async (review: ProductReview) => {
+      if (!review.documentId || !visitorKey || isMock) {
+        return;
+      }
+
+      setHelpfulPendingId(review.id);
+      setLoadError(null);
+      try {
+        const response = await fetch('/api/reviews/helpful', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            documentId: review.documentId,
+            dedupeKey: visitorKey,
+          }),
+        });
+
+        const data = (await response.json().catch(() => null)) as {
+          helpfulCount?: number;
+          viewerHasMarkedHelpful?: boolean;
+          error?: string;
+        } | null;
+
+        if (!response.ok) {
+          throw new Error(data?.error ?? 'Failed to update helpful state');
+        }
+
+        setReviews(current =>
+          current.map(item =>
+            item.id === review.id
+              ? {
+                  ...item,
+                  helpfulCount: Number(data?.helpfulCount ?? item.helpfulCount),
+                  viewerHasMarkedHelpful:
+                    data?.viewerHasMarkedHelpful ?? item.viewerHasMarkedHelpful,
+                }
+              : item
+          )
+        );
+      } catch (error) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to update helpful state'
+        );
+      } finally {
+        setHelpfulPendingId(null);
+      }
+    },
+    [isMock, visitorKey]
   );
 
   const totalReviews =
@@ -260,30 +468,52 @@ export function ProductReviews({
 
   return (
     <section aria-labelledby="reviews-heading" className="py-12 lg:py-16">
-      <h2 id="reviews-heading" className="heading-3 mb-10 text-center text-ink">
+      <h2 id="reviews-heading" className="heading-3 mb-8 text-center text-ink">
         Customer Reviews
       </h2>
 
-      {allowSubmit && <ReviewForm sku={sku} />}
+      {allowSubmit && (
+        <ReviewForm
+          sku={sku}
+          target={target}
+          onSubmitted={() => void loadPage(1, sort)}
+        />
+      )}
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[280px_1fr] lg:gap-16">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-12">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <div className="mb-4 text-center">
-              <p className="text-5xl font-black text-ink">
-                {(effectiveSummary?.average ?? 0).toFixed(1)}
-              </p>
-              <StarRow rating={Math.round(effectiveSummary?.average ?? 0)} />
-              <p className="mt-1 text-sm text-ink-muted">
-                {totalReviews.toLocaleString()} reviews
-              </p>
+          <div
+            data-testid="reviews-summary"
+            className="rounded-[28px] border border-border bg-surface p-5 sm:p-6"
+          >
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="micro-text uppercase tracking-[0.18em] text-ink-faint">
+                  Review snapshot
+                </p>
+                <div className="mt-3 flex items-end gap-3">
+                  <p className="text-5xl font-black tracking-tight text-ink">
+                    {(effectiveSummary?.average ?? 0).toFixed(1)}
+                  </p>
+                  <div className="pb-1">
+                    <StarRow
+                      rating={effectiveSummary?.average ?? 0}
+                      size="md"
+                    />
+                    <p className="mt-2 text-sm text-ink-muted">
+                      {totalReviews.toLocaleString()} reviews
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              {([5, 4, 3, 2, 1] as const).map(star => (
+
+            <div className="mt-6 space-y-2.5">
+              {DISTRIBUTION_KEYS.map(key => (
                 <RatingBar
-                  key={star}
-                  star={star}
-                  count={effectiveSummary?.distribution[star] ?? 0}
+                  key={key}
+                  label={key}
+                  count={effectiveSummary?.distribution[key] ?? 0}
                   total={totalReviews}
                 />
               ))}
@@ -292,6 +522,37 @@ export function ProductReviews({
         </div>
 
         <div>
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink">Browse reviews</p>
+              <p className="text-sm text-ink-muted">
+                Ratings, media, and helpful votes update against the selected
+                product SKU.
+              </p>
+            </div>
+            {!isMock && (
+              <label className="flex items-center gap-3 text-sm text-ink-muted">
+                <span>Sort by</span>
+                <select
+                  value={sort}
+                  onChange={event => {
+                    const nextSort = event.target
+                      .value as (typeof SORT_OPTIONS)[number]['value'];
+                    setSort(nextSort);
+                    void loadPage(1, nextSort);
+                  }}
+                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                >
+                  {SORT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+
           {loadError && (
             <p role="alert" className="mb-4 text-sm text-red-500">
               {loadError}
@@ -300,9 +561,14 @@ export function ProductReviews({
 
           {reviews.length > 0 ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
                 {reviews.map(review => (
-                  <ReviewCard key={review.id} review={review} />
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    onHelpful={handleHelpful}
+                    helpfulPending={helpfulPendingId === review.id}
+                  />
                 ))}
               </div>
               {!isMock && pagination.pageCount > 1 && (
@@ -317,14 +583,14 @@ export function ProductReviews({
                   </p>
                   <Pagination
                     pagination={pagination}
-                    onPageChange={loadPage}
+                    onPageChange={page => void loadPage(page, sort)}
                     isLoading={isLoading}
                   />
                 </div>
               )}
             </>
           ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+            <div className="rounded-[28px] border border-dashed border-border bg-card p-8 text-center">
               <p className="text-base font-semibold text-ink">
                 No approved reviews yet
               </p>

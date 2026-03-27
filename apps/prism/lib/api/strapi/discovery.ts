@@ -7,7 +7,7 @@ import type {
   DiscoverySortOption,
   DiscoveryLayoutType,
 } from '../discovery/types';
-import { env } from '../../env';
+import { getStrapiBaseUrl } from '../config';
 
 interface StrapiImageLike {
   url?: string | null;
@@ -71,11 +71,7 @@ interface StrapiListResponse<T> {
 function resolveStrapiUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = (env.NEXT_PUBLIC_API_URL ?? 'http://localhost:1337').replace(
-    /\/$/,
-    ''
-  );
-  return `${base}${url}`;
+  return `${getStrapiBaseUrl()}${url}`;
 }
 
 function normalizeSeo(raw?: StrapiSeoRaw | null): DiscoverySeo | undefined {

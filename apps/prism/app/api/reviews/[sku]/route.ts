@@ -6,12 +6,16 @@ import {
 } from '../../../../lib/api/strapi/reviews';
 
 interface SubmitReviewRequestBody {
+  productSku?: unknown;
+  purchasedSku?: unknown;
+  purchasedVariantLabel?: unknown;
   authorName?: unknown;
   authorEmail?: unknown;
   magentoUserId?: unknown;
   rating?: unknown;
   title?: unknown;
   content?: unknown;
+  mediaIds?: unknown;
 }
 
 function badRequest(message: string) {
@@ -39,12 +43,16 @@ export async function GET(
     50,
     Math.max(1, Number(request.nextUrl.searchParams.get('pageSize') ?? '10'))
   );
+  const sort = request.nextUrl.searchParams.get('sort');
+  const dedupeKey = request.nextUrl.searchParams.get('dedupeKey');
 
   try {
     const reviews = await fetchReviewsBySku(
       decodeURIComponent(sku),
       page,
-      pageSize
+      pageSize,
+      sort === 'highest_rating' || sort === 'most_helpful' ? sort : 'newest',
+      dedupeKey
     );
     return NextResponse.json(reviews);
   } catch (error) {
@@ -63,13 +71,23 @@ export async function POST(
     .json()
     .catch(() => ({}))) as SubmitReviewRequestBody;
 
+  const productSku = normalizeText(body.productSku) || decodeURIComponent(sku);
+  const purchasedSku = normalizeText(body.purchasedSku);
+  const purchasedVariantLabel = normalizeText(body.purchasedVariantLabel);
   const authorName = normalizeText(body.authorName);
   const authorEmail = normalizeText(body.authorEmail);
   const magentoUserId = normalizeText(body.magentoUserId);
   const title = normalizeText(body.title);
   const content = normalizeText(body.content);
   const rating = normalizeRating(body.rating);
+  const mediaIds = Array.isArray(body.mediaIds)
+    ? body.mediaIds
+        .map(value => Number.parseInt(String(value), 10))
+        .filter(Number.isInteger)
+    : [];
 
+  if (!productSku) return badRequest('productSku is required');
+  if (!purchasedSku) return badRequest('purchasedSku is required');
   if (!authorName) return badRequest('authorName is required');
   if (!authorEmail) return badRequest('authorEmail is required');
   if (!magentoUserId) return badRequest('magentoUserId is required');
@@ -79,8 +97,13 @@ export async function POST(
   if (!content || content.length < 10 || content.length > 2000) {
     return badRequest('content must be between 10 and 2000 characters');
   }
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return badRequest('rating must be an integer between 1 and 5');
+  if (
+    !Number.isFinite(rating) ||
+    rating < 1 ||
+    rating > 5 ||
+    rating * 2 !== Math.round(rating * 2)
+  ) {
+    return badRequest('rating must be between 1 and 5 in 0.5 increments');
   }
 
   const authorization = request.headers.get('authorization');
@@ -89,12 +112,16 @@ export async function POST(
     const result = await submitReview(
       {
         sku: decodeURIComponent(sku),
+        productSku,
+        purchasedSku,
+        purchasedVariantLabel: purchasedVariantLabel || null,
         authorName,
         authorEmail,
         magentoUserId,
         rating,
         title,
         content,
+        mediaIds,
       },
       authorization?.replace(/^Bearer\s+/i, '') ?? null
     );

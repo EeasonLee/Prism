@@ -9,7 +9,7 @@
  */
 
 import { apiClient } from '../client';
-import { env } from '../../env';
+import { getStrapiBaseUrl } from '../config';
 import { fetchPdpArticlesBySku, fetchPdpRecipesBySku } from './product-content';
 
 // ─── Strapi 响应原始结构 ──────────────────────────────────────────────────────
@@ -213,11 +213,7 @@ export interface StrapiProductEnrichment {
 function resolveStrapiUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = (env.NEXT_PUBLIC_API_URL ?? 'http://localhost:1337').replace(
-    /\/$/,
-    ''
-  );
-  return `${base}${url}`;
+  return `${getStrapiBaseUrl()}${url}`;
 }
 
 function normalizeImage(
