@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareTrigger } from '../../app/components/share/ShareTrigger';
@@ -6,8 +6,9 @@ import { ProductDetailContent } from '../../app/products/[sku]/ProductDetailCont
 import type { MagentoProduct } from '../../lib/api/magento/types';
 import type { UnifiedProductImage } from '../../lib/api/unified-product';
 
-const copyLinkMock = vi.fn().mockResolvedValue(undefined);
+const copyLinkMock = vi.fn().mockResolvedValue(true);
 const shareNativelyMock = vi.fn().mockResolvedValue(true);
+let copiedState = false;
 
 vi.mock('../../app/products/[sku]/ProductImageGallery', () => ({
   ProductImageGallery: () => <div data-testid="product-image-gallery" />,
@@ -19,9 +20,13 @@ vi.mock('../../app/products/[sku]/ProductDetailClient', () => ({
 
 vi.mock('../../app/components/share/useShareActions', () => ({
   useShareActions: () => ({
-    copied: false,
+    copied: copiedState,
     nativeShareSupported: true,
-    copyLink: copyLinkMock,
+    copyLink: async () => {
+      const copied = await copyLinkMock();
+      copiedState = copied;
+      return copied;
+    },
     shareNatively: shareNativelyMock,
     openChannel: vi.fn(),
   }),
@@ -47,6 +52,8 @@ const galleryImages: UnifiedProductImage[] = [
 describe('ShareTrigger', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    copiedState = false;
+    copyLinkMock.mockResolvedValue(true);
   });
 
   it('renders an accessible Share trigger', () => {
@@ -84,7 +91,7 @@ describe('ShareTrigger', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows desktop fallback actions when native share is unavailable', async () => {
+  it('shows layered desktop fallback actions when native share is unavailable', async () => {
     shareNativelyMock.mockResolvedValueOnce(false);
     const user = userEvent.setup();
 
@@ -101,14 +108,59 @@ describe('ShareTrigger', () => {
     await user.click(screen.getByRole('button', { name: 'Share' }));
 
     expect(
-      screen.getByRole('button', { name: 'Copy link' })
+      screen.getByRole('button', { name: 'Copy product link' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'SMS / iMessage' })
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Email' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'WhatsApp' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Facebook' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'X' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pinterest' })).toBeInTheDocument();
   });
 
-  it('copies the link when the fallback copy action is selected', async () => {
+  it('shows copied feedback after the primary fallback action is selected', async () => {
     shareNativelyMock.mockResolvedValueOnce(false);
+    const user = userEvent.setup();
+
+    const { rerender } = render(
+      <ShareTrigger
+        target={{
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Share' }));
+    await user.click(screen.getByRole('button', { name: 'Copy product link' }));
+
+    rerender(
+      <ShareTrigger
+        target={{
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        }}
+      />
+    );
+
+    expect(copyLinkMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Copy product link' })
+      ).toHaveTextContent('Copied');
+    });
+  });
+
+  it('falls back to a prompt when clipboard copy fails', async () => {
+    shareNativelyMock.mockResolvedValueOnce(false);
+    copyLinkMock.mockResolvedValueOnce(false);
+    const execCommandSpy = vi.fn().mockReturnValue(false);
+    document.execCommand = execCommandSpy;
+    const promptSpy = vi.spyOn(window, 'prompt').mockImplementation(() => null);
     const user = userEvent.setup();
 
     render(
@@ -122,9 +174,38 @@ describe('ShareTrigger', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Share' }));
-    await user.click(screen.getByRole('button', { name: 'Copy link' }));
+    await user.click(screen.getByRole('button', { name: 'Copy product link' }));
 
-    expect(copyLinkMock).toHaveBeenCalledTimes(1);
+    expect(execCommandSpy).toHaveBeenCalledWith('copy');
+    expect(promptSpy).toHaveBeenCalledWith(
+      'Copy this product link',
+      'https://example.com/products/JD-AF550'
+    );
+  });
+
+  it('uses legacy copy before showing the manual prompt', async () => {
+    shareNativelyMock.mockResolvedValueOnce(false);
+    copyLinkMock.mockResolvedValueOnce(false);
+    const execCommandSpy = vi.fn().mockReturnValue(true);
+    document.execCommand = execCommandSpy;
+    const promptSpy = vi.spyOn(window, 'prompt').mockImplementation(() => null);
+    const user = userEvent.setup();
+
+    render(
+      <ShareTrigger
+        target={{
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Share' }));
+    await user.click(screen.getByRole('button', { name: 'Copy product link' }));
+
+    expect(execCommandSpy).toHaveBeenCalledWith('copy');
+    expect(promptSpy).not.toHaveBeenCalled();
   });
 
   it('renders a Share action inside product detail content when a share target is provided', () => {

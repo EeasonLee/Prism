@@ -40,6 +40,41 @@ describe('useShareActions', () => {
     expect(result.current.copied).toBe(true);
   });
 
+  it('re-triggers copied state on repeated copy actions', async () => {
+    vi.useFakeTimers();
+
+    const { result } = renderHook(() =>
+      useShareActions({
+        target: {
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        },
+      })
+    );
+
+    await act(async () => {
+      await result.current.copyLink();
+    });
+
+    expect(result.current.copied).toBe(true);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1600);
+    });
+
+    expect(result.current.copied).toBe(false);
+
+    await act(async () => {
+      await result.current.copyLink();
+    });
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(2);
+    expect(result.current.copied).toBe(true);
+
+    vi.useRealTimers();
+  });
+
   it('uses native share when supported', async () => {
     const { result } = renderHook(() =>
       useShareActions({
@@ -133,6 +168,33 @@ describe('useShareActions', () => {
       await result.current.copyLink();
     });
 
+    expect(result.current.copied).toBe(false);
+  });
+
+  it('returns false when clipboard write is rejected', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockRejectedValue(new Error('clipboard denied')),
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useShareActions({
+        target: {
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        },
+      })
+    );
+
+    let copied = true;
+    await act(async () => {
+      copied = await result.current.copyLink();
+    });
+
+    expect(copied).toBe(false);
     expect(result.current.copied).toBe(false);
   });
 });

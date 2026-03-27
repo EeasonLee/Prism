@@ -1,7 +1,7 @@
 'use client';
 
-import { Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle2, Share2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { buildShareChannelUrl } from './build-share-channel-url';
 import { ShareMenu } from './ShareMenu';
 import { ShareSheet } from './ShareSheet';
@@ -15,11 +15,64 @@ interface ShareTriggerProps {
 
 export function ShareTrigger({ target, className }: ShareTriggerProps) {
   const [open, setOpen] = useState(false);
-  const { copyLink, shareNatively } = useShareActions({ target });
+  const [showCopyToast, setShowCopyToast] = useState(false);
+  const { copied, copyLink, shareNatively } = useShareActions({ target });
+
+  const copyLinkLegacy = () => {
+    const input = document.createElement('textarea');
+    input.value = target.url;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(input);
+    return copied;
+  };
+
+  useEffect(() => {
+    if (!copied || !open) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setOpen(false);
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [copied, open]);
+
+  useEffect(() => {
+    if (!copied) {
+      return;
+    }
+
+    setShowCopyToast(true);
+
+    const timer = window.setTimeout(() => {
+      setShowCopyToast(false);
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [copied]);
 
   const handleCopyLink = async () => {
-    await copyLink();
-    setOpen(false);
+    const copied = await copyLink();
+    if (copied) {
+      return;
+    }
+
+    if (copyLinkLegacy()) {
+      return;
+    }
+
+    window.prompt('Copy this product link', target.url);
   };
 
   const handleTriggerClick = async () => {
@@ -45,13 +98,23 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
         aria-expanded={open}
         onClick={() => void handleTriggerClick()}
         className={[
-          'inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+          'group inline-flex items-center gap-3 rounded-2xl border border-border/70 bg-surface/80 px-4 py-2.5 text-sm font-semibold text-ink shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+          open ? 'border-brand/30 bg-brand/5 text-brand' : '',
           className,
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        <Share2 className="h-4 w-4" />
+        <span
+          className={[
+            'flex h-8 w-8 items-center justify-center rounded-full bg-background text-ink-muted transition',
+            open ? 'bg-brand/10 text-brand' : 'group-hover:text-ink',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <Share2 className="h-4 w-4" />
+        </span>
         <span>Share</span>
       </button>
 
@@ -59,16 +122,29 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
         <>
           <div className="hidden sm:block">
             <ShareMenu
+              copied={copied}
               onCopyLink={() => void handleCopyLink()}
               getChannelHref={getChannelHref}
             />
           </div>
           <ShareSheet
+            copied={copied}
             onClose={() => setOpen(false)}
             onCopyLink={() => void handleCopyLink()}
             getChannelHref={getChannelHref}
           />
         </>
+      )}
+
+      {showCopyToast && (
+        <div className="pointer-events-none fixed bottom-24 right-4 z-40 sm:bottom-6 sm:right-6">
+          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+            <CheckCircle2 className="h-4 w-4 text-brand" />
+            <span className="text-sm font-medium text-ink">
+              Product link copied to clipboard
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

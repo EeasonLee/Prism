@@ -6,7 +6,11 @@ import { describe, it, expect } from 'vitest';
 import {
   buildEmailShareUrl,
   buildFacebookShareUrl,
+  buildPinterestShareUrl,
   buildShareChannelUrl,
+  buildSmsShareUrl,
+  buildWhatsAppShareUrl,
+  buildXShareUrl,
 } from '../../app/components/share/build-share-channel-url';
 import type { ShareTarget } from '../../app/components/share/types';
 
@@ -168,47 +172,100 @@ describe('buildFacebookShareUrl', () => {
   });
 });
 
+describe('buildWhatsAppShareUrl', () => {
+  it('should build a WhatsApp share URL with encoded text and URL', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product?id=123',
+      title: 'Amazing Product',
+      text: 'Check this out',
+    };
+
+    const result = buildWhatsAppShareUrl(target);
+
+    expect(result).toContain('https://wa.me/?text=');
+    expect(result).toContain('Check%20this%20out');
+    expect(result).toContain('https%3A%2F%2Fexample.com%2Fproduct%3Fid%3D123');
+  });
+});
+
+describe('buildSmsShareUrl', () => {
+  it('should build an SMS share URL with encoded body content', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Amazing Product',
+      text: 'Take a look',
+    };
+
+    const result = buildSmsShareUrl(target);
+
+    expect(result).toContain('sms:?&body=');
+    expect(result).toContain('Take%20a%20look');
+    expect(result).toContain('https%3A%2F%2Fexample.com%2Fproduct');
+  });
+});
+
+describe('buildXShareUrl', () => {
+  it('should build an X share URL with encoded text and URL', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Amazing Product',
+      text: 'Take a look',
+    };
+
+    const result = buildXShareUrl(target);
+
+    expect(result).toContain('https://twitter.com/intent/tweet?');
+    expect(result).toContain('text=Take%20a%20look');
+    expect(result).toContain('url=https%3A%2F%2Fexample.com%2Fproduct');
+  });
+});
+
+describe('buildPinterestShareUrl', () => {
+  it('should build a Pinterest share URL using the target URL and title', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Amazing Product',
+      imageUrl: 'https://cdn.example.com/product.jpg',
+    };
+
+    const result = buildPinterestShareUrl(target);
+
+    expect(result).toContain('https://pinterest.com/pin/create/button/?');
+    expect(result).toContain('url=https%3A%2F%2Fexample.com%2Fproduct');
+    expect(result).toContain('description=Amazing%20Product');
+    expect(result).toContain(
+      'media=https%3A%2F%2Fcdn.example.com%2Fproduct.jpg'
+    );
+  });
+});
+
 describe('buildShareChannelUrl', () => {
-  it('should delegate to buildEmailShareUrl for email channel', () => {
+  it('should delegate to the correct builder for each supported outbound channel', () => {
     const target: ShareTarget = {
       type: 'product',
       url: 'https://example.com/product',
       title: 'Product',
       text: 'Text',
+      imageUrl: 'https://cdn.example.com/product.jpg',
     };
 
-    const result = buildShareChannelUrl('email', target);
-    const expected = buildEmailShareUrl(target);
-
-    expect(result).toBe(expected);
-  });
-
-  it('should delegate to buildFacebookShareUrl for facebook channel', () => {
-    const target: ShareTarget = {
-      type: 'product',
-      url: 'https://example.com/product',
-      title: 'Product',
-      text: 'Text',
-    };
-
-    const result = buildShareChannelUrl('facebook', target);
-    const expected = buildFacebookShareUrl(target);
-
-    expect(result).toBe(expected);
-  });
-
-  it('should handle multiple channels independently', () => {
-    const target: ShareTarget = {
-      type: 'product',
-      url: 'https://example.com/product',
-      title: 'Product',
-    };
-
-    const emailUrl = buildShareChannelUrl('email', target);
-    const facebookUrl = buildShareChannelUrl('facebook', target);
-
-    expect(emailUrl).toContain('mailto:');
-    expect(facebookUrl).toContain('facebook.com');
-    expect(emailUrl).not.toBe(facebookUrl);
+    expect(buildShareChannelUrl('email', target)).toBe(
+      buildEmailShareUrl(target)
+    );
+    expect(buildShareChannelUrl('sms', target)).toBe(buildSmsShareUrl(target));
+    expect(buildShareChannelUrl('whatsapp', target)).toBe(
+      buildWhatsAppShareUrl(target)
+    );
+    expect(buildShareChannelUrl('facebook', target)).toBe(
+      buildFacebookShareUrl(target)
+    );
+    expect(buildShareChannelUrl('x', target)).toBe(buildXShareUrl(target));
+    expect(buildShareChannelUrl('pinterest', target)).toBe(
+      buildPinterestShareUrl(target)
+    );
   });
 });

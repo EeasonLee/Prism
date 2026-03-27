@@ -11,7 +11,13 @@ export interface ShareTarget {
   meta?: { id?: string; sku?: string; slug?: string };
 }
 
-export type ShareChannel = 'email' | 'facebook';
+export type ShareChannel =
+  | 'email'
+  | 'sms'
+  | 'whatsapp'
+  | 'facebook'
+  | 'x'
+  | 'pinterest';
 
 export interface ShareActionState {
   copied: boolean;
@@ -19,7 +25,7 @@ export interface ShareActionState {
 }
 
 export interface ShareActionHandlers {
-  copyLink: () => Promise<void>;
+  copyLink: () => Promise<boolean>;
   shareNatively: () => Promise<boolean>;
   openChannel: (channel: ShareChannel) => void;
 }

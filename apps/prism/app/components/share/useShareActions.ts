@@ -28,11 +28,19 @@ export function useShareActions({
 
   const copyLink = useCallback(async () => {
     if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-      return;
+      return false;
     }
 
-    await navigator.clipboard.writeText(target.url);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(target.url);
+      setCopied(true);
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1500);
+      return true;
+    } catch {
+      return false;
+    }
   }, [target.url]);
 
   const shareNatively = useCallback(async () => {
