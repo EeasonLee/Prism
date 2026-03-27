@@ -8,11 +8,10 @@ import {
   type ProductReviewListResult,
   type ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
-import { ProductDetailContent } from './ProductDetailContent';
+import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
-import { ProductReviews } from './ProductReviews';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
@@ -144,11 +143,34 @@ export default async function ProductDetailPage({ params }: Props) {
         <span className="text-ink">{product.display_name}</span>
       </nav>
 
-      <ProductDetailContent
+      <ProductDetailReviewShell
         product={product}
         galleryImages={galleryImages}
         ratingPercentage={ratingPercentage}
         ratingCount={ratingCount}
+        reviewSku={decodedSku}
+        summary={
+          decodedSku === MOCK_PRODUCT_SKU
+            ? undefined
+            : reviewSummary ?? emptyReviewSummary(decodedSku)
+        }
+        initialReviews={
+          decodedSku === MOCK_PRODUCT_SKU ? undefined : reviewList.items
+        }
+        initialPagination={
+          decodedSku === MOCK_PRODUCT_SKU ? undefined : reviewList.pagination
+        }
+        mockSummary={
+          decodedSku === MOCK_PRODUCT_SKU
+            ? mockProductExtras.review_summary
+            : undefined
+        }
+        mockReviews={
+          decodedSku === MOCK_PRODUCT_SKU
+            ? mockProductExtras.reviews
+            : undefined
+        }
+        allowSubmit={decodedSku !== MOCK_PRODUCT_SKU}
       />
 
       {sectionNavItems.length > 0 && (
@@ -190,25 +212,6 @@ export default async function ProductDetailPage({ params }: Props) {
           </section>
         </div>
       )}
-
-      <div id="section-reviews">
-        <div className="border-t border-border" />
-        {decodedSku === MOCK_PRODUCT_SKU ? (
-          <ProductReviews
-            sku={decodedSku}
-            mockSummary={mockProductExtras.review_summary}
-            mockReviews={mockProductExtras.reviews}
-            allowSubmit={false}
-          />
-        ) : (
-          <ProductReviews
-            sku={decodedSku}
-            summary={reviewSummary ?? emptyReviewSummary(decodedSku)}
-            initialReviews={reviewList.items}
-            initialPagination={reviewList.pagination}
-          />
-        )}
-      </div>
 
       {(cms?.recipes?.length ?? 0) > 0 && (
         <div id="section-recipes">

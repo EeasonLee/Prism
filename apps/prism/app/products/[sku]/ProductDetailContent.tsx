@@ -1,16 +1,24 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ProductDetailClient, type ProductDetailSelection } from './ProductDetailClient';
+import { useMemo } from 'react';
+import {
+  ProductDetailClient,
+  type ProductDetailSelection,
+} from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
+import { ShareTrigger } from '../../components/share';
 import type { MagentoProduct } from '../../../lib/api/magento/types';
 import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+import type { ShareTarget } from '../../components/share';
 
 interface ProductDetailContentProps {
   product: MagentoProduct;
   galleryImages: UnifiedProductImage[];
   ratingPercentage: number;
   ratingCount: number;
+  selection: ProductDetailSelection;
+  onSelectionChange: (selection: ProductDetailSelection) => void;
+  shareTarget?: ShareTarget;
 }
 
 const STAR_PATH =
@@ -54,7 +62,9 @@ function StarRating({
       </div>
       <span
         className="text-sm text-ink-muted"
-        aria-label={`${(percentage / 20).toFixed(1)} out of 5, ${count} reviews`}
+        aria-label={`${(percentage / 20).toFixed(
+          1
+        )} out of 5, ${count} reviews`}
       >
         {(percentage / 20).toFixed(1)} ({count}{' '}
         {count === 1 ? 'review' : 'reviews'})
@@ -68,19 +78,22 @@ export function ProductDetailContent({
   galleryImages,
   ratingPercentage,
   ratingCount,
+  selection,
+  onSelectionChange,
+  shareTarget,
 }: ProductDetailContentProps) {
-  const [selection, setSelection] = useState<ProductDetailSelection>({
-    selectedVariant: null,
-    allSelected: false,
-  });
-
   const displayProduct = useMemo(() => {
     const selectedVariant = selection.selectedVariant;
-    const hasCompleteVariantSelection = product.type_id !== 'configurable' || selection.allSelected;
+    const hasCompleteVariantSelection =
+      product.type_id !== 'configurable' || selection.allSelected;
 
     return {
-      sku: hasCompleteVariantSelection ? selectedVariant?.sku ?? product.sku : product.sku,
-      price: hasCompleteVariantSelection ? selectedVariant?.price ?? product.price : product.price,
+      sku: hasCompleteVariantSelection
+        ? selectedVariant?.sku ?? product.sku
+        : product.sku,
+      price: hasCompleteVariantSelection
+        ? selectedVariant?.price ?? product.price
+        : product.price,
       specialPrice: hasCompleteVariantSelection
         ? selectedVariant?.special_price ?? product.special_price
         : product.special_price,
@@ -91,7 +104,8 @@ export function ProductDetailContent({
         ? selectedVariant?.is_in_stock ?? product.is_in_stock ?? false
         : product.is_in_stock ?? false,
       images:
-        hasCompleteVariantSelection && (selectedVariant?.media_gallery?.length ?? 0) > 0
+        hasCompleteVariantSelection &&
+        (selectedVariant?.media_gallery?.length ?? 0) > 0
           ? selectedVariant?.media_gallery?.map(image => ({
               url: image.url,
               alt: image.label ?? product.display_name,
@@ -101,7 +115,8 @@ export function ProductDetailContent({
   }, [galleryImages, product, selection]);
 
   const hasDiscount =
-    displayProduct.specialPrice != null && displayProduct.specialPrice < displayProduct.price;
+    displayProduct.specialPrice != null &&
+    displayProduct.specialPrice < displayProduct.price;
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
@@ -174,10 +189,18 @@ export function ProductDetailContent({
           {hasDiscount && (
             <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
               Save $
-              {(displayProduct.price - (displayProduct.specialPrice ?? 0)).toFixed(2)}
+              {(
+                displayProduct.price - (displayProduct.specialPrice ?? 0)
+              ).toFixed(2)}
             </span>
           )}
         </div>
+
+        {shareTarget && (
+          <div className="mb-4 flex items-center">
+            <ShareTrigger target={shareTarget} />
+          </div>
+        )}
 
         {product.promotion_label && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
@@ -199,7 +222,10 @@ export function ProductDetailContent({
           />
         )}
 
-        <ProductDetailClient product={product} onSelectionChange={setSelection} />
+        <ProductDetailClient
+          product={product}
+          onSelectionChange={onSelectionChange}
+        />
 
         {product.description_html && (
           <div className="mt-6 border-t border-border pt-5">
