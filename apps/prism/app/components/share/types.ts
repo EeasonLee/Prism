@@ -1,17 +1,25 @@
 /**
- * Normalized share target containing essential metadata for sharing.
- * Used as input to channel-specific share URL builders.
+ * Share module types for normalized share targets and channel unions.
  */
+
 export interface ShareTarget {
-  /** The URL to share */
-  url: string;
-  /** The title/headline for the shared content */
+  type: 'product' | 'article' | 'recipe' | 'category' | 'page';
   title: string;
-  /** The description or body text for the shared content */
-  description: string;
+  url: string;
+  text?: string;
+  imageUrl?: string;
+  meta?: { id?: string; sku?: string; slug?: string };
 }
 
-/**
- * Supported share channels for phase 1.
- */
 export type ShareChannel = 'email' | 'facebook';
+
+export interface ShareActionState {
+  copied: boolean;
+  nativeShareSupported: boolean;
+}
+
+export interface ShareActionHandlers {
+  copyLink: () => Promise<void>;
+  shareNatively: () => Promise<boolean>;
+  openChannel: (channel: ShareChannel) => void;
+}

@@ -1,101 +1,214 @@
+/**
+ * Tests for share channel URL builders using TDD approach.
+ */
+
 import { describe, it, expect } from 'vitest';
 import {
   buildEmailShareUrl,
   buildFacebookShareUrl,
+  buildShareChannelUrl,
 } from '../../app/components/share/build-share-channel-url';
 import type { ShareTarget } from '../../app/components/share/types';
 
 describe('buildEmailShareUrl', () => {
   it('should build a mailto URL with encoded subject and body', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/123',
+      type: 'product',
+      url: 'https://example.com/product',
       title: 'Amazing Product',
-      description: 'Check out this amazing product!',
+      text: 'Check out this great product',
     };
 
     const result = buildEmailShareUrl(target);
 
-    expect(result).toContain('mailto:');
+    expect(result).toContain('mailto:?');
     expect(result).toContain('subject=');
     expect(result).toContain('body=');
-    expect(result).toContain(encodeURIComponent('Amazing Product'));
-    expect(result).toContain(
-      encodeURIComponent('https://example.com/product/123')
-    );
   });
 
-  it('should handle special characters in title and description', () => {
+  it('should URL-encode the subject line', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/456',
-      title: 'Product & Special "Chars"',
-      description: 'Description with & and "quotes"',
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product & Special Offer!',
     };
 
     const result = buildEmailShareUrl(target);
 
-    expect(result).toContain('mailto:');
-    expect(result).toContain(encodeURIComponent('Product & Special "Chars"'));
+    expect(result).toContain('subject=Product%20%26%20Special%20Offer');
+    expect(result).toContain('&body=');
   });
 
-  it('should include URL in the email body', () => {
+  it('should URL-encode the body with text and URL', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/789?param=value',
-      title: 'Test Product',
-      description: 'Test Description',
+      type: 'product',
+      url: 'https://example.com/product?id=123',
+      title: 'Product Title',
+      text: 'Product description with spaces',
     };
 
     const result = buildEmailShareUrl(target);
 
-    expect(result).toContain(
-      encodeURIComponent('https://example.com/product/789?param=value')
-    );
+    expect(result).toContain('body=');
+    expect(result).toContain('Product%20description%20with%20spaces');
+    expect(result).toContain('https%3A%2F%2Fexample.com%2Fproduct%3Fid%3D123');
   });
-});
 
-describe('buildFacebookShareUrl', () => {
-  it('should build a Facebook share URL from normalized target URL', () => {
+  it('should use title as fallback when text is missing', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/123',
-      title: 'Amazing Product',
-      description: 'Check out this amazing product!',
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product Title',
     };
 
-    const result = buildFacebookShareUrl(target);
+    const result = buildEmailShareUrl(target);
 
-    expect(result).toContain('https://www.facebook.com/sharer/sharer.php');
-    expect(result).toContain('u=');
-    expect(result).toContain(
-      encodeURIComponent('https://example.com/product/123')
-    );
+    expect(result).toContain('body=');
+    expect(result).toContain('Product%20Title');
+  });
+
+  it('should handle special characters in title', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product "Quote" & Ampersand',
+    };
+
+    const result = buildEmailShareUrl(target);
+
+    expect(result).toContain('subject=');
+    expect(result).not.toContain('"');
   });
 
   it('should handle URLs with query parameters', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/456?ref=home&utm_source=test',
-      title: 'Product with Params',
-      description: 'Description',
+      type: 'product',
+      url: 'https://example.com/product?sku=ABC123&ref=email',
+      title: 'Product',
+    };
+
+    const result = buildEmailShareUrl(target);
+
+    expect(result).toContain('%3F');
+    expect(result).toContain('%3D');
+  });
+});
+
+describe('buildFacebookShareUrl', () => {
+  it('should build a Facebook share URL', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product',
     };
 
     const result = buildFacebookShareUrl(target);
 
-    expect(result).toContain('https://www.facebook.com/sharer/sharer.php');
+    expect(result).toContain('https://www.facebook.com/sharer/sharer.php?u=');
+  });
+
+  it('should URL-encode the target URL', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product?id=123&name=test',
+      title: 'Product',
+    };
+
+    const result = buildFacebookShareUrl(target);
+
     expect(result).toContain(
-      encodeURIComponent(
-        'https://example.com/product/456?ref=home&utm_source=test'
-      )
+      'u=https%3A%2F%2Fexample.com%2Fproduct%3Fid%3D123%26name%3Dtest'
     );
   });
 
-  it('should handle special characters in URL', () => {
+  it('should handle URLs with special characters', () => {
     const target: ShareTarget = {
-      url: 'https://example.com/product/special-chars-&-more',
-      title: 'Special Product',
-      description: 'Description',
+      type: 'product',
+      url: 'https://example.com/product?title=Hello World&desc=Test & Demo',
+      title: 'Product',
     };
 
     const result = buildFacebookShareUrl(target);
 
-    expect(result).toContain('https://www.facebook.com/sharer/sharer.php');
-    expect(result).toContain('u=');
+    expect(result).not.toContain(' ');
+    expect(result).not.toContain('&desc=');
+  });
+
+  it('should handle URLs with fragments', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product#section-1',
+      title: 'Product',
+    };
+
+    const result = buildFacebookShareUrl(target);
+
+    expect(result).toContain('%23');
+  });
+
+  it('should ignore title and text', () => {
+    const target1: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Title 1',
+      text: 'Text 1',
+    };
+
+    const target2: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Title 2',
+      text: 'Text 2',
+    };
+
+    const result1 = buildFacebookShareUrl(target1);
+    const result2 = buildFacebookShareUrl(target2);
+
+    expect(result1).toBe(result2);
+  });
+});
+
+describe('buildShareChannelUrl', () => {
+  it('should delegate to buildEmailShareUrl for email channel', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product',
+      text: 'Text',
+    };
+
+    const result = buildShareChannelUrl('email', target);
+    const expected = buildEmailShareUrl(target);
+
+    expect(result).toBe(expected);
+  });
+
+  it('should delegate to buildFacebookShareUrl for facebook channel', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product',
+      text: 'Text',
+    };
+
+    const result = buildShareChannelUrl('facebook', target);
+    const expected = buildFacebookShareUrl(target);
+
+    expect(result).toBe(expected);
+  });
+
+  it('should handle multiple channels independently', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product',
+    };
+
+    const emailUrl = buildShareChannelUrl('email', target);
+    const facebookUrl = buildShareChannelUrl('facebook', target);
+
+    expect(emailUrl).toContain('mailto:');
+    expect(facebookUrl).toContain('facebook.com');
+    expect(emailUrl).not.toBe(facebookUrl);
   });
 });

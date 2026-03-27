@@ -6,8 +6,10 @@ import {
   type ProductDetailSelection,
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
+import { ShareTrigger } from '../../components/share';
 import type { MagentoProduct } from '../../../lib/api/magento/types';
 import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+import type { ShareTarget } from '../../components/share';
 
 interface ProductDetailContentProps {
   product: MagentoProduct;
@@ -16,6 +18,7 @@ interface ProductDetailContentProps {
   ratingCount: number;
   selection: ProductDetailSelection;
   onSelectionChange: (selection: ProductDetailSelection) => void;
+  shareTarget?: ShareTarget;
 }
 
 const STAR_PATH =
@@ -77,6 +80,7 @@ export function ProductDetailContent({
   ratingCount,
   selection,
   onSelectionChange,
+  shareTarget,
 }: ProductDetailContentProps) {
   const displayProduct = useMemo(() => {
     const selectedVariant = selection.selectedVariant;
@@ -191,6 +195,12 @@ export function ProductDetailContent({
             </span>
           )}
         </div>
+
+        {shareTarget && (
+          <div className="mb-4 flex items-center">
+            <ShareTrigger target={shareTarget} />
+          </div>
+        )}
 
         {product.promotion_label && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">

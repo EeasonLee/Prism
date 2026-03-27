@@ -58,7 +58,33 @@
       "Bash(cat:*)",
       "Bash(pnpm nx:*)",
       "Bash(cd:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git:*)",
+      "Bash(printf exists:*)",
+      "Bash(printf missing:*)",
+      "Bash(npm run:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm --version)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm check:*)",
+      "Skill(update-config)",
+      "Bash(cp \"/d/WORK/prism/apps/prism/app/products/[sku]/ProductDetailContent.tsx\" \"/d/WORK/prism/.claude/worktrees/share-module/apps/prism/app/products/[sku]/ProductDetailContent.tsx\")",
+      "Bash(cp \"/d/WORK/prism/apps/prism/app/products/[sku]/page.tsx\" \"/d/WORK/prism/.claude/worktrees/share-module/apps/prism/app/products/[sku]/page.tsx\")",
+      "Bash(cp \"/d/WORK/prism/apps/prism/app/products/[sku]/ProductDetailReviewShell.tsx\" \"/d/WORK/prism/.claude/worktrees/share-module/apps/prism/app/products/[sku]/ProductDetailReviewShell.tsx\")"
+    ]
+  },
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'let s=\"\";process.stdin.on(\"data\",d=>s+=d);process.stdin.on(\"end\",()=>{const j=JSON.parse(s||\"{}\");const d=j.cwd;if(!d) process.exit(0);require(\"child_process\").spawnSync(\"pnpm\",[\"install\",\"--frozen-lockfile\"],{cwd:d,stdio:\"inherit\"});});'",
+            "timeout": 1800,
+            "statusMessage": "Installing worktree dependencies"
+          }
+        ]
+      }
     ]
   }
 }

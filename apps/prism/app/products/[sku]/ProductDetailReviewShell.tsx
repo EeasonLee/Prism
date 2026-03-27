@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
+import { buildProductShareTarget } from './build-product-share-target';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
   ProductReview,
@@ -88,10 +90,24 @@ export function ProductDetailReviewShell({
   mockReviews,
   allowSubmit = true,
 }: ProductDetailReviewShellProps) {
+  const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
     selectedVariant: null,
     allSelected: false,
   });
+
+  const shareTarget = useMemo(() => {
+    if (typeof window === 'undefined' || !pathname) {
+      return undefined;
+    }
+
+    return buildProductShareTarget(
+      product,
+      pathname,
+      window.location.origin,
+      selection
+    );
+  }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {
     if (product.type_id === 'configurable') {
@@ -122,6 +138,7 @@ export function ProductDetailReviewShell({
         ratingCount={ratingCount}
         selection={selection}
         onSelectionChange={setSelection}
+        shareTarget={shareTarget}
       />
 
       <div id="section-reviews">
