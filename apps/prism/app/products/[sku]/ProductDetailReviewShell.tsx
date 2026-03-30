@@ -11,6 +11,8 @@ import type {
   ProductReviewPagination,
   ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
+import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
+import { ProductQA } from './ProductQA';
 import type {
   MagentoConfigurableOption,
   MagentoProduct,
@@ -30,6 +32,7 @@ interface ProductDetailReviewShellProps {
   mockSummary?: ProductPageExtras['review_summary'];
   mockReviews?: MockReview[];
   allowSubmit?: boolean;
+  initialProductQa: ProductQaListResult;
 }
 
 function buildVariantLabel(
@@ -89,6 +92,7 @@ export function ProductDetailReviewShell({
   mockSummary,
   mockReviews,
   allowSubmit = true,
+  initialProductQa,
 }: ProductDetailReviewShellProps) {
   const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
@@ -151,6 +155,14 @@ export function ProductDetailReviewShell({
           initialPagination={initialPagination}
           mockSummary={mockSummary}
           mockReviews={mockReviews}
+          allowSubmit={allowSubmit}
+        />
+      </div>
+
+      <div id="section-product-qa">
+        <ProductQA
+          sku={reviewSku}
+          initialResult={initialProductQa}
           allowSubmit={allowSubmit}
         />
       </div>

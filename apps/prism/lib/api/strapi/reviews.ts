@@ -1,3 +1,4 @@
+import { getStrapiBaseUrl } from '../config';
 import { apiClient } from '../client';
 
 interface StrapiReviewMediaRaw {
@@ -139,18 +140,34 @@ export interface SubmitProductReviewResult {
   message: string;
 }
 
+function toAbsoluteStrapiUrl(url: string | null | undefined) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  const baseUrl = getStrapiBaseUrl();
+  if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
+    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
+  }
+
+  return url;
+}
+
 function normalizeReviewMedia(media: StrapiReviewMediaRaw): ProductReviewMedia {
   return {
     id: media.id,
     kind: media.kind === 'video' ? 'video' : 'image',
-    url: media.url ?? '',
+    url: toAbsoluteStrapiUrl(media.url),
     width: media.width ?? null,
     height: media.height ?? null,
     mime: media.mime ?? null,
     alt: media.alt ?? null,
-    posterUrl: media.posterUrl ?? null,
+    posterUrl: media.posterUrl ? toAbsoluteStrapiUrl(media.posterUrl) : null,
   };
 }
+
+export const normalizeReviewMediaForTest = normalizeReviewMedia;
 
 function normalizeReview(review: StrapiReviewRaw): ProductReview {
   return {

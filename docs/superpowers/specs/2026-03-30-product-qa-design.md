@@ -6,6 +6,8 @@ type: design
 
 # 商品问答模块设计
 
+> **实现状态（2026-03-30）：** Strapi（`helpcenter`）已通过 `product-question` 自定义路由提供 `GET /api/product-qa/by-sku/:sku`（聚合 `product-faq` + 已公开用户问答）与 `POST /api/product-qa/questions`；Prism 已提供 BFF、`product-qa.ts` 归一化（`ProductQuestion.kind`：`faq` \| `user_qa`）、PDP `ProductQA`（展示 **Official FAQ** / **Customer Q&A**）。遗留：端到端手工验收、后端仅用 token 校验身份的强化、自动化测试。
+
 ## 一、模块定位
 
 这是一个 **跨前端复用的商品问答后端模块**，不是 Prism 专属前端功能。
@@ -57,15 +59,15 @@ type: design
 
 **字段定义**
 
-| 字段         | 类型     | 必填 | 说明                           |
-| ------------ | -------- | ---- | ------------------------------ |
-| `title`      | String   | ✓    | 问题标题，最多 200 字          |
-| `content`    | RichText | ✓    | 官方回答                       |
-| `sku`        | String   | ✗    | 关联商品 SKU；为空表示公共 FAQ |
-| `is_public`  | Boolean  | ✓    | 是否已发布（默认 false）       |
-| `order`      | Integer  | ✓    | 排序权重，越小越靠前（默认 0） |
-| `created_at` | DateTime | 自动 | 创建时间                       |
-| `updated_at` | DateTime | 自动 | 更新时间                       |
+| 字段         | 类型     | 必填 | 说明                                                                 |
+| ------------ | -------- | ---- | -------------------------------------------------------------------- |
+| `title`      | String   | ✓    | 问题标题，最多 200 字                                                |
+| `content`    | RichText | ✓    | 官方回答                                                             |
+| `sku`        | String   | ✗    | 关联商品 SKU；为空表示公共 FAQ（Strapi schema 中 `required: false`） |
+| `is_public`  | Boolean  | ✓    | 是否已发布（默认 false）                                             |
+| `order`      | Integer  | ✓    | 排序权重，越小越靠前（默认 0）                                       |
+| `created_at` | DateTime | 自动 | 创建时间                                                             |
+| `updated_at` | DateTime | 自动 | 更新时间                                                             |
 
 **验证规则**
 
@@ -171,6 +173,8 @@ GET /api/product-qa/by-sku/:sku?page=1&pageSize=10
 - 按 `order` 和 `createdAt` 排序
 - 分页：默认 10 条，支持 `?page=1&pageSize=10`
 
+**Strapi 实际响应形状（`data` / `meta`）** 中每条为 snake_case，含 `item_type: "faq" | "user_qa"`、`question_text`、`answer_text` 等；Prism `product-qa.ts` 归一为 `ProductQuestion`（含 `kind`）。若只对接 Strapi，请以运行中的 `GET /api/product-qa/by-sku/:sku` 为准。
+
 ---
 
 ### 2. 提交问题
@@ -187,6 +191,8 @@ Content-Type: application/json
   "content": "这个产品支持国际保修吗？"
 }
 ```
+
+**Prism BFF（`POST /api/product-qa/questions`）一期实现** 在 JSON 中额外要求 `authorName`、`authorEmail`、`magentoUserId`（来自 Magento 登录态），由 BFF 转写为 Strapi `data` 的 `author_name`、`author_email`、`magento_user_id`。理想情况下后端仅信任 token 解析出的身份，当前实现与前端字段一致以便联调。
 
 **响应（201 Created）**
 
@@ -244,32 +250,30 @@ Content-Type: application/json
 
 ## 五、Prism 前端接入
 
-### 实施清单
+### 实施清单（与仓库一致的路径）
 
-1. **新增 API 路由** `apps/prism/app/api/product-qa/[sku]/route.ts`
+1. **BFF 路由（只读 / 写入分离）**
 
-   - GET：代理 Strapi 查询，缓存 5 分钟
-   - POST：代理用户提问提交，需要认证
+   - `apps/prism/app/api/product-qa/by-sku/[sku]/route.ts` — GET，代理 Strapi 聚合列表，`revalidate` 由客户端 fetch 侧配置（5 分钟）
+   - `apps/prism/app/api/product-qa/questions/route.ts` — POST，代理用户提问（需 `Authorization: Bearer`）
 
-2. **新增 Strapi 客户端** `apps/prism/lib/api/strapi/product-qa.ts`
+2. **Strapi 客户端** `apps/prism/lib/api/strapi/product-qa.ts`
 
-   - `fetchProductQaBySku(sku, page, pageSize)`
-   - `submitProductQuestion(sku, content, token)`
+   - `fetchProductQaBySku(sku, page, pageSize)` → 请求 Strapi `GET /api/product-qa/by-sku/:sku`（聚合 FAQ + 已公开用户问答）
+   - `submitProductQuestion(input, accessToken)` → 请求 Strapi `POST /api/product-qa/questions`；body 除 `sku`、`content` 外包含由前端从登录态填写的 `author_name`、`author_email`、`magento_user_id`（与 Magento SSO 用户对象对齐；后端仍应视安全策略校验 token）
 
-3. **新增 PDP 组件** `apps/prism/app/products/[sku]/ProductQA.tsx`
+3. **PDP 组件** `apps/prism/app/products/[sku]/ProductQA.tsx` — 列表（Official FAQ / Customer Q&A，对应 `kind`）、分页、提问表单
 
-   - 展示 FAQ + Q&A 列表
-   - 提问表单
-   - 分页与加载状态
+4. **页面集成** `page.tsx` + `ProductDetailReviewShell.tsx` — 服务端首刷拉取 Q&A，置于 reviews 下方
 
-4. **在 PDP 页面集成** `apps/prism/app/products/[sku]/page.tsx`
+5. **测试** `ProductQA.spec.tsx`、`product-qa-api.spec.ts`、`product-qa-route.spec.ts`
 
-   - 在 reviews 下方或单独区域展示 ProductQA 组件
+### Strapi 侧对应实现（helpcenter）
 
-5. **新增测试** `apps/prism/tests/ProductQA.spec.tsx`
-   - 列表渲染
-   - 提问提交
-   - 错误处理
+- 聚合读取：`GET /api/product-qa/by-sku/:sku` 在 `product-question` 自定义路由中注册，处理器 `findAggregatedBySku`（合并 `product-faq` 与已发布/已回答的 `product-question`，FAQ 在前按 `order`，用户问答在后按时间；分页在合并后切片，适用于总量可控的一期）。
+- 仅用户问答列表（保留兼容）：`GET /api/product-qa/questions/by-sku/:sku`。
+- 写入：`POST /api/product-qa/questions`，实现于 `product-question` 自定义 `create`。
+- 聚合条目标记 `item_type: 'faq' | 'user_qa'`，并与 Prism `ProductQuestion.kind` 对应。
 
 ### 关键设计原则
 

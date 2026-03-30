@@ -1,12 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import { FormEvent, useMemo, useRef, useState } from 'react';
 import { LoaderCircle, Upload, Video, X } from 'lucide-react';
 import type { ProductReviewMedia } from '../../../lib/api/strapi/reviews';
 import { useAuth } from '../../../lib/auth/context';
 import { useAuthModal } from '../../../lib/auth-modal/context';
 import type { ReviewTarget } from './ProductReviews';
+import { ReviewImagePreview } from './ReviewImagePreview';
 
 interface ReviewFormProps {
   sku: string;
@@ -25,7 +25,6 @@ interface UploadingReviewMedia {
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
-const RATING_OPTIONS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1] as const;
 const MAX_ATTACHMENTS = 6;
 const MAX_VIDEO_COUNT = 1;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -105,11 +104,45 @@ function RatingStars({ rating, active }: { rating: number; active: boolean }) {
   );
 }
 
+function RatingControl({
+  rating,
+  onChange,
+}: {
+  rating: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded-full border border-border bg-background p-2">
+      <div className="relative">
+        <RatingStars rating={rating} active={rating > 0} />
+        <div className="absolute inset-0 grid grid-cols-10">
+          {Array.from({ length: 10 }, (_, index) => {
+            const value = (index + 1) / 2;
+            const isLeftHalf = index % 2 === 0;
+
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onChange(value)}
+                aria-label={`Rate ${value.toFixed(1)} out of 5`}
+                className={
+                  isLeftHalf ? 'h-full rounded-l-full' : 'h-full rounded-r-full'
+                }
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
   const { user, accessToken, isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [rating, setRating] = useState<(typeof RATING_OPTIONS)[number]>(5);
+  const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [uploads, setUploads] = useState<UploadingReviewMedia[]>([]);
@@ -394,29 +427,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
                 {rating.toFixed(1)} / 5
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {RATING_OPTIONS.map(option => {
-                const active = option === rating;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setRating(option)}
-                    className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-left transition ${
-                      active
-                        ? 'border-brand bg-brand/10 text-brand'
-                        : 'border-border bg-background text-ink hover:border-brand/40'
-                    }`}
-                    aria-label={`Rate ${option} out of 5`}
-                  >
-                    <RatingStars rating={option} active={active} />
-                    <span className="text-sm font-semibold">
-                      {option.toFixed(1)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <RatingControl rating={rating} onChange={setRating} />
           </div>
 
           <div>
@@ -532,12 +543,14 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
                       {upload.status === 'uploaded' &&
                         upload.media &&
                         upload.kind === 'image' && (
-                          <Image
+                          <ReviewImagePreview
                             src={upload.media.url}
                             alt={upload.media.alt ?? upload.fileName}
                             width={160}
                             height={112}
-                            className="h-full w-full object-cover"
+                            thumbnailClassName="h-full w-full object-cover"
+                            buttonClassName="h-full w-full cursor-pointer"
+                            previewLabel={`Preview image ${upload.fileName}`}
                           />
                         )}
                       {upload.status === 'uploaded' &&

@@ -8,6 +8,10 @@ import {
   type ProductReviewListResult,
   type ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
+import {
+  fetchProductQaBySku,
+  type ProductQaListResult,
+} from '../../../lib/api/strapi/product-qa';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { SellingPoints } from './SellingPoints';
@@ -59,27 +63,49 @@ export default async function ProductDetailPage({ params }: Props) {
     },
   };
 
+  let initialProductQa: ProductQaListResult = {
+    sku: decodedSku,
+    items: [],
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      pageCount: 0,
+      total: 0,
+    },
+  };
+
   if (decodedSku === MOCK_PRODUCT_SKU) {
     data = { product: mockProduct, cms: mockProductExtras };
   } else {
-    const [fetchedProduct, fetchedSummary, fetchedReviews] = await Promise.all([
-      fetchUnifiedProductBySku(decodedSku).catch(() => null),
-      fetchReviewSummaryBySku(decodedSku).catch(() => ({
-        sku: decodedSku,
-        average: 0,
-        total: 0,
-        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      })),
-      fetchReviewsBySku(decodedSku, 1, 10).catch(() => ({
-        items: [],
-        pagination: {
-          page: 1,
-          pageSize: 10,
-          pageCount: 0,
+    const [fetchedProduct, fetchedSummary, fetchedReviews, fetchedProductQa] =
+      await Promise.all([
+        fetchUnifiedProductBySku(decodedSku).catch(() => null),
+        fetchReviewSummaryBySku(decodedSku).catch(() => ({
+          sku: decodedSku,
+          average: 0,
           total: 0,
-        },
-      })),
-    ]);
+          distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        })),
+        fetchReviewsBySku(decodedSku, 1, 10).catch(() => ({
+          items: [],
+          pagination: {
+            page: 1,
+            pageSize: 10,
+            pageCount: 0,
+            total: 0,
+          },
+        })),
+        fetchProductQaBySku(decodedSku, 1, 10).catch(() => ({
+          sku: decodedSku,
+          items: [],
+          pagination: {
+            page: 1,
+            pageSize: 10,
+            pageCount: 0,
+            total: 0,
+          },
+        })),
+      ]);
 
     if (!fetchedProduct) notFound();
 
@@ -89,6 +115,7 @@ export default async function ProductDetailPage({ params }: Props) {
     };
     reviewSummary = fetchedSummary;
     reviewList = fetchedReviews;
+    initialProductQa = fetchedProductQa;
   }
 
   const { product, cms } = data;
@@ -172,6 +199,7 @@ export default async function ProductDetailPage({ params }: Props) {
             : undefined
         }
         allowSubmit={decodedSku !== MOCK_PRODUCT_SKU}
+        initialProductQa={initialProductQa}
       />
 
       {sectionNavItems.length > 0 && (

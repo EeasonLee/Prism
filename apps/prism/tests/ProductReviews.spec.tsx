@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductReviews } from '../app/products/[sku]/ProductReviews';
 import type {
@@ -135,5 +136,65 @@ describe('ProductReviews', () => {
       summaryNode.compareDocumentPosition(reviewTitle) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
+  });
+
+  it('renders summary distribution with integer star buckets only', () => {
+    render(
+      <ProductReviews
+        sku="PARENT"
+        target={target}
+        summary={summary}
+        initialReviews={[review]}
+        initialPagination={pagination}
+      />
+    );
+
+    const summaryNode = screen.getByTestId('reviews-summary');
+    const summaryLines = within(summaryNode).getAllByText(
+      (_content, node) => node?.tagName === 'SPAN'
+    );
+    const labels = summaryLines
+      .map(node => node.textContent?.trim() ?? '')
+      .filter(Boolean);
+
+    expect(labels).toContain('5');
+    expect(labels).toContain('4');
+    expect(labels).toContain('3');
+    expect(labels).toContain('2');
+    expect(labels).toContain('1');
+    expect(labels).not.toContain('4.5');
+    expect(labels).not.toContain('3.5');
+    expect(labels).not.toContain('2.5');
+    expect(labels).not.toContain('1.5');
+  });
+
+  it('opens an image preview dialog from review media thumbnails', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ProductReviews
+        sku="PARENT"
+        target={target}
+        summary={summary}
+        initialReviews={[review]}
+        initialPagination={pagination}
+      />
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: /preview review image/i })
+    );
+
+    const dialog = screen.getByRole('dialog', { name: /image preview/i });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByAltText('Review image')).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: /close image preview/i })
+    );
+
+    expect(
+      screen.queryByRole('dialog', { name: /image preview/i })
+    ).not.toBeInTheDocument();
   });
 });

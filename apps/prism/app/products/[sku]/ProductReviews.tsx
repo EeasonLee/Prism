@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { BadgeCheck, LoaderCircle, Star, ThumbsUp, Video } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
@@ -13,19 +12,24 @@ import type {
 import { Pagination } from '../../recipes/components/Pagination';
 import { getReviewVisitorKey } from './review-visitor-key';
 import { ReviewForm } from './ReviewForm';
+import { ReviewImagePreview } from './ReviewImagePreview';
 import type { ProductPageExtras, Review as MockReview } from './mock-data';
+
+interface SummaryDistribution {
+  '1': number;
+  '2': number;
+  '3': number;
+  '4': number;
+  '5': number;
+}
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
-const DISTRIBUTION_KEYS: ProductReviewDistributionKey[] = [
+const DISTRIBUTION_KEYS: Array<keyof SummaryDistribution> = [
   '5',
-  '4.5',
   '4',
-  '3.5',
   '3',
-  '2.5',
   '2',
-  '1.5',
   '1',
 ];
 const SORT_OPTIONS = [
@@ -103,7 +107,7 @@ function RatingBar({
   count,
   total,
 }: {
-  label: ProductReviewDistributionKey;
+  label: keyof SummaryDistribution;
   count: number;
   total: number;
 }) {
@@ -152,6 +156,18 @@ function getInitials(name: string) {
   return parts.map(part => part[0]?.toUpperCase() ?? '').join('');
 }
 
+function mergeSummaryDistribution(
+  distribution?: Partial<Record<ProductReviewDistributionKey, number>>
+): SummaryDistribution {
+  return {
+    '5': Number(distribution?.['5'] ?? 0),
+    '4': Number(distribution?.['4'] ?? 0) + Number(distribution?.['4.5'] ?? 0),
+    '3': Number(distribution?.['3'] ?? 0) + Number(distribution?.['3.5'] ?? 0),
+    '2': Number(distribution?.['2'] ?? 0) + Number(distribution?.['2.5'] ?? 0),
+    '1': Number(distribution?.['1'] ?? 0) + Number(distribution?.['1.5'] ?? 0),
+  };
+}
+
 function normalizeMockSummary(
   summary: ProductPageExtras['review_summary']
 ): ProductReviewSummary {
@@ -159,7 +175,17 @@ function normalizeMockSummary(
     sku: 'mock',
     average: summary.average,
     total: summary.total,
-    distribution: summary.distribution,
+    distribution: {
+      '1': Number(summary.distribution[1] ?? 0),
+      '1.5': 0,
+      '2': Number(summary.distribution[2] ?? 0),
+      '2.5': 0,
+      '3': Number(summary.distribution[3] ?? 0),
+      '3.5': 0,
+      '4': Number(summary.distribution[4] ?? 0),
+      '4.5': 0,
+      '5': Number(summary.distribution[5] ?? 0),
+    },
   };
 }
 
@@ -198,12 +224,14 @@ function ReviewMediaStrip({ review }: { review: ProductReview }) {
           className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-muted"
         >
           {media.kind === 'image' ? (
-            <Image
+            <ReviewImagePreview
               src={media.url}
               alt={media.alt ?? review.title}
               width={80}
               height={80}
-              className="h-full w-full object-cover"
+              thumbnailClassName="h-full w-full object-cover"
+              buttonClassName="h-full w-full cursor-pointer"
+              previewLabel={`Preview ${media.alt ?? review.title}`}
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-ink-muted">
@@ -465,6 +493,10 @@ export function ProductReviews({
 
   const totalReviews =
     effectiveSummary?.total ?? pagination.total ?? reviews.length;
+  const summaryDistribution = useMemo(
+    () => mergeSummaryDistribution(effectiveSummary?.distribution),
+    [effectiveSummary?.distribution]
+  );
 
   return (
     <section aria-labelledby="reviews-heading" className="py-12 lg:py-16">
@@ -513,7 +545,7 @@ export function ProductReviews({
                 <RatingBar
                   key={key}
                   label={key}
-                  count={effectiveSummary?.distribution[key] ?? 0}
+                  count={summaryDistribution[key]}
                   total={totalReviews}
                 />
               ))}
