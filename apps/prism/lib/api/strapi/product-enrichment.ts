@@ -69,6 +69,18 @@ interface StrapiGuaranteeRaw {
   description?: string | null;
 }
 
+export interface StrapiSpecificationRowRaw {
+  group_key?: string | null;
+  group_title?: string | null;
+  key?: string | null;
+  label?: string | null;
+  value?: string | null;
+  sort_order?: number | null;
+  is_highlighted?: boolean | null;
+  source?: 'template' | 'custom' | null;
+  enabled?: boolean | null;
+}
+
 interface StrapiListResponse<T> {
   data: T[];
   meta: {
@@ -97,6 +109,7 @@ interface StrapiProductEnrichmentRaw {
   videos?: StrapiVideoRaw[] | null;
   key_points?: StrapiKeyPointRaw[] | null;
   guarantees?: StrapiGuaranteeRaw[] | null;
+  specifications?: StrapiSpecificationRowRaw[] | null;
   promotion_label?: string | null;
   promotion_expires_at?: string | null;
   is_featured?: boolean | null;
@@ -126,6 +139,20 @@ export interface ProductEnrichmentGuarantee {
   icon: string;
   title: string;
   description: string;
+}
+
+export interface ProductSpecificationRow {
+  key: string;
+  label: string;
+  value: string;
+  source?: 'template' | 'custom';
+  highlighted?: boolean;
+}
+
+export interface ProductSpecificationGroup {
+  id: string;
+  title: string;
+  rows: ProductSpecificationRow[];
 }
 
 /**
@@ -186,6 +213,8 @@ export interface StrapiProductEnrichment {
   key_points?: ProductEnrichmentKeyPoint[];
   /** 商品保障卡片 */
   guarantees?: ProductEnrichmentGuarantee[];
+  /** 商品规格参数分组 */
+  specifications?: ProductSpecificationGroup[];
   /** 促销标签，如 "New Arrival"、"Buy 2 Get 1"、"Limited Edition" */
   promotion_label?: string;
   /** 促销截止日期（ISO 8601），用于前端自动隐藏过期标签 */
@@ -316,6 +345,81 @@ function normalizeGuarantees(
   return normalized.length > 0 ? normalized : undefined;
 }
 
+export function normalizeSpecifications(
+  rows: StrapiSpecificationRowRaw[] | null | undefined
+): ProductSpecificationGroup[] | undefined {
+  if (!rows || rows.length === 0) return undefined;
+
+  const groupMap = new Map<
+    string,
+    {
+      id: string;
+      title: string;
+      rows: Array<ProductSpecificationRow & { sortOrder: number }>;
+    }
+  >();
+
+  for (const row of rows) {
+    if (row.enabled === false) continue;
+
+    const key = row.key?.trim() ?? '';
+    const label = row.label?.trim() ?? '';
+    const value = row.value?.trim() ?? '';
+    const groupKey = row.group_key?.trim() ?? '';
+    const groupTitle = row.group_title?.trim() ?? '';
+
+    if (!groupKey || !key || !label || !value) continue;
+
+    const compositeKey = `${groupKey}::${groupTitle}`;
+    const existingGroup = groupMap.get(compositeKey);
+
+    if (existingGroup) {
+      existingGroup.rows.push({
+        key,
+        label,
+        value,
+        source: row.source ?? undefined,
+        highlighted: row.is_highlighted ?? undefined,
+        sortOrder: row.sort_order ?? 0,
+      });
+      continue;
+    }
+
+    groupMap.set(compositeKey, {
+      id: groupKey,
+      title: groupTitle || groupKey,
+      rows: [
+        {
+          key,
+          label,
+          value,
+          source: row.source ?? undefined,
+          highlighted: row.is_highlighted ?? undefined,
+          sortOrder: row.sort_order ?? 0,
+        },
+      ],
+    });
+  }
+
+  const groups = Array.from(groupMap.values())
+    .map<ProductSpecificationGroup | null>(group => {
+      if (group.rows.length === 0) return null;
+
+      const normalizedRows = [...group.rows]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(({ sortOrder: _sortOrder, ...normalizedRow }) => normalizedRow);
+
+      return {
+        id: group.id,
+        title: group.title,
+        rows: normalizedRows,
+      };
+    })
+    .filter((group): group is ProductSpecificationGroup => group !== null);
+
+  return groups.length > 0 ? groups : undefined;
+}
+
 function normalizeEnrichment(
   raw: StrapiProductEnrichmentRaw,
   relatedContent?: {
@@ -356,6 +460,7 @@ function normalizeEnrichment(
     videos: normalizeVideos(raw.videos),
     key_points: normalizeKeyPoints(raw.key_points),
     guarantees: normalizeGuarantees(raw.guarantees),
+    specifications: normalizeSpecifications(raw.specifications),
     promotion_label: raw.promotion_label ?? undefined,
     promotion_expires_at: raw.promotion_expires_at ?? undefined,
     is_featured: raw.is_featured ?? undefined,
@@ -395,6 +500,7 @@ export async function fetchProductEnrichments(
     'populate[videos][populate][poster]=true',
     'populate[key_points]=true',
     'populate[guarantees]=true',
+    'populate[specifications]=true',
     'populate[seo]=true',
   ].join('&');
 

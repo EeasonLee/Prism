@@ -68,6 +68,10 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-details', label: 'Details' });
   }
 
+  if ((product.specifications?.length ?? 0) > 0) {
+    sections.push({ id: 'section-specifications', label: 'Specifications' });
+  }
+
   const reviewTotal = reviewSummary?.total ?? cms?.review_summary.total ?? 0;
   if (cms || reviewSummary) {
     sections.push({

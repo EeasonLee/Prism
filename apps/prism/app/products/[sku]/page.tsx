@@ -14,6 +14,7 @@ import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
+import { ProductSpecifications } from './ProductSpecifications';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
 import {
   buildPdpSectionNav,
@@ -210,6 +211,13 @@ export default async function ProductDetailPage({ params }: Props) {
               }}
             />
           </section>
+        </div>
+      )}
+
+      {(product.specifications?.length ?? 0) > 0 && (
+        <div id="section-specifications">
+          <div className="border-t border-border" />
+          <ProductSpecifications groups={product.specifications ?? []} />
         </div>
       )}
 

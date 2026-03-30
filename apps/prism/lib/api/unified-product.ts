@@ -190,6 +190,8 @@ export interface UnifiedProduct extends MagentoProduct {
   recipes?: StrapiProductEnrichment['recipes'];
   /** PDP 关联文章 */
   blog_posts?: StrapiProductEnrichment['blog_posts'];
+  /** PDP 规格参数分组 */
+  specifications?: StrapiProductEnrichment['specifications'];
 }
 
 // ─── 融合函数 ─────────────────────────────────────────────────────────────────
@@ -269,6 +271,7 @@ export function mergeProduct(
     seo_description: enrichment?.seo_description ?? null,
     recipes: enrichment?.recipes,
     blog_posts: enrichment?.blog_posts,
+    specifications: enrichment?.specifications,
   };
 }
 

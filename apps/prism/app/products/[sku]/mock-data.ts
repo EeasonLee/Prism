@@ -340,6 +340,57 @@ export const mockProduct: UnifiedProduct = {
   seo_title: 'JoyDeem Smart Air Fryer Pro 5.5L – Healthy Cooking Made Easy',
   seo_description:
     'Cook crispy, golden meals with 75% less oil. 12 preset programs, 5.5L family capacity, easy-clean basket. Free shipping & 2-year warranty.',
+  specifications: [
+    {
+      id: 'general',
+      title: 'General',
+      rows: [
+        {
+          key: 'capacity',
+          label: 'Capacity',
+          value: '5.5 L',
+          source: 'template',
+          highlighted: true,
+        },
+        {
+          key: 'programs',
+          label: 'Preset Programs',
+          value: '12',
+          source: 'template',
+        },
+        {
+          key: 'temperature_range',
+          label: 'Temperature Range',
+          value: '80°C - 200°C',
+          source: 'template',
+        },
+      ],
+    },
+    {
+      id: 'dimensions',
+      title: 'Dimensions & Power',
+      rows: [
+        {
+          key: 'power',
+          label: 'Rated Power',
+          value: '1700 W',
+          source: 'template',
+        },
+        {
+          key: 'voltage',
+          label: 'Voltage',
+          value: '120 V / 60 Hz',
+          source: 'template',
+        },
+        {
+          key: 'product_size',
+          label: 'Product Size',
+          value: '365 x 300 x 325 mm',
+          source: 'custom',
+        },
+      ],
+    },
+  ],
 };
 
 // ─── 扩展页面区块数据 ─────────────────────────────────────────────────────────
