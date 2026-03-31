@@ -1,4 +1,4 @@
-import type { ArticleDetail } from '@prism/blog';
+import type { ArticleDetail } from '@prism/blog/api/types';
 import type { Metadata } from 'next';
 import { env } from './env';
 import type { Recipe } from '../app/recipes/types';
