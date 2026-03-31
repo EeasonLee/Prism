@@ -11,7 +11,7 @@ import {
 } from '@prism/ui/components/carousel';
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import Autoplay from 'embla-carousel-autoplay';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface HeroSlide {
   image: string;
@@ -46,23 +46,35 @@ export function HeroCarousel({
       return;
     }
 
-    setCurrent(api.selectedScrollSnap());
-
-    api.on('select', () => {
+    const handleSelect = () => {
       setCurrent(api.selectedScrollSnap());
-    });
+    };
+
+    handleSelect();
+    api.on('select', handleSelect);
+    api.on('reInit', handleSelect);
+
+    return () => {
+      api.off('select', handleSelect);
+      api.off('reInit', handleSelect);
+    };
   }, [api]);
 
-  const plugin = Autoplay({
-    delay: autoPlayInterval,
-    stopOnInteraction: false,
-  });
+  const plugin = useMemo(
+    () =>
+      Autoplay({
+        delay: autoPlayInterval,
+        stopOnInteraction: false,
+      }),
+    [autoPlayInterval]
+  );
+  const plugins = useMemo(() => [plugin], [plugin]);
 
   return (
     <div className={cn('relative w-full overflow-hidden', height)}>
       <Carousel
         setApi={setApi}
-        plugins={[plugin]}
+        plugins={plugins}
         className="h-full w-full"
         opts={{
           align: 'start',
@@ -77,13 +89,14 @@ export function HeroCarousel({
               : { className: 'relative h-full w-full' };
 
             return (
-              <CarouselItem key={index} className="h-full pl-0">
+              <CarouselItem key={slide.image || index} className="h-full pl-0">
                 <Wrapper {...wrapperProps}>
                   <OptimizedImage
                     src={slide.image}
                     alt={slide.alt}
                     fill
                     className="object-cover"
+                    forceUnoptimized
                     priority={index === 0}
                     sizes="100vw"
                   />

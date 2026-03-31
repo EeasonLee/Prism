@@ -42,6 +42,10 @@ export interface OptimizedImageProps
    * 图片加载失败时的回调
    */
   onImageError?: (error: Error) => void;
+  /**
+   * 强制禁用 Next.js 图片优化，适用于轮播等需要避免多尺寸重复请求的场景
+   */
+  forceUnoptimized?: boolean;
 }
 
 /**
@@ -79,6 +83,7 @@ export function OptimizedImage({
   placeholder,
   preferredFormat,
   onImageError,
+  forceUnoptimized = false,
   ...imageProps
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
@@ -103,7 +108,8 @@ export function OptimizedImage({
   }
 
   // 判断是否需要禁用优化
-  const unoptimized = shouldDisableImageOptimization(imageUrl);
+  const unoptimized =
+    forceUnoptimized || shouldDisableImageOptimization(imageUrl);
 
   // 处理图片加载错误
   const handleError = (_e: React.SyntheticEvent<HTMLImageElement, Event>) => {
