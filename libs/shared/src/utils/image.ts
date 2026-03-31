@@ -14,6 +14,26 @@ function isDevelopment(): boolean {
   return process.env['NODE_ENV'] === 'development';
 }
 
+function getDefaultImageBaseUrl(): string {
+  return isDevelopment()
+    ? 'http://localhost:1337'
+    : 'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages';
+}
+
+function getImageBaseUrl(): string {
+  return getEnv('NEXT_PUBLIC_IMAGE_BASE_URL') || getDefaultImageBaseUrl();
+}
+
+function isPrivateImageHost(url: string): boolean {
+  return (
+    url.startsWith('http://localhost') ||
+    url.startsWith('http://127.0.0.1') ||
+    url.startsWith('http://192.168') ||
+    url.startsWith('http://10.') ||
+    url.startsWith('http://172.')
+  );
+}
+
 /**
  * Strapi 图片格式类型
  */
@@ -66,14 +86,8 @@ export function processImageUrl(url: string | null | undefined): string | null {
     return url;
   }
 
-  // 相对路径，根据环境拼接前缀
-  // 优先使用环境变量，否则使用默认值
-  const imageBaseUrl = getEnv('NEXT_PUBLIC_IMAGE_BASE_URL');
-  const baseUrl = imageBaseUrl
-    ? imageBaseUrl
-    : isDevelopment()
-    ? 'http://localhost:1337'
-    : 'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages';
+  // 相对路径，根据环境变量拼接前缀
+  const baseUrl = getImageBaseUrl();
 
   // 确保 baseUrl 不以 / 结尾（除了根路径）
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '') || baseUrl;
@@ -117,11 +131,6 @@ export function extractImageUrl(
  */
 export function shouldDisableImageOptimization(url: string | null): boolean {
   if (!url) return false;
-  return (
-    url.startsWith('http://localhost') ||
-    url.startsWith('http://127.0.0.1') ||
-    url.startsWith('http://192.168') ||
-    url.startsWith('http://10.') ||
-    url.startsWith('http://172.')
-  );
+
+  return !isPrivateImageHost(url);
 }

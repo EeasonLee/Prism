@@ -1,6 +1,8 @@
 import type { HeroSlide } from '@/app/components/HeroCarousel';
 import { HeroCarousel } from '@/app/components/HeroCarousel';
 import { fetchCategoryByType } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { buildStaticMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
 import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
 import { ProductCategories } from '@prism/blog/components/ProductCategories';
@@ -30,6 +32,19 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
 }
 
 export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+
+export const metadata: Metadata = buildStaticMetadata({
+  title: 'Joydeem Blog | Kitchen Guides, Tips, and Inspiration',
+  description:
+    'Browse Joydeem blog articles for kitchen guides, product knowledge, recipes, and cooking inspiration.',
+  path: '/blog',
+  keywords: [
+    'Joydeem blog',
+    'kitchen guides',
+    'cooking tips',
+    'recipe articles',
+  ],
+});
 
 export default async function BlogPage() {
   // 服务端获取轮播图数据、产品分类和主题分类

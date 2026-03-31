@@ -5,6 +5,8 @@ import {
   searchArticles,
   type CategoryDetail,
 } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { buildStaticMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import type {
   ArticlesFilters,
   ArticlesSearchInitialData,
@@ -23,6 +25,24 @@ type PageProps = {
   params: Promise<{ category: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { category } = await params;
+  const categoryLabel =
+    category === 'all' ? 'All Articles' : category.replace(/-/g, ' ');
+
+  return buildStaticMetadata({
+    title: `${categoryLabel} | Joydeem Blog`,
+    description:
+      category === 'all'
+        ? 'Browse all Joydeem blog articles across product guides, cooking tips, and kitchen inspiration.'
+        : `Browse Joydeem blog articles about ${categoryLabel} with practical kitchen advice and inspiration.`,
+    path: `/blog/${category}`,
+    keywords: ['Joydeem blog', categoryLabel, 'kitchen articles'],
+  });
+}
 
 function parseNumber(value: string | string[] | undefined): number | undefined {
   if (!value) return undefined;

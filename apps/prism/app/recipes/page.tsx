@@ -1,4 +1,6 @@
 import type { HeroSlide } from '@/app/components/HeroCarousel';
+import { buildStaticMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import { processImageUrl } from '@prism/shared';
 import type { CarouselItemResponse } from '../../lib/api/carousel';
 import { getCarouselItems } from '../../lib/api/carousel';
@@ -7,6 +9,19 @@ import { RecipesClient } from './RecipesClient';
 import type { SelectedFilters } from './types';
 
 export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+
+export const metadata: Metadata = buildStaticMetadata({
+  title: 'Joydeem Recipes | Step-by-Step Kitchen Inspiration',
+  description:
+    'Find Joydeem recipes with ingredient ideas, cooking filters, and step-by-step instructions for everyday meals.',
+  path: '/recipes',
+  keywords: [
+    'Joydeem recipes',
+    'easy recipes',
+    'home cooking',
+    'kitchen inspiration',
+  ],
+});
 
 type RecipesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

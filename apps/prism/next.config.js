@@ -5,6 +5,51 @@ const { join } = require('path');
 // 读取环境变量
 const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const imageBaseUrl = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
+
+function createRemotePattern(url, pathname = '/**') {
+  if (!url) return null;
+
+  const parsedUrl = new URL(url);
+  return {
+    protocol: parsedUrl.protocol.replace(':', ''),
+    hostname: parsedUrl.hostname,
+    ...(parsedUrl.port ? { port: parsedUrl.port } : {}),
+    pathname,
+  };
+}
+
+const configuredImagePattern = createRemotePattern(imageBaseUrl);
+const imageRemotePatterns = [
+  {
+    protocol: 'https',
+    hostname: 'images.unsplash.com',
+  },
+  {
+    protocol: 'http',
+    hostname: 'localhost',
+    port: '1337',
+    pathname: '/uploads/**',
+  },
+  {
+    protocol: 'http',
+    hostname: '192.168.50.244',
+    port: '1337',
+    pathname: '/uploads/**',
+  },
+  {
+    protocol: 'http',
+    hostname: '192.168.50.240',
+    port: '1337',
+    pathname: '/uploads/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'd2s2mafqv46idp.cloudfront.net',
+    pathname: '/joydeem/media/pages/**',
+  },
+  configuredImagePattern,
+].filter(Boolean);
 
 // 构建时注入版本号，单一来源：apps/prism/package.json（用 fs 读取避免 tsconfig 将 package.json 纳入项目）
 const prismPkg = JSON.parse(
@@ -25,34 +70,7 @@ const nextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '1337',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '192.168.50.244',
-        port: '1337',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '192.168.50.240',
-        port: '1337',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**', // 允许所有 HTTPS 域名（生产环境建议限制具体域名）
-      },
-    ],
+    remotePatterns: imageRemotePatterns,
   },
   // 配置 API 代理（仅当启用代理时）
   ...(useApiProxy && apiUrl
