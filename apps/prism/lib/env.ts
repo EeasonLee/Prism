@@ -7,7 +7,22 @@ const serverSchema = z.object({
 
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-  NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  NEXT_PUBLIC_API_URL: z.preprocess(
+    val => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z
+      .string()
+      .refine(
+        value =>
+          value.startsWith('http://') ||
+          value.startsWith('https://') ||
+          value.startsWith('/'),
+        {
+          message:
+            'NEXT_PUBLIC_API_URL must be an absolute URL or a relative path starting with /',
+        }
+      )
+      .optional()
+  ),
   NEXT_PUBLIC_IMAGE_BASE_URL: z.string().url().optional(), // 图片基础 URL，用于处理相对路径
   NEXT_PUBLIC_LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'])

@@ -59,12 +59,20 @@ export function getApiBaseUrl(): string {
   }
 
   const baseUrl = env.NEXT_PUBLIC_API_URL;
-  if (!baseUrl) {
-    throw new Error('NEXT_PUBLIC_API_URL is required');
+  if (baseUrl) {
+    // 移除末尾的斜杠，统一处理
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   }
 
-  // 移除末尾的斜杠，统一处理
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  // 未配置 NEXT_PUBLIC_API_URL 时：
+  // - 客户端默认走同源请求（当前站点域名）
+  // - 服务端回退到 NEXT_PUBLIC_APP_URL 以保证 fetch URL 可用
+  if (!isServerSide()) {
+    return '';
+  }
+
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
+  return appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
 }
 
 /**
