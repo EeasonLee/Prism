@@ -1,4 +1,11 @@
-import { fetchArticleBySlug, fetchArticleCategories } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { fetchArticleBySlug } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import {
+  buildArticleMetadata,
+  buildArticleSchema,
+  buildBreadcrumbSchema,
+} from '@/lib/seo';
+import type { Metadata } from 'next';
+import { cache } from 'react';
 import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
 import { ArticleSidebar } from '@prism/blog/components/ArticleSidebar';
 import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
@@ -14,6 +21,34 @@ type ArticleDetailPageProps = {
 };
 
 export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+
+const getArticleDetail = cache(async (slug: string, locale: string) => {
+  const { data: article } = await fetchArticleBySlug(slug, locale);
+  return article;
+});
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: ArticleDetailPageProps): Promise<Metadata> {
+  const { category, slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const locale = Array.isArray(resolvedSearchParams.locale)
+    ? resolvedSearchParams.locale[0]
+    : resolvedSearchParams.locale || 'en';
+
+  try {
+    const article = await getArticleDetail(slug, locale);
+    return buildArticleMetadata(article, category);
+  } catch {
+    return {
+      title: 'Article Not Found | Joydeem Blog',
+      description:
+        'Read kitchen insights, product guides, and cooking inspiration from Joydeem.',
+      alternates: { canonical: `/blog/${category}/${slug}` },
+    };
+  }
+}
 
 export default async function ArticleDetailPage({
   params,
@@ -34,42 +69,15 @@ export default async function ArticleDetailPage({
 
   try {
     // 在服务端获取文章数据
-    const { data: article } = await fetchArticleBySlug(slug, locale);
+    const article = await getArticleDetail(slug, locale);
 
     // 验证 URL 中的 category 是否与文章的实际分类匹配
-    const actualCategorySlug = article.categories?.[0]?.slug;
+    const primaryCategory = article.categories?.[0];
+    const actualCategorySlug = primaryCategory?.slug;
     if (actualCategorySlug && category !== actualCategorySlug) {
       // 重定向到正确的路由（服务端重定向）
       redirect(`/blog/${actualCategorySlug}/${slug}`);
     }
-
-    // 获取分类信息（用于面包屑）
-    const categoriesRes = await fetchArticleCategories({
-      rootOnly: true,
-      includeChildren: true,
-      level: '1-2',
-      locale,
-    });
-    const categories = categoriesRes.data;
-
-    // 查找当前分类信息（用于面包屑）
-    const findCategory = (
-      list: typeof categories,
-      slug: string
-    ): (typeof categories)[0] | undefined => {
-      for (const cat of list) {
-        if (cat.slug === slug) return cat;
-        if (cat.children) {
-          const found = findCategory(cat.children, slug);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-
-    const currentCategory = actualCategorySlug
-      ? findCategory(categories, actualCategorySlug)
-      : undefined;
 
     // 检查是否有侧边栏内容
     const hasProducts = article.products && article.products.length > 0;
@@ -78,55 +86,72 @@ export default async function ArticleDetailPage({
       Array.isArray(article.relatedArticles) &&
       article.relatedArticles.length > 0;
     const hasSidebarContent = hasProducts || hasRelatedArticles;
+    const canonicalCategory = actualCategorySlug ?? category;
+    const breadcrumbSource = [
+      { name: 'Blog', path: '/blog' },
+      ...(primaryCategory
+        ? [
+            {
+              name: primaryCategory.name,
+              path: `/blog/${primaryCategory.slug}`,
+            },
+          ]
+        : []),
+      {
+        name: article.title,
+        path: `/blog/${canonicalCategory}/${slug}`,
+      },
+    ];
+    const breadcrumbItems = breadcrumbSource.map((item, index) => ({
+      label: item.name,
+      href: index === breadcrumbSource.length - 1 ? '#' : item.path,
+    }));
+    const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
+    const articleSchema = buildArticleSchema(article, canonicalCategory);
 
     return (
-      <div className="min-h-screen bg-white">
-        {/* Breadcrumb */}
-        <div className="border-b border-gray-200 bg-white">
-          <PageContainer className="py-4">
-            <Breadcrumb
-              items={[
-                { label: 'Blog', href: '/blog' },
-                ...(currentCategory
-                  ? [
-                      {
-                        label: currentCategory.name,
-                        href: `/blog/${currentCategory.slug}`,
-                      },
-                    ]
-                  : []),
-                { label: article.title, href: '#' },
-              ]}
-            />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([breadcrumbSchema, articleSchema]),
+          }}
+        />
+        <div className="min-h-screen bg-white">
+          {/* Breadcrumb */}
+          <div className="border-b border-gray-200 bg-white">
+            <PageContainer className="py-4">
+              <Breadcrumb items={breadcrumbItems} />
+            </PageContainer>
+          </div>
+
+          <PageContainer className="py-8">
+            <div
+              className={
+                hasSidebarContent
+                  ? 'grid gap-8 lg:grid-cols-[1fr,360px]'
+                  : 'w-full'
+              }
+            >
+              {/* 文章内容：min-w-0 + overflow-x-hidden 防止 CMS 正文撑出视口 */}
+              <div className="min-w-0 overflow-x-hidden">
+                <ArticleDetail article={article} />
+              </div>
+
+              {/* 右侧固定栏 - 桌面显示 */}
+              {hasSidebarContent && (
+                <div className="hidden lg:block">
+                  <ArticleSidebar article={article} />
+                </div>
+              )}
+            </div>
+            {/* 移动端：Related Products / Related Articles 在正文下方单列展示（始终渲染区块，由 ArticleSidebar 内部判断是否有内容） */}
+            <div className="mt-8 block w-full lg:hidden">
+              <ArticleSidebar article={article} />
+            </div>
           </PageContainer>
         </div>
-
-        <PageContainer className="py-8">
-          <div
-            className={
-              hasSidebarContent
-                ? 'grid gap-8 lg:grid-cols-[1fr,360px]'
-                : 'w-full'
-            }
-          >
-            {/* 文章内容：min-w-0 + overflow-x-hidden 防止 CMS 正文撑出视口 */}
-            <div className="min-w-0 overflow-x-hidden">
-              <ArticleDetail article={article} />
-            </div>
-
-            {/* 右侧固定栏 - 桌面显示 */}
-            {hasSidebarContent && (
-              <div className="hidden lg:block">
-                <ArticleSidebar article={article} />
-              </div>
-            )}
-          </div>
-          {/* 移动端：Related Products / Related Articles 在正文下方单列展示（始终渲染区块，由 ArticleSidebar 内部判断是否有内容） */}
-          <div className="mt-8 block w-full lg:hidden">
-            <ArticleSidebar article={article} />
-          </div>
-        </PageContainer>
-      </div>
+      </>
     );
   } catch (error) {
     // 处理错误
