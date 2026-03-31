@@ -40,6 +40,28 @@ export function ProductCategories({
     return categories.slice(start, end);
   }, [categories, currentPage, itemsPerPage]);
 
+  const desktopColumnsClass = useMemo(() => {
+    const desktopColumns = Math.min(
+      currentCategories.length,
+      ITEMS_PER_PAGE_DESKTOP
+    );
+
+    switch (desktopColumns) {
+      case 1:
+        return 'lg:grid-cols-1';
+      case 2:
+        return 'lg:grid-cols-2';
+      case 3:
+        return 'lg:grid-cols-3';
+      case 4:
+        return 'lg:grid-cols-4';
+      case 5:
+        return 'lg:grid-cols-5';
+      default:
+        return 'lg:grid-cols-6';
+    }
+  }, [currentCategories.length]);
+
   const handlePrev = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
   };
@@ -98,7 +120,9 @@ export function ProductCategories({
 
           {/* 分类网格：移动端单行 4 列，sm 及以上多行 */}
           <div className="min-w-0 flex-1">
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+            <div
+              className={`mx-auto grid w-fit grid-cols-4 gap-2 sm:w-full sm:grid-cols-3 sm:gap-4 ${desktopColumnsClass}`}
+            >
               {currentCategories.map(category => {
                 return (
                   <Link
