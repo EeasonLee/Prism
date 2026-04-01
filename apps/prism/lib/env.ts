@@ -23,6 +23,8 @@ const clientSchema = z.object({
   NEXT_PUBLIC_APP_VERSION: z.string().optional(),
   // Magento/SSO 服务地址（独立于 Strapi）
   NEXT_PUBLIC_MAGENTO_API_URL: z.string().url().optional(),
+  // Magento GraphQL 端点（直接访问 Magento GraphQL，不经过 SSO 代理）
+  NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: z.string().url().optional(),
   // Meilisearch 服务地址（商品搜索与分类检索）
   NEXT_PUBLIC_MEILISEARCH_HOST: z.string().url().optional(),
 });
@@ -39,6 +41,7 @@ export const env = mergedSchema.parse({
   NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
   NEXT_PUBLIC_MAGENTO_API_URL: process.env.NEXT_PUBLIC_MAGENTO_API_URL,
+  NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL,
   NEXT_PUBLIC_MEILISEARCH_HOST: process.env.NEXT_PUBLIC_MEILISEARCH_HOST,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   STRAPI_API_TOKEN: process.env.STRAPI_API_TOKEN,
