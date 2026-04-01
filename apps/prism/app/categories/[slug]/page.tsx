@@ -3,14 +3,11 @@ import { categoryService } from '../../../lib/services/category.service';
 import { productService } from '../../../lib/services/product.service';
 import { mapProductListItem } from '../../../lib/mappers/product.mapper';
 import { mergeProduct } from '../../../lib/api/unified-product';
-import { ProductCard } from '../components/ProductCard';
+import { ProductCard } from '../../shop/components/ProductCard';
 import type { MagentoProduct } from '../../../lib/api/magento/types';
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{
-    page?: string;
-  }>;
 }
 
 function toMagentoProduct(
@@ -46,24 +43,27 @@ function toMagentoProduct(
 
 interface CategoryNode {
   id: number;
+  name: string;
   url_key: string;
   children: CategoryNode[];
 }
 
-async function getCategoryIdByUrlKey(urlKey: string): Promise<number | null> {
+async function findCategory(
+  urlKey: string
+): Promise<{ id: number; name: string } | null> {
   try {
     const tree = await categoryService.getCategoryTree({ rootId: 2 });
 
-    function findByUrlKey(node: CategoryNode): number | null {
-      if (node.url_key === urlKey) return node.id;
+    function find(node: CategoryNode): { id: number; name: string } | null {
+      if (node.url_key === urlKey) return { id: node.id, name: node.name };
       for (const child of node.children || []) {
-        const found = findByUrlKey(child);
+        const found = find(child);
         if (found) return found;
       }
       return null;
     }
 
-    return findByUrlKey(tree as CategoryNode);
+    return find(tree as CategoryNode);
   } catch {
     return null;
   }
@@ -71,17 +71,19 @@ async function getCategoryIdByUrlKey(urlKey: string): Promise<number | null> {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  return { title: `${slug} - Shop - Joydeem` };
+  const category = await findCategory(slug);
+  const name = category?.name ?? slug;
+  return { title: `${name} - Shop - Joydeem` };
 }
 
-export default async function ShopCategoryPage({ params }: Props) {
+export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
 
-  const categoryId = await getCategoryIdByUrlKey(slug);
-  if (!categoryId) notFound();
+  const category = await findCategory(slug);
+  if (!category) notFound();
 
   const productResponse = await productService
-    .getProducts({ categoryId, pageSize: 24 })
+    .getProducts({ categoryId: category.id, pageSize: 24 })
     .catch(() => null);
 
   if (!productResponse) notFound();
@@ -93,7 +95,9 @@ export default async function ShopCategoryPage({ params }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 sm:px-6 lg:px-[50px]">
-      <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">{slug}</h1>
+      <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">
+        {category.name}
+      </h1>
 
       <div className="min-w-0 flex-1">
         {products.length === 0 ? (

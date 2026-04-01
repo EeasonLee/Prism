@@ -25,7 +25,7 @@ function CategoryItem({
   return (
     <li>
       <Link
-        href={`/shop/${cat.id}` as Route}
+        href={`/categories/${cat.url_key ?? cat.id}` as Route}
         className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
           isActive
             ? 'bg-brand/10 font-semibold text-brand'
