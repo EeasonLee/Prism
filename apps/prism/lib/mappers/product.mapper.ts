@@ -55,7 +55,6 @@ export function mapProductList(
     pagination: { page, total, totalPages },
   };
 }
-
 // Product detail types (GraphQL)
 interface MagentoProductDetail {
   __typename: string;
