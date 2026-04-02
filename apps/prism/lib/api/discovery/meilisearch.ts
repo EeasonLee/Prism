@@ -106,7 +106,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     price: hit.special_price ?? hit.price,
     in_stock: hit.in_stock ?? true,
     promotion_label: hit.promotion_label ?? undefined,
-    href: hit.href ?? `/products/${encodeURIComponent(hit.id)}`,
+    href: hit.href ?? `/products/${encodeURIComponent(hit.url_key ?? hit.id)}`,
   };
 }
 

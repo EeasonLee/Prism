@@ -16,6 +16,7 @@ function toMagentoProduct(
   return {
     id: 0,
     sku: item.sku,
+    url_key: item.url_key,
     name: item.name,
     price: item.price,
     final_price: item.price,

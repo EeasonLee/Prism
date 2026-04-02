@@ -7,8 +7,8 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ReviewForm } from '../app/products/[sku]/ReviewForm';
-import type { ReviewTarget } from '../app/products/[sku]/ProductReviews';
+import { ReviewForm } from '../app/products/[slug]/ReviewForm';
+import type { ReviewTarget } from '../app/products/[slug]/ProductReviews';
 
 vi.mock('next/image', () => ({
   default: ({

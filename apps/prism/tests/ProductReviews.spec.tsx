@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { ProductReviews } from '../app/products/[sku]/ProductReviews';
+import { ProductReviews } from '../app/products/[slug]/ProductReviews';
 import type {
   ProductReview,
   ProductReviewPagination,
@@ -23,11 +23,11 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-vi.mock('../app/products/[sku]/ReviewForm', () => ({
+vi.mock('../app/products/[slug]/ReviewForm', () => ({
   ReviewForm: () => <div data-testid="review-form">Review form</div>,
 }));
 
-vi.mock('../app/products/[sku]/review-visitor-key', () => ({
+vi.mock('../app/products/[slug]/review-visitor-key', () => ({
   getReviewVisitorKey: () => 'visitor-123',
 }));
 

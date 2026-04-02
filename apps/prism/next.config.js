@@ -91,9 +91,6 @@ const nextConfig = {
   },
   reactStrictMode: true,
   typedRoutes: true,
-  experimental: {
-    instrumentationHook: true,
-  },
   eslint: {
     ignoreDuringBuilds: false, // 构建时进行 ESLint 检查
   },

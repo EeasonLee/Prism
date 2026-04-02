@@ -10,6 +10,7 @@ export interface GetProductsParams {
 interface GraphQLProduct {
   sku: string;
   name: string;
+  url_key: string | null;
   price_range: {
     minimum_price: {
       final_price: {
@@ -49,6 +50,7 @@ const PRODUCTS_QUERY = `
       items {
         sku
         name
+        url_key
         price_range {
           minimum_price {
             final_price {
@@ -84,6 +86,7 @@ const PRODUCTS_QUERY_NO_FILTER = `
       items {
         sku
         name
+        url_key
         price_range {
           minimum_price {
             final_price {

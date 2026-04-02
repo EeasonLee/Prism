@@ -229,7 +229,8 @@ function ConfigurableOptions({
     }
 
     return (
-      children.find(item => item.sku === findChildSku(selectedAttributes)) ?? null
+      children.find(item => item.sku === findChildSku(selectedAttributes)) ??
+      null
     );
   }, [allSelected, children, selectedAttributes]);
 

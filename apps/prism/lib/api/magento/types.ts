@@ -183,6 +183,14 @@ export interface MagentoProduct {
   options?: unknown[];
   media_gallery_entries?: MagentoProductImage[];
   custom_attributes?: MagentoCustomAttribute[];
+  // Magento 自定义属性
+  long_title?: string | null;
+  cp_label?: string | null;
+  cp_code?: string | null;
+  cp_date?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  specifications?: string | null;
   // 前端友好字段（由代理服务注入）
   thumbnail_url?: string | null;
   image_url?: string | null;
