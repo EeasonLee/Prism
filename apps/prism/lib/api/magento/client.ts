@@ -4,25 +4,12 @@
  * 与 Strapi 客户端完全独立：
  * - 读取 NEXT_PUBLIC_MAGENTO_API_URL（不共享 Strapi 的 NEXT_PUBLIC_API_URL）
  * - 自动解包 { success, data, error } 三层响应
- * - 支持注入 Bearer accessToken（购物车等需认证接口）
- * - 收到 TOKEN_EXPIRED 时静默刷新 token 并重试一次
+ * - 服务端使用，不再支持客户端 token 注入
  */
 
 import { logRequest } from '../../api/interceptors/request-logger';
 import { env } from '../../env';
 import type { MagentoResponse } from './types';
-
-// token 刷新回调，由 AuthProvider 在运行时注入
-let tokenRefresher: (() => Promise<string | null>) | null = null;
-let tokenGetter: (() => string | null) | null = null;
-
-export function setMagentoTokenRefresher(
-  getter: () => string | null,
-  refresher: () => Promise<string | null>
-) {
-  tokenGetter = getter;
-  tokenRefresher = refresher;
-}
 
 function getMagentoBaseUrl(): string {
   // 浏览器端走 Next.js 代理，避免跨域；服务端直连
@@ -40,15 +27,12 @@ interface RequestOptions {
   method?: string;
   body?: string;
   headers?: Record<string, string>;
-  /** 传入 accessToken 覆盖自动获取（用于登录流程等特殊场景） */
-  accessToken?: string;
   signal?: AbortSignal;
 }
 
 async function magentoFetch<T>(
   path: string,
-  options: RequestOptions = {},
-  isRetry = false
+  options: RequestOptions = {}
 ): Promise<T> {
   const base = getMagentoBaseUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
@@ -63,12 +47,6 @@ async function magentoFetch<T>(
   // 有 body 时才设置 Content-Type，否则部分服务端会拒绝空 body + application/json
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
-  }
-
-  // 注入 Bearer token（优先使用显式传入的，否则从 tokenGetter 获取）
-  const token = options.accessToken ?? tokenGetter?.();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
   }
 
   let res: Response;
@@ -113,19 +91,6 @@ async function magentoFetch<T>(
         parseErr instanceof Error ? parseErr : new Error('JSON parse failed'),
     });
     throw parseErr;
-  }
-
-  // 处理 TOKEN_EXPIRED：静默刷新后重试一次（不记录日志，避免干扰）
-  if (
-    res.status === 401 &&
-    json.error?.code === 'TOKEN_EXPIRED' &&
-    !isRetry &&
-    tokenRefresher
-  ) {
-    const newToken = await tokenRefresher();
-    if (newToken) {
-      return magentoFetch<T>(path, { ...options, accessToken: newToken }, true);
-    }
   }
 
   // 统一记录请求日志（与 Strapi 客户端格式完全一致）

@@ -1,9 +1,7 @@
 /**
- * Magento 购物车操作（需要认证）
- * 所有请求都需要携带 accessToken
+ * Magento 购物车操作（通过 BFF /api/cart/* 路由，Cookie 自动传递）
  */
 
-import { magentoClient } from './client';
 import type {
   AddCartItemParams,
   CartItem,
@@ -11,69 +9,73 @@ import type {
   CartRedirectResponse,
 } from './types';
 
-/** 添加商品到购物车 */
-export function addCartItem(
-  params: AddCartItemParams,
-  accessToken: string
-): Promise<CartItem> {
-  return magentoClient.post<CartItem>('/api/cart/items/add', params, {
-    accessToken,
+async function cartFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(path, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...options.headers,
+    },
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      json?.error?.message ?? json?.message ?? `Cart error: ${res.status}`
+    );
+  }
+
+  return json as T;
+}
+
+export function addCartItem(params: AddCartItemParams): Promise<CartItem> {
+  return cartFetch<CartItem>('/api/cart/items/add', {
+    method: 'POST',
+    body: JSON.stringify(params),
   });
 }
 
-/** 获取购物车商品列表 */
-export async function getCartItems(accessToken: string): Promise<CartItem[]> {
-  const res = await magentoClient.get<CartItemsResponse>(
-    '/api/cart/items?storeId=1',
-    { accessToken }
-  );
+export async function getCartItems(): Promise<CartItem[]> {
+  const res = await cartFetch<CartItemsResponse>('/api/cart/items');
   return res.items ?? [];
 }
 
-/** 删除购物车中的单个商品 */
-export function deleteCartItem(
-  itemId: number,
-  accessToken: string
-): Promise<unknown> {
-  return magentoClient.delete(`/api/cart/items/${itemId}`, { accessToken });
+export function deleteCartItem(itemId: number): Promise<unknown> {
+  return cartFetch(`/api/cart/items/${itemId}`, {
+    method: 'DELETE',
+  });
 }
 
-/** 清空购物车 */
-export function clearCart(accessToken: string): Promise<unknown> {
-  return magentoClient.delete('/api/cart/clear', { accessToken });
+export function clearCart(): Promise<unknown> {
+  return cartFetch('/api/cart/clear', {
+    method: 'DELETE',
+  });
 }
 
-/** 更新购物车商品数量 */
 export function updateCartItemQty(
   itemId: number,
-  qty: number,
-  accessToken: string
+  qty: number
 ): Promise<CartItem> {
-  return magentoClient.put<CartItem>(
-    `/api/cart/items/${itemId}`,
-    { qty },
-    { accessToken }
-  );
+  return cartFetch<CartItem>(`/api/cart/items/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ qty }),
+  });
 }
 
-/** 生成购物车跳转链接（有效期 10 分钟，跳转到 /checkout/cart） */
-export function getCartRedirectLink(
-  accessToken: string
-): Promise<CartRedirectResponse> {
-  return magentoClient.post<CartRedirectResponse>(
-    '/api/cart/redirect-link',
-    { storeId: 1 },
-    { accessToken }
-  );
+export function getCartRedirectLink(): Promise<CartRedirectResponse> {
+  return cartFetch<CartRedirectResponse>('/api/cart/redirect-link', {
+    method: 'POST',
+  });
 }
 
-/** 生成结账重定向链接（有效期 10 分钟，跳转到 /checkout） */
-export function getCheckoutRedirectLink(
-  accessToken: string
-): Promise<CartRedirectResponse> {
-  return magentoClient.post<CartRedirectResponse>(
-    '/api/cart/checkout-redirect-link',
-    { storeId: 1 },
-    { accessToken }
-  );
+export function getCheckoutRedirectLink(): Promise<CartRedirectResponse> {
+  return cartFetch<CartRedirectResponse>('/api/cart/checkout-redirect-link', {
+    method: 'POST',
+  });
 }

@@ -21,7 +21,7 @@ export function CartDrawer() {
     clearCart,
     updateItemQty,
   } = useCart();
-  const { accessToken, isGuest } = useAuth();
+  const { hasSession, isGuest } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [viewCartLoading, setViewCartLoading] = useState(false);
@@ -33,10 +33,10 @@ export function CartDrawer() {
 
   // 打开抽屉时加载购物车详情
   useEffect(() => {
-    if (!isCartOpen || !accessToken) return;
+    if (!isCartOpen || !hasSession) return;
     setLoadingItems(true);
     setServiceError(null);
-    getCartItems(accessToken)
+    getCartItems()
       .then(data => setItems(Array.isArray(data) ? data : []))
       .catch(err => {
         const msg = err instanceof Error ? err.message : '';
@@ -47,14 +47,14 @@ export function CartDrawer() {
         }
       })
       .finally(() => setLoadingItems(false));
-  }, [isCartOpen, accessToken, itemCount]);
+  }, [isCartOpen, hasSession, itemCount]);
 
   const handleViewCart = useCallback(async () => {
-    if (!accessToken) return;
+    if (!hasSession) return;
     setViewCartLoading(true);
     setServiceError(null);
     try {
-      const { redirect_url } = await getCartRedirectLink(accessToken);
+      const { redirect_url } = await getCartRedirectLink();
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -66,10 +66,10 @@ export function CartDrawer() {
     } finally {
       setViewCartLoading(false);
     }
-  }, [accessToken]);
+  }, [hasSession]);
 
   const handleCheckout = useCallback(async () => {
-    if (!accessToken) return;
+    if (!hasSession) return;
 
     // 游客直接弹出登录引导
     if (isGuest) {
@@ -80,7 +80,7 @@ export function CartDrawer() {
     setCheckoutLoading(true);
     setServiceError(null);
     try {
-      const { redirect_url } = await getCheckoutRedirectLink(accessToken);
+      const { redirect_url } = await getCheckoutRedirectLink();
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -96,7 +96,7 @@ export function CartDrawer() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [accessToken, isGuest]);
+  }, [hasSession, isGuest]);
 
   const handleRemoveItem = useCallback(
     async (itemId: number) => {
