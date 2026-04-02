@@ -1,0 +1,251 @@
+/**
+ * Magento 商品详情服务（BFF 专用）
+ *
+ * 直接通过 NEXT_PUBLIC_MAGENTO_GRAPHQL_URL 查询 Magento GraphQL，
+ * 不经过 13000 代理（与分类服务保持一致）。
+ */
+
+import { magentoGraphQL } from '../magento-graphql.client';
+
+// ─── GraphQL 类型 ──────────────────────────────────────────────────────────────
+
+interface GQLMediaGallery {
+  url: string;
+  label: string | null;
+  position: number;
+  disabled: boolean;
+}
+
+interface GQLConfigurableOption {
+  attribute_code: string;
+  label: string;
+  values: Array<{ value_index: number; label: string }>;
+}
+
+interface GQLVariantProduct {
+  id: number;
+  sku: string;
+  name: string;
+  stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
+  price_range: {
+    minimum_price: {
+      regular_price: { value: number; currency: string };
+      final_price: { value: number; currency: string };
+    };
+  };
+  media_gallery: GQLMediaGallery[];
+}
+
+interface GQLVariantAttribute {
+  code: string;
+  value_index: number;
+  label: string;
+}
+
+interface GQLVariant {
+  product: GQLVariantProduct;
+  attributes: GQLVariantAttribute[];
+}
+
+export interface GQLProduct {
+  __typename: string;
+  id: number;
+  sku: string;
+  url_key: string | null;
+  name: string;
+  // 自定义属性
+  long_title: string | null;
+  cp_label: string | null;
+  cp_code: string | null;
+  cp_date: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  description: { html: string } | null;
+  short_description: { html: string } | null;
+  price_range: {
+    minimum_price: {
+      regular_price: { value: number; currency: string };
+      final_price: { value: number; currency: string };
+    };
+  };
+  media_gallery: GQLMediaGallery[];
+  thumbnail: { url: string; label: string | null } | null;
+  stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
+  rating_summary: number;
+  review_count: number;
+  categories: Array<{
+    id: number;
+    name: string;
+    level: number;
+    url_key: string | null;
+    url_path: string | null;
+  }>;
+  configurable_options: GQLConfigurableOption[] | null;
+  variants: GQLVariant[] | null;
+}
+
+interface GQLProductsResponse {
+  products: {
+    items: GQLProduct[];
+  };
+}
+
+// ─── GraphQL 查询 ──────────────────────────────────────────────────────────────
+
+const PRODUCT_DETAIL_QUERY = `
+  query GetProductDetail($sku: String!) {
+    products(filter: { sku: { eq: $sku } }) {
+      items {
+        __typename
+        id
+        sku
+        url_key
+        name
+        long_title
+        cp_label
+        cp_code
+        cp_date
+        meta_title
+        meta_description
+        description { html }
+        short_description { html }
+        price_range {
+          minimum_price {
+            regular_price { value currency }
+            final_price { value currency }
+          }
+        }
+        media_gallery {
+          url
+          label
+          position
+          disabled
+        }
+        thumbnail { url label }
+        stock_status
+        rating_summary
+        review_count
+        categories { id name level url_key url_path }
+        ... on ConfigurableProduct {
+          configurable_options {
+            attribute_code
+            label
+            values { value_index label }
+          }
+          variants {
+            product {
+              id
+              sku
+              name
+              stock_status
+              price_range {
+                minimum_price {
+                  regular_price { value currency }
+                  final_price { value currency }
+                }
+              }
+              media_gallery { url label position disabled }
+            }
+            attributes { code value_index label }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
+  query GetProductDetailByUrlKey($url_key: String!) {
+    products(filter: { url_key: { eq: $url_key } }) {
+      items {
+        __typename
+        id
+        sku
+        url_key
+        name
+        long_title
+        cp_label
+        cp_code
+        cp_date
+        meta_title
+        meta_description
+        description { html }
+        short_description { html }
+        price_range {
+          minimum_price {
+            regular_price { value currency }
+            final_price { value currency }
+          }
+        }
+        media_gallery {
+          url
+          label
+          position
+          disabled
+        }
+        thumbnail { url label }
+        stock_status
+        rating_summary
+        review_count
+        categories { id name level url_key url_path }
+        ... on ConfigurableProduct {
+          configurable_options {
+            attribute_code
+            label
+            values { value_index label }
+          }
+          variants {
+            product {
+              id
+              sku
+              name
+              stock_status
+              price_range {
+                minimum_price {
+                  regular_price { value currency }
+                  final_price { value currency }
+                }
+              }
+              media_gallery { url label position disabled }
+            }
+            attributes { code value_index label }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// ─── 主函数 ────────────────────────────────────────────────────────────────────
+
+export async function fetchProductDetailBySkuGQL(
+  sku: string
+): Promise<GQLProduct> {
+  const response = await magentoGraphQL<GQLProductsResponse>(
+    PRODUCT_DETAIL_QUERY,
+    { sku }
+  );
+
+  const item = response.products.items[0];
+  if (!item) {
+    throw new Error(`Product not found: ${sku}`);
+  }
+
+  return item;
+}
+
+export async function fetchProductDetailByUrlKeyGQL(
+  url_key: string
+): Promise<GQLProduct> {
+  const response = await magentoGraphQL<GQLProductsResponse>(
+    PRODUCT_DETAIL_BY_URL_KEY_QUERY,
+    { url_key }
+  );
+
+  const item = response.products.items[0];
+  if (!item) {
+    throw new Error(`Product not found: ${url_key}`);
+  }
+
+  return item;
+}

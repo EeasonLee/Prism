@@ -32,7 +32,7 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/products/${product.sku}`}
+      href={`/products/${product.url_key ?? product.sku}`}
       className="group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">

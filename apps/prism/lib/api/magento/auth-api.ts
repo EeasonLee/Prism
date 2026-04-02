@@ -1,27 +1,14 @@
 /**
- * 认证相关 API（直接请求 SSO 服务，不经过 /magento/* 代理）
- * /auth/* 接口直接返回业务数据，不使用 { success, data, error } 包装
+ * 认证相关 API（通过 BFF /api/auth/* 路由，不直连 SSO 服务）
  */
 
-import { env } from '../../env';
 import type { AuthResponse, GuestAuthResponse } from './types';
-
-function getBaseUrl(): string {
-  // 浏览器端走 Next.js 代理，避免跨域；服务端直连
-  if (typeof window !== 'undefined' && env.NEXT_PUBLIC_USE_API_PROXY) {
-    return '/magento-proxy';
-  }
-  const url = env.NEXT_PUBLIC_MAGENTO_API_URL;
-  if (!url) throw new Error('NEXT_PUBLIC_MAGENTO_API_URL is not configured');
-  return url.endsWith('/') ? url.slice(0, -1) : url;
-}
 
 async function authFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const base = getBaseUrl();
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -44,9 +31,7 @@ async function authFetch<T>(
 export interface LoginParams {
   email: string;
   password: string;
-  /** 游客 SSO 用户 ID，登录时合并游客购物车 */
   guestSsoUserId?: string;
-  /** Magento 店铺 ID，不传则使用后端默认 */
   storeId?: number;
 }
 
@@ -68,9 +53,7 @@ export interface RegisterParams {
   password: string;
   firstName?: string;
   lastName?: string;
-  /** 游客 SSO 用户 ID，注册时合并游客购物车 */
   guestSsoUserId?: string;
-  /** Magento 店铺 ID，不传则使用后端默认 */
   storeId?: number;
 }
 
@@ -97,10 +80,10 @@ export function logout(accessToken: string): Promise<void> {
   });
 }
 
-export function refreshToken(refreshToken: string): Promise<AuthResponse> {
+export function refreshToken(token: string): Promise<AuthResponse> {
   return authFetch<AuthResponse>('/api/auth/refresh', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken }),
+    body: JSON.stringify({ refreshToken: token }),
   });
 }
 

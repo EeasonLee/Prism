@@ -89,7 +89,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link
-      href={`/products/${encodeURIComponent(product.sku)}` as Route}
+      href={
+        `/products/${encodeURIComponent(
+          product.url_key ?? product.sku
+        )}` as Route
+      }
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
     >
       {/* 图片区域 */}

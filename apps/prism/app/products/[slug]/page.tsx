@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageContainer } from '@prism/ui';
-import { fetchUnifiedProductBySku } from '../../../lib/api/unified-product';
+import { fetchUnifiedProductBySlug } from '../../../lib/api/unified-product';
 import {
   fetchReviewsBySku,
   fetchReviewSummaryBySku,
@@ -27,12 +27,12 @@ import {
 } from './product-detail-data';
 
 interface Props {
-  params: Promise<{ sku: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { sku } = await params;
-  const decodedSku = decodeURIComponent(sku);
+  const { slug } = await params;
+  const decodedSku = decodeURIComponent(slug);
 
   if (decodedSku === MOCK_PRODUCT_SKU) {
     return {
@@ -48,8 +48,8 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ProductDetailPage({ params }: Props) {
-  const { sku } = await params;
-  const decodedSku = decodeURIComponent(sku);
+  const { slug } = await params;
+  const decodedSku = decodeURIComponent(slug);
 
   let data: ProductDetailPageData;
   let reviewSummary: ProductReviewSummary | null = null;
@@ -79,7 +79,7 @@ export default async function ProductDetailPage({ params }: Props) {
   } else {
     const [fetchedProduct, fetchedSummary, fetchedReviews, fetchedProductQa] =
       await Promise.all([
-        fetchUnifiedProductBySku(decodedSku).catch(() => null),
+        fetchUnifiedProductBySlug(decodedSku).catch(() => null),
         fetchReviewSummaryBySku(decodedSku).catch(() => ({
           sku: decodedSku,
           average: 0,
@@ -160,7 +160,9 @@ export default async function ProductDetailPage({ params }: Props) {
         {product.categories?.[0] && (
           <>
             <Link
-              href={`/shop/${product.categories[0].id}`}
+              href={`/categories/${
+                product.categories[0].url_key ?? product.categories[0].id
+              }`}
               className="transition hover:text-ink"
             >
               {product.categories[0].name}

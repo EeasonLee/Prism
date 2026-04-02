@@ -30,7 +30,9 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
             return (
               <Link
                 key={product.id}
-                href={`/products/${encodeURIComponent(product.sku)}`}
+                href={`/products/${encodeURIComponent(
+                  product.url_key ?? product.sku
+                )}`}
                 className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:border-brand/30 hover:shadow-md sm:w-52"
               >
                 {/* 图片 */}

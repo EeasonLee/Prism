@@ -7,12 +7,14 @@ import {
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ShareTrigger } from '../../components/share';
-import type { MagentoProduct } from '../../../lib/api/magento/types';
-import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+import type {
+  UnifiedProduct,
+  UnifiedProductImage,
+} from '../../../lib/api/unified-product';
 import type { ShareTarget } from '../../components/share';
 
 interface ProductDetailContentProps {
-  product: MagentoProduct;
+  product: UnifiedProduct;
   galleryImages: UnifiedProductImage[];
   ratingPercentage: number;
   ratingCount: number;
@@ -151,17 +153,12 @@ export function ProductDetailContent({
           {displayProduct.isInStock ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              In Stock
-              {displayProduct.stockQty != null && (
-                <span className="font-normal text-ink-muted">
-                  ({displayProduct.stockQty} available)
-                </span>
-              )}
+              Item is in stock
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-500">
               <span className="h-2 w-2 rounded-full bg-red-400" />
-              Out of Stock
+              Item is out of stock
             </span>
           )}
           {ratingCount > 0 && (
@@ -213,31 +210,26 @@ export function ProductDetailContent({
           </div>
         )}
 
-        {product.short_description_html && (
+        {product.short_description_html ? (
           <div
             className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{
               __html: product.short_description_html,
             }}
           />
-        )}
+        ) : product.short_description ? (
+          <div
+            className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            dangerouslySetInnerHTML={{
+              __html: product.short_description,
+            }}
+          />
+        ) : null}
 
         <ProductDetailClient
           product={product}
           onSelectionChange={onSelectionChange}
         />
-
-        {product.description_html && (
-          <div className="mt-6 border-t border-border pt-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-muted">
-              Description
-            </h2>
-            <div
-              className="prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4"
-              dangerouslySetInnerHTML={{ __html: product.description_html }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

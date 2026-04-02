@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPdpSectionNav } from '../app/products/[sku]/product-detail-data';
+import { buildPdpSectionNav } from '../app/products/[slug]/product-detail-data';
 import type { UnifiedProduct } from '../lib/api/unified-product';
 
 const baseProduct: UnifiedProduct = {
