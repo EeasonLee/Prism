@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ProductSpecifications } from '../app/products/[sku]/ProductSpecifications';
+import { ProductSpecifications } from '../app/products/[slug]/ProductSpecifications';
 
 describe('ProductSpecifications', () => {
   it('renders grouped specification rows', () => {

@@ -1,5 +1,6 @@
 {
   "eslint.workingDirectories": [
     { "directory": "./apps/prism", "changeProcessCWD": true }
-  ]
+  ],
+  "git.ignoreLimitWarning": true
 }

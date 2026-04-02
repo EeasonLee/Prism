@@ -6,39 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import {
-  guestLogin as apiGuestLogin,
-  login as apiLogin,
-  logout as apiLogout,
-  register as apiRegister,
-  refreshToken as apiRefresh,
-} from '../api/magento/auth-api';
-import { setMagentoTokenRefresher } from '../api/magento/client';
 import type { AuthUser } from '../api/magento/types';
-
-const USER_STORAGE_KEY = 'magento_auth';
-const GUEST_STORAGE_KEY = 'magento_guest_auth';
-
-interface StoredAuth {
-  user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface StoredGuestAuth {
-  guestId: string;
-  accessToken: string;
-  refreshToken: string;
-}
 
 interface AuthContextValue {
   user: AuthUser | null;
-  accessToken: string | null;
+  hasSession: boolean;
   isAuthenticated: boolean;
   isGuest: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -46,167 +23,81 @@ interface AuthContextValue {
     firstName?: string,
     lastName?: string
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readUserStorage(): StoredAuth | null {
-  try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StoredAuth) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeUserStorage(data: StoredAuth) {
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data));
-}
-
-function clearUserStorage() {
-  localStorage.removeItem(USER_STORAGE_KEY);
-}
-
-function readGuestStorage(): StoredGuestAuth | null {
-  try {
-    const raw = localStorage.getItem(GUEST_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StoredGuestAuth) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeGuestStorage(data: StoredGuestAuth) {
-  localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(data));
-}
-
-function clearGuestStorage() {
-  localStorage.removeItem(GUEST_STORAGE_KEY);
+interface SessionResponse {
+  hasSession: boolean;
+  isAuthenticated: boolean;
+  isGuest: boolean;
+  user?: AuthUser;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshTokenStr, setRefreshTokenStr] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
-  // 防止并发 guest 初始化
-  const guestInitRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 启动时恢复登录态或初始化游客身份
-  useEffect(() => {
-    const stored = readUserStorage();
-    if (stored) {
-      setUser(stored.user);
-      setAccessToken(stored.accessToken);
-      setRefreshTokenStr(stored.refreshToken);
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/session', {
+        credentials: 'include',
+      });
+      const data = (await res.json()) as SessionResponse;
+      setHasSession(data.hasSession);
+      setIsAuthenticated(data.isAuthenticated);
+      setIsGuest(data.isGuest);
+      setUser(data.user ?? null);
+    } catch {
+      setHasSession(false);
+      setIsAuthenticated(false);
       setIsGuest(false);
-      return;
+      setUser(null);
     }
+  }, []);
 
-    // 无注册用户 token，尝试恢复或新建 guest
-    const storedGuest = readGuestStorage();
-    if (storedGuest) {
-      setAccessToken(storedGuest.accessToken);
-      setRefreshTokenStr(storedGuest.refreshToken);
-      setIsGuest(true);
-      return;
-    }
-
-    // 全新访客，获取 guest token
-    void initGuest();
+  useEffect(() => {
+    const initSession = async () => {
+      await refreshSession();
+      const currentHasSession = hasSession;
+      if (!currentHasSession) {
+        try {
+          await fetch('/api/auth/guest', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          await refreshSession();
+        } catch {
+          // guest 初始化失败，静默处理
+        }
+      }
+      setIsLoading(false);
+    };
+    void initSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const initGuest = useCallback(async () => {
-    if (guestInitRef.current) return;
-    guestInitRef.current = true;
-    try {
-      const res = await apiGuestLogin();
-      setAccessToken(res.tokens.accessToken);
-      setRefreshTokenStr(res.tokens.refreshToken);
-      setIsGuest(true);
-      writeGuestStorage({
-        guestId: res.guest_id,
-        accessToken: res.tokens.accessToken,
-        refreshToken: res.tokens.refreshToken,
-      });
-    } catch {
-      // guest 初始化失败静默处理，功能降级为无 token 状态
-    } finally {
-      guestInitRef.current = false;
-    }
-  }, []);
-
-  // 向 Magento 客户端注入 token 获取和刷新逻辑
-  useEffect(() => {
-    const getter = () => accessToken;
-    const refresher = async (): Promise<string | null> => {
-      if (!refreshTokenStr) return null;
-      try {
-        if (isGuest) {
-          // 游客 refresh token 过期（24h），重新获取新 guest 身份
-          const res = await apiGuestLogin();
-          setAccessToken(res.tokens.accessToken);
-          setRefreshTokenStr(res.tokens.refreshToken);
-          writeGuestStorage({
-            guestId: res.guest_id,
-            accessToken: res.tokens.accessToken,
-            refreshToken: res.tokens.refreshToken,
-          });
-          return res.tokens.accessToken;
-        }
-
-        const res = await apiRefresh(refreshTokenStr);
-        setUser(res.user);
-        setAccessToken(res.tokens.accessToken);
-        setRefreshTokenStr(res.tokens.refreshToken);
-        writeUserStorage({
-          user: res.user,
-          accessToken: res.tokens.accessToken,
-          refreshToken: res.tokens.refreshToken,
-        });
-        return res.tokens.accessToken;
-      } catch {
-        if (isGuest) {
-          // guest refresh 失败，尝试重新初始化 guest
-          clearGuestStorage();
-          setAccessToken(null);
-          setRefreshTokenStr(null);
-          void initGuest();
-        } else {
-          setUser(null);
-          setAccessToken(null);
-          setRefreshTokenStr(null);
-          setIsGuest(false);
-          clearUserStorage();
-        }
-        return null;
-      }
-    };
-    setMagentoTokenRefresher(getter, refresher);
-  }, [accessToken, refreshTokenStr, isGuest, initGuest]);
-
   const login = useCallback(async (email: string, password: string) => {
-    const storedGuest = readGuestStorage();
-    const res = await apiLogin({
-      email,
-      password,
-      guestSsoUserId: storedGuest?.guestId,
-      storeId: 1,
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
-    // 清除 guest 状态（无论 cartMergeStatus 成功与否都清除）
-    clearGuestStorage();
-    setUser(res.user);
-    setAccessToken(res.tokens.accessToken);
-    setRefreshTokenStr(res.tokens.refreshToken);
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data?.error?.message ?? 'Login failed');
+    }
+    const data = await res.json();
+    setUser(data.user);
+    setIsAuthenticated(true);
     setIsGuest(false);
-    writeUserStorage({
-      user: res.user,
-      accessToken: res.tokens.accessToken,
-      refreshToken: res.tokens.refreshToken,
-    });
-    // cartMergeStatus: success/failed/skipped 已通过 clearGuestStorage 处理
+    setHasSession(true);
   }, []);
 
   const register = useCallback(
@@ -216,56 +107,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName?: string,
       lastName?: string
     ) => {
-      const storedGuest = readGuestStorage();
-      const res = await apiRegister({
-        email,
-        password,
-        firstName,
-        lastName,
-        guestSsoUserId: storedGuest?.guestId,
-        storeId: 1,
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+        }),
       });
-      // 清除 guest 状态和购物车标记（无论 cartMergeStatus 成功与否都清除）
-      clearGuestStorage();
-      localStorage.removeItem('magento_cart_created');
-      setUser(res.user);
-      setAccessToken(res.tokens.accessToken);
-      setRefreshTokenStr(res.tokens.refreshToken);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error?.message ?? 'Registration failed');
+      }
+      const data = await res.json();
+      setUser(data.user);
+      setIsAuthenticated(true);
       setIsGuest(false);
-      writeUserStorage({
-        user: res.user,
-        accessToken: res.tokens.accessToken,
-        refreshToken: res.tokens.refreshToken,
-      });
-      // cartMergeStatus: success/failed/skipped 已通过 clearGuestStorage 处理
+      setHasSession(true);
     },
     []
   );
 
-  const logout = useCallback(() => {
-    if (accessToken && !isGuest) {
-      apiLogout(accessToken).catch(() => {
-        /* 失败也强制清除本地状态 */
-      });
-    }
-    clearUserStorage();
+  const logout = useCallback(async () => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {
+      /* 失败也继续 */
+    });
     setUser(null);
-    setIsGuest(false);
-    // 登出后重新初始化 guest 身份
-    void initGuest();
-  }, [accessToken, isGuest, initGuest]);
+    setIsAuthenticated(false);
+    setIsGuest(true);
+    setHasSession(true);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      accessToken,
-      isAuthenticated: !!user && !isGuest,
+      hasSession,
+      isAuthenticated,
       isGuest,
+      isLoading,
       login,
       register,
       logout,
+      refreshSession,
     }),
-    [user, accessToken, isGuest, login, register, logout]
+    [
+      user,
+      hasSession,
+      isAuthenticated,
+      isGuest,
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshSession,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

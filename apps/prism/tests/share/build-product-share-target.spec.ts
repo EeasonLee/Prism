@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildProductShareTarget } from '../../app/products/[sku]/build-product-share-target';
+import { buildProductShareTarget } from '../../app/products/[slug]/build-product-share-target';
 import type { MagentoProduct } from '../../lib/api/magento/types';
-import type { ProductDetailSelection } from '../../app/products/[sku]/ProductDetailClient';
+import type { ProductDetailSelection } from '../../app/products/[slug]/ProductDetailClient';
 
 describe('buildProductShareTarget', () => {
   const baseProduct: MagentoProduct = {

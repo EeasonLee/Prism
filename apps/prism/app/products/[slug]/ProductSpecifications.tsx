@@ -22,7 +22,10 @@ export function ProductSpecifications({ groups }: ProductSpecificationsProps) {
 
         <div className="space-y-8">
           {groups.map(group => (
-            <div key={group.id} className="overflow-hidden rounded-2xl border border-border bg-surface">
+            <div
+              key={group.id}
+              className="overflow-hidden rounded-2xl border border-border bg-surface"
+            >
               <div className="border-b border-border bg-surface-muted px-5 py-4 sm:px-6">
                 <h3 className="text-base font-semibold text-ink sm:text-lg">
                   {group.title}

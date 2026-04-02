@@ -139,7 +139,7 @@ function RatingControl({
 }
 
 export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
-  const { user, accessToken, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [rating, setRating] = useState(5);
@@ -231,9 +231,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
         try {
           const response = await fetch('/api/reviews/upload', {
             method: 'POST',
-            headers: accessToken
-              ? { Authorization: `Bearer ${accessToken}` }
-              : undefined,
+            credentials: 'include',
             body: formData,
           });
 
@@ -293,7 +291,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
       return;
     }
 
-    if (!isAuthenticated || !user || !accessToken) {
+    if (!isAuthenticated || !user) {
       openLogin('signin');
       return;
     }
@@ -312,9 +310,9 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
     try {
       const response = await fetch(`/api/reviews/${encodeURIComponent(sku)}`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           productSku: target.productSku,

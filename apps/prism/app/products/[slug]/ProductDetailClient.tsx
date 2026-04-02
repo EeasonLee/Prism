@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type {
   MagentoConfigurableOption,
@@ -106,97 +106,101 @@ function ConfigurableOptions({
   >({});
   const [qty, setQty] = useState(1);
 
-  const findChildSku = (attrs: Record<string, number>): string | null => {
-    const child = children.find(item =>
-      configurableOptions.every(option => {
-        const selectedValue = attrs[option.attribute_id];
-        if (selectedValue === undefined) {
-          return false;
-        }
+  const findChildSku = useCallback(
+    (attrs: Record<string, number>): string | null => {
+      const child = children.find(item =>
+        configurableOptions.every(option => {
+          const selectedValue = attrs[option.attribute_id];
+          if (selectedValue === undefined) {
+            return false;
+          }
 
-        const childValueById = item.attributes[option.attribute_id];
+          const childValueById = item.attributes[option.attribute_id];
+          if (childValueById != null) {
+            return childValueById === String(selectedValue);
+          }
+
+          if (!option.attribute_code) {
+            return false;
+          }
+
+          const childValueByCode = item.attributes[option.attribute_code];
+          if (childValueByCode != null) {
+            if (childValueByCode === String(selectedValue)) {
+              return true;
+            }
+
+            const selectedOption = option.values.find(
+              value => value.value_index === selectedValue
+            );
+            return selectedOption?.label === childValueByCode;
+          }
+
+          return false;
+        })
+      );
+
+      return child?.sku ?? null;
+    },
+    [children, configurableOptions]
+  );
+
+  const findAttributesBySku = useCallback(
+    (childSku: string): Record<string, number> | null => {
+      const child = children.find(item => item.sku === childSku);
+      if (!child) {
+        return null;
+      }
+
+      const attrs: Record<string, number> = {};
+
+      for (const option of configurableOptions) {
+        const childValueById = child.attributes[option.attribute_id];
         if (childValueById != null) {
-          return childValueById === String(selectedValue);
+          const selectedValue = Number(childValueById);
+          const hasMatchingValue = option.values.some(
+            value => value.value_index === selectedValue
+          );
+
+          if (!hasMatchingValue) {
+            return null;
+          }
+
+          attrs[option.attribute_id] = selectedValue;
+          continue;
         }
 
         if (!option.attribute_code) {
-          return false;
-        }
-
-        const childValueByCode = item.attributes[option.attribute_code];
-        if (childValueByCode != null) {
-          if (childValueByCode === String(selectedValue)) {
-            return true;
-          }
-
-          const selectedOption = option.values.find(
-            value => value.value_index === selectedValue
-          );
-          return selectedOption?.label === childValueByCode;
-        }
-
-        return false;
-      })
-    );
-
-    return child?.sku ?? null;
-  };
-
-  const findAttributesBySku = (
-    childSku: string
-  ): Record<string, number> | null => {
-    const child = children.find(item => item.sku === childSku);
-    if (!child) {
-      return null;
-    }
-
-    const attrs: Record<string, number> = {};
-
-    for (const option of configurableOptions) {
-      const childValueById = child.attributes[option.attribute_id];
-      if (childValueById != null) {
-        const selectedValue = Number(childValueById);
-        const hasMatchingValue = option.values.some(
-          value => value.value_index === selectedValue
-        );
-
-        if (!hasMatchingValue) {
           return null;
         }
 
-        attrs[option.attribute_id] = selectedValue;
-        continue;
+        const childValueByCode = child.attributes[option.attribute_code];
+        if (!childValueByCode) {
+          return null;
+        }
+
+        const selectedByValueIndex = option.values.find(
+          value => String(value.value_index) === childValueByCode
+        );
+        if (selectedByValueIndex) {
+          attrs[option.attribute_id] = selectedByValueIndex.value_index;
+          continue;
+        }
+
+        const selectedByLabel = option.values.find(
+          value => value.label === childValueByCode
+        );
+        if (!selectedByLabel) {
+          return null;
+        }
+
+        attrs[option.attribute_id] = selectedByLabel.value_index;
       }
 
-      if (!option.attribute_code) {
-        return null;
-      }
-
-      const childValueByCode = child.attributes[option.attribute_code];
-      if (!childValueByCode) {
-        return null;
-      }
-
-      const selectedByValueIndex = option.values.find(
-        value => String(value.value_index) === childValueByCode
-      );
-      if (selectedByValueIndex) {
-        attrs[option.attribute_id] = selectedByValueIndex.value_index;
-        continue;
-      }
-
-      const selectedByLabel = option.values.find(
-        value => value.label === childValueByCode
-      );
-      if (!selectedByLabel) {
-        return null;
-      }
-
-      attrs[option.attribute_id] = selectedByLabel.value_index;
-    }
-
-    return attrs;
-  };
+      return attrs;
+    },
+    [children, configurableOptions]
+  );
 
   useEffect(() => {
     if (children.length === 0 || !variantSku) {
@@ -217,7 +221,7 @@ function ConfigurableOptions({
 
       return isSameSelection ? prev : attrs;
     });
-  }, [children, configurableOptions, variantSku]);
+  }, [children, configurableOptions, variantSku, findAttributesBySku]);
 
   const allSelected = configurableOptions.every(
     option => selectedAttributes[option.attribute_id] !== undefined
@@ -229,9 +233,10 @@ function ConfigurableOptions({
     }
 
     return (
-      children.find(item => item.sku === findChildSku(selectedAttributes)) ?? null
+      children.find(item => item.sku === findChildSku(selectedAttributes)) ??
+      null
     );
-  }, [allSelected, children, selectedAttributes]);
+  }, [allSelected, children, selectedAttributes, findChildSku]);
 
   useEffect(() => {
     if (!allSelected) {
@@ -251,7 +256,7 @@ function ConfigurableOptions({
     }${window.location.hash}`;
 
     window.history.replaceState(window.history.state, '', nextUrl);
-  }, [allSelected, selectedAttributes, variantSku]);
+  }, [allSelected, selectedAttributes, variantSku, findChildSku]);
 
   useEffect(() => {
     onSelectionChange?.({

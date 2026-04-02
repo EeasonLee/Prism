@@ -63,7 +63,7 @@ function toProductCardItemFromMagento(
     currency: product.currency ?? undefined,
     in_stock: product.is_in_stock !== false,
     promotion_label: product.promotion_label ?? undefined,
-    href: `/products/${encodeURIComponent(product.sku)}`,
+    href: `/products/${encodeURIComponent(product.url_key ?? product.sku)}`,
   };
 }
 

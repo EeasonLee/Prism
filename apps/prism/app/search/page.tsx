@@ -1,5 +1,6 @@
+import Link from 'next/link';
+import Image from 'next/image';
 import { fetchDiscoveryResult } from '../../lib/api/discovery/service';
-import { DiscoveryProductCard } from '../shop/components/DiscoveryProductCard';
 import type {
   DiscoverySortOption,
   ProductDiscoveryQuery,
@@ -68,7 +69,57 @@ export default async function SearchPage({ searchParams }: Props) {
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {items.map(item => (
               <li key={item.sku}>
-                <DiscoveryProductCard item={item} />
+                <Link
+                  href={item.href}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-surface">
+                    {item.thumbnail ? (
+                      <Image
+                        src={item.thumbnail}
+                        alt={item.name}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                        className="object-contain p-4 transition duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-ink-muted/30">
+                        <svg
+                          className="h-12 w-12"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    {item.promotion_label && (
+                      <span className="absolute left-2 top-2 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
+                        {item.promotion_label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <p className="mb-2 line-clamp-2 text-sm font-medium leading-snug text-ink group-hover:text-brand">
+                      {item.name}
+                    </p>
+                    <div className="mt-auto flex items-baseline gap-2">
+                      {item.price != null && (
+                        <span className="text-base font-bold text-ink">
+                          ${item.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

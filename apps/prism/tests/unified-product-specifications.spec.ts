@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mergeProduct } from '../lib/api/unified-product';
 import type { MagentoProduct } from '../lib/api/magento/types';
-import type { StrapiProductEnrichment } from '../lib/api/strapi/product-enrichment';
 
 const baseProduct: MagentoProduct = {
   id: 1,
@@ -26,34 +25,20 @@ const baseProduct: MagentoProduct = {
 };
 
 describe('mergeProduct specifications', () => {
-  it('exposes normalized specifications from Strapi enrichment', () => {
-    const enrichment: StrapiProductEnrichment = {
-      sku: 'JD-AF550',
-      specifications: [
-        {
-          id: 'general',
-          title: 'General',
-          rows: [
-            {
-              key: 'capacity',
-              label: 'Capacity',
-              value: '5.5L',
-              source: 'template',
-              highlighted: true,
-            },
-          ],
-        },
-      ],
+  it('exposes specifications from Magento custom attribute', () => {
+    const product: MagentoProduct = {
+      ...baseProduct,
+      specifications: 'Capacity: 5.5L | Power: 1500W',
     };
 
-    const result = mergeProduct(baseProduct, enrichment);
+    const result = mergeProduct(product);
 
-    expect(result.specifications).toEqual(enrichment.specifications);
+    expect(result.specifications).toBe('Capacity: 5.5L | Power: 1500W');
   });
 
-  it('keeps specifications undefined when Strapi enrichment is absent', () => {
+  it('keeps specifications null when not set', () => {
     const result = mergeProduct(baseProduct);
 
-    expect(result.specifications).toBeUndefined();
+    expect(result.specifications).toBeNull();
   });
 });

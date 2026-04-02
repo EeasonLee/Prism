@@ -28,7 +28,7 @@ export function ProductQA({
   allowSubmit = true,
   pageSize = 10,
 }: ProductQAProps) {
-  const { user, accessToken, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
 
   const [result, setResult] = useState<ProductQaListResult>(initialResult);
@@ -103,18 +103,13 @@ export function ProductQA({
       return;
     }
 
-    if (!accessToken) {
-      openLogin('signin');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/product-qa/questions', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           sku,

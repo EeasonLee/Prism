@@ -286,7 +286,7 @@ export function Header() {
                         type="button"
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          logout();
+                          void logout();
                         }}
                         className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
                       >
@@ -351,7 +351,6 @@ export function Header() {
                 <path d="M3 4h2l1.5 12.5h11l1-9H6.2" />
               </svg>
             </IconButton>
-
           </div>
         </div>
 

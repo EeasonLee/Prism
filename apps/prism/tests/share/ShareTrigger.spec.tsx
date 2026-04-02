@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareTrigger } from '../../app/components/share/ShareTrigger';
-import { ProductDetailContent } from '../../app/products/[sku]/ProductDetailContent';
+import { ProductDetailContent } from '../../app/products/[slug]/ProductDetailContent';
 import type { MagentoProduct } from '../../lib/api/magento/types';
 import type { UnifiedProductImage } from '../../lib/api/unified-product';
 
@@ -10,11 +10,11 @@ const copyLinkMock = vi.fn().mockResolvedValue(true);
 const shareNativelyMock = vi.fn().mockResolvedValue(true);
 let copiedState = false;
 
-vi.mock('../../app/products/[sku]/ProductImageGallery', () => ({
+vi.mock('../../app/products/[slug]/ProductImageGallery', () => ({
   ProductImageGallery: () => <div data-testid="product-image-gallery" />,
 }));
 
-vi.mock('../../app/products/[sku]/ProductDetailClient', () => ({
+vi.mock('../../app/products/[slug]/ProductDetailClient', () => ({
   ProductDetailClient: () => <div data-testid="product-detail-client" />,
 }));
 
