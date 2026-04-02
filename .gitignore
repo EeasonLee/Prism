@@ -67,3 +67,8 @@ ecosystem.config.js
 .nx/polygraph
 
 .claude/worktrees
+
+# Local tooling
+.omc/
+.pnpm-store/
+.claude/settings.local.json
