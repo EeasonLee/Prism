@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { AuthUser } from '../lib/api/magento/types';
-import { ProductQA } from '../app/products/[sku]/ProductQA';
+import { ProductQA } from '../app/products/[slug]/ProductQA';
 import type {
   ProductQaListResult,
   ProductQuestion,
@@ -158,9 +158,7 @@ describe('ProductQA', () => {
       '/api/product-qa/questions',
       expect.objectContaining({
         method: 'POST',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer token-abc',
-        }) as Record<string, string>,
+        credentials: 'include',
       })
     );
   });
