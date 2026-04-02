@@ -12,6 +12,7 @@ interface StrapiQuestionRaw {
   question_text?: string;
   content?: string;
   answer_text?: string | null;
+  answer_content?: string | null;
   answered_at?: string | null;
   answered_by?: string | null;
   question_status?: 'pending' | 'answered' | 'published' | 'rejected' | null;
@@ -111,6 +112,9 @@ function mapStrapiStatus(raw: StrapiQuestionRaw): ProductQuestion['status'] {
 function resolveAnswerText(raw: StrapiQuestionRaw): string | null {
   if (raw.answer_text !== undefined && raw.answer_text !== null) {
     return raw.answer_text;
+  }
+  if (raw.answer_content !== undefined && raw.answer_content !== null) {
+    return raw.answer_content;
   }
   const nested = raw.answer?.content;
   if (nested !== undefined && nested !== null && nested !== '') {

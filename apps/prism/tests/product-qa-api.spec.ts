@@ -149,8 +149,11 @@ describe('fetchProductQaBySku', () => {
           sku: 'SKU-003',
           author_name: 'Carol',
           question_text: 'Is this vegan?',
+          answer_content: 'Yes, suitable for vegan diets.',
+          answered_at: '2024-03-02T00:00:00.000Z',
+          answered_by: 'Support Team',
           createdAt: '2024-03-01T00:00:00.000Z',
-          updatedAt: '2024-03-01T00:00:00.000Z',
+          updatedAt: '2024-03-02T00:00:00.000Z',
         },
       ],
       meta: {
@@ -161,6 +164,9 @@ describe('fetchProductQaBySku', () => {
     const result = await fetchProductQaBySku('SKU-003');
 
     expect(result.items[0].productSku).toBe('SKU-003');
+    expect(result.items[0].answerText).toBe('Yes, suitable for vegan diets.');
+    expect(result.items[0].answeredAt).toBe('2024-03-02T00:00:00.000Z');
+    expect(result.items[0].answeredBy).toBe('Support Team');
   });
 
   it('defaults status to pending when question_status is absent', async () => {
