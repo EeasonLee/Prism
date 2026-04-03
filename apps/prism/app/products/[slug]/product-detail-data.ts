@@ -1,26 +1,45 @@
 import type { UnifiedProduct } from '../../../lib/api/unified-product';
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
+import {
+  fetchPdpArticlesBySku,
+  fetchPdpRecipesBySku,
+} from '../../../lib/api/strapi/product-content';
 import type { ProductPageCms } from './mock-data';
 
 /**
  * 商品详情页服务端组装结果。
  * - product：Magento UnifiedProduct
- * - cms：mock 数据（真实 SKU 为 null）
+ * - cms：Strapi 侧与 PDP 区块相关的片段（当前：食谱、博客来自 Product 关联，经 by-product-sku 接口）
  */
-export type ProductDetailCms = ProductPageCms;
+export type ProductDetailCms = Partial<ProductPageCms>;
 
 export interface ProductDetailPageData {
   product: UnifiedProduct;
   cms: ProductDetailCms | null;
 }
 
-export function buildRealProductPageCms(_product: UnifiedProduct): null {
-  return null;
+/**
+ * 从 Strapi `api::product.product` 与 recipe/article 的关联拉取 PDP 食谱与文章区块。
+ * 后端路由：`/api/recipes/by-product-sku/:sku`、`/api/articles/by-product-sku/:sku`（按 Product.sku 过滤 `products` 关系）。
+ */
+export async function fetchRealProductPageCms(
+  sku: string
+): Promise<ProductDetailCms | null> {
+  const [recipes, blog_posts] = await Promise.all([
+    fetchPdpRecipesBySku(sku).catch(() => []),
+    fetchPdpArticlesBySku(sku).catch(() => []),
+  ]);
+
+  if (recipes.length === 0 && blog_posts.length === 0) {
+    return null;
+  }
+
+  return { recipes, blog_posts };
 }
 
 /** Sticky 导航：仅包含页面上实际存在的锚点区块 */
 export function buildPdpSectionNav(
-  cms: ProductPageCms | null,
+  cms: ProductDetailCms | null,
   product: UnifiedProduct,
   reviewSummary?: ProductReviewSummary | null
 ): Array<{ id: string; label: string }> {
@@ -39,11 +58,12 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-details', label: 'Details' });
   }
 
-  if ((product.specifications?.length ?? 0) > 0) {
+  const specRaw = product.specifications as unknown;
+  if (Array.isArray(specRaw) && specRaw.length > 0) {
     sections.push({ id: 'section-specifications', label: 'Specifications' });
   }
 
-  const reviewTotal = reviewSummary?.total ?? cms?.review_summary.total ?? 0;
+  const reviewTotal = reviewSummary?.total ?? cms?.review_summary?.total ?? 0;
   if (cms || reviewSummary) {
     sections.push({
       id: 'section-reviews',

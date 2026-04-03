@@ -6,6 +6,10 @@
  *
  * 数据源：Strapi CT `product-enrichments`（api/product-enrichments）
  * 缓存策略：1 小时，tag = 'product-enrichments'（Strapi webhook 触发 revalidate）
+ *
+ * 食谱/文章：`fetchPdpRecipesBySku` / `fetchPdpArticlesBySku` 调用
+ * `api/recipes/by-product-sku` 与 `api/articles/by-product-sku`，后端按 Strapi Product（`api::product.product`）
+ * 与 recipe/article 的 `products` 关联过滤；与 Product Enrichment CT 无直接关系。
  */
 
 import { apiClient } from '../client';

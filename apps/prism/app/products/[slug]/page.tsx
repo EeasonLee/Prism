@@ -19,15 +19,42 @@ import { ProductGuarantees } from './ProductGuarantees';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
+import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
 import {
   buildPdpSectionNav,
-  buildRealProductPageCms,
+  fetchRealProductPageCms,
   type ProductDetailPageData,
 } from './product-detail-data';
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+function getSpecificationGroups(product: {
+  specifications: unknown;
+}): ProductSpecificationGroup[] {
+  const raw = product.specifications;
+  return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
+}
+
+function emptyReviewSummary(sku: string): ProductReviewSummary {
+  return {
+    sku,
+    average: 0,
+    total: 0,
+    distribution: {
+      '1': 0,
+      '1.5': 0,
+      '2': 0,
+      '2.5': 0,
+      '3': 0,
+      '3.5': 0,
+      '4': 0,
+      '4.5': 0,
+      '5': 0,
+    },
+  };
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -84,14 +111,11 @@ export default async function ProductDetailPage({ params }: Props) {
 
     if (!fetchedProduct) notFound();
 
-    const [fetchedSummary, fetchedReviews, fetchedProductQa] =
+    const [fetchedSummary, fetchedReviews, fetchedProductQa, fetchedCms] =
       await Promise.all([
-        fetchReviewSummaryBySku(fetchedProduct.sku).catch(() => ({
-          sku: fetchedProduct.sku,
-          average: 0,
-          total: 0,
-          distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        })),
+        fetchReviewSummaryBySku(fetchedProduct.sku).catch(() =>
+          emptyReviewSummary(fetchedProduct.sku)
+        ),
         fetchReviewsBySku(fetchedProduct.sku, 1, 10).catch(() => ({
           items: [],
           pagination: {
@@ -117,11 +141,12 @@ export default async function ProductDetailPage({ params }: Props) {
             total: 0,
           },
         })),
+        fetchRealProductPageCms(fetchedProduct.sku).catch(() => null),
       ]);
 
     data = {
       product: fetchedProduct,
-      cms: buildRealProductPageCms(fetchedProduct),
+      cms: fetchedCms,
     };
     reviewSummary = fetchedSummary;
     reviewList = fetchedReviews;
@@ -158,6 +183,8 @@ export default async function ProductDetailPage({ params }: Props) {
   const ratingCount =
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
+  const specificationGroups = getSpecificationGroups(product);
+
   return (
     <PageContainer className="py-6">
       <nav
@@ -171,9 +198,7 @@ export default async function ProductDetailPage({ params }: Props) {
         {product.categories?.[0] && (
           <>
             <Link
-              href={`/categories/${
-                product.categories[0].url_key ?? product.categories[0].id
-              }`}
+              href={`/categories/${product.categories[0].id}`}
               className="transition hover:text-ink"
             >
               {product.categories[0].name}
@@ -224,10 +249,10 @@ export default async function ProductDetailPage({ params }: Props) {
           (cms?.guarantees?.length ?? 0) > 0) && (
           <div id="section-features">
             {(cms?.key_points?.length ?? 0) > 0 && (
-              <SellingPoints points={cms.key_points} />
+              <SellingPoints points={cms.key_points ?? []} />
             )}
             {(cms?.guarantees?.length ?? 0) > 0 && (
-              <ProductGuarantees guarantees={cms.guarantees} />
+              <ProductGuarantees guarantees={cms.guarantees ?? []} />
             )}
           </div>
         )}
@@ -255,24 +280,24 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       )}
 
-      {(product.specifications?.length ?? 0) > 0 && (
+      {specificationGroups.length > 0 && (
         <div id="section-specifications">
           <div className="border-t border-border" />
-          <ProductSpecifications groups={product.specifications ?? []} />
+          <ProductSpecifications groups={specificationGroups} />
         </div>
       )}
 
       {(cms?.recipes?.length ?? 0) > 0 && (
         <div id="section-recipes">
           <div className="border-t border-border" />
-          <RecipesSection recipes={cms.recipes} />
+          <RecipesSection recipes={cms?.recipes ?? []} />
         </div>
       )}
 
       {(cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <div className="border-t border-border" />
-          <BlogSection posts={cms.blog_posts} />
+          <BlogSection posts={cms?.blog_posts ?? []} />
         </div>
       )}
     </PageContainer>
