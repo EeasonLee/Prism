@@ -1,6 +1,7 @@
 import type { ArticleListItem } from '@prism/blog';
 import type { Recipe } from '../../../app/recipes/types';
 import type { BlogPost } from '../../../app/products/[sku]/mock-data';
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '../cache-policy';
 import { apiClient } from '../client';
 import { getStrapiBaseUrl } from '../config';
 
@@ -145,7 +146,7 @@ export async function fetchPdpRecipesBySku(
   const response = await apiClient.get<StrapiListResponse<Recipe>>(
     `api/recipes/by-product-sku/${encodeURIComponent(sku)}`,
     {
-      next: { revalidate: 3600 },
+      next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
     } as Parameters<typeof apiClient.get>[1]
   );
 
@@ -158,7 +159,7 @@ export async function fetchPdpArticlesBySku(sku: string): Promise<BlogPost[]> {
   const response = await apiClient.get<StrapiListResponse<PdpArticleItem>>(
     `api/articles/by-product-sku/${encodeURIComponent(sku)}?locale=en`,
     {
-      next: { revalidate: 3600 },
+      next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
     } as Parameters<typeof apiClient.get>[1]
   );
 

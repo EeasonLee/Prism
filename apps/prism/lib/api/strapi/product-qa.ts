@@ -1,3 +1,7 @@
+import {
+  CACHE_TAG_PRODUCT_QA,
+  REVALIDATE_SECONDS_REVIEW_UGC,
+} from '../cache-policy';
 import { apiClient } from '../client';
 
 /** Strapi 聚合/列表接口返回的单条（snake_case，含 item_type） */
@@ -199,7 +203,10 @@ export async function fetchProductQaByProduct(
   const response = await apiClient.get<StrapiQuestionListResponseRaw>(
     `api/product-qa/by-product/${productId}?${searchParams.toString()}`,
     {
-      next: { tags: ['product-qa'], revalidate: 300 },
+      next: {
+        tags: [CACHE_TAG_PRODUCT_QA],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 
@@ -227,7 +234,10 @@ export async function fetchProductQaBySku(
       sku
     )}?${searchParams.toString()}`,
     {
-      next: { tags: ['product-qa'], revalidate: 300 },
+      next: {
+        tags: [CACHE_TAG_PRODUCT_QA],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 

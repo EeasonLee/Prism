@@ -10,6 +10,7 @@
  * - 错误处理：失败时返回 null，不抛异常
  */
 
+import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
 import { apiClient } from './client';
 import type {
   Page,
@@ -445,8 +446,8 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       )}&${populateParams}`,
       {
         next: {
-          revalidate: 60, // ISR 60s 缓存
-          tags: [`cms-page:${slug}`],
+          revalidate: REVALIDATE_SECONDS_CMS_PAGE,
+          tags: [cacheTagCmsPage(slug)],
         },
       }
     );

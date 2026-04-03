@@ -1,8 +1,9 @@
+import { REVALIDATE_SECONDS_CMS_PAGE } from '@/lib/api/cache-policy';
 import { getPageBySlug } from '@/lib/api/cms-pages';
 import { renderSections } from '../components/sections/blockMap';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 60; // ISR 60s 缓存
+export const revalidate = REVALIDATE_SECONDS_CMS_PAGE; // ISR + On-Demand
 
 export async function generateMetadata({
   params,

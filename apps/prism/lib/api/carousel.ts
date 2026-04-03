@@ -1,3 +1,4 @@
+import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from './cache-policy';
 import { apiClient } from './client';
 
 export interface CarouselSlide {
@@ -43,7 +44,7 @@ export async function getCarouselItems(
 
   return apiClient.get<CarouselItemsResponse>(endpoint, {
     next: {
-      revalidate: 60,
+      revalidate: REVALIDATE_SECONDS_CATALOG_SNAPSHOT,
     },
   });
 }

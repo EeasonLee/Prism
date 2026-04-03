@@ -1,3 +1,8 @@
+import {
+  CACHE_TAG_PRODUCT_REVIEWS,
+  CACHE_TAG_PRODUCT_REVIEW_SUMMARIES,
+  REVALIDATE_SECONDS_REVIEW_UGC,
+} from '../cache-policy';
 import { getStrapiBaseUrl } from '../config';
 import { apiClient } from '../client';
 
@@ -231,7 +236,10 @@ export async function fetchReviewsBySku(
       sku
     )}?${searchParams.toString()}`,
     {
-      next: { tags: ['product-reviews'], revalidate: 300 },
+      next: {
+        tags: [CACHE_TAG_PRODUCT_REVIEWS],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 
@@ -247,7 +255,10 @@ export async function fetchReviewSummaryBySku(
   const response = await apiClient.get<StrapiReviewSummaryRaw>(
     `api/product-review-summaries/by-sku/${encodeURIComponent(sku)}`,
     {
-      next: { tags: ['product-review-summaries'], revalidate: 300 },
+      next: {
+        tags: [CACHE_TAG_PRODUCT_REVIEW_SUMMARIES],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 

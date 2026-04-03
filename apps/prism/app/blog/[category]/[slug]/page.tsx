@@ -1,4 +1,5 @@
 import { fetchArticleBySlug } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/lib/api/cache-policy';
 import {
   buildArticleMetadata,
   buildArticleSchema,
@@ -20,7 +21,7 @@ type ArticleDetailPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+export const revalidate = REVALIDATE_SECONDS_CMS_ASSOCIATION; // ISR 兜底，主要依赖 On-Demand
 
 const getArticleDetail = cache(async (slug: string, locale: string) => {
   const { data: article } = await fetchArticleBySlug(slug, locale);
