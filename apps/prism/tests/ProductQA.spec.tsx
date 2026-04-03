@@ -38,6 +38,7 @@ vi.mock('../lib/auth-modal/context', () => ({
 
 const faqLikeItem: ProductQuestion = {
   id: 1,
+  productId: 321,
   kind: 'faq',
   sku: 'JD-AF550',
   productSku: 'JD-AF550',
@@ -55,6 +56,7 @@ const faqLikeItem: ProductQuestion = {
 
 const userQaItem: ProductQuestion = {
   id: 2,
+  productId: 321,
   kind: 'user_qa',
   sku: 'JD-AF550',
   productSku: 'JD-AF550',
@@ -71,6 +73,7 @@ const userQaItem: ProductQuestion = {
 };
 
 const baseResult: ProductQaListResult = {
+  productId: 321,
   sku: 'JD-AF550',
   items: [faqLikeItem, userQaItem],
   pagination: { page: 1, pageSize: 10, pageCount: 1, total: 2 },
@@ -100,7 +103,14 @@ describe('ProductQA', () => {
   });
 
   it('renders the section heading, list items, and ask-a-question card', () => {
-    render(<ProductQA sku="JD-AF550" initialResult={baseResult} allowSubmit />);
+    render(
+      <ProductQA
+        productId={321}
+        sku="JD-AF550"
+        initialResult={baseResult}
+        allowSubmit
+      />
+    );
 
     expect(
       screen.getByRole('heading', { name: /questions and answers/i })
@@ -115,7 +125,14 @@ describe('ProductQA', () => {
   it('opens sign-in when an unauthenticated user tries to submit a question', async () => {
     const user = userEvent.setup();
 
-    render(<ProductQA sku="SKU-1" initialResult={baseResult} allowSubmit />);
+    render(
+      <ProductQA
+        productId={321}
+        sku="SKU-1"
+        initialResult={baseResult}
+        allowSubmit
+      />
+    );
 
     await user.click(screen.getByRole('button', { name: /submit question/i }));
 
@@ -140,7 +157,14 @@ describe('ProductQA', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<ProductQA sku="JD-AF550" initialResult={baseResult} allowSubmit />);
+    render(
+      <ProductQA
+        productId={321}
+        sku="JD-AF550"
+        initialResult={baseResult}
+        allowSubmit
+      />
+    );
 
     await user.type(
       screen.getByLabelText(/your question/i),
@@ -170,6 +194,7 @@ describe('ProductQA', () => {
       ok: true,
       status: 200,
       json: async () => ({
+        productId: 321,
         sku: 'JD-AF550',
         items: [faqLikeItem],
         pagination: { page: 2, pageSize: 10, pageCount: 2, total: 11 },
@@ -182,7 +207,14 @@ describe('ProductQA', () => {
       pagination: { page: 1, pageSize: 10, pageCount: 2, total: 11 },
     };
 
-    render(<ProductQA sku="JD-AF550" initialResult={multiPage} allowSubmit />);
+    render(
+      <ProductQA
+        productId={321}
+        sku="JD-AF550"
+        initialResult={multiPage}
+        allowSubmit
+      />
+    );
 
     await user.click(screen.getByRole('button', { name: /page 2/i }));
 

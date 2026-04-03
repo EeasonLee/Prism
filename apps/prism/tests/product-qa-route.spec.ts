@@ -33,6 +33,7 @@ beforeEach(() => {
 describe('GET /api/product-qa/by-sku/[sku]', () => {
   it('returns questions for a given SKU', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 301,
       sku: 'SKU-001',
       items: [
         {
@@ -55,7 +56,7 @@ describe('GET /api/product-qa/by-sku/[sku]', () => {
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-001'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-001?productId=301'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-001' }) };
 
@@ -69,94 +70,99 @@ describe('GET /api/product-qa/by-sku/[sku]', () => {
 
   it('decodes URL-encoded SKU', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 302,
       sku: 'SKU/001',
       items: [],
       pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 },
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU%2F001'
+      'http://localhost:3000/api/product-qa/by-sku/SKU%2F001?productId=302'
     );
     const context = { params: Promise.resolve({ sku: 'SKU%2F001' }) };
 
     await getQaBySku(request, context);
 
-    expect(mockFetch).toHaveBeenCalledWith('SKU/001', 1, 10);
+    expect(mockFetch).toHaveBeenCalledWith(302, 'SKU/001', 1, 10);
   });
 
   it('parses and clamps page parameter', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 303,
       sku: 'SKU-002',
       items: [],
       pagination: { page: 2, pageSize: 10, pageCount: 0, total: 0 },
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-002?page=2'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-002?page=2&productId=303'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-002' }) };
 
     await getQaBySku(request, context);
 
-    expect(mockFetch).toHaveBeenCalledWith('SKU-002', 2, 10);
+    expect(mockFetch).toHaveBeenCalledWith(303, 'SKU-002', 2, 10);
   });
 
   it('clamps page to minimum 1', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 304,
       sku: 'SKU-003',
       items: [],
       pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 },
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-003?page=0'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-003?page=0&productId=304'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-003' }) };
 
     await getQaBySku(request, context);
 
-    expect(mockFetch).toHaveBeenCalledWith('SKU-003', 1, 10);
+    expect(mockFetch).toHaveBeenCalledWith(304, 'SKU-003', 1, 10);
   });
 
   it('parses and clamps pageSize parameter', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 305,
       sku: 'SKU-004',
       items: [],
       pagination: { page: 1, pageSize: 20, pageCount: 0, total: 0 },
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-004?pageSize=20'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-004?pageSize=20&productId=305'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-004' }) };
 
     await getQaBySku(request, context);
 
-    expect(mockFetch).toHaveBeenCalledWith('SKU-004', 1, 20);
+    expect(mockFetch).toHaveBeenCalledWith(305, 'SKU-004', 1, 20);
   });
 
   it('clamps pageSize to maximum 50', async () => {
     mockFetch.mockResolvedValueOnce({
+      productId: 306,
       sku: 'SKU-005',
       items: [],
       pagination: { page: 1, pageSize: 50, pageCount: 0, total: 0 },
     });
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-005?pageSize=100'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-005?pageSize=100&productId=306'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-005' }) };
 
     await getQaBySku(request, context);
 
-    expect(mockFetch).toHaveBeenCalledWith('SKU-005', 1, 50);
+    expect(mockFetch).toHaveBeenCalledWith(306, 'SKU-005', 1, 50);
   });
 
   it('returns 502 on upstream failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Upstream timeout'));
 
     const request = new NextRequest(
-      'http://localhost:3000/api/product-qa/by-sku/SKU-006'
+      'http://localhost:3000/api/product-qa/by-sku/SKU-006?productId=307'
     );
     const context = { params: Promise.resolve({ sku: 'SKU-006' }) };
 
@@ -186,6 +192,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 401,
           sku: 'SKU-100',
           content: 'Is this gluten-free?',
           authorName: 'Alice',
@@ -216,6 +223,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 402,
           sku: '  SKU-101  ',
           content: '  Does this ship to Canada?  ',
           authorName: 'Bob',
@@ -229,6 +237,7 @@ describe('POST /api/product-qa/questions', () => {
 
     expect(mockSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
+        productId: 402,
         sku: 'SKU-101',
         content: 'Does this ship to Canada?',
       }),
@@ -236,7 +245,7 @@ describe('POST /api/product-qa/questions', () => {
     );
   });
 
-  it('returns 400 when sku is missing', async () => {
+  it('returns 400 when productId is missing', async () => {
     const request = new NextRequest(
       'http://localhost:3000/api/product-qa/questions',
       {
@@ -255,7 +264,7 @@ describe('POST /api/product-qa/questions', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('sku is required');
+    expect(data.error).toBe('productId is required');
   });
 
   it('returns 400 when content is too short', async () => {
@@ -265,6 +274,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 403,
           sku: 'SKU-102',
           content: 'Short',
           authorName: 'Dave',
@@ -288,6 +298,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 404,
           sku: 'SKU-103',
           content: 'a'.repeat(501),
           authorName: 'Eve',
@@ -311,6 +322,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 405,
           sku: 'SKU-104',
           content: 'Is this available in blue?',
           authorEmail: 'frank@example.com',
@@ -333,6 +345,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 406,
           sku: 'SKU-105',
           content: 'Is this available in blue?',
           authorName: 'Frank',
@@ -355,6 +368,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 407,
           sku: 'SKU-106',
           content: 'Is this available in blue?',
           authorName: 'Frank',
@@ -376,6 +390,7 @@ describe('POST /api/product-qa/questions', () => {
       {
         method: 'POST',
         body: JSON.stringify({
+          productId: 408,
           sku: 'SKU-107',
           content: 'What is the warranty period?',
           authorName: 'Grace',
@@ -405,6 +420,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token-xyz' },
         body: JSON.stringify({
+          productId: 409,
           sku: 'SKU-104',
           content: 'What is the warranty period?',
           authorName: 'Hank',
@@ -432,6 +448,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 410,
           sku: 'SKU-105',
           content: 'Is this available in blue?',
           authorName: 'Ivy',
@@ -457,6 +474,7 @@ describe('POST /api/product-qa/questions', () => {
         method: 'POST',
         headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
+          productId: 411,
           sku: 'SKU-106',
           content: 'Does this come with a warranty?',
           authorName: 'Jack',

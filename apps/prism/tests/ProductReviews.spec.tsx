@@ -72,6 +72,16 @@ const review: ProductReview = {
   content: 'Easy to use and the selected variant matched the listing.',
   media: [
     {
+      id: 10,
+      kind: 'video',
+      url: 'https://example.com/review-video.webm',
+      width: null,
+      height: null,
+      mime: 'video/webm',
+      alt: 'Review video',
+      posterUrl: null,
+    },
+    {
       id: 11,
       kind: 'image',
       url: 'https://example.com/review-image.jpg',
@@ -168,7 +178,7 @@ describe('ProductReviews', () => {
     expect(labels).not.toContain('1.5');
   });
 
-  it('opens an image preview dialog from review media thumbnails', async () => {
+  it('shows a visual video thumbnail, opens review media, and navigates to the next image', async () => {
     const user = userEvent.setup();
 
     render(
@@ -181,20 +191,33 @@ describe('ProductReviews', () => {
       />
     );
 
+    expect(screen.getByLabelText('Review video')).toBeInTheDocument();
+
     await user.click(
-      screen.getByRole('button', { name: /preview review image/i })
+      screen.getByRole('button', { name: /preview review media 1/i })
     );
 
-    const dialog = screen.getByRole('dialog', { name: /image preview/i });
+    const dialog = screen.getByRole('dialog', {
+      name: /media viewer video preview/i,
+    });
     expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByAltText('Review image')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Review video')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /show next media/i }));
+
+    expect(
+      screen.getByRole('dialog', { name: /media viewer image preview/i })
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).getByAltText('Review image')
+    ).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole('button', { name: /close image preview/i })
+      screen.getByRole('button', { name: /close media viewer/i })
     );
 
     expect(
-      screen.queryByRole('dialog', { name: /image preview/i })
+      screen.queryByRole('dialog', { name: /media viewer/i })
     ).not.toBeInTheDocument();
   });
 });

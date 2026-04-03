@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useMemo, useRef, useState } from 'react';
-import { LoaderCircle, Upload, Video, X } from 'lucide-react';
+import { LoaderCircle, Upload, X } from 'lucide-react';
 import type { ProductReviewMedia } from '../../../lib/api/strapi/reviews';
 import { useAuth } from '../../../lib/auth/context';
 import { useAuthModal } from '../../../lib/auth-modal/context';
@@ -161,10 +161,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
   const currentVideoCount = uploads.filter(
     upload => upload.kind === 'video'
   ).length;
-  const isVariantBlocked =
-    target.requiresVariantSelection || !target.purchasedSku;
-  const isSubmitDisabled =
-    isSubmitting || isVariantBlocked || hasUploadingMedia || hasFailedMedia;
+  const isSubmitDisabled = isSubmitting || hasUploadingMedia || hasFailedMedia;
 
   const handleFileSelection = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -286,11 +283,6 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
     setError(null);
     setSuccess(null);
 
-    if (isVariantBlocked) {
-      setError('Select a variant before writing a review.');
-      return;
-    }
-
     if (!isAuthenticated || !user) {
       openLogin('signin');
       return;
@@ -316,7 +308,8 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
         },
         body: JSON.stringify({
           productSku: target.productSku,
-          purchasedSku: target.purchasedSku,
+          // 后端要求 purchasedSku 必填；未选体产品时回退为主 SKU
+          purchasedSku: target.purchasedSku ?? target.productSku,
           purchasedVariantLabel: target.purchasedVariantLabel,
           authorName: displayName || user.email,
           authorEmail: user.email,
@@ -401,7 +394,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
             <p className="text-sm text-ink-muted">
               {target.purchasedSku
                 ? `Purchased SKU: ${target.purchasedSku}`
-                : 'Purchased SKU will be set after you choose a variant.'}
+                : 'Purchased SKU will default to the Product SKU.'}
             </p>
             {target.purchasedVariantLabel && (
               <p className="text-sm text-ink-muted">
@@ -410,12 +403,6 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
             )}
           </div>
         </div>
-
-        {isVariantBlocked && (
-          <div className="rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-ink">
-            Select a variant before writing a review.
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -538,27 +525,15 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
                           {upload.error ?? 'Upload failed'}
                         </p>
                       )}
-                      {upload.status === 'uploaded' &&
-                        upload.media &&
-                        upload.kind === 'image' && (
-                          <ReviewImagePreview
-                            src={upload.media.url}
-                            alt={upload.media.alt ?? upload.fileName}
-                            width={160}
-                            height={112}
-                            thumbnailClassName="h-full w-full object-cover"
-                            buttonClassName="h-full w-full cursor-pointer"
-                            previewLabel={`Preview image ${upload.fileName}`}
-                          />
-                        )}
-                      {upload.status === 'uploaded' &&
-                        upload.media &&
-                        upload.kind === 'video' && (
-                          <div className="flex flex-col items-center gap-2 text-ink-muted">
-                            <Video className="h-6 w-6" />
-                            <span className="text-xs">Video ready</span>
-                          </div>
-                        )}
+                      {upload.status === 'uploaded' && upload.media && (
+                        <ReviewImagePreview
+                          media={[upload.media]}
+                          altFallback={upload.fileName}
+                          thumbnailClassName="h-full w-full object-cover"
+                          buttonClassName="h-full w-full cursor-pointer"
+                          previewLabel={`Preview media ${upload.fileName}`}
+                        />
+                      )}
                     </div>
                   </div>
                 ))}

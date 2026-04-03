@@ -14,7 +14,7 @@ vi.mock('../lib/api/client', () => ({
 
 import { apiClient } from '../lib/api/client';
 import {
-  fetchProductQaBySku,
+  fetchProductQaByProduct,
   submitProductQuestion,
 } from '../lib/api/strapi/product-qa';
 import type { SubmitProductQuestionInput } from '../lib/api/strapi/product-qa';
@@ -27,11 +27,11 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// fetchProductQaBySku
+// fetchProductQaByProduct
 // ---------------------------------------------------------------------------
 
-describe('fetchProductQaBySku', () => {
-  it('returns sku, normalized items, and pagination', async () => {
+describe('fetchProductQaByProduct', () => {
+  it('returns productId, sku, normalized items, and pagination', async () => {
     mockGet.mockResolvedValueOnce({
       data: [
         {
@@ -56,8 +56,9 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-001');
+    const result = await fetchProductQaByProduct(101, 'SKU-001');
 
+    expect(result.productId).toBe(101);
     expect(result.sku).toBe('SKU-001');
     expect(result.items).toHaveLength(1);
     expect(result.items[0].kind).toBe('user_qa');
@@ -93,7 +94,7 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-002');
+    const result = await fetchProductQaByProduct(102, 'SKU-002');
     const item = result.items[0];
 
     expect(item.id).toBe(2);
@@ -135,7 +136,7 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-FAQ');
+    const result = await fetchProductQaByProduct(103, 'SKU-FAQ');
 
     expect(result.items[0].kind).toBe('faq');
     expect(result.items[0].authorName).toBeNull();
@@ -161,7 +162,7 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-003');
+    const result = await fetchProductQaByProduct(104, 'SKU-003');
 
     expect(result.items[0].productSku).toBe('SKU-003');
     expect(result.items[0].answerText).toBe('Yes, suitable for vegan diets.');
@@ -186,7 +187,7 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-004');
+    const result = await fetchProductQaByProduct(105, 'SKU-004');
 
     expect(result.items[0].status).toBe('pending');
   });
@@ -209,7 +210,7 @@ describe('fetchProductQaBySku', () => {
       },
     });
 
-    const result = await fetchProductQaBySku('SKU-005');
+    const result = await fetchProductQaByProduct(106, 'SKU-005');
 
     expect(result.items[0].helpfulCount).toBe(0);
   });
@@ -220,7 +221,7 @@ describe('fetchProductQaBySku', () => {
       meta: { pagination: { page: 2, pageSize: 5, pageCount: 0, total: 0 } },
     });
 
-    await fetchProductQaBySku('SKU-006', 2, 5);
+    await fetchProductQaByProduct(107, 'SKU-006', 2, 5);
 
     expect(mockGet).toHaveBeenCalledWith(
       expect.stringContaining('page=2'),
@@ -238,14 +239,10 @@ describe('fetchProductQaBySku', () => {
       meta: { pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 } },
     });
 
-    await fetchProductQaBySku('SKU/SPECIAL&001');
+    await fetchProductQaByProduct(108, 'SKU/SPECIAL&001');
 
     expect(mockGet).toHaveBeenCalledWith(
-      expect.stringMatching(/api\/product-qa\/by-sku\//),
-      expect.anything()
-    );
-    expect(mockGet).toHaveBeenCalledWith(
-      expect.stringContaining('SKU%2FSPECIAL%26001'),
+      expect.stringMatching(/api\/product-qa\/by-product\/108/),
       expect.anything()
     );
   });
@@ -256,7 +253,7 @@ describe('fetchProductQaBySku', () => {
       meta: { pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 } },
     });
 
-    await fetchProductQaBySku('SKU-007');
+    await fetchProductQaByProduct(109, 'SKU-007');
 
     expect(mockGet).toHaveBeenCalledWith(
       expect.any(String),
@@ -272,8 +269,9 @@ describe('fetchProductQaBySku', () => {
       meta: { pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 } },
     });
 
-    const result = await fetchProductQaBySku('SKU-EMPTY');
+    const result = await fetchProductQaByProduct(110, 'SKU-EMPTY');
 
+    expect(result.productId).toBe(110);
     expect(result.items).toEqual([]);
     expect(result.sku).toBe('SKU-EMPTY');
   });
@@ -285,6 +283,7 @@ describe('fetchProductQaBySku', () => {
 
 describe('submitProductQuestion', () => {
   const baseInput: SubmitProductQuestionInput = {
+    productId: 201,
     sku: 'SKU-100',
     content: 'Is this gluten-free?',
     authorName: 'Frank',
@@ -348,6 +347,7 @@ describe('submitProductQuestion', () => {
       'api/product-qa/questions',
       {
         data: {
+          productId: 201,
           sku: 'SKU-100',
           content: 'Is this gluten-free?',
           author_name: 'Frank',

@@ -1,3 +1,4 @@
+import { logRequest } from '../api/interceptors/request-logger';
 import { env } from '../env';
 
 function getMagentoGraphQLUrl(): string {
@@ -28,14 +29,67 @@ export async function magentoGraphQL<T>(
   variables?: Record<string, unknown>
 ): Promise<T> {
   const url = getMagentoGraphQLUrl();
+  const requestBody = { query, variables };
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  const startTime = Date.now();
 
-  const response = await fetch(url, {
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+      next: { revalidate: 60 },
+    });
+  } catch (error) {
+    logRequest({
+      method: 'POST',
+      url,
+      endpoint: 'magento/graphql',
+      duration: Date.now() - startTime,
+      requestHeaders: headers,
+      requestBody,
+      error: error instanceof Error ? error : String(error),
+    });
+    throw error;
+  }
+
+  const duration = Date.now() - startTime;
+
+  let json: GraphQLResponse<T>;
+
+  try {
+    json = (await response.json()) as GraphQLResponse<T>;
+  } catch (error) {
+    logRequest({
+      method: 'POST',
+      url,
+      endpoint: 'magento/graphql',
+      status: response.status,
+      statusText: response.statusText,
+      duration,
+      requestHeaders: headers,
+      responseHeaders: response.headers,
+      requestBody,
+      error: error instanceof Error ? error : String(error),
+    });
+    throw error;
+  }
+
+  logRequest({
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 },
+    url,
+    endpoint: 'magento/graphql',
+    status: response.status,
+    statusText: response.statusText,
+    duration,
+    requestHeaders: headers,
+    responseHeaders: response.headers,
+    requestBody,
+    responseBody: json,
   });
 
   if (!response.ok) {
@@ -43,8 +97,6 @@ export async function magentoGraphQL<T>(
       `GraphQL request failed: ${response.status} ${response.statusText}`
     );
   }
-
-  const json: GraphQLResponse<T> = await response.json();
 
   if (json.errors && json.errors.length > 0) {
     throw new MagentoGraphQLError(json.errors[0].message, json.errors);

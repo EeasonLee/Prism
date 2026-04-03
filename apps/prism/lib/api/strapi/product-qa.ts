@@ -3,10 +3,12 @@ import { apiClient } from '../client';
 /** Strapi 聚合/列表接口返回的单条（snake_case，含 item_type） */
 interface StrapiQuestionRaw {
   item_type?: 'faq' | 'user_qa';
+  type?: 'faq' | 'user_qa';
   id: number;
   documentId?: string;
-  sku: string;
-  product_sku?: string;
+  product_id?: number | null;
+  sku: string | null;
+  product_sku?: string | null;
   author_name: string | null;
   author_email?: string;
   question_text?: string;
@@ -15,19 +17,34 @@ interface StrapiQuestionRaw {
   answer_content?: string | null;
   answered_at?: string | null;
   answered_by?: string | null;
-  question_status?: 'pending' | 'answered' | 'published' | 'rejected' | null;
+  question_status?:
+    | 'draft'
+    | 'pending'
+    | 'answered'
+    | 'published'
+    | 'rejected'
+    | 'archived'
+    | null;
   helpful_count?: number | null;
   viewer_has_marked_helpful?: boolean | null;
+  sort_order?: number | null;
+  is_public?: boolean | null;
+  published_at?: string | null;
   createdAt?: string;
   updatedAt?: string;
-  /** nested shape from legacy findBySku only */
   answer?: {
     content?: string;
     is_published?: boolean;
     createdAt?: string;
     updatedAt?: string;
   } | null;
-  status?: 'pending' | 'answered' | 'published';
+  status?:
+    | 'draft'
+    | 'pending'
+    | 'answered'
+    | 'published'
+    | 'rejected'
+    | 'archived';
 }
 
 interface StrapiQuestionListResponseRaw {
@@ -54,6 +71,7 @@ export type ProductQaKind = 'faq' | 'user_qa';
 export interface ProductQuestion {
   id: number;
   documentId?: string;
+  productId: number | null;
   kind: ProductQaKind;
   sku: string;
   productSku: string;
@@ -62,7 +80,13 @@ export interface ProductQuestion {
   answerText: string | null;
   answeredAt: string | null;
   answeredBy: string | null;
-  status: 'pending' | 'answered' | 'published' | 'rejected';
+  status:
+    | 'draft'
+    | 'pending'
+    | 'answered'
+    | 'published'
+    | 'rejected'
+    | 'archived';
   helpfulCount: number;
   viewerHasMarkedHelpful: boolean;
   createdAt: string | null;
@@ -77,12 +101,14 @@ export interface ProductQaPagination {
 }
 
 export interface ProductQaListResult {
+  productId: number;
   sku: string;
   items: ProductQuestion[];
   pagination: ProductQaPagination;
 }
 
 export interface SubmitProductQuestionInput {
+  productId: number;
   sku: string;
   content: string;
   authorName: string;
@@ -99,10 +125,12 @@ export interface SubmitProductQuestionResult {
 function mapStrapiStatus(raw: StrapiQuestionRaw): ProductQuestion['status'] {
   const s = raw.question_status ?? raw.status;
   if (
+    s === 'draft' ||
     s === 'published' ||
     s === 'answered' ||
     s === 'pending' ||
-    s === 'rejected'
+    s === 'rejected' ||
+    s === 'archived'
   ) {
     return s;
   }
@@ -124,20 +152,23 @@ function resolveAnswerText(raw: StrapiQuestionRaw): string | null {
 }
 
 function normalizeQuestion(raw: StrapiQuestionRaw): ProductQuestion {
-  const kind: ProductQaKind = raw.item_type === 'faq' ? 'faq' : 'user_qa';
+  const kind: ProductQaKind =
+    raw.item_type === 'faq' || raw.type === 'faq' ? 'faq' : 'user_qa';
   const questionText =
     (typeof raw.question_text === 'string' && raw.question_text.length > 0
       ? raw.question_text
       : null) ??
     (typeof raw.content === 'string' ? raw.content : '') ??
     '';
+  const sku = raw.sku ?? raw.product_sku ?? '';
 
   return {
     id: raw.id,
     documentId: raw.documentId,
+    productId: raw.product_id ?? null,
     kind,
-    sku: raw.sku,
-    productSku: raw.product_sku ?? raw.sku,
+    sku,
+    productSku: raw.product_sku ?? sku,
     authorName:
       raw.author_name !== undefined && raw.author_name !== null
         ? raw.author_name
@@ -154,7 +185,34 @@ function normalizeQuestion(raw: StrapiQuestionRaw): ProductQuestion {
   };
 }
 
+export async function fetchProductQaByProduct(
+  productId: number,
+  sku: string,
+  page = 1,
+  pageSize = 10
+): Promise<ProductQaListResult> {
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  const response = await apiClient.get<StrapiQuestionListResponseRaw>(
+    `api/product-qa/by-product/${productId}?${searchParams.toString()}`,
+    {
+      next: { tags: ['product-qa'], revalidate: 300 },
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return {
+    productId,
+    sku,
+    items: response.data.map(normalizeQuestion),
+    pagination: response.meta.pagination,
+  };
+}
+
 export async function fetchProductQaBySku(
+  productIdForContext: number,
   sku: string,
   page = 1,
   pageSize = 10
@@ -174,6 +232,7 @@ export async function fetchProductQaBySku(
   );
 
   return {
+    productId: productIdForContext,
     sku,
     items: response.data.map(normalizeQuestion),
     pagination: response.meta.pagination,
@@ -188,6 +247,7 @@ export async function submitProductQuestion(
     'api/product-qa/questions',
     {
       data: {
+        productId: input.productId,
         sku: input.sku,
         content: input.content,
         author_name: input.authorName,

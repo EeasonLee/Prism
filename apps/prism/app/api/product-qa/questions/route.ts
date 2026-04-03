@@ -3,6 +3,7 @@ import { ApiError } from '@prism/shared';
 import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
 
 interface SubmitQuestionRequestBody {
+  productId?: unknown;
   sku?: unknown;
   content?: unknown;
   authorName?: unknown;
@@ -23,12 +24,16 @@ export async function POST(request: NextRequest) {
     .json()
     .catch(() => ({}))) as SubmitQuestionRequestBody;
 
+  const productId = Number(body.productId);
   const sku = normalizeText(body.sku);
   const content = normalizeText(body.content);
   const authorName = normalizeText(body.authorName);
   const authorEmail = normalizeText(body.authorEmail);
   const magentoUserId = normalizeText(body.magentoUserId);
 
+  if (!Number.isInteger(productId) || productId < 1) {
+    return badRequest('productId is required');
+  }
   if (!sku) return badRequest('sku is required');
   if (!content || content.length < 10 || content.length > 500) {
     return badRequest('content must be between 10 and 500 characters');
@@ -44,6 +49,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await submitProductQuestion(
       {
+        productId,
         sku,
         content,
         authorName,
