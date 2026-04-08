@@ -145,7 +145,9 @@ export function ProductDetailContent({
         ? selectedVariant?.price ?? product.price
         : product.price,
       specialPrice: hasCompleteVariantSelection
-        ? selectedVariant?.special_price ?? product.special_price
+        ? selectedVariant
+          ? selectedVariant.special_price ?? null
+          : null
         : product.special_price,
       stockQty: hasCompleteVariantSelection
         ? selectedVariant?.stock_qty ?? product.stock_qty
