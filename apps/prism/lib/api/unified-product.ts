@@ -287,7 +287,12 @@ function mapGQLProduct(
         id: v.product.id,
         sku: v.product.sku,
         name: v.product.name,
-        price: v.product.price_range.minimum_price.final_price.value,
+        price: v.product.price_range.minimum_price.regular_price.value,
+        special_price:
+          v.product.price_range.minimum_price.final_price.value <
+          v.product.price_range.minimum_price.regular_price.value
+            ? v.product.price_range.minimum_price.final_price.value
+            : null,
         is_in_stock: v.product.stock_status === 'IN_STOCK',
         stock_status: v.product.stock_status,
         attributes: v.attributes.reduce<Record<string, string>>((acc, attr) => {

@@ -2,9 +2,10 @@
 
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
+  // getCartRedirectLink,
   getCartItems,
-  getCartRedirectLink,
   getCheckoutRedirectLink,
 } from '../../lib/api/magento/cart';
 import type { CartItem } from '../../lib/api/magento/types';
@@ -13,6 +14,7 @@ import { useCart } from '../../lib/cart/context';
 import { LoginModal } from './LoginModal';
 
 export function CartDrawer() {
+  const router = useRouter();
   const {
     isCartOpen,
     closeCart,
@@ -52,21 +54,15 @@ export function CartDrawer() {
   const handleViewCart = useCallback(async () => {
     if (!hasSession) return;
     setViewCartLoading(true);
-    setServiceError(null);
     try {
-      const { redirect_url } = await getCartRedirectLink();
-      window.open(redirect_url, '_blank', 'noopener,noreferrer');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      setServiceError(
-        msg.includes('unavailable')
-          ? 'Shop service is temporarily unavailable, please try again later.'
-          : 'Failed to generate cart link. Please try again.'
-      );
+      closeCart();
+      router.push('/cart');
+      // const { redirect_url } = await getCartRedirectLink();
+      // window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } finally {
       setViewCartLoading(false);
     }
-  }, [hasSession]);
+  }, [closeCart, hasSession, router]);
 
   const handleCheckout = useCallback(async () => {
     if (!hasSession) return;

@@ -161,6 +161,7 @@ export function ProductDetailReviewShell({
 
       <div id="section-product-qa">
         <ProductQA
+          productId={product.id}
           sku={reviewSku}
           initialResult={initialProductQa}
           allowSubmit={allowSubmit}

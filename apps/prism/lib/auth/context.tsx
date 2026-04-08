@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshSession = useCallback(async () => {
+  const refreshSession = useCallback(async (): Promise<SessionResponse> => {
     try {
       const res = await fetch('/api/auth/session', {
         credentials: 'include',
@@ -53,19 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(data.isAuthenticated);
       setIsGuest(data.isGuest);
       setUser(data.user ?? null);
+      return data;
     } catch {
       setHasSession(false);
       setIsAuthenticated(false);
       setIsGuest(false);
       setUser(null);
+      return {
+        hasSession: false,
+        isAuthenticated: false,
+        isGuest: false,
+      };
     }
   }, []);
 
   useEffect(() => {
     const initSession = async () => {
-      await refreshSession();
-      const currentHasSession = hasSession;
-      if (!currentHasSession) {
+      const session = await refreshSession();
+      if (!session.hasSession) {
         try {
           await fetch('/api/auth/guest', {
             method: 'POST',
@@ -79,8 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     };
     void initSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshSession]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {

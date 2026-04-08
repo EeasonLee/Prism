@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck, LoaderCircle, Star, ThumbsUp, Video } from 'lucide-react';
+import { BadgeCheck, LoaderCircle, Star, ThumbsUp } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   ProductReview,
@@ -218,29 +218,19 @@ function ReviewMediaStrip({ review }: { review: ProductReview }) {
 
   return (
     <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-      {review.media.map(media => (
+      {review.media.map((media, index) => (
         <div
           key={media.id}
           className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-muted"
         >
-          {media.kind === 'image' ? (
-            <ReviewImagePreview
-              src={media.url}
-              alt={media.alt ?? review.title}
-              width={80}
-              height={80}
-              thumbnailClassName="h-full w-full object-cover"
-              buttonClassName="h-full w-full cursor-pointer"
-              previewLabel={`Preview ${media.alt ?? review.title}`}
-            />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-ink-muted">
-              <Video className="h-5 w-5" />
-              <span className="text-[10px] font-medium uppercase tracking-[0.16em]">
-                Video
-              </span>
-            </div>
-          )}
+          <ReviewImagePreview
+            media={review.media}
+            initialIndex={index}
+            altFallback={review.title}
+            thumbnailClassName="h-full w-full object-cover"
+            buttonClassName="h-full w-full cursor-pointer"
+            previewLabel={`Preview review media ${index + 1}`}
+          />
         </div>
       ))}
     </div>
@@ -349,6 +339,10 @@ export function ProductReviews({
   mockReviews,
   allowSubmit = true,
 }: ProductReviewsProps) {
+  // 对可变体产品：已选中变体时，按子 SKU（purchasedSku）拉取对应评论；
+  // 未选择变体时，fallback 到父级 SKU（sku）。
+  const effectiveSku = target.purchasedSku ?? sku;
+
   const isMock = !!mockSummary && !!mockReviews;
   const [visitorKey, setVisitorKey] = useState<string | null>(null);
 
@@ -404,7 +398,9 @@ export function ProductReviews({
         }
 
         const response = await fetch(
-          `/api/reviews/${encodeURIComponent(sku)}?${params.toString()}`,
+          `/api/reviews/${encodeURIComponent(
+            effectiveSku
+          )}?${params.toString()}`,
           {
             method: 'GET',
             cache: 'no-store',
@@ -433,8 +429,15 @@ export function ProductReviews({
         setIsLoading(false);
       }
     },
-    [isMock, pagination.pageSize, sku, sort, visitorKey]
+    [isMock, pagination.pageSize, effectiveSku, sort, visitorKey]
   );
+
+  useEffect(() => {
+    if (isMock) return;
+    void loadPage(1, sort);
+    // 这里强制按变体变化刷新评论列表
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveSku, isMock]);
 
   const handleHelpful = useCallback(
     async (review: ProductReview) => {

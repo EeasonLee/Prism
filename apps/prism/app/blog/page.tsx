@@ -1,5 +1,6 @@
 import type { HeroSlide } from '@/app/components/HeroCarousel';
 import { HeroCarousel } from '@/app/components/HeroCarousel';
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/lib/api/cache-policy';
 import { fetchCategoryByType } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
 import { buildStaticMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -32,7 +33,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
     );
 }
 
-export const revalidate = 3600; // ISR 兜底 1 小时，主要依赖 On-Demand
+export const revalidate = REVALIDATE_SECONDS_CMS_ASSOCIATION; // ISR 兜底，主要依赖 On-Demand
 
 export const metadata: Metadata = buildStaticMetadata({
   title: 'Joydeem Blog | Kitchen Guides, Tips, and Inspiration',

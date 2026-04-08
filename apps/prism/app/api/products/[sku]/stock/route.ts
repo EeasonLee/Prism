@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { REVALIDATE_SECONDS_REALTIME } from '@/lib/api/cache-policy';
 import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
 
 // 不缓存，每次实时获取
-export const revalidate = 0;
+export const revalidate = REVALIDATE_SECONDS_REALTIME;
 export const dynamic = 'force-dynamic';
 
 export async function GET(

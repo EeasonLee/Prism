@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiError } from '@prism/shared';
 import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
+import { getAccessToken } from '@/lib/api/bff/cookies';
 
 interface SubmitQuestionRequestBody {
+  productId?: unknown;
   sku?: unknown;
   content?: unknown;
   authorName?: unknown;
@@ -23,6 +25,11 @@ export async function POST(request: NextRequest) {
     .json()
     .catch(() => ({}))) as SubmitQuestionRequestBody;
 
+  const rawProductId = body.productId;
+  const productId =
+    rawProductId === undefined || rawProductId === null || rawProductId === ''
+      ? null
+      : Number(rawProductId);
   const sku = normalizeText(body.sku);
   const content = normalizeText(body.content);
   const authorName = normalizeText(body.authorName);
@@ -38,12 +45,15 @@ export async function POST(request: NextRequest) {
   if (!magentoUserId) return badRequest('magentoUserId is required');
 
   const authorization = request.headers.get('authorization');
-  if (!authorization) return badRequest('Authorization header is required');
-  const accessToken = authorization.replace(/^Bearer\s+/i, '');
+  const accessToken =
+    authorization?.replace(/^Bearer\s+/i, '') ?? getAccessToken(request);
 
   try {
     const result = await submitProductQuestion(
       {
+        ...(Number.isInteger(productId) && (productId ?? 0) > 0
+          ? { productId: productId as number }
+          : {}),
         sku,
         content,
         authorName,

@@ -153,6 +153,36 @@ export interface MagentoCustomAttribute {
   value: string | string[];
 }
 
+export type CustomizableOptionType =
+  | 'drop_down'
+  | 'radio'
+  | 'checkbox'
+  | 'multiple'
+  | 'field'
+  | 'area'
+  | 'date'
+  | 'date_time'
+  | 'time'
+  | 'file';
+
+export interface MagentoCustomizableOptionValue {
+  option_type_id: number;
+  title: string;
+  price: number;
+  price_type: 'fixed' | 'percent' | 'dynamic';
+  sort_order: number;
+}
+
+export interface MagentoCustomizableOption {
+  option_id: number;
+  title: string;
+  required: boolean;
+  sort_order: number;
+  type: CustomizableOptionType;
+  values?: MagentoCustomizableOptionValue[];
+  max_characters?: number | null;
+}
+
 export interface MagentoProduct {
   id: number;
   __typename?: string | null;
@@ -180,7 +210,7 @@ export interface MagentoProduct {
     configurable_product_links?: number[];
   };
   product_links?: unknown[];
-  options?: unknown[];
+  options?: MagentoCustomizableOption[];
   media_gallery_entries?: MagentoProductImage[];
   custom_attributes?: MagentoCustomAttribute[];
   // Magento 自定义属性

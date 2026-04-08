@@ -16,6 +16,7 @@ function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
 }
 
 interface ProductQAProps {
+  productId: number;
   sku: string;
   initialResult: ProductQaListResult;
   allowSubmit?: boolean;
@@ -23,6 +24,7 @@ interface ProductQAProps {
 }
 
 export function ProductQA({
+  productId,
   sku,
   initialResult,
   allowSubmit = true,
@@ -52,7 +54,7 @@ export function ProductQA({
       try {
         const encodedSku = encodeURIComponent(sku);
         const res = await fetch(
-          `/api/product-qa/by-sku/${encodedSku}?page=${nextPage}&pageSize=${pageSize}`,
+          `/api/product-qa/by-sku/${encodedSku}?productId=${productId}&page=${nextPage}&pageSize=${pageSize}`,
           { method: 'GET' }
         );
         if (!res.ok) {
@@ -72,7 +74,7 @@ export function ProductQA({
         setIsPageLoading(false);
       }
     },
-    [pageSize, sku]
+    [pageSize, productId, sku]
   );
 
   const validateContent = (text: string) => {

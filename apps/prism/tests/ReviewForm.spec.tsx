@@ -64,7 +64,17 @@ describe('ReviewForm', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  it('blocks configurable-product submission until a variant is selected', async () => {
+  it('allows configurable-product submission without selecting a variant (falls back to product SKU)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: 'submitted',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const onSubmitted = vi.fn();
+
     render(
       <ReviewForm
         sku="PARENT"
@@ -73,20 +83,45 @@ describe('ReviewForm', () => {
           purchasedVariantLabel: null,
           requiresVariantSelection: true,
         })}
-        onSubmitted={vi.fn()}
+        onSubmitted={onSubmitted}
       />
     );
 
     expect(
-      screen.getByText(/select a variant before writing a review/i)
-    ).toBeInTheDocument();
+      screen.queryByText(/select a variant before writing a review/i)
+    ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
+    const titleInput = screen.getByLabelText('Title');
+    await userEvent.type(titleInput, 'Great product');
+
+    const contentTextarea = screen.getByLabelText('Review');
+    await userEvent.type(
+      contentTextarea,
+      'Works well and exceeded my expectations. I would buy again.'
+    );
+
+    const submitButton = screen.getByRole('button', { name: /submit review/i });
+    fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/select a variant before writing a review/i)
-      ).toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    const [, options] = fetchMock.mock.calls[0] as [
+      string,
+      { method: string; headers: Record<string, string>; body: string }
+    ];
+    const payload = JSON.parse(options.body) as {
+      purchasedSku?: string;
+      productSku?: string;
+    };
+
+    expect(payload.productSku).toBe('PARENT');
+    // purchasedSku must be required by the API; we fall back to product SKU.
+    expect(payload.purchasedSku).toBe('PARENT');
+
+    await waitFor(() => {
+      expect(onSubmitted).toHaveBeenCalled();
     });
   });
 
@@ -142,7 +177,7 @@ describe('ReviewForm', () => {
     expect(screen.getByText('4.5 / 5')).toBeInTheDocument();
   });
 
-  it('opens and closes an image preview dialog for uploaded review images', async () => {
+  it('opens uploaded video media and closes the viewer with escape', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -150,12 +185,12 @@ describe('ReviewForm', () => {
         items: [
           {
             id: 101,
-            kind: 'image',
-            url: 'https://example.com/uploaded-image.jpg',
-            width: 160,
-            height: 112,
-            mime: 'image/jpeg',
-            alt: 'Uploaded review image',
+            kind: 'video',
+            url: 'https://example.com/uploaded-video.webm',
+            width: null,
+            height: null,
+            mime: 'video/webm',
+            alt: 'Uploaded review video',
             posterUrl: null,
           },
         ],
@@ -170,30 +205,32 @@ describe('ReviewForm', () => {
     const input = document.querySelector('input[type="file"]');
     expect(input).not.toBeNull();
 
-    const image = new File(['image'], 'preview.jpg', { type: 'image/jpeg' });
+    const video = new File(['video'], 'preview.webm', { type: 'video/webm' });
 
     fireEvent.change(input as HTMLInputElement, {
-      target: { files: [image] },
+      target: { files: [video] },
     });
 
     const thumbButton = await screen.findByRole('button', {
-      name: /preview image preview\.jpg/i,
+      name: /preview media preview\.webm/i,
     });
     await user.click(thumbButton);
 
-    const dialog = screen.getByRole('dialog', { name: /image preview/i });
+    const dialog = screen.getByRole('dialog', {
+      name: /media viewer video preview/i,
+    });
     expect(dialog).toBeInTheDocument();
     expect(
-      within(dialog).getByAltText('Uploaded review image')
+      within(dialog).getByLabelText('Uploaded review video')
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /close image preview/i })
+      screen.getByRole('button', { name: /close media viewer/i })
     ).toHaveFocus();
 
     await user.keyboard('{Escape}');
 
     expect(
-      screen.queryByRole('dialog', { name: /image preview/i })
+      screen.queryByRole('dialog', { name: /media viewer/i })
     ).not.toBeInTheDocument();
   });
 });

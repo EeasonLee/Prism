@@ -7,6 +7,9 @@ import type {
   SearchRecipesResponse,
 } from '../../app/recipes/types';
 
+import { ApiError, NetworkError } from '@prism/shared';
+
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from './cache-policy';
 import { apiClient } from './client';
 import { isServerSide } from './config';
 
@@ -33,6 +36,132 @@ function buildQueryString(params: Record<string, unknown>): string {
   });
 
   return searchParams.toString();
+}
+
+function buildRecipeFacetedQueryRecord(
+  params: RecipeSearchParams
+): Record<string, unknown> {
+  const queryParams: Record<string, unknown> = {
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 12,
+    includeFacets: params.includeFacets ?? false,
+  };
+
+  if (params.recipeTypes && params.recipeTypes.length > 0) {
+    queryParams.recipeTypes = params.recipeTypes;
+  }
+  if (params.ingredients && params.ingredients.length > 0) {
+    queryParams.ingredients = params.ingredients;
+  }
+  if (params.cuisines && params.cuisines.length > 0) {
+    queryParams.cuisines = params.cuisines;
+  }
+  if (params.dishTypes && params.dishTypes.length > 0) {
+    queryParams.dishTypes = params.dishTypes;
+  }
+  if (params.specialDiets && params.specialDiets.length > 0) {
+    queryParams.specialDiets = params.specialDiets;
+  }
+  if (params.holidaysEvents && params.holidaysEvents.length > 0) {
+    queryParams.holidaysEvents = params.holidaysEvents;
+  }
+  if (params.productTypes && params.productTypes.length > 0) {
+    queryParams.productTypes = params.productTypes;
+  }
+  if (params.categoryId) {
+    queryParams.categoryId = params.categoryId;
+  }
+
+  return queryParams;
+}
+
+function buildRecipeKeywordQueryRecord(params: {
+  q: string;
+  page?: number;
+  pageSize?: number;
+  tags?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  cookTimeGte?: number;
+  cookTimeLte?: number;
+  ratingGte?: number;
+  sort?: string | string[];
+}): Record<string, unknown> {
+  return {
+    q: params.q,
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 12,
+    tags: params.tags,
+    difficulty: params.difficulty,
+    cookTimeGte: params.cookTimeGte,
+    cookTimeLte: params.cookTimeLte,
+    ratingGte: params.ratingGte,
+    sort: Array.isArray(params.sort) ? params.sort.join(',') : params.sort,
+  };
+}
+
+/**
+ * 浏览器同源 BFF：解析 JSON，错误形态与 apiClient 对齐。
+ */
+async function fetchBffJson<T>(relativePath: string): Promise<T> {
+  const response = await fetch(relativePath, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new NetworkError('Failed to parse response body');
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof (data as { error: unknown }).error === 'string'
+        ? (data as { error: string }).error
+        : `API request failed: ${response.statusText}`;
+    throw new ApiError(message, response.status, undefined, data);
+  }
+
+  return data as T;
+}
+
+/**
+ * 服务端 / BFF Route：直连 Strapi 的分面搜索（含 token）。
+ */
+export async function fetchRecipeFacetedSearchStrapi(
+  params: RecipeSearchParams
+): Promise<RecipeSearchResponse> {
+  const queryString = buildQueryString(buildRecipeFacetedQueryRecord(params));
+  return apiClient.get<RecipeSearchResponse>(
+    `api/recipes/search?${queryString}`
+  );
+}
+
+/**
+ * 服务端 / BFF Route：直连 Strapi 的关键字搜索（含 token）。
+ */
+export async function fetchRecipeKeywordSearchStrapi(params: {
+  q: string;
+  page?: number;
+  pageSize?: number;
+  tags?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  cookTimeGte?: number;
+  cookTimeLte?: number;
+  ratingGte?: number;
+  sort?: string | string[];
+}): Promise<SearchRecipesResponse> {
+  const queryString = buildQueryString(buildRecipeKeywordQueryRecord(params));
+  return apiClient.get<SearchRecipesResponse>(
+    `api/search/recipes?${queryString}`
+  );
 }
 
 /**
@@ -86,22 +215,15 @@ export async function searchRecipesByKeyword(params: {
   ratingGte?: number;
   sort?: string | string[];
 }): Promise<SearchRecipesResponse> {
-  const queryParams: Record<string, unknown> = {
-    q: params.q,
-    page: params.page ?? 1,
-    pageSize: params.pageSize ?? 12,
-    tags: params.tags,
-    difficulty: params.difficulty,
-    cookTimeGte: params.cookTimeGte,
-    cookTimeLte: params.cookTimeLte,
-    ratingGte: params.ratingGte,
-    sort: Array.isArray(params.sort) ? params.sort.join(',') : params.sort,
-  };
+  const queryString = buildQueryString(buildRecipeKeywordQueryRecord(params));
 
-  const queryString = buildQueryString(queryParams);
-  const endpoint = `api/search/recipes?${queryString}`;
+  if (!isServerSide()) {
+    return fetchBffJson<SearchRecipesResponse>(
+      `/api/search/recipes?${queryString}`
+    );
+  }
 
-  return apiClient.get<SearchRecipesResponse>(endpoint);
+  return fetchRecipeKeywordSearchStrapi(params);
 }
 
 /**
@@ -110,53 +232,26 @@ export async function searchRecipesByKeyword(params: {
 export async function searchRecipes(
   params: RecipeSearchParams
 ): Promise<RecipeSearchResponse> {
-  const queryParams: Record<string, unknown> = {
-    page: params.page ?? 1,
-    pageSize: params.pageSize ?? 12,
-    includeFacets: params.includeFacets ?? false,
-  };
+  const queryString = buildQueryString(buildRecipeFacetedQueryRecord(params));
 
-  // 添加筛选条件
-  if (params.recipeTypes && params.recipeTypes.length > 0) {
-    queryParams.recipeTypes = params.recipeTypes;
-  }
-  if (params.ingredients && params.ingredients.length > 0) {
-    queryParams.ingredients = params.ingredients;
-  }
-  if (params.cuisines && params.cuisines.length > 0) {
-    queryParams.cuisines = params.cuisines;
-  }
-  if (params.dishTypes && params.dishTypes.length > 0) {
-    queryParams.dishTypes = params.dishTypes;
-  }
-  if (params.specialDiets && params.specialDiets.length > 0) {
-    queryParams.specialDiets = params.specialDiets;
-  }
-  if (params.holidaysEvents && params.holidaysEvents.length > 0) {
-    queryParams.holidaysEvents = params.holidaysEvents;
-  }
-  if (params.productTypes && params.productTypes.length > 0) {
-    queryParams.productTypes = params.productTypes;
-  }
-  if (params.categoryId) {
-    queryParams.categoryId = params.categoryId;
+  if (!isServerSide()) {
+    return fetchBffJson<RecipeSearchResponse>(
+      `/api/recipes/search?${queryString}`
+    );
   }
 
-  const queryString = buildQueryString(queryParams);
-  const endpoint = `api/recipes/search?${queryString}`;
-
-  return apiClient.get<RecipeSearchResponse>(endpoint);
+  return fetchRecipeFacetedSearchStrapi(params);
 }
 
 /**
  * 根据 slug 获取食谱详情
  * @param slug 食谱 slug
  * @param revalidate 重新验证时间（秒），用于 Next.js Data Cache（仅服务端有效）。
- *   必须显式传入有效数值，否则 fetch 不缓存会导致 Full Route Cache 被禁用。与路由 revalidate 一致（3600 秒兜底）。
+ *   必须显式传入有效数值，否则 fetch 不缓存会导致 Full Route Cache 被禁用。与路由 revalidate 一致（见 `REVALIDATE_SECONDS_CMS_ASSOCIATION`）。
  */
 export async function getRecipeBySlug(
   slug: string,
-  revalidate = 3600
+  revalidate = REVALIDATE_SECONDS_CMS_ASSOCIATION
 ): Promise<{ data: Recipe }> {
   const endpoint = `api/recipes/slug/${slug}`;
 

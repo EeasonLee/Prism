@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { REVALIDATE_SECONDS_CATEGORY_DETAIL } from '@/lib/api/cache-policy';
 import { categoryService } from '@/lib/services/category.service';
 import { mapCategoryDetail } from '@/lib/mappers/category.mapper';
 
-export const revalidate = 300;
+export const revalidate = REVALIDATE_SECONDS_CATEGORY_DETAIL;
 
 export async function GET(
   _request: Request,
