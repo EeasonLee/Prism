@@ -1,3 +1,4 @@
+import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '../api/cache-policy';
 import { logRequest } from '../api/interceptors/request-logger';
 import { env } from '../env';
 
@@ -42,7 +43,7 @@ export async function magentoGraphQL<T>(
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
-      next: { revalidate: 60 },
+      next: { revalidate: REVALIDATE_SECONDS_CATALOG_SNAPSHOT },
     });
   } catch (error) {
     logRequest({

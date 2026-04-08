@@ -114,7 +114,6 @@ export function ProductQA({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          productId,
           sku,
           content: questionText.trim(),
           authorName: getDisplayName(user),

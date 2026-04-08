@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '@/lib/api/cache-policy';
 
-export const revalidate = 60;
+export const revalidate = REVALIDATE_SECONDS_CATALOG_SNAPSHOT;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

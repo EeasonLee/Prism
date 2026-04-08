@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiError } from '@prism/shared';
 import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
+import { getAccessToken } from '@/lib/api/bff/cookies';
 
 interface SubmitQuestionRequestBody {
   productId?: unknown;
@@ -24,16 +25,17 @@ export async function POST(request: NextRequest) {
     .json()
     .catch(() => ({}))) as SubmitQuestionRequestBody;
 
-  const productId = Number(body.productId);
+  const rawProductId = body.productId;
+  const productId =
+    rawProductId === undefined || rawProductId === null || rawProductId === ''
+      ? null
+      : Number(rawProductId);
   const sku = normalizeText(body.sku);
   const content = normalizeText(body.content);
   const authorName = normalizeText(body.authorName);
   const authorEmail = normalizeText(body.authorEmail);
   const magentoUserId = normalizeText(body.magentoUserId);
 
-  if (!Number.isInteger(productId) || productId < 1) {
-    return badRequest('productId is required');
-  }
   if (!sku) return badRequest('sku is required');
   if (!content || content.length < 10 || content.length > 500) {
     return badRequest('content must be between 10 and 500 characters');
@@ -43,13 +45,15 @@ export async function POST(request: NextRequest) {
   if (!magentoUserId) return badRequest('magentoUserId is required');
 
   const authorization = request.headers.get('authorization');
-  if (!authorization) return badRequest('Authorization header is required');
-  const accessToken = authorization.replace(/^Bearer\s+/i, '');
+  const accessToken =
+    authorization?.replace(/^Bearer\s+/i, '') ?? getAccessToken(request);
 
   try {
     const result = await submitProductQuestion(
       {
-        productId,
+        ...(Number.isInteger(productId) && (productId ?? 0) > 0
+          ? { productId: productId as number }
+          : {}),
         sku,
         content,
         authorName,

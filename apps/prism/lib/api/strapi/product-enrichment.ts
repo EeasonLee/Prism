@@ -5,13 +5,17 @@
  * 联结键：sku（与 Magento 对齐）
  *
  * 数据源：Strapi CT `product-enrichments`（api/product-enrichments）
- * 缓存策略：1 小时，tag = 'product-enrichments'（Strapi webhook 触发 revalidate）
+ * 缓存策略：见 `cache-policy`（CMS 关联档 + product-enrichments tag；Strapi webhook 可触发 revalidate）
  *
  * 食谱/文章：`fetchPdpRecipesBySku` / `fetchPdpArticlesBySku` 调用
  * `api/recipes/by-product-sku` 与 `api/articles/by-product-sku`，后端按 Strapi Product（`api::product.product`）
  * 与 recipe/article 的 `products` 关联过滤；与 Product Enrichment CT 无直接关系。
  */
 
+import {
+  CACHE_TAG_PRODUCT_ENRICHMENTS,
+  REVALIDATE_SECONDS_CMS_ASSOCIATION,
+} from '../cache-policy';
 import { apiClient } from '../client';
 import { getStrapiBaseUrl } from '../config';
 import { fetchPdpArticlesBySku, fetchPdpRecipesBySku } from './product-content';
@@ -513,7 +517,10 @@ export async function fetchProductEnrichments(
   >(
     `api/product-enrichments?${skuFilter}&${populateParams}&pagination[pageSize]=100`,
     {
-      next: { tags: ['product-enrichments'], revalidate: 3600 },
+      next: {
+        tags: [CACHE_TAG_PRODUCT_ENRICHMENTS],
+        revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 

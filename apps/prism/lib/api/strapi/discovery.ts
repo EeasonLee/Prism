@@ -1,3 +1,9 @@
+import {
+  CACHE_TAG_DISCOVERY_CATEGORIES,
+  CACHE_TAG_DISCOVERY_CATEGORY_MAPPINGS,
+  CACHE_TAG_DISCOVERY_FILTER_CONFIGS,
+  REVALIDATE_SECONDS_CMS_ASSOCIATION,
+} from '../cache-policy';
 import { apiClient } from '../client';
 import type {
   DiscoveryCategory,
@@ -154,7 +160,10 @@ export async function fetchDiscoveryCategoryBySlug(
   >(
     `api/discovery-categories?filters[slug][$eq]=${encodedSlug}&populate[icon]=true&populate[banner]=true&populate[seo]=true&populate[children][populate][icon]=true&populate[children][populate][banner]=true&populate[children][populate][seo]=true`,
     {
-      next: { tags: ['discovery-categories'], revalidate: 3600 },
+      next: {
+        tags: [CACHE_TAG_DISCOVERY_CATEGORIES],
+        revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION,
+      },
     } as Parameters<typeof apiClient.get>[1]
   );
 
@@ -168,7 +177,10 @@ export async function fetchDiscoveryCategoryMapping(
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryCategoryMappingRaw>
   >('api/discovery-category-mappings?populate=*', {
-    next: { tags: ['discovery-category-mappings'], revalidate: 3600 },
+    next: {
+      tags: [CACHE_TAG_DISCOVERY_CATEGORY_MAPPINGS],
+      revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION,
+    },
   } as Parameters<typeof apiClient.get>[1]);
 
   return data.data
@@ -186,7 +198,10 @@ export async function fetchDiscoveryFilterConfig(
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryFilterConfigRaw>
   >('api/discovery-filter-configs?populate=*', {
-    next: { tags: ['discovery-filter-configs'], revalidate: 3600 },
+    next: {
+      tags: [CACHE_TAG_DISCOVERY_FILTER_CONFIGS],
+      revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION,
+    },
   } as Parameters<typeof apiClient.get>[1]);
 
   const first = data.data.find(
