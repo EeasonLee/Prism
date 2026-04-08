@@ -89,6 +89,10 @@ interface MagentoProductDetail {
   variants: Array<{
     product: {
       sku: string;
+      cp_label: string | null;
+      cp_code: string | null;
+      cp_date: string | null;
+      cp_price: number | null;
       stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
       price_range: {
         minimum_price: {
@@ -164,6 +168,10 @@ export function mapProductDetail(raw: MagentoProductDetail): ProductDetail {
 export interface ProductVariant {
   sku: string;
   attributes: Record<string, string>;
+  cp_label: string | null;
+  cp_code: string | null;
+  cp_date: string | null;
+  cp_price: number | null;
   price: number;
   inStock: boolean;
 }
@@ -200,6 +208,10 @@ export function mapProductVariants(
     return {
       sku: v.product.sku,
       attributes,
+      cp_label: v.product.cp_label ?? null,
+      cp_code: v.product.cp_code ?? null,
+      cp_date: v.product.cp_date ?? null,
+      cp_price: v.product.cp_price ?? null,
       price: v.product.price_range.minimum_price.final_price.value,
       inStock: v.product.stock_status === 'IN_STOCK',
     };

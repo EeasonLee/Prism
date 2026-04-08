@@ -12,6 +12,7 @@ import {
 } from '../services/magento/product.service';
 import type {
   FetchProductsParams,
+  MagentoCustomizableOption,
   MagentoProduct,
   MagentoProductListResponse,
 } from './magento/types';
@@ -272,8 +273,8 @@ function mapGQLProduct(
     description: raw.description?.html ?? null,
     short_description: raw.short_description?.html ?? null,
     configurable_options:
-      raw.configurable_options?.map(opt => ({
-        id: 0,
+      raw.configurable_options?.map((opt, index) => ({
+        id: index + 1,
         attribute_id: opt.attribute_code,
         attribute_code: opt.attribute_code,
         label: opt.label,
@@ -281,6 +282,7 @@ function mapGQLProduct(
           value_index: v.value_index,
           label: v.label,
         })),
+        position: index,
       })) ?? [],
     children:
       raw.variants?.map(v => ({
@@ -306,6 +308,69 @@ function mapGQLProduct(
           media_type: 'image',
         })),
       })) ?? [],
+    options:
+      raw.options?.map(opt => {
+        const optRecord = opt as unknown as Record<string, unknown>;
+        const baseOption = {
+          option_id: opt.option_id,
+          title: opt.title,
+          required: opt.required,
+          sort_order: opt.sort_order,
+        };
+
+        // 从别名字段中提取 selection values
+        const selectionValue =
+          optRecord.drop_down_value ??
+          optRecord.dropdownValue ??
+          optRecord.radio_value ??
+          optRecord.radioValue ??
+          optRecord.checkbox_value ??
+          optRecord.checkboxValue ??
+          optRecord.multiple_value ??
+          optRecord.multipleValue ??
+          null;
+
+        // 从别名字段中提取 text values
+        const textValue =
+          optRecord.field_value ??
+          optRecord.fieldValue ??
+          optRecord.area_value ??
+          optRecord.areaValue ??
+          null;
+
+        if (Array.isArray(selectionValue)) {
+          const typeName = opt.__typename
+            .replace('Customizable', '')
+            .replace('Option', '')
+            .toLowerCase()
+            .replace('dropdown', 'drop_down');
+          return {
+            ...baseOption,
+            type: typeName as MagentoCustomizableOption['type'],
+            values: selectionValue.map((v: Record<string, unknown>) => ({
+              option_type_id: v.option_type_id as number,
+              title: v.title as string,
+              price: v.price as number,
+              price_type: v.price_type as 'fixed' | 'percent' | 'dynamic',
+              sort_order: v.sort_order as number,
+            })),
+          };
+        } else if (textValue && typeof textValue === 'object') {
+          const typeName = opt.__typename
+            .replace('Customizable', '')
+            .replace('Option', '')
+            .toLowerCase();
+          return {
+            ...baseOption,
+            type: typeName as MagentoCustomizableOption['type'],
+            max_characters:
+              ((textValue as Record<string, unknown>).max_characters as
+                | number
+                | null) ?? null,
+          };
+        }
+        return baseOption as MagentoCustomizableOption;
+      }) ?? [],
   } as MagentoProduct;
 }
 

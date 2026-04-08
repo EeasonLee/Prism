@@ -136,19 +136,25 @@ export function ProductDetailContent({
     const selectedVariant = selection.selectedVariant;
     const hasCompleteVariantSelection =
       product.type_id !== 'configurable' || selection.allSelected;
+    const customOptionPriceDelta = selection.customOptionPriceDelta ?? 0;
+    const basePrice = hasCompleteVariantSelection
+      ? selectedVariant?.price ?? product.price
+      : product.price;
+    const baseSpecialPrice = hasCompleteVariantSelection
+      ? selectedVariant
+        ? selectedVariant.special_price ?? null
+        : null
+      : product.special_price;
 
     return {
       sku: hasCompleteVariantSelection
         ? selectedVariant?.sku ?? product.sku
         : product.sku,
-      price: hasCompleteVariantSelection
-        ? selectedVariant?.price ?? product.price
-        : product.price,
-      specialPrice: hasCompleteVariantSelection
-        ? selectedVariant
-          ? selectedVariant.special_price ?? null
-          : null
-        : product.special_price,
+      price: basePrice + customOptionPriceDelta,
+      specialPrice:
+        baseSpecialPrice != null
+          ? baseSpecialPrice + customOptionPriceDelta
+          : null,
       stockQty: hasCompleteVariantSelection
         ? selectedVariant?.stock_qty ?? product.stock_qty
         : product.stock_qty,

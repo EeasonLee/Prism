@@ -13,15 +13,15 @@ import type {
 } from '../../../lib/api/strapi/reviews';
 import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
 import { ProductQA } from './ProductQA';
+import type { MagentoConfigurableOption } from '../../../lib/api/magento/types';
 import type {
-  MagentoConfigurableOption,
-  MagentoProduct,
-} from '../../../lib/api/magento/types';
-import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+  UnifiedProduct,
+  UnifiedProductImage,
+} from '../../../lib/api/unified-product';
 import type { ProductPageExtras, Review as MockReview } from './mock-data';
 
 interface ProductDetailReviewShellProps {
-  product: MagentoProduct;
+  product: UnifiedProduct;
   galleryImages: UnifiedProductImage[];
   ratingPercentage: number;
   ratingCount: number;
@@ -36,7 +36,7 @@ interface ProductDetailReviewShellProps {
 }
 
 function buildVariantLabel(
-  product: MagentoProduct,
+  product: UnifiedProduct,
   selection: ProductDetailSelection
 ) {
   if (
@@ -98,6 +98,7 @@ export function ProductDetailReviewShell({
   const [selection, setSelection] = useState<ProductDetailSelection>({
     selectedVariant: null,
     allSelected: false,
+    customOptionPriceDelta: 0,
   });
 
   const shareTarget = useMemo(() => {
