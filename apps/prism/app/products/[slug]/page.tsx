@@ -9,7 +9,7 @@ import {
   type ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
 import {
-  fetchProductQaByProduct,
+  fetchProductQaBySku,
   type ProductQaListResult,
 } from '../../../lib/api/strapi/product-qa';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
@@ -125,22 +125,19 @@ export default async function ProductDetailPage({ params }: Props) {
             total: 0,
           },
         })),
-        fetchProductQaByProduct(
-          fetchedProduct.id,
-          fetchedProduct.sku,
-          1,
-          10
-        ).catch(() => ({
-          productId: fetchedProduct.id,
-          sku: fetchedProduct.sku,
-          items: [],
-          pagination: {
-            page: 1,
-            pageSize: 10,
-            pageCount: 0,
-            total: 0,
-          },
-        })),
+        fetchProductQaBySku(fetchedProduct.id, fetchedProduct.sku, 1, 10).catch(
+          () => ({
+            productId: fetchedProduct.id,
+            sku: fetchedProduct.sku,
+            items: [],
+            pagination: {
+              page: 1,
+              pageSize: 10,
+              pageCount: 0,
+              total: 0,
+            },
+          })
+        ),
         fetchRealProductPageCms(fetchedProduct.sku).catch(() => null),
       ]);
 

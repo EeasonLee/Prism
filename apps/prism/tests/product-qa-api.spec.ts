@@ -283,7 +283,6 @@ describe('fetchProductQaByProduct', () => {
 
 describe('submitProductQuestion', () => {
   const baseInput: SubmitProductQuestionInput = {
-    productId: 201,
     sku: 'SKU-100',
     content: 'Is this gluten-free?',
     authorName: 'Frank',
@@ -347,13 +346,38 @@ describe('submitProductQuestion', () => {
       'api/product-qa/questions',
       {
         data: {
-          productId: 201,
           sku: 'SKU-100',
           content: 'Is this gluten-free?',
           author_name: 'Frank',
           author_email: 'frank@example.com',
           magento_user_id: '12345',
         },
+      },
+      expect.anything()
+    );
+  });
+
+  it('includes productId in the POST body when provided', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: {
+        id: 105,
+        sku: 'SKU-100',
+        author_name: 'Frank',
+        question_text: 'Is this gluten-free?',
+        createdAt: '2024-06-01T00:00:00.000Z',
+        updatedAt: '2024-06-01T00:00:00.000Z',
+      },
+    });
+
+    await submitProductQuestion({ ...baseInput, productId: 201 });
+
+    expect(mockPost).toHaveBeenCalledWith(
+      'api/product-qa/questions',
+      {
+        data: expect.objectContaining({
+          productId: 201,
+          sku: 'SKU-100',
+        }),
       },
       expect.anything()
     );

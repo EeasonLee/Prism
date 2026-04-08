@@ -112,7 +112,7 @@ export interface ProductQaListResult {
 }
 
 export interface SubmitProductQuestionInput {
-  productId: number;
+  productId?: number;
   sku: string;
   content: string;
   authorName: string;
@@ -257,7 +257,9 @@ export async function submitProductQuestion(
     'api/product-qa/questions',
     {
       data: {
-        productId: input.productId,
+        ...(typeof input.productId === 'number'
+          ? { productId: input.productId }
+          : {}),
         sku: input.sku,
         content: input.content,
         author_name: input.authorName,

@@ -264,7 +264,7 @@ describe('POST /api/product-qa/questions', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('productId is required');
+    expect(data.error).toBe('sku is required');
   });
 
   it('returns 400 when content is too short', async () => {
@@ -384,13 +384,18 @@ describe('POST /api/product-qa/questions', () => {
     expect(data.error).toBe('magentoUserId is required');
   });
 
-  it('returns 400 when Authorization header is missing', async () => {
+  it('accepts requests without Authorization header', async () => {
+    mockSubmit.mockResolvedValueOnce({
+      success: true,
+      message: 'Question submitted.',
+      questionId: 103,
+    });
+
     const request = new NextRequest(
       'http://localhost:3000/api/product-qa/questions',
       {
         method: 'POST',
         body: JSON.stringify({
-          productId: 408,
           sku: 'SKU-107',
           content: 'What is the warranty period?',
           authorName: 'Grace',
@@ -403,8 +408,8 @@ describe('POST /api/product-qa/questions', () => {
     const response = await postQuestion(request);
     const data = await response.json();
 
-    expect(response.status).toBe(400);
-    expect(data.error).toBe('Authorization header is required');
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
   });
 
   it('passes Authorization header to submitProductQuestion', async () => {
