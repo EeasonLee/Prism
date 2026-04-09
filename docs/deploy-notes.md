@@ -208,14 +208,39 @@ networks:
 
 ## 数据同步流程
 
-### 1. 本地导出
+### 为啥会乱码（大白话）
+
+- **数据库 dump 本质是文本文件**，服务器上的 PostgreSQL 按 **UTF-8** 读最省事。
+- 老写法是：`docker exec ... pg_dump ... > helpcenter_dump.sql`。在 **Windows PowerShell** 里，`>` 把输出存盘时有时会变成 **UTF-16**（带 BOM），你在本机打开可能正常，传到 Linux 上一导入，中文就容易 **乱码**。
+- **解决办法**：不要让 PowerShell 去“改写”这份 SQL——先在 **容器里** 生成文件，再用 **`docker cp` 拷到 Windows**，文件一直是 Linux 下的 UTF-8，一般就不用再 `iconv` 了。
+
+### 1. 本地导出（推荐：避免乱码）
+
+在 **PowerShell / CMD** 里都可以直接跑（把容器名、库名换成你本机的；测试编排默认库名多为 `helpcenter`）：
 
 ```bash
-# 导出 PostgreSQL
-docker exec <postgres容器> pg_dump -U postgres -d helpcenter > helpcenter_dump.sql
+# 1) 在 Postgres 容器内生成 SQL（UTF-8，不经 PowerShell 重定向）
+docker exec helpcenter-postgres sh -c "pg_dump -U postgres -d helpcenter --no-owner --no-acl -f /tmp/helpcenter_dump.sql"
 
-# 打包 uploads
+# 2) 拷到当前目录（项目根或任意目录）
+docker cp helpcenter-postgres:/tmp/helpcenter_dump.sql ./helpcenter_dump.sql
+```
+
+**打包 uploads**（在仓库 `helpcenter` 一侧；路径按你本机调整）：
+
+```bash
+# Linux / macOS / Git Bash
 tar -czf uploads.tar.gz -C helpcenter/backend/public uploads
+
+# Windows PowerShell（把 D:\WORK\helpcenter 换成你的路径）
+tar -czf uploads.tar.gz -C D:\WORK\helpcenter\backend\public uploads
+```
+
+**若你坚持用管道落到本机一个 `.sql` 文件**（次选），在 PowerShell 里显式 UTF-8 无 BOM：
+
+```powershell
+docker exec helpcenter-postgres pg_dump -U postgres -d helpcenter --no-owner --no-acl |
+  Set-Content -Path .\helpcenter_dump.sql -Encoding utf8NoBOM
 ```
 
 ### 2. 传输到服务器
@@ -231,16 +256,18 @@ scp uploads.tar.gz root@192.168.50.4:/opt/projects/helpcenter/
 # 停止 Strapi
 docker compose -f docker-compose.test.yml stop strapi
 
-# 编码转换（Windows 导出的可能是 UTF-16）
-iconv -f UTF-16LE -t UTF-8 helpcenter_dump.sql > helpcenter_dump_utf8.sql
+# 若 SQL 已是 UTF-8（推荐导出方式），直接导入，跳过下面 iconv。
+# 只有当你确认文件是 PowerShell 用 `>` 导出的 UTF-16 时，才需要转换：
+# iconv -f UTF-16LE -t UTF-8 helpcenter_dump.sql > helpcenter_dump_utf8.sql
+# 然后下面把 helpcenter_dump.sql 改成 helpcenter_dump_utf8.sql
 
 # 清空并导入数据库
 docker exec -i helpcenter-postgres psql -U postgres -d helpcenter \
   -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 docker exec -i helpcenter-postgres psql -U postgres -d helpcenter \
-  < helpcenter_dump_utf8.sql
+  < helpcenter_dump.sql
 
-# 解压 uploads
+# 解压 uploads（覆盖服务端文件）
 tar -xzf uploads.tar.gz -C backend/public/
 
 # 重启 Strapi
@@ -249,9 +276,9 @@ docker compose -f docker-compose.test.yml start strapi
 
 **踩坑点：**
 
-- Windows PowerShell 导出的 SQL 文件可能是 UTF-16LE 编码，需要用 `iconv` 转换
-- 导入前要 `DROP SCHEMA public CASCADE` 清空，否则会有表冲突
-- 导入后 Strapi 的 Public 角色 API 权限不会自动开放，需要在管理面板手动配置
+- **推荐**用「容器内 `pg_dump -f` + `docker cp`」，避免 Windows 重定向导致 UTF-16 乱码；`iconv` 仅作补救。
+- 导入前要 `DROP SCHEMA public CASCADE` 清空，否则会有表冲突。
+- 导入后 Strapi 的 Public 角色 API 权限不会自动开放，需要在管理面板手动配置。
 
 ## 端口分配表
 
