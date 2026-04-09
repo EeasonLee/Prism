@@ -339,10 +339,6 @@ export function ProductReviews({
   mockReviews,
   allowSubmit = true,
 }: ProductReviewsProps) {
-  // 对可变体产品：已选中变体时，按子 SKU（purchasedSku）拉取对应评论；
-  // 未选择变体时，fallback 到父级 SKU（sku）。
-  const effectiveSku = target.purchasedSku ?? sku;
-
   const isMock = !!mockSummary && !!mockReviews;
   const [visitorKey, setVisitorKey] = useState<string | null>(null);
 
@@ -398,9 +394,7 @@ export function ProductReviews({
         }
 
         const response = await fetch(
-          `/api/reviews/${encodeURIComponent(
-            effectiveSku
-          )}?${params.toString()}`,
+          `/api/reviews/${encodeURIComponent(sku)}?${params.toString()}`,
           {
             method: 'GET',
             cache: 'no-store',
@@ -429,15 +423,14 @@ export function ProductReviews({
         setIsLoading(false);
       }
     },
-    [isMock, pagination.pageSize, effectiveSku, sort, visitorKey]
+    [isMock, pagination.pageSize, sku, sort, visitorKey]
   );
 
   useEffect(() => {
     if (isMock) return;
     void loadPage(1, sort);
-    // 这里强制按变体变化刷新评论列表
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveSku, isMock]);
+  }, [sku, isMock]);
 
   const handleHelpful = useCallback(
     async (review: ProductReview) => {
@@ -561,8 +554,7 @@ export function ProductReviews({
             <div>
               <p className="text-sm font-semibold text-ink">Browse reviews</p>
               <p className="text-sm text-ink-muted">
-                Ratings, media, and helpful votes update against the selected
-                product SKU.
+                All approved reviews for this product, including every variant.
               </p>
             </div>
             {!isMock && (

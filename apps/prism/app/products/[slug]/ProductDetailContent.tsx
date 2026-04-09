@@ -7,9 +7,10 @@ import {
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ShareTrigger } from '../../components/share';
-import type {
-  UnifiedProduct,
-  UnifiedProductImage,
+import {
+  normalizeCpPrice,
+  type UnifiedProduct,
+  type UnifiedProductImage,
 } from '../../../lib/api/unified-product';
 import type { ShareTarget } from '../../components/share';
 
@@ -136,6 +137,28 @@ export function ProductDetailContent({
     return Number.isFinite(ms) ? ms : null;
   };
 
+  const useVariantHeadline =
+    product.type_id === 'configurable' &&
+    selection.allSelected &&
+    selection.selectedVariant != null;
+
+  const displayTitle = useMemo(() => {
+    if (useVariantHeadline && selection.selectedVariant?.name) {
+      return selection.selectedVariant.name;
+    }
+    return product.display_name;
+  }, [product.display_name, selection.selectedVariant, useVariantHeadline]);
+
+  const parsedCpPrice = useMemo(
+    () =>
+      normalizeCpPrice(
+        useVariantHeadline
+          ? selection.selectedVariant?.cp_price
+          : product.cp_price
+      ),
+    [product.cp_price, selection.selectedVariant, useVariantHeadline]
+  );
+
   const displayProduct = useMemo(() => {
     const selectedVariant = selection.selectedVariant;
     const hasCompleteVariantSelection =
@@ -149,6 +172,8 @@ export function ProductDetailContent({
         ? selectedVariant.special_price ?? null
         : null
       : product.special_price;
+
+    const imageAltFallback = displayTitle;
 
     return {
       sku: hasCompleteVariantSelection
@@ -170,31 +195,61 @@ export function ProductDetailContent({
         (selectedVariant?.media_gallery?.length ?? 0) > 0
           ? selectedVariant?.media_gallery?.map(image => ({
               url: image.url,
-              alt: image.label ?? product.display_name,
+              alt: image.label ?? imageAltFallback,
             })) ?? galleryImages
           : galleryImages,
     };
-  }, [galleryImages, product, selection]);
+  }, [displayTitle, galleryImages, product, selection]);
 
   const hasDiscount =
     displayProduct.specialPrice != null &&
     displayProduct.specialPrice < displayProduct.price;
 
-  const cpCode = product.cp_code ?? null;
-  const cpDateMs = parseCouponDateMs(product.cp_date);
+  const effectiveCpCode = useVariantHeadline
+    ? selection.selectedVariant?.cp_code ?? null
+    : product.cp_code ?? null;
+  const effectiveCpDate = useVariantHeadline
+    ? selection.selectedVariant?.cp_date ?? null
+    : product.cp_date ?? null;
+
+  const cpCode = effectiveCpCode;
+  const cpDateMs = parseCouponDateMs(effectiveCpDate);
   const isCouponExpired =
     cpDateMs != null && nowMs != null ? cpDateMs < nowMs : false;
+
+  const displayPromotionLabel = useMemo(() => {
+    if (useVariantHeadline && selection.selectedVariant) {
+      const label = selection.selectedVariant.cp_label ?? null;
+      if (label == null) return null;
+      const variantDateMs = parseCouponDateMs(
+        selection.selectedVariant.cp_date ?? undefined
+      );
+      const expired =
+        variantDateMs != null && nowMs != null ? variantDateMs < nowMs : false;
+      return !expired ? label : null;
+    }
+    return product.promotion_label;
+  }, [
+    nowMs,
+    product.promotion_label,
+    selection.selectedVariant,
+    useVariantHeadline,
+  ]);
 
   const showCouponBanner =
     typeof cpCode === 'string' && cpCode.trim().length > 0 && !isCouponExpired;
 
-  const regularPrice = displayProduct.price;
-  const discountedPrice =
+  const priceBeforeCoupon =
     displayProduct.specialPrice != null && hasDiscount
       ? displayProduct.specialPrice
-      : null;
-  const couponOff =
-    discountedPrice != null ? Math.max(0, regularPrice - discountedPrice) : 0;
+      : displayProduct.price;
+
+  const couponOffAmount =
+    showCouponBanner && parsedCpPrice != null && parsedCpPrice > 0
+      ? Math.min(parsedCpPrice, priceBeforeCoupon)
+      : 0;
+
+  const priceAfterCoupon = Math.max(0, priceBeforeCoupon - couponOffAmount);
 
   const validUntilText =
     cpDateMs != null && !isCouponExpired
@@ -230,7 +285,7 @@ export function ProductDetailContent({
       <div className="lg:sticky lg:top-[89px]">
         <ProductImageGallery
           images={displayProduct.images}
-          productName={product.display_name}
+          productName={displayTitle}
         />
       </div>
 
@@ -242,21 +297,22 @@ export function ProductDetailContent({
           {debugCoupon && (
             <span className="text-[11px] font-medium text-ink-muted">
               [debugCoupon] cp_code={cpCode ?? 'null'}, cp_date=
-              {product.cp_date ?? 'null'}, cpDateMs={cpDateMs ?? 'null'},
+              {effectiveCpDate ?? 'null'}, cpDateMs={cpDateMs ?? 'null'},
               expired=
               {isCouponExpired ? 'true' : 'false'}, showBanner=
-              {showCouponBanner ? 'true' : 'false'}
+              {showCouponBanner ? 'true' : 'false'}, cp_price=
+              {parsedCpPrice ?? 'null'}
             </span>
           )}
-          {product.promotion_label && (
+          {displayPromotionLabel && (
             <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
-              {product.promotion_label}
+              {displayPromotionLabel}
             </span>
           )}
         </div>
 
         <h1 className="mb-2 text-2xl font-bold leading-tight text-ink sm:text-3xl">
-          {product.display_name}
+          {displayTitle}
         </h1>
 
         {product.subtitle && (
@@ -280,6 +336,7 @@ export function ProductDetailContent({
           )}
         </div>
 
+        {/* 主价格区：仅展示未使用 cp_code / cp_price 的售价（特价 vs 原价）；券后价只在下方优惠券横幅展示 */}
         <div className="mb-4 flex items-baseline gap-3">
           {displayProduct.specialPrice != null && (
             <span className="text-2xl font-bold text-ink">
@@ -319,28 +376,37 @@ export function ProductDetailContent({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="text-sm font-semibold text-white/90">
-                    {product.promotion_label ?? 'Limited time coupon'}
+                    {displayPromotionLabel ?? 'Limited time coupon'}
                   </span>
-                  {discountedPrice != null ? (
+                  {couponOffAmount > 0 ? (
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold leading-none">
-                        ${discountedPrice.toFixed(2)}
+                        ${priceAfterCoupon.toFixed(2)}
                       </span>
                       <span className="text-sm font-semibold text-white/70 line-through">
-                        ${regularPrice.toFixed(2)}
+                        ${priceBeforeCoupon.toFixed(2)}
+                      </span>
+                    </div>
+                  ) : hasDiscount && displayProduct.specialPrice != null ? (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold leading-none">
+                        ${displayProduct.specialPrice.toFixed(2)}
+                      </span>
+                      <span className="text-sm font-semibold text-white/70 line-through">
+                        ${displayProduct.price.toFixed(2)}
                       </span>
                     </div>
                   ) : (
                     <div className="text-sm font-semibold text-white/90">
-                      Current price ${regularPrice.toFixed(2)}
+                      Current price ${priceBeforeCoupon.toFixed(2)}
                     </div>
                   )}
                 </div>
 
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  {discountedPrice != null && couponOff > 0 ? (
+                  {couponOffAmount > 0 ? (
                     <span className="font-medium">
-                      Use coupon for ${couponOff.toFixed(2)} off
+                      Use coupon for ${couponOffAmount.toFixed(2)} off
                     </span>
                   ) : (
                     <span className="font-medium">
@@ -382,10 +448,10 @@ export function ProductDetailContent({
           </div>
         )}
 
-        {product.promotion_label && !showCouponBanner && (
+        {displayPromotionLabel && !showCouponBanner && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
             <span className="text-sm font-medium text-brand">
-              {product.promotion_label}
+              {displayPromotionLabel}
             </span>
             <span className="text-sm text-ink-muted">
               Save big while offer lasts

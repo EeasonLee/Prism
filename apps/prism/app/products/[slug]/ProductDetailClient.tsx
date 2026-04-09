@@ -13,6 +13,12 @@ import { AddToCartButton } from '../../components/AddToCartButton';
 
 export interface SelectedVariantProduct {
   sku: string;
+  name: string;
+  cp_label?: string | null;
+  cp_code?: string | null;
+  cp_date?: string | null;
+  /** 与 cp_code 对应的可抵扣金额 */
+  cp_price?: number | null;
   price: number;
   special_price?: number | null;
   stock_qty?: number | null;

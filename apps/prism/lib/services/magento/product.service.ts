@@ -29,7 +29,8 @@ interface GQLVariantProduct {
   cp_label: string | null;
   cp_code: string | null;
   cp_date: string | null;
-  cp_price: number | null;
+  /** 优惠券抵扣金额（GraphQL 可能返回 number 或 string） */
+  cp_price?: number | string | null;
   stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
   price_range: {
     minimum_price: {
@@ -92,6 +93,8 @@ export interface GQLProduct {
   cp_label: string | null;
   cp_code: string | null;
   cp_date: string | null;
+  /** 优惠券抵扣金额（GraphQL 可能返回 number 或 string） */
+  cp_price?: number | string | null;
   meta_title: string | null;
   meta_description: string | null;
   description: { html: string } | null;
@@ -140,6 +143,7 @@ const PRODUCT_DETAIL_QUERY = `
         cp_label
         cp_code
         cp_date
+        cp_price
         meta_title
         meta_description
         description { html }
@@ -233,6 +237,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         cp_label
         cp_code
         cp_date
+        cp_price
         meta_title
         meta_description
         description { html }

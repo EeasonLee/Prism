@@ -169,6 +169,21 @@ function normalizeHtmlContent(value: unknown): string | null {
     : renderPlainTextRichContent(trimmed);
 }
 
+/** GraphQL / Magento 可能把 cp_price 打成 string，统一为抵扣金额（美元） */
+export function normalizeCpPrice(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const n = Number.parseFloat(trimmed);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+  return null;
+}
+
 // ─── 融合函数 ─────────────────────────────────────────────────────────────────
 
 /**
@@ -245,6 +260,7 @@ function mapGQLProduct(
     cp_label: raw.cp_label ?? null,
     cp_code: raw.cp_code ?? null,
     cp_date: raw.cp_date ?? null,
+    cp_price: normalizeCpPrice(raw.cp_price),
     meta_title: raw.meta_title ?? null,
     meta_description: raw.meta_description ?? null,
     price: regularPrice,
@@ -289,6 +305,10 @@ function mapGQLProduct(
         id: v.product.id,
         sku: v.product.sku,
         name: v.product.name,
+        cp_label: v.product.cp_label ?? null,
+        cp_code: v.product.cp_code ?? null,
+        cp_date: v.product.cp_date ?? null,
+        cp_price: normalizeCpPrice(v.product.cp_price),
         price: v.product.price_range.minimum_price.regular_price.value,
         special_price:
           v.product.price_range.minimum_price.final_price.value <

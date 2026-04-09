@@ -218,6 +218,8 @@ export interface MagentoProduct {
   cp_label?: string | null;
   cp_code?: string | null;
   cp_date?: string | null;
+  /** 与 cp_code 对应的可抵扣金额 */
+  cp_price?: number | null;
   meta_title?: string | null;
   meta_description?: string | null;
   specifications?: string | null;
@@ -267,6 +269,10 @@ export interface MagentoProduct {
     is_in_stock: boolean;
     attributes: Record<string, string>;
     media_gallery?: MagentoMediaGalleryItem[];
+    cp_label?: string | null;
+    cp_code?: string | null;
+    cp_date?: string | null;
+    cp_price?: number | null;
   }>;
 }
 
