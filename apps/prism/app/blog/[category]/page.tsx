@@ -5,7 +5,6 @@ import {
   searchArticles,
   type CategoryDetail,
 } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
-import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/lib/api/cache-policy';
 import { buildStaticMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import type {
@@ -20,7 +19,8 @@ import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { redirect } from 'next/navigation';
 
-export const revalidate = REVALIDATE_SECONDS_CMS_ASSOCIATION; // ISR 兜底，主要依赖 On-Demand
+// Numeric literal required by Next.js segment config; sync with REVALIDATE_SECONDS_CMS_ASSOCIATION in cache-policy.ts
+export const revalidate = 3600; // ISR 兜底，主要依赖 On-Demand
 
 type PageProps = {
   params: Promise<{ category: string }>;

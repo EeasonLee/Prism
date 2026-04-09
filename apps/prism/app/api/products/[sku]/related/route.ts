@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { REVALIDATE_SECONDS_RELATED_PRODUCTS } from '@/lib/api/cache-policy';
 import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
 import { fetchRelatedBySlug } from '@/lib/services/search/meilisearch.service';
 import type { RelatedProductItem } from '@/lib/services/search/meilisearch.service';
 
-export const revalidate = REVALIDATE_SECONDS_RELATED_PRODUCTS;
+// Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_RELATED_PRODUCTS in cache-policy.ts
+export const revalidate = 120;
 
 /** 从 Magento variants fallback */
 async function fetchRelatedFromMagento(

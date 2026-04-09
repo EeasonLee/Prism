@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { REVALIDATE_SECONDS_PRODUCT_DETAIL } from '@/lib/api/cache-policy';
 import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
 import { mapProductVariants } from '@/lib/mappers/product.mapper';
 
-export const revalidate = REVALIDATE_SECONDS_PRODUCT_DETAIL;
+// Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_PRODUCT_DETAIL in cache-policy.ts
+export const revalidate = 300;
 
 export async function GET(
   _request: Request,

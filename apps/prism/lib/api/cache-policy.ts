@@ -18,7 +18,7 @@ export const REVALIDATE_SECONDS_REVIEW_UGC = 300;
 /** CMS 关联：PDP 食谱/文章、Discovery 配置、Product enrichment 等 */
 export const REVALIDATE_SECONDS_CMS_ASSOCIATION = 3600;
 
-/** CMS 静态页（首页、Landing）：短 ISR，主要配合 On-Demand */
+/** CMS 静态页（首页、Landing）：短 ISR，主要配合 On-Demand。App Router `export const revalidate` 须用同值字面量，勿从本常量导入。 */
 export const REVALIDATE_SECONDS_CMS_PAGE = 60;
 
 /** 目录/轮播等短时快照（可与 GraphQL 等保持一致） */

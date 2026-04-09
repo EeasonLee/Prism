@@ -1,5 +1,4 @@
 import type { HeroSlide } from '@/app/components/HeroCarousel';
-import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/lib/api/cache-policy';
 import { buildStaticMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { processImageUrl } from '@prism/shared';
@@ -9,7 +8,8 @@ import { getFilterTypes, searchRecipes } from '../../lib/api/recipes';
 import { RecipesClient } from './RecipesClient';
 import type { SelectedFilters } from './types';
 
-export const revalidate = REVALIDATE_SECONDS_CMS_ASSOCIATION; // ISR 兜底，主要依赖 On-Demand
+// Numeric literal required by Next.js segment config; sync with REVALIDATE_SECONDS_CMS_ASSOCIATION in cache-policy.ts
+export const revalidate = 3600; // ISR 兜底，主要依赖 On-Demand
 
 export const metadata: Metadata = buildStaticMetadata({
   title: 'Joydeem Recipes | Step-by-Step Kitchen Inspiration',

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { REVALIDATE_SECONDS_CATEGORY_NAV } from '@/lib/api/cache-policy';
 import { categoryService } from '@/lib/services/category.service';
 import { mapCategoryTree } from '@/lib/mappers/category.mapper';
 
-export const revalidate = REVALIDATE_SECONDS_CATEGORY_NAV;
+// Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_CATEGORY_NAV in cache-policy.ts
+export const revalidate = 3600;
 
 export async function GET() {
   try {

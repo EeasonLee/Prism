@@ -1,9 +1,9 @@
-import { REVALIDATE_SECONDS_CMS_PAGE } from '@/lib/api/cache-policy';
 import { getPageBySlug } from '@/lib/api/cms-pages';
 import { renderSections } from '../components/sections/blockMap';
 import { notFound } from 'next/navigation';
 
-export const revalidate = REVALIDATE_SECONDS_CMS_PAGE; // ISR + On-Demand
+// Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.
+export const revalidate = 60; // ISR + On-Demand
 
 export async function generateMetadata({
   params,
