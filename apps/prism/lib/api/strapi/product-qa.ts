@@ -117,7 +117,8 @@ export interface SubmitProductQuestionInput {
   content: string;
   authorName: string;
   authorEmail: string;
-  magentoUserId: string;
+  /** 登录用户传入；游客不传 */
+  magentoUserId?: string;
 }
 
 export interface SubmitProductQuestionResult {
@@ -253,19 +254,24 @@ export async function submitProductQuestion(
   input: SubmitProductQuestionInput,
   accessToken?: string | null
 ): Promise<SubmitProductQuestionResult> {
+  const dataBody: Record<string, unknown> = {
+    ...(typeof input.productId === 'number'
+      ? { productId: input.productId }
+      : {}),
+    sku: input.sku,
+    content: input.content,
+    author_name: input.authorName,
+    author_email: input.authorEmail,
+  };
+  const trimmedMagento = input.magentoUserId?.trim();
+  if (trimmedMagento) {
+    dataBody.magento_user_id = trimmedMagento;
+  }
+
   const response = await apiClient.post<SubmitQuestionResponseRaw>(
     'api/product-qa/questions',
     {
-      data: {
-        ...(typeof input.productId === 'number'
-          ? { productId: input.productId }
-          : {}),
-        sku: input.sku,
-        content: input.content,
-        author_name: input.authorName,
-        author_email: input.authorEmail,
-        magento_user_id: input.magentoUserId,
-      },
+      data: dataBody,
     },
     {
       cache: 'no-store',

@@ -122,8 +122,19 @@ describe('ProductQA', () => {
     expect(screen.getByText(/Customer Q&A/i)).toBeInTheDocument();
   });
 
-  it('opens sign-in when an unauthenticated user tries to submit a question', async () => {
+  it('lets a guest submit a question with email only', async () => {
     const user = userEvent.setup();
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        success: true,
+        message: 'Thank you for your question.',
+        questionId: 88,
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     render(
       <ProductQA
@@ -134,9 +145,30 @@ describe('ProductQA', () => {
       />
     );
 
+    await user.type(
+      screen.getByLabelText(/your question/i),
+      'Does this ship to Canada? I need it for a gift soon.'
+    );
+    await user.type(screen.getByLabelText(/^Email$/i), 'alex@example.com');
     await user.click(screen.getByRole('button', { name: /submit question/i }));
 
-    expect(mocks.openLogin).toHaveBeenCalledWith('signin');
+    await waitFor(() => {
+      expect(
+        screen.getByText(/thank you for your question/i)
+      ).toBeInTheDocument();
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/product-qa/questions',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('alex@example.com'),
+      })
+    );
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0][1] as { body: string }).body
+    ) as Record<string, unknown>;
+    expect(body.magentoUserId).toBeUndefined();
   });
 
   it('submits a valid question and shows the success message', async () => {

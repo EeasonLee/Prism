@@ -4,6 +4,10 @@ import {
   fetchReviewsBySku,
   submitReview,
 } from '../../../../lib/api/strapi/reviews';
+import {
+  guestAuthorLabelFromEmail,
+  isReasonableEmail,
+} from '../../../../lib/validation/email';
 
 interface SubmitReviewRequestBody {
   productSku?: unknown;
@@ -88,9 +92,12 @@ export async function POST(
 
   if (!productSku) return badRequest('productSku is required');
   if (!purchasedSku) return badRequest('purchasedSku is required');
-  if (!authorName) return badRequest('authorName is required');
   if (!authorEmail) return badRequest('authorEmail is required');
-  if (!magentoUserId) return badRequest('magentoUserId is required');
+  if (!isReasonableEmail(authorEmail)) {
+    return badRequest('authorEmail is invalid');
+  }
+  const resolvedAuthorName =
+    authorName || guestAuthorLabelFromEmail(authorEmail);
   if (!title || title.length < 3 || title.length > 150) {
     return badRequest('title must be between 3 and 150 characters');
   }
@@ -115,9 +122,9 @@ export async function POST(
         productSku,
         purchasedSku,
         purchasedVariantLabel: purchasedVariantLabel || null,
-        authorName,
+        authorName: resolvedAuthorName,
         authorEmail,
-        magentoUserId,
+        ...(magentoUserId ? { magentoUserId } : {}),
         rating,
         title,
         content,

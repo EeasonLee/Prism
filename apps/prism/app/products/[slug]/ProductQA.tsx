@@ -8,6 +8,10 @@ import type {
   ProductQaListResult,
   ProductQuestion,
 } from '../../../lib/api/strapi/product-qa';
+import {
+  guestAuthorLabelFromEmail,
+  isReasonableEmail,
+} from '../../../lib/validation/email';
 
 function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
   if (!user) return '';
@@ -39,6 +43,7 @@ export function ProductQA({
   const [pageError, setPageError] = useState<string | null>(null);
 
   const [questionText, setQuestionText] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [clientError, setClientError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -94,15 +99,29 @@ export function ProductQA({
     setSubmitError(null);
     setSuccessMessage(null);
 
-    if (!isAuthenticated || !user) {
-      openLogin('signin');
-      return;
-    }
-
     const err = validateContent(questionText);
     if (err) {
       setClientError(err);
       return;
+    }
+
+    const payload: Record<string, unknown> = {
+      sku,
+      content: questionText.trim(),
+    };
+
+    if (isAuthenticated && user) {
+      payload.authorName = getDisplayName(user) || user.email;
+      payload.authorEmail = user.email;
+      payload.magentoUserId = String(user.id);
+    } else {
+      const email = guestEmail.trim();
+      if (!isReasonableEmail(email)) {
+        setClientError('Please enter a valid email address.');
+        return;
+      }
+      payload.authorName = guestAuthorLabelFromEmail(email);
+      payload.authorEmail = email;
     }
 
     setIsSubmitting(true);
@@ -113,13 +132,7 @@ export function ProductQA({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          sku,
-          content: questionText.trim(),
-          authorName: getDisplayName(user),
-          authorEmail: user.email,
-          magentoUserId: user.id,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const body = (await res.json()) as {
@@ -136,6 +149,7 @@ export function ProductQA({
         body.message ?? 'Thank you for your question. We will review it soon.'
       );
       setQuestionText('');
+      setGuestEmail('');
     } catch (e) {
       setSubmitError(
         e instanceof Error ? e.message : 'Something went wrong. Try again.'
@@ -234,9 +248,22 @@ export function ProductQA({
           <div className="mt-10 rounded-[26px] border border-border bg-card p-5 sm:p-6">
             <h3 className="text-base font-semibold text-ink">Ask a question</h3>
             <p className="mt-1 text-sm text-ink-muted">
-              Signed-in shoppers can submit a question about this product. We
-              typically respond within a few business days.
+              Ask about this product. We typically respond within a few business
+              days. Guests: enter your email only (not shown publicly); your
+              public label uses the part before @ in that address.
             </p>
+            {!isAuthenticated && (
+              <p className="mt-2 text-sm text-ink-muted">
+                <button
+                  type="button"
+                  onClick={() => openLogin('signin')}
+                  className="font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  Sign in
+                </button>{' '}
+                to use your account details automatically.
+              </p>
+            )}
 
             <form
               className="mt-4 space-y-4"
@@ -275,6 +302,27 @@ export function ProductQA({
                   </p>
                 )}
               </div>
+
+              {!isAuthenticated && (
+                <div>
+                  <label
+                    htmlFor="product-qa-guest-email"
+                    className="mb-2 block text-sm font-medium text-ink"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="product-qa-guest-email"
+                    type="email"
+                    autoComplete="email"
+                    maxLength={254}
+                    value={guestEmail}
+                    onChange={e => setGuestEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
+                  />
+                </div>
+              )}
 
               {submitError && (
                 <p role="alert" className="text-sm text-destructive">

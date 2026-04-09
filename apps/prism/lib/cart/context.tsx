@@ -47,10 +47,11 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { hasSession } = useAuth();
+  const { hasSession, isAuthenticated } = useAuth();
   const [itemCount, setItemCount] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const prevSessionRef = useRef<boolean>(false);
+  const prevAuthenticatedRef = useRef<boolean>(false);
 
   const syncCart = useCallback(async () => {
     if (!hasSession) return;
@@ -83,6 +84,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSession]);
+
+  // 登出后 hasSession 仍为 true（游客），仅靠 hasSession 不会触发上面的重置
+  useEffect(() => {
+    const wasAuthenticated = prevAuthenticatedRef.current;
+    prevAuthenticatedRef.current = isAuthenticated;
+
+    if (wasAuthenticated && !isAuthenticated && hasSession) {
+      setItemCount(0);
+      void syncCart();
+    }
+  }, [hasSession, isAuthenticated, syncCart]);
 
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {

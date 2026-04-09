@@ -315,7 +315,13 @@ describe('POST /api/product-qa/questions', () => {
     expect(data.error).toBe('content must be between 10 and 500 characters');
   });
 
-  it('returns 400 when authorName is missing', async () => {
+  it('derives authorName from email when authorName is omitted', async () => {
+    mockSubmit.mockResolvedValueOnce({
+      success: true,
+      message: 'Question submitted.',
+      questionId: 199,
+    });
+
     const request = new NextRequest(
       'http://localhost:3000/api/product-qa/questions',
       {
@@ -325,7 +331,7 @@ describe('POST /api/product-qa/questions', () => {
           productId: 405,
           sku: 'SKU-104',
           content: 'Is this available in blue?',
-          authorEmail: 'frank@example.com',
+          authorEmail: 'frank.smith@example.com',
           magentoUserId: '47',
         }),
       }
@@ -334,8 +340,15 @@ describe('POST /api/product-qa/questions', () => {
     const response = await postQuestion(request);
     const data = await response.json();
 
-    expect(response.status).toBe(400);
-    expect(data.error).toBe('authorName is required');
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(mockSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorName: 'frank.smith',
+        authorEmail: 'frank.smith@example.com',
+      }),
+      'my-token'
+    );
   });
 
   it('returns 400 when authorEmail is missing', async () => {
@@ -361,12 +374,17 @@ describe('POST /api/product-qa/questions', () => {
     expect(data.error).toBe('authorEmail is required');
   });
 
-  it('returns 400 when magentoUserId is missing', async () => {
+  it('accepts guest submission without magentoUserId', async () => {
+    mockSubmit.mockResolvedValueOnce({
+      success: true,
+      message: 'Question submitted.',
+      questionId: 107,
+    });
+
     const request = new NextRequest(
       'http://localhost:3000/api/product-qa/questions',
       {
         method: 'POST',
-        headers: { Authorization: 'Bearer my-token' },
         body: JSON.stringify({
           productId: 407,
           sku: 'SKU-106',
@@ -380,8 +398,36 @@ describe('POST /api/product-qa/questions', () => {
     const response = await postQuestion(request);
     const data = await response.json();
 
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(mockSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sku: 'SKU-106',
+        authorEmail: 'frank@example.com',
+      }),
+      null
+    );
+  });
+
+  it('returns 400 when authorEmail is invalid', async () => {
+    const request = new NextRequest(
+      'http://localhost:3000/api/product-qa/questions',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          sku: 'SKU-106b',
+          content: 'Is this available in blue?',
+          authorName: 'Frank',
+          authorEmail: 'not-an-email',
+        }),
+      }
+    );
+
+    const response = await postQuestion(request);
+    const data = await response.json();
+
     expect(response.status).toBe(400);
-    expect(data.error).toBe('magentoUserId is required');
+    expect(data.error).toBe('authorEmail is invalid');
   });
 
   it('accepts requests without Authorization header', async () => {

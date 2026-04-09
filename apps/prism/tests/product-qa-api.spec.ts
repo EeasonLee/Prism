@@ -328,6 +328,35 @@ describe('submitProductQuestion', () => {
     expect(result.message).toBe('Question submitted and pending review.');
   });
 
+  it('omits magento_user_id when magentoUserId is absent (guest)', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: {
+        id: 106,
+        sku: 'SKU-100',
+        author_name: 'Guest',
+        question_text: 'Is this gluten-free?',
+        createdAt: '2024-06-01T00:00:00.000Z',
+        updatedAt: '2024-06-01T00:00:00.000Z',
+      },
+    });
+
+    const { magentoUserId: _omit, ...guestInput } = baseInput;
+    await submitProductQuestion(guestInput);
+
+    expect(mockPost).toHaveBeenCalledWith(
+      'api/product-qa/questions',
+      {
+        data: {
+          sku: 'SKU-100',
+          content: 'Is this gluten-free?',
+          author_name: 'Frank',
+          author_email: 'frank@example.com',
+        },
+      },
+      expect.anything()
+    );
+  });
+
   it('maps camelCase input fields to snake_case in the POST body', async () => {
     mockPost.mockResolvedValueOnce({
       data: {

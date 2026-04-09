@@ -133,7 +133,8 @@ export interface SubmitProductReviewInput {
   purchasedVariantLabel: string | null;
   authorName: string;
   authorEmail: string;
-  magentoUserId: string;
+  /** 登录用户传入 Magento 用户 ID；游客省略 */
+  magentoUserId?: string;
   rating: number;
   title: string;
   content: string;
@@ -288,22 +289,27 @@ export async function submitReview(
   input: SubmitProductReviewInput,
   accessToken?: string | null
 ): Promise<SubmitProductReviewResult> {
+  const dataPayload: Record<string, unknown> = {
+    sku: input.sku,
+    product_sku: input.productSku,
+    purchased_sku: input.purchasedSku,
+    purchased_variant_label: input.purchasedVariantLabel,
+    author_name: input.authorName,
+    author_email: input.authorEmail,
+    rating: input.rating,
+    title: input.title,
+    content: input.content,
+    media: input.mediaIds,
+  };
+  const trimmedMagento = input.magentoUserId?.trim();
+  if (trimmedMagento) {
+    dataPayload.magento_user_id = trimmedMagento;
+  }
+
   const response = await apiClient.post<SubmitReviewResponseRaw>(
     'api/product-reviews',
     {
-      data: {
-        sku: input.sku,
-        product_sku: input.productSku,
-        purchased_sku: input.purchasedSku,
-        purchased_variant_label: input.purchasedVariantLabel,
-        author_name: input.authorName,
-        author_email: input.authorEmail,
-        magento_user_id: input.magentoUserId,
-        rating: input.rating,
-        title: input.title,
-        content: input.content,
-        media: input.mediaIds,
-      },
+      data: dataPayload,
     },
     {
       cache: 'no-store',

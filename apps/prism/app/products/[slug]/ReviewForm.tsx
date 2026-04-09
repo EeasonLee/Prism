@@ -7,6 +7,10 @@ import { useAuth } from '../../../lib/auth/context';
 import { useAuthModal } from '../../../lib/auth-modal/context';
 import type { ReviewTarget } from './ProductReviews';
 import { ReviewImagePreview } from './ReviewImagePreview';
+import {
+  guestAuthorLabelFromEmail,
+  isReasonableEmail,
+} from '../../../lib/validation/email';
 
 interface ReviewFormProps {
   sku: string;
@@ -149,6 +153,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [guestEmail, setGuestEmail] = useState('');
 
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const uploadedMediaIds = uploads
@@ -283,9 +288,21 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
     setError(null);
     setSuccess(null);
 
-    if (!isAuthenticated || !user) {
-      openLogin('signin');
-      return;
+    let authorName = '';
+    let authorEmail = '';
+    let magentoUserId: string | undefined;
+
+    if (isAuthenticated && user) {
+      authorName = (displayName || user.email).trim();
+      authorEmail = user.email.trim();
+      magentoUserId = String(user.id);
+    } else {
+      authorEmail = guestEmail.trim();
+      authorName = guestAuthorLabelFromEmail(authorEmail);
+      if (!isReasonableEmail(authorEmail)) {
+        setError('Please enter a valid email address.');
+        return;
+      }
     }
 
     if (hasUploadingMedia) {
@@ -311,9 +328,9 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
           // 后端要求 purchasedSku 必填；未选体产品时回退为主 SKU
           purchasedSku: target.purchasedSku ?? target.productSku,
           purchasedVariantLabel: target.purchasedVariantLabel,
-          authorName: displayName || user.email,
-          authorEmail: user.email,
-          magentoUserId: String(user.id),
+          authorName,
+          authorEmail,
+          ...(magentoUserId ? { magentoUserId } : {}),
           rating,
           title,
           content,
@@ -376,7 +393,7 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
               onClick={() => openLogin('signin')}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition hover:border-brand hover:text-brand"
             >
-              Sign in to review
+              Sign in
             </button>
           )}
         </div>
@@ -405,6 +422,28 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {!isAuthenticated && (
+            <div>
+              <label
+                htmlFor="review-guest-email"
+                className="mb-2 block text-sm font-medium text-ink"
+              >
+                Email
+              </label>
+              <input
+                id="review-guest-email"
+                type="email"
+                autoComplete="email"
+                maxLength={254}
+                required
+                value={guestEmail}
+                onChange={event => setGuestEmail(event.target.value)}
+                placeholder="For moderation only; display name uses the part before @"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+              />
+            </div>
+          )}
+
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-ink">Rating</span>
@@ -550,8 +589,9 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
 
           <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-muted">
-              Helpful votes use a device visitor key. Reviews require sign-in
-              and remain pending until approval.
+              Helpful votes use a device visitor key. Reviews stay pending until
+              approval. Guests only need an email (not shown publicly); your
+              public display name comes from the part before @ in that address.
             </p>
             <button
               type="submit"

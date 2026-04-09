@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiError } from '@prism/shared';
 import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
 import { getAccessToken } from '@/lib/api/bff/cookies';
+import {
+  guestAuthorLabelFromEmail,
+  isReasonableEmail,
+} from '@/lib/validation/email';
 
 interface SubmitQuestionRequestBody {
   productId?: unknown;
@@ -40,9 +44,12 @@ export async function POST(request: NextRequest) {
   if (!content || content.length < 10 || content.length > 500) {
     return badRequest('content must be between 10 and 500 characters');
   }
-  if (!authorName) return badRequest('authorName is required');
   if (!authorEmail) return badRequest('authorEmail is required');
-  if (!magentoUserId) return badRequest('magentoUserId is required');
+  if (!isReasonableEmail(authorEmail)) {
+    return badRequest('authorEmail is invalid');
+  }
+  const resolvedAuthorName =
+    authorName || guestAuthorLabelFromEmail(authorEmail);
 
   const authorization = request.headers.get('authorization');
   const accessToken =
@@ -56,9 +63,9 @@ export async function POST(request: NextRequest) {
           : {}),
         sku,
         content,
-        authorName,
+        authorName: resolvedAuthorName,
         authorEmail,
-        magentoUserId,
+        ...(magentoUserId ? { magentoUserId } : {}),
       },
       accessToken
     );
