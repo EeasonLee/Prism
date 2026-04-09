@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ProductDetailClient,
   type ProductDetailSelection,
@@ -114,6 +114,10 @@ export function ProductDetailContent({
   shareTarget,
 }: ProductDetailContentProps) {
   const [showCouponToast, setShowCouponToast] = useState(false);
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
 
   const debugCoupon =
     typeof window !== 'undefined' &&
@@ -172,7 +176,8 @@ export function ProductDetailContent({
 
   const cpCode = product.cp_code ?? null;
   const cpDateMs = parseCouponDateMs(product.cp_date);
-  const isCouponExpired = cpDateMs != null ? cpDateMs < Date.now() : false;
+  const isCouponExpired =
+    cpDateMs != null && nowMs != null ? cpDateMs < nowMs : false;
 
   const showCouponBanner =
     typeof cpCode === 'string' && cpCode.trim().length > 0 && !isCouponExpired;
