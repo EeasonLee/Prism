@@ -26,6 +26,10 @@ interface GQLVariantProduct {
   id: number;
   sku: string;
   name: string;
+  cp_label: string | null;
+  cp_code: string | null;
+  cp_date: string | null;
+  cp_price: number | null;
   stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
   price_range: {
     minimum_price: {
@@ -40,6 +44,36 @@ interface GQLVariantAttribute {
   code: string;
   value_index: number;
   label: string;
+}
+
+interface GQLCustomizableSelectionValue {
+  option_type_id: number;
+  title: string;
+  price: number;
+  price_type: string;
+  sort_order: number;
+}
+
+interface GQLCustomizableTextValue {
+  price: number;
+  price_type: string;
+  max_characters?: number | null;
+}
+
+interface GQLCustomizableOption {
+  __typename: string;
+  option_id: number;
+  title: string;
+  required: boolean;
+  sort_order: number;
+  // aliased selection values
+  drop_down_value?: GQLCustomizableSelectionValue[] | null;
+  radio_value?: GQLCustomizableSelectionValue[] | null;
+  checkbox_value?: GQLCustomizableSelectionValue[] | null;
+  multiple_value?: GQLCustomizableSelectionValue[] | null;
+  // aliased text values
+  field_value?: GQLCustomizableTextValue | null;
+  area_value?: GQLCustomizableTextValue | null;
 }
 
 interface GQLVariant {
@@ -82,6 +116,7 @@ export interface GQLProduct {
   }>;
   configurable_options: GQLConfigurableOption[] | null;
   variants: GQLVariant[] | null;
+  options?: GQLCustomizableOption[] | null;
 }
 
 interface GQLProductsResponse {
@@ -126,6 +161,33 @@ const PRODUCT_DETAIL_QUERY = `
         rating_summary
         review_count
         categories { id name level url_key url_path }
+        ... on CustomizableProductInterface {
+          options {
+            option_id
+            title
+            required
+            sort_order
+            __typename
+            ... on CustomizableDropDownOption {
+              dropdownValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableRadioOption {
+              radioValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableCheckboxOption {
+              checkboxValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableMultipleOption {
+              multipleValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableFieldOption {
+              fieldValue: value { price price_type max_characters }
+            }
+            ... on CustomizableAreaOption {
+              areaValue: value { price price_type max_characters }
+            }
+          }
+        }
         ... on ConfigurableProduct {
           configurable_options {
             attribute_code
@@ -137,6 +199,10 @@ const PRODUCT_DETAIL_QUERY = `
               id
               sku
               name
+              cp_label
+              cp_code
+              cp_date
+              cp_price
               stock_status
               price_range {
                 minimum_price {
@@ -188,6 +254,33 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         rating_summary
         review_count
         categories { id name level url_key url_path }
+        ... on CustomizableProductInterface {
+          options {
+            option_id
+            title
+            required
+            sort_order
+            __typename
+            ... on CustomizableDropDownOption {
+              dropdownValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableRadioOption {
+              radioValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableCheckboxOption {
+              checkboxValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableMultipleOption {
+              multipleValue: value { option_type_id title price price_type sort_order }
+            }
+            ... on CustomizableFieldOption {
+              fieldValue: value { price price_type max_characters }
+            }
+            ... on CustomizableAreaOption {
+              areaValue: value { price price_type max_characters }
+            }
+          }
+        }
         ... on ConfigurableProduct {
           configurable_options {
             attribute_code
@@ -199,6 +292,10 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
               id
               sku
               name
+              cp_label
+              cp_code
+              cp_date
+              cp_price
               stock_status
               price_range {
                 minimum_price {

@@ -7,6 +7,7 @@ import type {
   MagentoConfigurableOption,
   MagentoMediaGalleryItem,
   MagentoProduct,
+  MagentoCustomizableOption,
 } from '../../../lib/api/magento/types';
 import { AddToCartButton } from '../../components/AddToCartButton';
 
@@ -23,11 +24,51 @@ export interface SelectedVariantProduct {
 export interface ProductDetailSelection {
   selectedVariant: SelectedVariantProduct | null;
   allSelected: boolean;
+  customOptionPriceDelta: number;
 }
 
 interface ProductDetailClientProps {
   product: MagentoProduct;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
+}
+
+function calculateCustomOptionPriceDelta(
+  options: MagentoCustomizableOption[],
+  selections: Record<string, string | string[]>,
+  basePrice: number
+): number {
+  if (options.length === 0) return 0;
+
+  const optionMap = new Map<number, MagentoCustomizableOption>(
+    options.map(option => [option.option_id, option])
+  );
+
+  return Object.entries(selections).reduce((sum, [optionId, rawValue]) => {
+    const option = optionMap.get(Number(optionId));
+    if (
+      !option ||
+      !Array.isArray(option.values) ||
+      option.values.length === 0
+    ) {
+      return sum;
+    }
+
+    const selectedIds = Array.isArray(rawValue) ? rawValue : [rawValue];
+    const optionExtra = selectedIds.reduce((optionSum, selectedId) => {
+      const value = option.values?.find(
+        item => String(item.option_type_id) === String(selectedId)
+      );
+      if (!value) return optionSum;
+
+      const price =
+        value.price_type === 'percent'
+          ? (basePrice * value.price) / 100
+          : value.price;
+      return optionSum + price;
+    }, 0);
+
+    return sum + optionExtra;
+  }, 0);
 }
 
 // ─── 数量输入框 ───────────────────────────────────────────────────────────────
@@ -66,18 +107,240 @@ function QtyInput({
   );
 }
 
+// ─── Customizable Options ────────────────────────────────────────────────────
+
+function CustomizableOptionsSection({
+  options,
+  selections,
+  onSelectionsChange,
+}: {
+  options: MagentoCustomizableOption[];
+  selections: Record<string, string | string[]>;
+  onSelectionsChange: (s: Record<string, string | string[]>) => void;
+}) {
+  if (options.length === 0) return null;
+
+  const sorted = [...options].sort((a, b) => a.sort_order - b.sort_order);
+
+  const handleChange = (optionId: number, value: string | string[]) => {
+    onSelectionsChange({ ...selections, [String(optionId)]: value });
+  };
+
+  return (
+    <div className="space-y-4">
+      {sorted.map(opt => {
+        const key = String(opt.option_id);
+        const type = opt.type;
+
+        if (
+          type === 'drop_down' ||
+          type === 'radio' ||
+          type === 'checkbox' ||
+          type === 'multiple'
+        ) {
+          const values = opt.values ?? [];
+          const isMulti = type === 'checkbox' || type === 'multiple';
+
+          if (type === 'drop_down') {
+            return (
+              <div key={key}>
+                <label className="mb-1 block text-sm font-medium text-ink">
+                  {opt.title}
+                  {opt.required && <span className="text-red-500"> *</span>}
+                </label>
+                <select
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+                  value={(selections[key] as string) ?? ''}
+                  onChange={e => handleChange(opt.option_id, e.target.value)}
+                >
+                  <option value="">-- Select --</option>
+                  {values.map(v => (
+                    <option
+                      key={v.option_type_id}
+                      value={String(v.option_type_id)}
+                    >
+                      {v.title}
+                      {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
+
+          if (type === 'radio') {
+            return (
+              <fieldset key={key}>
+                <legend className="mb-1 text-sm font-medium text-ink">
+                  {opt.title}
+                  {opt.required && <span className="text-red-500"> *</span>}
+                </legend>
+                <div className="space-y-1">
+                  {values.map(v => (
+                    <label
+                      key={v.option_type_id}
+                      className="flex items-center gap-2 text-sm text-ink"
+                    >
+                      <input
+                        type="radio"
+                        name={`custom-opt-${key}`}
+                        value={String(v.option_type_id)}
+                        checked={
+                          (selections[key] as string) ===
+                          String(v.option_type_id)
+                        }
+                        onChange={e =>
+                          handleChange(opt.option_id, e.target.value)
+                        }
+                        className="accent-brand"
+                      />
+                      {v.title}
+                      {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            );
+          }
+
+          if (isMulti) {
+            const selected = (selections[key] as string[]) ?? [];
+            return (
+              <fieldset key={key}>
+                <legend className="mb-1 text-sm font-medium text-ink">
+                  {opt.title}
+                  {opt.required && <span className="text-red-500"> *</span>}
+                </legend>
+                <div className="space-y-1">
+                  {values.map(v => {
+                    const val = String(v.option_type_id);
+                    const checked = selected.includes(val);
+                    return (
+                      <label
+                        key={v.option_type_id}
+                        className="flex items-center gap-2 text-sm text-ink"
+                      >
+                        <input
+                          type="checkbox"
+                          value={val}
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? selected.filter(s => s !== val)
+                              : [...selected, val];
+                            handleChange(opt.option_id, next);
+                          }}
+                          className="accent-brand"
+                        />
+                        {v.title}
+                        {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          }
+        }
+
+        if (type === 'field' || type === 'area') {
+          const Tag = type === 'area' ? 'textarea' : 'input';
+          return (
+            <div key={key}>
+              <label className="mb-1 block text-sm font-medium text-ink">
+                {opt.title}
+                {opt.required && <span className="text-red-500"> *</span>}
+              </label>
+              <Tag
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+                value={(selections[key] as string) ?? ''}
+                onChange={e => handleChange(opt.option_id, e.target.value)}
+                maxLength={
+                  opt.max_characters != null && opt.max_characters > 0
+                    ? opt.max_characters
+                    : undefined
+                }
+                {...(type === 'area' ? { rows: 3 } : {})}
+              />
+              {opt.max_characters != null && opt.max_characters > 0 && (
+                <p className="mt-1 text-xs text-ink-muted">
+                  Max {opt.max_characters} characters
+                </p>
+              )}
+            </div>
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
+}
+
 // ─── Simple / Virtual ────────────────────────────────────────────────────────
 
-function SimpleOptions({ product }: { product: MagentoProduct }) {
+function SimpleOptions({
+  product,
+  onSelectionChange,
+}: {
+  product: MagentoProduct;
+  onSelectionChange?: (selection: ProductDetailSelection) => void;
+}) {
   const [qty, setQty] = useState(1);
+  const [customSelections, setCustomSelections] = useState<
+    Record<string, string | string[]>
+  >({});
+
+  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const customOptionPriceDelta = useMemo(
+    () =>
+      calculateCustomOptionPriceDelta(
+        customOptions,
+        customSelections,
+        product.price
+      ),
+    [customOptions, customSelections, product.price]
+  );
+
+  useEffect(() => {
+    onSelectionChange?.({
+      selectedVariant: null,
+      allSelected: true,
+      customOptionPriceDelta,
+    });
+  }, [customOptionPriceDelta, onSelectionChange]);
+
+  const productOptionsJson = useMemo(() => {
+    const entries = Object.entries(customSelections).filter(([, v]) =>
+      Array.isArray(v) ? v.length > 0 : v !== ''
+    );
+    if (entries.length === 0) return undefined;
+
+    const custom_options = entries.map(([optionId, value]) => ({
+      option_id: optionId,
+      option_value: Array.isArray(value) ? value.join(',') : value,
+    }));
+    return JSON.stringify({ custom_options });
+  }, [customSelections]);
 
   return (
     <div className="space-y-6">
+      {customOptions.length > 0 && (
+        <CustomizableOptionsSection
+          options={customOptions}
+          selections={customSelections}
+          onSelectionsChange={setCustomSelections}
+        />
+      )}
       <div>
         <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
         <QtyInput value={qty} min={1} onChange={setQty} />
       </div>
-      <AddToCartButton sku={product.sku} qty={qty} />
+      <AddToCartButton
+        sku={product.sku}
+        qty={qty}
+        productOptionsJson={productOptionsJson}
+      />
     </div>
   );
 }
@@ -258,16 +521,48 @@ function ConfigurableOptions({
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [allSelected, selectedAttributes, variantSku, findChildSku]);
 
+  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const [customSelections, setCustomSelections] = useState<
+    Record<string, string | string[]>
+  >({});
+  const basePrice = selectedChild?.price ?? product.price;
+  const customOptionPriceDelta = useMemo(
+    () =>
+      calculateCustomOptionPriceDelta(
+        customOptions,
+        customSelections,
+        basePrice
+      ),
+    [basePrice, customOptions, customSelections]
+  );
+
+  const productOptionsJson = useMemo(() => {
+    if (!allSelected) return undefined;
+
+    const payload: Record<string, unknown> = {
+      super_attribute: selectedAttributes,
+    };
+
+    const customEntries = Object.entries(customSelections).filter(([, v]) =>
+      Array.isArray(v) ? v.length > 0 : v !== ''
+    );
+    if (customEntries.length > 0) {
+      payload.custom_options = customEntries.map(([optionId, value]) => ({
+        option_id: optionId,
+        option_value: Array.isArray(value) ? value.join(',') : value,
+      }));
+    }
+
+    return JSON.stringify(payload);
+  }, [allSelected, selectedAttributes, customSelections]);
+
   useEffect(() => {
     onSelectionChange?.({
       selectedVariant: selectedChild,
       allSelected,
+      customOptionPriceDelta,
     });
-  }, [allSelected, onSelectionChange, selectedChild]);
-
-  const productOptionsJson = allSelected
-    ? JSON.stringify({ super_attribute: selectedAttributes })
-    : undefined;
+  }, [allSelected, customOptionPriceDelta, onSelectionChange, selectedChild]);
 
   return (
     <div className="space-y-6">
@@ -301,6 +596,14 @@ function ConfigurableOptions({
           </div>
         </div>
       ))}
+
+      {customOptions.length > 0 && (
+        <CustomizableOptionsSection
+          options={customOptions}
+          selections={customSelections}
+          onSelectionsChange={setCustomSelections}
+        />
+      )}
 
       <div>
         <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
@@ -675,12 +978,12 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink">{link.title}</p>
-                    {link.number_of_downloads > 0 && (
+                    {(link.number_of_downloads ?? 0) > 0 && (
                       <p className="text-xs text-ink-muted">
                         {link.number_of_downloads} downloads
                       </p>
                     )}
-                    {link.number_of_downloads === 0 && (
+                    {(link.number_of_downloads ?? 0) === 0 && (
                       <p className="text-xs text-ink-muted">
                         Unlimited downloads
                       </p>
@@ -747,6 +1050,11 @@ export function ProductDetailClient({
       return <DownloadableOptions product={product} />;
     default:
       // simple / virtual
-      return <SimpleOptions product={product} />;
+      return (
+        <SimpleOptions
+          product={product}
+          onSelectionChange={onSelectionChange}
+        />
+      );
   }
 }
