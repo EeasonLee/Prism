@@ -23,7 +23,7 @@ function toMagentoProduct(
     name: item.name,
     price: item.price,
     final_price: item.price,
-    type_id: 'simple',
+    type_id: item.type_id,
     thumbnail_url: item.image,
     image_url: item.image,
     stock_status: item.inStock ? 'IN_STOCK' : 'OUT_OF_STOCK',

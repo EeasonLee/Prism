@@ -8,6 +8,7 @@ export interface GetProductsParams {
 }
 
 interface GraphQLProduct {
+  __typename?: string;
   sku: string;
   name: string;
   url_key: string | null;
@@ -48,6 +49,7 @@ const PRODUCTS_QUERY = `
       currentPage: $currentPage
     ) {
       items {
+        __typename
         sku
         name
         url_key
@@ -84,6 +86,7 @@ const PRODUCTS_QUERY_NO_FILTER = `
       currentPage: $currentPage
     ) {
       items {
+        __typename
         sku
         name
         url_key

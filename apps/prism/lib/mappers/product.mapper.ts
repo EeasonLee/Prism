@@ -5,6 +5,7 @@ export interface ProductListItem {
   image: string;
   inStock: boolean;
   url_key: string | null;
+  type_id: 'simple' | 'configurable';
 }
 
 export interface ProductListResponse {
@@ -17,6 +18,7 @@ export interface ProductListResponse {
 }
 
 interface GraphQLProduct {
+  __typename?: string;
   sku: string;
   name: string;
   url_key?: string | null;
@@ -41,6 +43,8 @@ export function mapProductListItem(raw: GraphQLProduct): ProductListItem {
     image: raw.thumbnail?.url || '',
     inStock: raw.stock_status === 'IN_STOCK',
     url_key: raw.url_key ?? null,
+    type_id:
+      raw.__typename === 'ConfigurableProduct' ? 'configurable' : 'simple',
   };
 }
 
