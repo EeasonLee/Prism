@@ -34,6 +34,22 @@ export interface UnifiedProductImage {
  * 所有 Magento 原始字段保持不变，新增的 unified_* 字段为派生展示字段。
  * 组件应优先使用 unified_* / 派生字段，而非直接访问 Magento 原始字段。
  */
+export interface UnifiedLinkedProduct {
+  id: number;
+  sku: string;
+  url_key: string | null;
+  name: string;
+  display_name: string;
+  price: number;
+  special_price: number | null;
+  type_id: string;
+  is_in_stock: boolean;
+  review_count: number;
+  rating_percentage: number;
+  promotion_label: string | null;
+  unified_thumbnail: string | null;
+}
+
 export interface UnifiedProduct extends MagentoProduct {
   // ── 内容字段 ──
 
@@ -245,7 +261,41 @@ async function fetchProductByUrlKeyGQL(slug: string): Promise<MagentoProduct> {
   return mapGQLProduct(raw);
 }
 
-function mapGQLProduct(
+export function mapLinkedProduct(raw: {
+  id: number;
+  sku: string;
+  url_key: string | null;
+  name: string;
+  thumbnail: { url: string; label: string | null } | null;
+  price_range: {
+    minimum_price: {
+      regular_price: { value: number };
+      final_price: { value: number };
+    };
+  };
+  stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
+}): UnifiedLinkedProduct {
+  const finalPrice = raw.price_range.minimum_price.final_price.value;
+  const regularPrice = raw.price_range.minimum_price.regular_price.value;
+
+  return {
+    id: raw.id,
+    sku: raw.sku,
+    url_key: raw.url_key ?? null,
+    name: raw.name,
+    display_name: raw.name,
+    price: regularPrice,
+    special_price: finalPrice < regularPrice ? finalPrice : null,
+    type_id: 'simple',
+    is_in_stock: raw.stock_status === 'IN_STOCK',
+    review_count: 0,
+    rating_percentage: 0,
+    promotion_label: null,
+    unified_thumbnail: raw.thumbnail?.url ?? null,
+  };
+}
+
+export function mapGQLProduct(
   raw: Awaited<ReturnType<typeof fetchProductDetailBySkuGQL>>
 ): MagentoProduct {
   const finalPrice = raw.price_range.minimum_price.final_price.value;
@@ -286,6 +336,8 @@ function mapGQLProduct(
     rating_percentage: raw.rating_summary,
     review_count: raw.review_count,
     categories: raw.categories,
+    related_products: (raw.related_products ?? []).map(mapLinkedProduct),
+    upsell_products: (raw.upsell_products ?? []).map(mapLinkedProduct),
     description: raw.description?.html ?? null,
     short_description: raw.short_description?.html ?? null,
     configurable_options:
@@ -329,7 +381,7 @@ function mapGQLProduct(
         })),
       })) ?? [],
     options:
-      raw.options?.map(opt => {
+      raw.options?.reduce<MagentoCustomizableOption[]>((acc, opt) => {
         const optRecord = opt as unknown as Record<string, unknown>;
         const baseOption = {
           option_id: opt.option_id,
@@ -338,24 +390,23 @@ function mapGQLProduct(
           sort_order: opt.sort_order,
         };
 
-        // 从别名字段中提取 selection values
+        // 同时兼容 GraphQL alias 的 camelCase 与历史 snake_case 字段名。
         const selectionValue =
-          optRecord.drop_down_value ??
           optRecord.dropdownValue ??
-          optRecord.radio_value ??
+          optRecord.drop_down_value ??
           optRecord.radioValue ??
-          optRecord.checkbox_value ??
+          optRecord.radio_value ??
           optRecord.checkboxValue ??
-          optRecord.multiple_value ??
+          optRecord.checkbox_value ??
           optRecord.multipleValue ??
+          optRecord.multiple_value ??
           null;
 
-        // 从别名字段中提取 text values
         const textValue =
-          optRecord.field_value ??
           optRecord.fieldValue ??
-          optRecord.area_value ??
+          optRecord.field_value ??
           optRecord.areaValue ??
+          optRecord.area_value ??
           null;
 
         if (Array.isArray(selectionValue)) {
@@ -364,7 +415,7 @@ function mapGQLProduct(
             .replace('Option', '')
             .toLowerCase()
             .replace('dropdown', 'drop_down');
-          return {
+          acc.push({
             ...baseOption,
             type: typeName as MagentoCustomizableOption['type'],
             values: selectionValue.map((v: Record<string, unknown>) => ({
@@ -374,23 +425,27 @@ function mapGQLProduct(
               price_type: v.price_type as 'fixed' | 'percent' | 'dynamic',
               sort_order: v.sort_order as number,
             })),
-          };
-        } else if (textValue && typeof textValue === 'object') {
+          });
+          return acc;
+        }
+
+        if (textValue && typeof textValue === 'object') {
           const typeName = opt.__typename
             .replace('Customizable', '')
             .replace('Option', '')
             .toLowerCase();
-          return {
+          acc.push({
             ...baseOption,
             type: typeName as MagentoCustomizableOption['type'],
             max_characters:
               ((textValue as Record<string, unknown>).max_characters as
                 | number
                 | null) ?? null,
-          };
+          });
         }
-        return baseOption as MagentoCustomizableOption;
-      }) ?? [],
+
+        return acc;
+      }, []) ?? [],
   } as MagentoProduct;
 }
 

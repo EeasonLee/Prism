@@ -82,7 +82,22 @@ interface GQLVariant {
   attributes: GQLVariantAttribute[];
 }
 
-export interface GQLProduct {
+export interface GQLLinkedProduct {
+  id: number;
+  sku: string;
+  name: string;
+  url_key: string | null;
+  thumbnail: { url: string; label: string | null } | null;
+  price_range: {
+    minimum_price: {
+      regular_price: { value: number; currency: string };
+      final_price: { value: number; currency: string };
+    };
+  };
+  stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
+}
+
+interface GQLProduct {
   __typename: string;
   id: number;
   sku: string;
@@ -117,6 +132,8 @@ export interface GQLProduct {
     url_key: string | null;
     url_path: string | null;
   }>;
+  related_products: GQLLinkedProduct[];
+  upsell_products: GQLLinkedProduct[];
   configurable_options: GQLConfigurableOption[] | null;
   variants: GQLVariant[] | null;
   options?: GQLCustomizableOption[] | null;
@@ -165,6 +182,34 @@ const PRODUCT_DETAIL_QUERY = `
         rating_summary
         review_count
         categories { id name level url_key url_path }
+        related_products {
+          id
+          name
+          sku
+          url_key
+          thumbnail { url label }
+          price_range {
+            minimum_price {
+              regular_price { value currency }
+              final_price { value currency }
+            }
+          }
+          stock_status
+        }
+        upsell_products {
+          id
+          name
+          sku
+          url_key
+          thumbnail { url label }
+          price_range {
+            minimum_price {
+              regular_price { value currency }
+              final_price { value currency }
+            }
+          }
+          stock_status
+        }
         ... on CustomizableProductInterface {
           options {
             option_id
@@ -259,6 +304,34 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         rating_summary
         review_count
         categories { id name level url_key url_path }
+        related_products {
+          id
+          name
+          sku
+          url_key
+          thumbnail { url label }
+          price_range {
+            minimum_price {
+              regular_price { value currency }
+              final_price { value currency }
+            }
+          }
+          stock_status
+        }
+        upsell_products {
+          id
+          name
+          sku
+          url_key
+          thumbnail { url label }
+          price_range {
+            minimum_price {
+              regular_price { value currency }
+              final_price { value currency }
+            }
+          }
+          stock_status
+        }
         ... on CustomizableProductInterface {
           options {
             option_id

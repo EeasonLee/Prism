@@ -183,6 +183,22 @@ export interface MagentoCustomizableOption {
   max_characters?: number | null;
 }
 
+export interface MagentoLinkedProduct {
+  id: number;
+  sku: string;
+  name: string;
+  url_key?: string | null;
+  display_name: string;
+  price: number;
+  special_price?: number | null;
+  type_id: string;
+  is_in_stock: boolean;
+  review_count?: number | null;
+  rating_percentage?: number | null;
+  promotion_label?: string | null;
+  unified_thumbnail?: string | null;
+}
+
 export interface MagentoProduct {
   id: number;
   __typename?: string | null;
@@ -247,6 +263,8 @@ export interface MagentoProduct {
     name: string;
     level: number;
   }>;
+  related_products?: MagentoLinkedProduct[];
+  upsell_products?: MagentoLinkedProduct[];
   // grouped
   grouped_items?: MagentoGroupedItem[];
   // bundle

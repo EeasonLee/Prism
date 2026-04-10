@@ -1,19 +1,17 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
 import { PageContainer } from '@prism/ui';
-import { fetchUnifiedProductBySlug } from '../../../lib/api/unified-product';
-import {
-  fetchReviewsBySku,
-  fetchReviewSummaryBySku,
-  type ProductReviewListResult,
-  type ProductReviewSummary,
+import { getProductDetailAggregate } from '../../../lib/api/bff/product/detail';
+import type {
+  ProductReviewListResult,
+  ProductReviewSummary,
 } from '../../../lib/api/strapi/reviews';
-import {
-  fetchProductQaBySku,
-  type ProductQaListResult,
-} from '../../../lib/api/strapi/product-qa';
+import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
+import { UpsellProductsSection } from './UpsellProductsSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { ProductVideosSection } from './ProductVideosSection';
@@ -22,11 +20,8 @@ import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
 import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
 import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
-import {
-  buildPdpSectionNav,
-  fetchRealProductPageCms,
-  type ProductDetailPageData,
-} from './product-detail-data';
+import type { ProductDetailPageData } from './product-detail-data';
+import { buildPdpSectionNav } from './pdp-section-nav';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -56,6 +51,71 @@ function emptyReviewSummary(sku: string): ProductReviewSummary {
       '5': 0,
     },
   };
+}
+
+async function DeferredRelatedProductsSection({
+  promise,
+}: {
+  promise: Promise<UnifiedLinkedProduct[]>;
+}) {
+  const relatedProducts = await promise;
+
+  if (relatedProducts.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-labelledby="related-products-heading"
+      className="py-8 lg:py-10"
+    >
+      <div className="border-t border-border pt-8">
+        <h2 id="related-products-heading" className="heading-4 mb-6 text-ink">
+          Related products
+        </h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          {relatedProducts.map(item => {
+            const displayPrice = item.special_price ?? item.price;
+            const hasDiscount =
+              item.special_price != null && item.special_price < item.price;
+
+            return (
+              <Link
+                key={item.sku}
+                href={`/products/${item.url_key ?? item.sku}`}
+                className="group overflow-hidden rounded-xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-card"
+              >
+                <div className="space-y-2 p-4">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-ink">
+                    {item.display_name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-ink">
+                      ${displayPrice.toFixed(2)}
+                    </span>
+                    {hasDiscount ? (
+                      <span className="text-ink-faint line-through">
+                        ${item.price.toFixed(2)}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+async function DeferredUpsellProductsSection({
+  promise,
+}: {
+  promise: Promise<UnifiedLinkedProduct[]>;
+}) {
+  const upsellProducts = await promise;
+  return <UpsellProductsSection initialProducts={upsellProducts} />;
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -103,52 +163,39 @@ export default async function ProductDetailPage({ params }: Props) {
     },
   };
 
+  let deferredRelated: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
+  let deferredUpsell: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
+
   if (decodedSku === MOCK_PRODUCT_SKU) {
     data = { product: mockProduct, cms: mockProductExtras };
   } else {
-    const fetchedProduct = await fetchUnifiedProductBySlug(decodedSku).catch(
+    const aggregate = await getProductDetailAggregate(decodedSku).catch(
       () => null
     );
 
-    if (!fetchedProduct) notFound();
+    if (!aggregate) notFound();
 
-    const [fetchedSummary, fetchedReviews, fetchedProductQa, fetchedCms] =
+    const fetchedProduct = aggregate.core.product;
+
+    const [fetchedReviewsData, fetchedProductQa, fetchedCms] =
       await Promise.all([
-        fetchReviewSummaryBySku(fetchedProduct.sku).catch(() =>
-          emptyReviewSummary(fetchedProduct.sku)
-        ),
-        fetchReviewsBySku(fetchedProduct.sku, 1, 10).catch(() => ({
-          items: [],
-          pagination: {
-            page: 1,
-            pageSize: 10,
-            pageCount: 0,
-            total: 0,
-          },
-        })),
-        fetchProductQaBySku(fetchedProduct.id, fetchedProduct.sku, 1, 10).catch(
-          () => ({
-            productId: fetchedProduct.id,
-            sku: fetchedProduct.sku,
-            items: [],
-            pagination: {
-              page: 1,
-              pageSize: 10,
-              pageCount: 0,
-              total: 0,
-            },
-          })
-        ),
-        fetchRealProductPageCms(fetchedProduct.sku).catch(() => null),
+        aggregate.deferred.reviews,
+        aggregate.deferred.productQa,
+        aggregate.deferred.cms,
       ]);
 
     data = {
       product: fetchedProduct,
       cms: fetchedCms,
     };
-    reviewSummary = fetchedSummary;
-    reviewList = fetchedReviews;
+    reviewSummary = fetchedReviewsData.summary;
+    reviewList = {
+      items: fetchedReviewsData.items,
+      pagination: fetchedReviewsData.pagination,
+    };
     initialProductQa = fetchedProductQa;
+    deferredRelated = aggregate.deferred.related;
+    deferredUpsell = aggregate.deferred.upsell;
   }
 
   const { product, cms } = data;
@@ -196,7 +243,7 @@ export default async function ProductDetailPage({ params }: Props) {
         {product.categories?.[0] && (
           <>
             <Link
-              href={`/categories/${product.categories[0].id}`}
+              href={`/categories/${product.categories[0].url_key}`}
               className="transition hover:text-ink"
             >
               {product.categories[0].name}
@@ -237,6 +284,12 @@ export default async function ProductDetailPage({ params }: Props) {
         allowSubmit={decodedSku !== MOCK_PRODUCT_SKU}
         initialProductQa={initialProductQa}
       />
+
+      {decodedSku !== MOCK_PRODUCT_SKU && (
+        <Suspense fallback={null}>
+          <DeferredRelatedProductsSection promise={deferredRelated} />
+        </Suspense>
+      )}
 
       {sectionNavItems.length > 0 && (
         <ProductSectionNav sections={sectionNavItems} />
@@ -304,6 +357,12 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="border-t border-border" />
           <BlogSection posts={cms?.blog_posts ?? []} />
         </div>
+      )}
+
+      {decodedSku !== MOCK_PRODUCT_SKU && (
+        <Suspense fallback={null}>
+          <DeferredUpsellProductsSection promise={deferredUpsell} />
+        </Suspense>
       )}
     </PageContainer>
   );

@@ -5,12 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
 import { getCartItems } from '../../../lib/api/magento/cart';
+import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 import { useCart } from '../../../lib/cart/context';
 
 interface ProductCardProps {
-  product: UnifiedProduct;
+  product: ProductCardItem;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -85,11 +85,15 @@ function StarRating({ percentage }: { percentage: number }) {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const priceValue = product.price.value;
+  const originalPrice = product.originalPrice;
   const hasDiscount =
-    product.special_price != null && product.special_price < product.price;
-  const typeLabel = TYPE_LABEL[product.type_id] ?? product.type_id;
-  const typeStyle = TYPE_STYLE[product.type_id] ?? 'bg-surface text-ink-muted';
-  const hasRating = (product.rating_percentage ?? 0) > 0;
+    priceValue != null && originalPrice != null && originalPrice > priceValue;
+  const typeKey = product.type ?? 'simple';
+  const typeLabel = TYPE_LABEL[typeKey] ?? typeKey;
+  const typeStyle = TYPE_STYLE[typeKey] ?? 'bg-surface text-ink-muted';
+  const hasRating = product.ratingPercentage > 0;
+  const isOutOfStock = product.inStock === false;
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [cartQty, setCartQty] = useState(0);
@@ -113,9 +117,7 @@ export function ProductCard({ product }: ProductCardProps) {
     Record<string, string>
   >({});
 
-  // 优先使用 Strapi 统一缩略图，其次 Magento 原始缩略图
-  const imageUrl = product.unified_thumbnail;
-  const isOutOfStock = product.is_in_stock === false;
+  const imageUrl = product.image;
 
   const allConfigOptionsSelected = useMemo(() => {
     if (!variantData) return false;
@@ -139,7 +141,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const refreshCardQtyFromCart = async () => {
     try {
       const items = await getCartItems();
-      if (product.type_id === 'configurable' && variantData) {
+      if (typeKey === 'configurable' && variantData) {
         const variantSkuSet = new Set([
           product.sku,
           ...variantData.variants.map(variant => variant.sku),
@@ -223,7 +225,7 @@ export function ProductCard({ product }: ProductCardProps) {
     event.stopPropagation();
     if (isOutOfStock || isAdding) return;
 
-    if (product.type_id === 'configurable') {
+    if (typeKey === 'configurable') {
       setIsConfigModalOpen(true);
       setAddError(null);
       setVariantError(null);
@@ -264,7 +266,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link
         href={
           `/products/${encodeURIComponent(
-            product.url_key ?? product.sku
+            product.urlKey ?? product.sku
           )}` as Route
         }
         className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
@@ -274,7 +276,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {imageUrl ? (
             <Image
               src={imageUrl}
-              alt={product.display_name}
+              alt={product.displayName}
               fill
               unoptimized
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -301,12 +303,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* 左上角标签：促销 > Sale > 商品类型 */}
           <div className="absolute left-2 top-2 flex flex-col gap-1">
-            {product.promotion_label && (
+            {product.promotionLabel && (
               <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
-                {product.promotion_label}
+                {product.promotionLabel}
               </span>
             )}
-            {!product.promotion_label && hasDiscount && (
+            {!product.promotionLabel && hasDiscount && (
               <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
                 Sale
               </span>
@@ -332,7 +334,7 @@ export function ProductCard({ product }: ProductCardProps) {
               }}
               disabled={isOutOfStock || isAdding}
               aria-label={
-                product.type_id === 'configurable'
+                typeKey === 'configurable'
                   ? 'Select options and add to cart'
                   : 'Add to cart'
               }
@@ -352,37 +354,42 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex flex-1 flex-col p-4">
           {/* 使用 display_name（Strapi 优化标题 > Magento 原始名称） */}
           <p className="mb-2 line-clamp-2 text-sm font-medium text-ink leading-snug group-hover:text-brand">
-            {product.display_name}
+            {product.displayName}
           </p>
 
           {/* 评分 */}
           {hasRating ? (
             <div className="mb-2 flex items-center gap-1.5">
-              <StarRating percentage={product.rating_percentage ?? 0} />
+              <StarRating percentage={product.ratingPercentage ?? 0} />
               <span className="text-[11px] text-ink-muted">
-                ({product.review_count})
+                ({product.reviewCount})
               </span>
             </div>
           ) : (
             <div className="mb-2 h-4" />
           )}
 
-          {/* 价格（永远使用 Magento 原始价格） */}
           <div className="mt-auto flex items-baseline gap-2">
-            {product.special_price != null && (
-              <span className="text-base font-bold text-ink">
-                ${product.special_price.toFixed(2)}
-              </span>
-            )}
-            {product.price > 0 && (
-              <span
-                className={`text-base font-bold ${
-                  product.special_price != null
-                    ? 'text-xs text-ink-muted line-through'
-                    : 'text-ink'
-                }`}
-              >
-                ${product.price.toFixed(2)}
+            {priceValue != null ? (
+              <>
+                {hasDiscount && (
+                  <span className="text-base font-bold text-ink">
+                    ${priceValue.toFixed(2)}
+                  </span>
+                )}
+                <span
+                  className={`text-base font-bold ${
+                    hasDiscount
+                      ? 'text-xs text-ink-muted line-through'
+                      : 'text-ink'
+                  }`}
+                >
+                  ${(hasDiscount ? originalPrice : priceValue)?.toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="text-sm font-medium text-ink-muted">
+                Price unavailable
               </span>
             )}
           </div>
@@ -399,7 +406,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   Select options
                 </h3>
                 <p className="mt-1 text-sm text-ink-muted">
-                  {product.display_name}
+                  {product.displayName}
                 </p>
               </div>
               <button
@@ -426,7 +433,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     {imageUrl ? (
                       <Image
                         src={imageUrl}
-                        alt={product.display_name}
+                        alt={product.displayName}
                         fill
                         unoptimized
                         className="object-contain p-3"
@@ -455,22 +462,23 @@ export function ProductCard({ product }: ProductCardProps) {
                   <div className="min-w-0 space-y-4">
                     <div>
                       <p className="line-clamp-2 text-sm text-ink-muted">
-                        {product.display_name}
+                        {product.displayName}
                       </p>
                       <div className="mt-2 flex items-baseline gap-2">
                         <span className="text-2xl font-bold text-ink">
                           $
                           {(
                             selectedVariant?.price ??
-                            product.special_price ??
-                            product.price
+                            priceValue ??
+                            originalPrice ??
+                            0
                           ).toFixed(2)}
                         </span>
                         {selectedVariant == null &&
-                          product.special_price != null &&
-                          product.price > product.special_price && (
+                          hasDiscount &&
+                          originalPrice != null && (
                             <span className="text-sm text-ink-muted line-through">
-                              ${product.price.toFixed(2)}
+                              ${originalPrice.toFixed(2)}
                             </span>
                           )}
                       </div>

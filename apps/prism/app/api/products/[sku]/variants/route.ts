@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
-import { mapProductVariants } from '@/lib/mappers/product.mapper';
+import { getProductVariantsBFF } from '@/lib/api/bff/product/variants';
 
 // Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_PRODUCT_DETAIL in cache-policy.ts
 export const revalidate = 300;
@@ -12,8 +11,7 @@ export async function GET(
   const { sku } = await params;
 
   try {
-    const raw = await fetchProductDetailBySkuGQL(sku);
-    const data = mapProductVariants(raw);
+    const data = await getProductVariantsBFF(sku);
 
     return NextResponse.json({ success: true, data, error: null });
   } catch (error) {

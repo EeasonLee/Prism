@@ -2,7 +2,7 @@
  * Meilisearch 相关商品查询服务
  *
  * 基于 category slug 和 tags 查询相关商品，
- * 作为 /api/products/:sku/related 的主要数据源。
+ * 作为产品详情页 related products 内部 service 的主要数据源。
  */
 
 import { searchProducts } from '../../api/discovery/meilisearch';
