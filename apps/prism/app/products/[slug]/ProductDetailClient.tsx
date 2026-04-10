@@ -77,6 +77,29 @@ function calculateCustomOptionPriceDelta(
   }, 0);
 }
 
+function hasRequiredCustomOptionsSelected(
+  options: MagentoCustomizableOption[],
+  selections: Record<string, string | string[]>
+): boolean {
+  if (options.length === 0) return true;
+
+  return options
+    .filter(option => option.required)
+    .every(option => {
+      const selected = selections[String(option.option_id)];
+
+      if (option.type === 'checkbox' || option.type === 'multiple') {
+        return Array.isArray(selected) && selected.length > 0;
+      }
+
+      if (Array.isArray(selected)) {
+        return selected.length > 0;
+      }
+
+      return typeof selected === 'string' && selected.trim().length > 0;
+    });
+}
+
 // ─── 数量输入框 ───────────────────────────────────────────────────────────────
 
 function QtyInput({
@@ -307,14 +330,18 @@ function SimpleOptions({
       ),
     [customOptions, customSelections, product.price]
   );
+  const allCustomRequiredSelected = useMemo(
+    () => hasRequiredCustomOptionsSelected(customOptions, customSelections),
+    [customOptions, customSelections]
+  );
 
   useEffect(() => {
     onSelectionChange?.({
       selectedVariant: null,
-      allSelected: true,
+      allSelected: allCustomRequiredSelected,
       customOptionPriceDelta,
     });
-  }, [customOptionPriceDelta, onSelectionChange]);
+  }, [allCustomRequiredSelected, customOptionPriceDelta, onSelectionChange]);
 
   const productOptionsJson = useMemo(() => {
     const entries = Object.entries(customSelections).filter(([, v]) =>
@@ -346,6 +373,8 @@ function SimpleOptions({
         sku={product.sku}
         qty={qty}
         productOptionsJson={productOptionsJson}
+        disabled={!allCustomRequiredSelected}
+        disabledLabel="Select required options"
       />
     </div>
   );
@@ -541,6 +570,10 @@ function ConfigurableOptions({
       ),
     [basePrice, customOptions, customSelections]
   );
+  const allCustomRequiredSelected = useMemo(
+    () => hasRequiredCustomOptionsSelected(customOptions, customSelections),
+    [customOptions, customSelections]
+  );
 
   const productOptionsJson = useMemo(() => {
     if (!allSelected) return undefined;
@@ -565,10 +598,16 @@ function ConfigurableOptions({
   useEffect(() => {
     onSelectionChange?.({
       selectedVariant: selectedChild,
-      allSelected,
+      allSelected: allSelected && allCustomRequiredSelected,
       customOptionPriceDelta,
     });
-  }, [allSelected, customOptionPriceDelta, onSelectionChange, selectedChild]);
+  }, [
+    allCustomRequiredSelected,
+    allSelected,
+    customOptionPriceDelta,
+    onSelectionChange,
+    selectedChild,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -620,8 +659,10 @@ function ConfigurableOptions({
         sku={selectedChild?.sku ?? product.sku}
         qty={qty}
         productOptionsJson={productOptionsJson}
-        disabled={!allSelected}
-        disabledLabel="Select Options"
+        disabled={!allSelected || !allCustomRequiredSelected}
+        disabledLabel={
+          !allSelected ? 'Select Options' : 'Select required options'
+        }
       />
     </div>
   );
