@@ -399,10 +399,7 @@ export async function fetchReviewDimensionSummaryBySku(
   const response = await apiClient.get<StrapiReviewDimensionSummaryResponseRaw>(
     `api/product-reviews/by-sku/${encodeURIComponent(sku)}/dimension-summary`,
     {
-      next: {
-        tags: [CACHE_TAG_PRODUCT_REVIEWS],
-        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
-      },
+      cache: 'no-store',
     } as Parameters<typeof apiClient.get>[1]
   );
 

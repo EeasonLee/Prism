@@ -354,6 +354,18 @@ function ReviewCard({
 }) {
   const displayDate =
     formatReviewDate(review.createdAt) || review.createdAt || '';
+  const reviewDimensionRatings = review.dimensionRatings
+    .map(item => {
+      const relatedTag = review.reviewTags.find(
+        tag => tag.slug === item.tagSlug
+      );
+      return {
+        slug: item.tagSlug,
+        name: relatedTag?.name ?? item.tagSlug,
+        score: item.score,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <article className="rounded-[26px] border border-border bg-card p-5 sm:p-6">
@@ -397,6 +409,24 @@ function ReviewCard({
       <p className="mt-2 text-sm leading-relaxed text-ink-muted">
         {review.content}
       </p>
+
+      {reviewDimensionRatings.length > 0 && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {reviewDimensionRatings.map(item => (
+            <div
+              key={item.slug}
+              className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2"
+            >
+              <span className="text-xs font-medium text-ink-muted">
+                {item.name}
+              </span>
+              <span className="text-xs font-semibold text-ink">
+                {item.score} / 5
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <ReviewMediaStrip review={review} />
 
