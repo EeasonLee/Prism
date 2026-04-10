@@ -16,6 +16,7 @@ import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
+import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
@@ -281,6 +282,13 @@ export default async function ProductDetailPage({ params }: Props) {
         <div id="section-specifications">
           <div className="border-t border-border" />
           <ProductSpecifications groups={specificationGroups} />
+        </div>
+      )}
+
+      {(cms?.product_videos?.length ?? 0) > 0 && (
+        <div id="section-videos">
+          <div className="border-t border-border" />
+          <ProductVideosSection videos={cms?.product_videos ?? []} />
         </div>
       )}
 

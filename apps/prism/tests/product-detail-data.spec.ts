@@ -64,4 +64,38 @@ describe('buildPdpSectionNav', () => {
       label: 'Specifications',
     });
   });
+
+  it('adds Videos before Recipes when CMS has product_videos', () => {
+    const sections = buildPdpSectionNav(
+      {
+        product_videos: [
+          {
+            id: 1,
+            title: 'Demo',
+            caption: 'Caption',
+            thumbnailUrl: 'https://example.com/t.jpg',
+            videoUrl: 'https://example.com/v',
+          },
+        ],
+        recipes: [
+          {
+            id: 1,
+            title: 'R',
+            image: '',
+            time: '1 min',
+            servings: 1,
+            difficulty: 'Easy',
+            tags: [],
+          },
+        ],
+      },
+      baseProduct
+    );
+
+    const videoIdx = sections.findIndex(s => s.id === 'section-videos');
+    const recipesIdx = sections.findIndex(s => s.id === 'section-recipes');
+    expect(videoIdx).toBeGreaterThan(-1);
+    expect(recipesIdx).toBeGreaterThan(-1);
+    expect(videoIdx).toBeLessThan(recipesIdx);
+  });
 });

@@ -73,6 +73,15 @@ export interface BlogPost {
   readTime: string;
 }
 
+/** PDP 商品关联视频轮播（与 Strapi product-video / Prism fetch 字段对齐） */
+export interface ProductVideoCard {
+  id: number;
+  title: string;
+  caption: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
+
 export interface CrossSellAddon {
   id: number;
   sku: string;
@@ -112,6 +121,7 @@ export interface ProductPageExtras {
   recommended_products: RecommendedProduct[];
   recipes: Recipe[];
   blog_posts: BlogPost[];
+  product_videos: ProductVideoCard[];
   cross_sell_addons: CrossSellAddon[];
   bundle_deals: BundleDeal[];
 }
@@ -621,6 +631,50 @@ export const mockProductExtras: ProductPageExtras = {
       price: 44.99,
       image:
         'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80',
+    },
+  ],
+
+  // 关联视频（PDP 轮播）
+  product_videos: [
+    {
+      id: 1,
+      title: 'Crispy fries in 12 minutes',
+      caption: 'Crispy fries in 12 minutes — #airfryer #joydeem',
+      thumbnailUrl:
+        'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80',
+      videoUrl: 'https://example.com/video/1',
+    },
+    {
+      id: 2,
+      title: 'Meal prep Sunday',
+      caption: 'Meal prep Sunday with the Smart Air Fryer Pro 🍗',
+      thumbnailUrl:
+        'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=400&q=80',
+      videoUrl: 'https://example.com/video/2',
+    },
+    {
+      id: 3,
+      title: 'Zero-oil wings',
+      caption: 'Zero-oil wings that taste fried ✨',
+      thumbnailUrl:
+        'https://images.unsplash.com/photo-1527477396000-e27137b194f6?w=400&q=80',
+      videoUrl: 'https://example.com/video/3',
+    },
+    {
+      id: 4,
+      title: 'Quick salmon',
+      caption: 'Quick salmon bowls for busy weeknights',
+      thumbnailUrl:
+        'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80',
+      videoUrl: 'https://example.com/video/4',
+    },
+    {
+      id: 5,
+      title: 'Family snack night',
+      caption: 'Family snack night — sliders & sweet potato fries',
+      thumbnailUrl:
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80',
+      videoUrl: 'https://example.com/video/5',
     },
   ],
 

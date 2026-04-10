@@ -2,6 +2,7 @@ import type { UnifiedProduct } from '../../../lib/api/unified-product';
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
 import {
   fetchPdpArticlesBySku,
+  fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '../../../lib/api/strapi/product-content';
 import type { ProductPageCms } from './mock-data';
@@ -19,22 +20,28 @@ export interface ProductDetailPageData {
 }
 
 /**
- * 从 Strapi `api::product.product` 与 recipe/article 的关联拉取 PDP 食谱与文章区块。
- * 后端路由：`/api/recipes/by-product-sku/:sku`、`/api/articles/by-product-sku/:sku`（按 Product.sku 过滤 `products` 关系）。
+ * 从 Strapi `api::product.product` 与 recipe/article/product-video 的关联拉取 PDP 区块。
+ * 后端路由：`/api/recipes/by-product-sku/:sku`、`/api/articles/by-product-sku/:sku`、
+ * `api/product-videos/by-product-sku/:sku`（按 Product.sku 过滤关联）。
  */
 export async function fetchRealProductPageCms(
   sku: string
 ): Promise<ProductDetailCms | null> {
-  const [recipes, blog_posts] = await Promise.all([
+  const [recipes, blog_posts, product_videos] = await Promise.all([
     fetchPdpRecipesBySku(sku).catch(() => []),
     fetchPdpArticlesBySku(sku).catch(() => []),
+    fetchPdpProductVideosBySku(sku).catch(() => []),
   ]);
 
-  if (recipes.length === 0 && blog_posts.length === 0) {
+  if (
+    recipes.length === 0 &&
+    blog_posts.length === 0 &&
+    product_videos.length === 0
+  ) {
     return null;
   }
 
-  return { recipes, blog_posts };
+  return { recipes, blog_posts, product_videos };
 }
 
 /** Sticky 导航：仅包含页面上实际存在的锚点区块 */
@@ -72,6 +79,10 @@ export function buildPdpSectionNav(
           ? `Reviews (${reviewTotal.toLocaleString()})`
           : 'Reviews',
     });
+  }
+
+  if ((cms?.product_videos?.length ?? 0) > 0) {
+    sections.push({ id: 'section-videos', label: 'Videos' });
   }
 
   if ((cms?.recipes?.length ?? 0) > 0) {

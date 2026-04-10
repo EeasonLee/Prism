@@ -1,6 +1,9 @@
 import type { ArticleListItem } from '@prism/blog';
 import type { Recipe } from '../../../app/recipes/types';
-import type { BlogPost } from '../../../app/products/[sku]/mock-data';
+import type {
+  BlogPost,
+  ProductVideoCard,
+} from '../../../app/products/[slug]/mock-data';
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '../cache-policy';
 import { apiClient } from '../client';
 import { getStrapiBaseUrl } from '../config';
@@ -166,4 +169,64 @@ export async function fetchPdpArticlesBySku(sku: string): Promise<BlogPost[]> {
   return response.data.map(mapArticleToPdpCard).filter(Boolean) as BlogPost[];
 }
 
+/** Strapi 上传视频（media single），无 formats */
+interface StrapiVideoFileLike {
+  url?: string | null;
+}
+
+interface StrapiProductVideoRaw {
+  id: number;
+  title?: string | null;
+  caption?: string | null;
+  /** 媒体库 / 上传视频 */
+  video?: StrapiVideoFileLike | null;
+  video_url?: string | null;
+  thumbnail?: StrapiImageLike | null;
+}
+
+function pickUploadedVideoUrl(
+  file: StrapiVideoFileLike | null | undefined
+): string {
+  return resolveStrapiUrl(file?.url ?? null) ?? '';
+}
+
+function mapProductVideoToCard(
+  raw: StrapiProductVideoRaw
+): ProductVideoCard | null {
+  const fromUpload = pickUploadedVideoUrl(raw.video ?? null).trim();
+  const fromExternal = (raw.video_url ?? '').trim();
+  const videoUrl = fromUpload || fromExternal;
+  if (!raw.id || !videoUrl) return null;
+
+  const thumb = pickImageUrl(raw.thumbnail);
+  const caption = (raw.caption ?? '').trim();
+  const title = (raw.title ?? '').trim() || caption || 'Video';
+
+  return {
+    id: raw.id,
+    title,
+    caption: caption || title,
+    thumbnailUrl: thumb,
+    videoUrl,
+  };
+}
+
+/**
+ * PDP 商品关联视频（Strapi `product-videos` × Product manyToMany，经 by-product-sku 自定义路由）。
+ */
+export async function fetchPdpProductVideosBySku(
+  sku: string
+): Promise<ProductVideoCard[]> {
+  const response = await apiClient.get<
+    StrapiListResponse<StrapiProductVideoRaw>
+  >(`api/product-videos/by-product-sku/${encodeURIComponent(sku)}`, {
+    next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
+  } as Parameters<typeof apiClient.get>[1]);
+
+  return response.data
+    .map(mapProductVideoToCard)
+    .filter(Boolean) as ProductVideoCard[];
+}
+
 export type { PdpRecipeCard };
+export type { ProductVideoCard as PdpProductVideoCard };
