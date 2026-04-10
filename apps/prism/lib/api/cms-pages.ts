@@ -98,14 +98,154 @@ interface RawFeaturedProduct {
   productLink?: string;
 }
 
-interface RawContentCard {
+/** Strapi 组件行内关联的食谱（populate 后扁平字段） */
+interface RawRecipeRef {
   id?: number;
-  type?: string;
   title?: string | null;
-  description?: string;
-  image?: StrapiImageRaw | null;
-  link?: string;
-  metadata?: Record<string, unknown>;
+  slug?: string | null;
+  description?: string | null;
+  excerpt?: string | null;
+  prepTime?: number;
+  cookTime?: number;
+  featuredImage?: StrapiImageRaw | null;
+  categories?: Array<{ id?: number; slug?: string | null }> | null;
+  author?: { username?: string | null } | null;
+}
+
+/** Strapi 组件行内关联的文章 */
+interface RawArticleRef {
+  id?: number;
+  title?: string | null;
+  slug?: string | null;
+  excerpt?: string | null;
+  featuredImage?: StrapiImageRaw | null;
+  categories?: Array<{ id?: number; slug?: string | null }> | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  author?: { username?: string | null } | null;
+}
+
+/**
+ * 兼容 Strapi 响应：扁平 document，或 { data: { id, attributes } }
+ */
+function unwrapStrapiRelation<T extends object>(raw: unknown): T | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  if ('data' in o) {
+    const inner = o.data;
+    if (inner === null || inner === undefined) return null;
+    if (typeof inner === 'object' && inner !== null && !Array.isArray(inner)) {
+      const d = inner as Record<string, unknown>;
+      if (
+        'attributes' in d &&
+        d.attributes &&
+        typeof d.attributes === 'object' &&
+        d.attributes !== null
+      ) {
+        return {
+          id: d.id,
+          documentId: d.documentId,
+          ...(d.attributes as T),
+        } as unknown as T;
+      }
+      return inner as T;
+    }
+    return null;
+  }
+  return raw as T;
+}
+
+function formatRecipeTotalMinutes(recipe: RawRecipeRef): string {
+  const total = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
+  if (total <= 0) return '';
+  return `${total} min`;
+}
+
+function estimateArticleReadTime(text: string | null | undefined): string {
+  const plain = (text ?? '').replace(/<[^>]+>/g, ' ').trim();
+  if (!plain) return '3 min read';
+  const words = plain.split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(words / 200));
+  return `${minutes} min read`;
+}
+
+function formatArticleCardDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+}
+
+function mapContentCarouselRowToCard(item: unknown): ContentCard | null {
+  if (!item || typeof item !== 'object') return null;
+  const row = item as Record<string, unknown>;
+  const componentId = typeof row.id === 'number' ? row.id : 0;
+
+  const recipeRaw = unwrapStrapiRelation<RawRecipeRef>(row.recipe);
+  if (recipeRaw?.slug) {
+    const image = transformImage(recipeRaw.featuredImage);
+    if (!image?.url) return null;
+
+    const categorySlug = recipeRaw.categories?.[0]?.slug ?? 'recipe';
+    const timeStr = formatRecipeTotalMinutes(recipeRaw);
+    const description =
+      recipeRaw.excerpt?.trim() ||
+      (recipeRaw.description
+        ? recipeRaw.description
+            .replace(/<[^>]+>/g, ' ')
+            .trim()
+            .slice(0, 400)
+        : '') ||
+      undefined;
+
+    const metadata: Record<string, unknown> = {};
+    if (timeStr) metadata.time = timeStr;
+    if (recipeRaw.author?.username) {
+      metadata.author = recipeRaw.author.username;
+    }
+
+    return {
+      id: recipeRaw.id ?? componentId,
+      type: 'recipe',
+      title: recipeRaw.title ?? '',
+      description,
+      image: image as StrapiImage,
+      link: `/recipes/${categorySlug}/${recipeRaw.slug}`,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+    };
+  }
+
+  const articleRaw = unwrapStrapiRelation<RawArticleRef>(row.article);
+  if (articleRaw?.slug) {
+    const image = transformImage(articleRaw.featuredImage);
+    if (!image?.url) return null;
+
+    const categorySlug = articleRaw.categories?.[0]?.slug ?? 'articles';
+    const dateRaw = articleRaw.createdAt ?? articleRaw.updatedAt;
+    const dateLabel = formatArticleCardDate(dateRaw);
+
+    const metadata: Record<string, unknown> = {
+      readTime: estimateArticleReadTime(articleRaw.excerpt),
+    };
+    if (dateLabel) metadata.date = dateLabel;
+
+    return {
+      id: articleRaw.id ?? componentId,
+      type: 'blog',
+      title: articleRaw.title ?? '',
+      description: articleRaw.excerpt ?? undefined,
+      image: image as StrapiImage,
+      link: `/blog/${categorySlug}/${articleRaw.slug}`,
+      metadata,
+    };
+  }
+
+  return null;
 }
 
 interface RawVideoItem {
@@ -147,29 +287,29 @@ function transformImage(
           large: image.formats.large
             ? {
                 url: resolveStrapiUrl(image.formats.large.url) || '',
-                width: image.formats.large.width,
-                height: image.formats.large.height,
+                width: image.formats.large.width ?? 0,
+                height: image.formats.large.height ?? 0,
               }
             : undefined,
           medium: image.formats.medium
             ? {
                 url: resolveStrapiUrl(image.formats.medium.url) || '',
-                width: image.formats.medium.width,
-                height: image.formats.medium.height,
+                width: image.formats.medium.width ?? 0,
+                height: image.formats.medium.height ?? 0,
               }
             : undefined,
           small: image.formats.small
             ? {
                 url: resolveStrapiUrl(image.formats.small.url) || '',
-                width: image.formats.small.width,
-                height: image.formats.small.height,
+                width: image.formats.small.width ?? 0,
+                height: image.formats.small.height ?? 0,
               }
             : undefined,
           thumbnail: image.formats.thumbnail
             ? {
                 url: resolveStrapiUrl(image.formats.thumbnail.url) || '',
-                width: image.formats.thumbnail.width,
-                height: image.formats.thumbnail.height,
+                width: image.formats.thumbnail.width ?? 0,
+                height: image.formats.thumbnail.height ?? 0,
               }
             : undefined,
         }
@@ -298,7 +438,9 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
         __component,
         id,
         props: {
-          image: transformImage(rawProps.image) as StrapiImage,
+          image: transformImage(
+            rawProps.image as StrapiImageRaw | null | undefined
+          ) as StrapiImage,
           imagePosition: rawProps.imagePosition || 'right',
           title: rawProps.title || '',
           description: rawProps.description,
@@ -349,21 +491,15 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
 
     case 'page.content-carousel': {
       const itemList = Array.isArray(rawProps.items) ? rawProps.items : [];
-      const items: ContentCard[] = itemList.map((item): ContentCard => {
-        const it = item as RawContentCard;
-        const typeRaw = it.type;
-        const type: ContentCard['type'] =
-          typeRaw === 'blog' || typeRaw === 'recipe' ? typeRaw : 'recipe';
-        return {
-          id: it.id ?? 0,
-          type,
-          title: it.title ?? '',
-          description: it.description,
-          image: transformImage(it.image) as StrapiImage,
-          link: it.link,
-          metadata: it.metadata,
-        };
-      });
+      const items: ContentCard[] = itemList
+        .map(mapContentCarouselRowToCard)
+        .filter((c): c is ContentCard => c !== null);
+
+      if (items.length === 0 && itemList.length > 0) {
+        console.warn(
+          'page.content-carousel: items could not be mapped (check recipe/article relations and featured images)'
+        );
+      }
 
       return {
         __component,
@@ -434,7 +570,8 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
       'populate[sections][on][page.featured-products][populate][products][populate]=*',
-      'populate[sections][on][page.content-carousel][populate][items][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
       'populate[seo][populate]=*',
       'populate[featuredImage]=true',
