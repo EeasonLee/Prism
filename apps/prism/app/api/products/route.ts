@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { productService } from '@/lib/services/product.service';
-import { mapProductList } from '@/lib/mappers/product.mapper';
+import { getProductListBFF } from '@/lib/api/bff/product/list';
 
 // Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_CATALOG_SNAPSHOT in cache-policy.ts
 export const revalidate = 60;
@@ -13,19 +12,12 @@ export async function GET(request: Request) {
   const sort = searchParams.get('sort') as 'name' | 'price' | null;
 
   try {
-    const response = await productService.getProducts({
+    const mapped = await getProductListBFF({
       categoryId: categoryId ? Number(categoryId) : undefined,
       page,
-      pageSize: limit,
+      limit,
       sort: sort || undefined,
     });
-
-    const mapped = mapProductList(
-      response.items,
-      response.page_info.current_page,
-      response.total_count,
-      response.page_info.total_pages
-    );
 
     return NextResponse.json({
       success: true,

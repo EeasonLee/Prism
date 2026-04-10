@@ -1,90 +1,28 @@
-import { categoryService } from '../../lib/services/category.service';
-import { productService } from '../../lib/services/product.service';
-import { mapCategoryTree } from '../../lib/mappers/category.mapper';
-import { mapProductListItem } from '../../lib/mappers/product.mapper';
-import { mergeProduct } from '../../lib/api/unified-product';
+import { getCategoryListPageData } from '../../lib/api/bff/category/list';
 import { CategorySidebar } from './components/CategorySidebar';
 import { ProductCard } from './components/ProductCard';
-import type { MagentoCategoryTree } from '../../lib/api/magento/types';
-import type { MagentoProduct } from '../../lib/api/magento/types';
-
-const SHOP_ROOT_CATEGORY_ID = 2;
 
 export const metadata = {
   title: 'Shop - Joydeem',
   description: 'Browse Joydeem kitchen appliances',
 };
 
-function toBffCategoryTree(
-  node: ReturnType<typeof mapCategoryTree>,
-  level = 1
-): MagentoCategoryTree {
-  return {
-    id: node.id,
-    name: node.name,
-    is_active: true,
-    level,
-    product_count: 0,
-    url_key: node.urlKey || String(node.id),
-    children: node.children.map(child => toBffCategoryTree(child, level + 1)),
-  };
-}
-
-function toMagentoProduct(
-  item: ReturnType<typeof mapProductListItem>
-): MagentoProduct {
-  return {
-    id: 0,
-    sku: item.sku,
-    url_key: item.url_key,
-    name: item.name,
-    price: item.price,
-    final_price: item.price,
-    type_id: 'simple',
-    thumbnail_url: item.image,
-    image_url: item.image,
-    stock_status: item.inStock ? 'IN_STOCK' : 'OUT_OF_STOCK',
-    is_in_stock: item.inStock,
-    review_count: 0,
-    has_reviews: false,
-    category_ids: [],
-    categories: [],
-    configurable_options: [],
-    children: [],
-    grouped_items: [],
-    bundle_options: [],
-    links_purchased_separately: false,
-    downloadable_links: [],
-    downloadable_samples: [],
-    media_gallery: item.image
-      ? [{ url: item.image, label: null, position: 0, media_type: null }]
-      : [],
-  };
-}
-
 export default async function ShopPage() {
-  const [rawTree, productResponse] = await Promise.all([
-    categoryService
-      .getCategoryTree({ rootId: SHOP_ROOT_CATEGORY_ID })
-      .catch(() => null),
-    productService.getProducts({ pageSize: 24 }).catch(() => null),
-  ]);
-
-  const tree = rawTree ? toBffCategoryTree(mapCategoryTree(rawTree)) : null;
-  // BFF 直出数据，不做 Strapi enrichment（后续在 BFF 层融合）
-  const products = (productResponse?.items ?? []).map(item =>
-    mergeProduct(toMagentoProduct(mapProductListItem(item)))
+  const data = await getCategoryListPageData({ page: 1, pageSize: 24 }).catch(
+    () => null
   );
-  const total = productResponse?.total_count ?? products.length;
+
+  const products = data?.products ?? [];
+  const total = data?.pagination.total ?? products.length;
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 sm:px-6 lg:px-[50px]">
       <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">Shop</h1>
 
       <div className="flex gap-8 lg:gap-12">
-        {tree && (
+        {(data?.categoryTree?.length ?? 0) > 0 && (
           <aside className="hidden w-52 shrink-0 lg:block">
-            <CategorySidebar tree={tree} />
+            <CategorySidebar categories={data?.categoryTree ?? []} />
           </aside>
         )}
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
-import { mapProductDetail } from '@/lib/mappers/product.mapper';
+import {
+  getProductDetailAggregate,
+  resolveProductDetailAggregate,
+} from '@/lib/api/bff/product/detail';
 
 // Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_PRODUCT_DETAIL in cache-policy.ts
 export const revalidate = 300;
@@ -12,8 +14,8 @@ export async function GET(
   const { sku } = await params;
 
   try {
-    const raw = await fetchProductDetailBySkuGQL(sku);
-    const data = mapProductDetail(raw);
+    const aggregate = await getProductDetailAggregate(sku);
+    const data = await resolveProductDetailAggregate(aggregate);
 
     return NextResponse.json({ success: true, data, error: null });
   } catch (error) {

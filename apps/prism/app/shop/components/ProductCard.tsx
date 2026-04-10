@@ -1,10 +1,10 @@
 import type { Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
+import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 
 interface ProductCardProps {
-  product: UnifiedProduct;
+  product: ProductCardItem;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -78,20 +78,22 @@ function StarRating({ percentage }: { percentage: number }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const priceValue = product.price.value;
+  const originalPrice = product.originalPrice;
   const hasDiscount =
-    product.special_price != null && product.special_price < product.price;
-  const typeLabel = TYPE_LABEL[product.type_id] ?? product.type_id;
-  const typeStyle = TYPE_STYLE[product.type_id] ?? 'bg-surface text-ink-muted';
-  const hasRating = (product.rating_percentage ?? 0) > 0;
+    priceValue != null && originalPrice != null && originalPrice > priceValue;
+  const typeKey = product.type ?? 'simple';
+  const typeLabel = TYPE_LABEL[typeKey] ?? typeKey;
+  const typeStyle = TYPE_STYLE[typeKey] ?? 'bg-surface text-ink-muted';
+  const hasRating = product.ratingPercentage > 0;
 
-  // 优先使用 Strapi 统一缩略图，其次 Magento 原始缩略图
-  const imageUrl = product.unified_thumbnail;
+  const imageUrl = product.image;
 
   return (
     <Link
       href={
         `/products/${encodeURIComponent(
-          product.url_key ?? product.sku
+          product.urlKey ?? product.sku
         )}` as Route
       }
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
@@ -101,7 +103,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={product.display_name}
+            alt={product.displayName}
             fill
             unoptimized
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -128,12 +130,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* 左上角标签：促销 > Sale > 商品类型 */}
         <div className="absolute left-2 top-2 flex flex-col gap-1">
-          {product.promotion_label && (
+          {product.promotionLabel && (
             <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
-              {product.promotion_label}
+              {product.promotionLabel}
             </span>
           )}
-          {!product.promotion_label && hasDiscount && (
+          {!product.promotionLabel && hasDiscount && (
             <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
               Sale
             </span>
@@ -146,7 +148,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* 右上角：库存状态 */}
-        {product.is_in_stock === false && (
+        {product.inStock === false && (
           <span className="absolute right-2 top-2 rounded-full bg-ink/60 px-2 py-0.5 text-[10px] font-medium text-white">
             Out of Stock
           </span>
@@ -157,37 +159,42 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="flex flex-1 flex-col p-4">
         {/* 使用 display_name（Strapi 优化标题 > Magento 原始名称） */}
         <p className="mb-2 line-clamp-2 text-sm font-medium text-ink leading-snug group-hover:text-brand">
-          {product.display_name}
+          {product.displayName}
         </p>
 
         {/* 评分 */}
         {hasRating ? (
           <div className="mb-2 flex items-center gap-1.5">
-            <StarRating percentage={product.rating_percentage ?? 0} />
+            <StarRating percentage={product.ratingPercentage ?? 0} />
             <span className="text-[11px] text-ink-muted">
-              ({product.review_count})
+              ({product.reviewCount})
             </span>
           </div>
         ) : (
           <div className="mb-2 h-4" />
         )}
 
-        {/* 价格（永远使用 Magento 原始价格） */}
         <div className="mt-auto flex items-baseline gap-2">
-          {product.special_price != null && (
-            <span className="text-base font-bold text-ink">
-              ${product.special_price.toFixed(2)}
-            </span>
-          )}
-          {product.price > 0 && (
-            <span
-              className={`text-base font-bold ${
-                product.special_price != null
-                  ? 'text-xs text-ink-muted line-through'
-                  : 'text-ink'
-              }`}
-            >
-              ${product.price.toFixed(2)}
+          {priceValue != null ? (
+            <>
+              {hasDiscount && (
+                <span className="text-base font-bold text-ink">
+                  ${priceValue.toFixed(2)}
+                </span>
+              )}
+              <span
+                className={`text-base font-bold ${
+                  hasDiscount
+                    ? 'text-xs text-ink-muted line-through'
+                    : 'text-ink'
+                }`}
+              >
+                ${(hasDiscount ? originalPrice : priceValue)?.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm font-medium text-ink-muted">
+              Price unavailable
             </span>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildPdpSectionNav } from '../app/products/[slug]/product-detail-data';
+import { buildPdpSectionNav } from '../app/products/[slug]/pdp-section-nav';
 import type { UnifiedProduct } from '../lib/api/unified-product';
+import type { ProductSpecificationGroup } from '../lib/api/strapi/product-enrichment';
 
 const baseProduct: UnifiedProduct = {
   id: 1,
@@ -21,7 +22,6 @@ const baseProduct: UnifiedProduct = {
   media_gallery: [],
   categories: [],
   configurable_options: [],
-  variants: [],
   _enriched: true,
   display_name: 'Air Fryer',
   subtitle: null,
@@ -39,15 +39,17 @@ const baseProduct: UnifiedProduct = {
 
 describe('buildPdpSectionNav', () => {
   it('adds Specifications when product has specification groups', () => {
+    const specifications: ProductSpecificationGroup[] = [
+      {
+        id: 'general',
+        title: 'General',
+        rows: [{ key: 'capacity', label: 'Capacity', value: '5.5L' }],
+      },
+    ];
+
     const sections = buildPdpSectionNav(null, {
       ...baseProduct,
-      specifications: [
-        {
-          id: 'general',
-          title: 'General',
-          rows: [{ key: 'capacity', label: 'Capacity', value: '5.5L' }],
-        },
-      ],
+      specifications: specifications as unknown as string,
     });
 
     expect(sections).toContainEqual({
