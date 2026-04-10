@@ -41,6 +41,10 @@ export function buildPdpSectionNav(
     });
   }
 
+  if ((cms?.product_videos?.length ?? 0) > 0) {
+    sections.push({ id: 'section-videos', label: 'Videos' });
+  }
+
   if ((cms?.recipes?.length ?? 0) > 0) {
     sections.push({ id: 'section-recipes', label: 'Recipes' });
   }

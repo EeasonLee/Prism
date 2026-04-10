@@ -22,6 +22,7 @@ import {
 } from '@/lib/api/strapi/product-qa';
 import {
   fetchPdpArticlesBySku,
+  fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '@/lib/api/strapi/product-content';
 import type { ProductPageCms } from '@/app/products/[slug]/mock-data';
@@ -166,16 +167,21 @@ async function getProductReviewsBFF(sku: string): Promise<ProductReviewsData> {
 }
 
 async function getProductCmsBFF(sku: string): Promise<ProductDetailCms | null> {
-  const [recipes, blog_posts] = await Promise.all([
+  const [recipes, blog_posts, product_videos] = await Promise.all([
     fetchPdpRecipesBySku(sku).catch(() => []),
     fetchPdpArticlesBySku(sku).catch(() => []),
+    fetchPdpProductVideosBySku(sku).catch(() => []),
   ]);
 
-  if (recipes.length === 0 && blog_posts.length === 0) {
+  if (
+    recipes.length === 0 &&
+    blog_posts.length === 0 &&
+    product_videos.length === 0
+  ) {
     return null;
   }
 
-  return { recipes, blog_posts };
+  return { recipes, blog_posts, product_videos };
 }
 
 export async function getProductDetailAggregate(

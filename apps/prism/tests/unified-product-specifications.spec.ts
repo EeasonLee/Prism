@@ -11,6 +11,7 @@ const {
   fetchProductQaBySkuMock,
   fetchPdpRecipesBySkuMock,
   fetchPdpArticlesBySkuMock,
+  fetchPdpProductVideosBySkuMock,
 } = vi.hoisted(() => ({
   fetchProductDetailBySkuGQLMock: vi.fn(),
   fetchProductDetailByUrlKeyGQLMock: vi.fn(),
@@ -20,6 +21,7 @@ const {
   fetchProductQaBySkuMock: vi.fn(),
   fetchPdpRecipesBySkuMock: vi.fn(),
   fetchPdpArticlesBySkuMock: vi.fn(),
+  fetchPdpProductVideosBySkuMock: vi.fn(),
 }));
 
 vi.mock('../lib/services/magento/product.service', () => ({
@@ -43,6 +45,7 @@ vi.mock('../lib/api/strapi/product-qa', () => ({
 vi.mock('../lib/api/strapi/product-content', () => ({
   fetchPdpRecipesBySku: fetchPdpRecipesBySkuMock,
   fetchPdpArticlesBySku: fetchPdpArticlesBySkuMock,
+  fetchPdpProductVideosBySku: fetchPdpProductVideosBySkuMock,
 }));
 
 const baseProduct: MagentoProduct = {
@@ -255,6 +258,7 @@ describe('product detail aggregate', () => {
         readTime: '4 min read',
       },
     ]);
+    fetchPdpProductVideosBySkuMock.mockResolvedValueOnce([]);
 
     const { getProductDetailAggregate, resolveProductDetailAggregate } =
       await import('../lib/api/bff/product/detail');
@@ -376,6 +380,7 @@ describe('product detail aggregate', () => {
           readTime: '4 min read',
         },
       ],
+      product_videos: [],
     });
 
     await expect(
