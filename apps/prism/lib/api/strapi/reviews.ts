@@ -29,6 +29,8 @@ interface StrapiReviewRaw {
   title: string;
   content: string;
   media?: StrapiReviewMediaRaw[];
+  review_tags?: StrapiReviewTagRaw[];
+  dimension_ratings?: StrapiReviewDimensionRatingRaw[];
   verified?: boolean | null;
   helpful_count?: number | null;
   viewer_has_marked_helpful?: boolean | null;
@@ -46,6 +48,52 @@ interface StrapiReviewListResponseRaw {
       pageCount: number;
       total: number;
     };
+  };
+}
+
+interface StrapiReviewTagRaw {
+  id: number;
+  documentId?: string | null;
+  name: string;
+  slug: string;
+  sortOrder?: number | null;
+  isActive?: boolean | null;
+  isScored?: boolean | null;
+}
+
+interface StrapiReviewDimensionRatingRaw {
+  tagSlug?: string;
+  score?: number;
+}
+
+interface StrapiReviewTagListResponseRaw {
+  data: StrapiReviewTagRaw[];
+}
+
+interface StrapiReviewDimensionSummaryItemRaw {
+  slug: string;
+  name: string;
+  average: number;
+  count: number;
+  scaleMax?: number;
+}
+
+interface StrapiReviewDimensionSummaryResponseRaw {
+  data: StrapiReviewDimensionSummaryItemRaw[];
+}
+
+interface StrapiReviewMediaGalleryItemRaw extends StrapiReviewMediaRaw {
+  reviewDocumentId?: string | null;
+  reviewTitle?: string | null;
+  reviewAuthor?: string | null;
+  reviewCreatedAt?: string | null;
+}
+
+interface StrapiReviewMediaGalleryResponseRaw {
+  data: StrapiReviewMediaGalleryItemRaw[];
+  meta: {
+    pagination: ProductReviewPagination;
+    type: 'all' | 'image' | 'video';
   };
 }
 
@@ -99,6 +147,8 @@ export interface ProductReview {
   title: string;
   content: string;
   media: ProductReviewMedia[];
+  reviewTags: ProductReviewTag[];
+  dimensionRatings: ProductReviewDimensionRating[];
   verified: boolean;
   helpfulCount: number;
   viewerHasMarkedHelpful: boolean;
@@ -114,6 +164,36 @@ export interface ProductReviewSummary {
   distribution: Record<ProductReviewDistributionKey, number>;
 }
 
+export interface ProductReviewTag {
+  id: number;
+  documentId: string | null;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  isActive: boolean;
+  isScored: boolean;
+}
+
+export interface ProductReviewDimensionRating {
+  tagSlug: string;
+  score: number;
+}
+
+export interface ProductReviewDimensionSummaryItem {
+  slug: string;
+  name: string;
+  average: number;
+  count: number;
+  scaleMax: number;
+}
+
+export interface ProductReviewMediaGalleryItem extends ProductReviewMedia {
+  reviewDocumentId: string | null;
+  reviewTitle: string | null;
+  reviewAuthor: string | null;
+  reviewCreatedAt: string | null;
+}
+
 export interface ProductReviewPagination {
   page: number;
   pageSize: number;
@@ -124,6 +204,17 @@ export interface ProductReviewPagination {
 export interface ProductReviewListResult {
   items: ProductReview[];
   pagination: ProductReviewPagination;
+}
+
+export interface ProductReviewMediaGalleryResult {
+  items: ProductReviewMediaGalleryItem[];
+  pagination: ProductReviewPagination;
+  type: 'all' | 'image' | 'video';
+}
+
+export interface ReviewQueryFilters {
+  ratings?: number[];
+  tagSlugs?: string[];
 }
 
 export interface SubmitProductReviewInput {
@@ -139,6 +230,8 @@ export interface SubmitProductReviewInput {
   title: string;
   content: string;
   mediaIds: number[];
+  reviewTagSlugs?: string[];
+  dimensionRatings?: ProductReviewDimensionRating[];
 }
 
 export interface SubmitProductReviewResult {
@@ -173,6 +266,36 @@ function normalizeReviewMedia(media: StrapiReviewMediaRaw): ProductReviewMedia {
   };
 }
 
+function normalizeReviewTag(tag: StrapiReviewTagRaw): ProductReviewTag {
+  return {
+    id: tag.id,
+    documentId: tag.documentId ?? null,
+    name: tag.name,
+    slug: tag.slug,
+    sortOrder: Number(tag.sortOrder ?? 0),
+    isActive: tag.isActive ?? true,
+    isScored: tag.isScored ?? false,
+  };
+}
+
+function normalizeDimensionRatings(
+  value: StrapiReviewDimensionRatingRaw[] | undefined
+): ProductReviewDimensionRating[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => ({
+      tagSlug: typeof item.tagSlug === 'string' ? item.tagSlug : '',
+      score: Number(item.score ?? -1),
+    }))
+    .filter(
+      item =>
+        item.tagSlug.length > 0 &&
+        Number.isInteger(item.score) &&
+        item.score >= 0 &&
+        item.score <= 5
+    );
+}
+
 export const normalizeReviewMediaForTest = normalizeReviewMedia;
 
 function normalizeReview(review: StrapiReviewRaw): ProductReview {
@@ -188,6 +311,8 @@ function normalizeReview(review: StrapiReviewRaw): ProductReview {
     title: review.title,
     content: review.content,
     media: (review.media ?? []).map(normalizeReviewMedia),
+    reviewTags: (review.review_tags ?? []).map(normalizeReviewTag),
+    dimensionRatings: normalizeDimensionRatings(review.dimension_ratings),
     verified: review.verified ?? false,
     helpfulCount: Number(review.helpful_count ?? 0),
     viewerHasMarkedHelpful: review.viewer_has_marked_helpful ?? false,
@@ -221,7 +346,8 @@ export async function fetchReviewsBySku(
   page = 1,
   pageSize = 10,
   sort: 'newest' | 'highest_rating' | 'most_helpful' = 'newest',
-  dedupeKey?: string | null
+  dedupeKey?: string | null,
+  filters?: ReviewQueryFilters
 ): Promise<ProductReviewListResult> {
   const searchParams = new URLSearchParams({
     page: String(page),
@@ -230,6 +356,12 @@ export async function fetchReviewsBySku(
   });
   if (dedupeKey) {
     searchParams.set('dedupeKey', dedupeKey);
+  }
+  if (filters?.ratings && filters.ratings.length > 0) {
+    searchParams.set('ratings', filters.ratings.join(','));
+  }
+  if (filters?.tagSlugs && filters.tagSlugs.length > 0) {
+    searchParams.set('tagSlugs', filters.tagSlugs.join(','));
   }
 
   const response = await apiClient.get<StrapiReviewListResponseRaw>(
@@ -247,6 +379,75 @@ export async function fetchReviewsBySku(
   return {
     items: response.data.map(normalizeReview),
     pagination: response.meta.pagination,
+  };
+}
+
+export async function fetchReviewTags(): Promise<ProductReviewTag[]> {
+  const response = await apiClient.get<StrapiReviewTagListResponseRaw>(
+    'api/review-tags/active',
+    {
+      cache: 'no-store',
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return (response.data ?? []).map(normalizeReviewTag);
+}
+
+export async function fetchReviewDimensionSummaryBySku(
+  sku: string
+): Promise<ProductReviewDimensionSummaryItem[]> {
+  const response = await apiClient.get<StrapiReviewDimensionSummaryResponseRaw>(
+    `api/product-reviews/by-sku/${encodeURIComponent(sku)}/dimension-summary`,
+    {
+      next: {
+        tags: [CACHE_TAG_PRODUCT_REVIEWS],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return (response.data ?? []).map(item => ({
+    slug: item.slug,
+    name: item.name,
+    average: Number(item.average ?? 0),
+    count: Number(item.count ?? 0),
+    scaleMax: Number(item.scaleMax ?? 5),
+  }));
+}
+
+export async function fetchReviewMediaBySku(
+  sku: string,
+  type: 'all' | 'image' | 'video' = 'all',
+  page = 1,
+  pageSize = 24
+): Promise<ProductReviewMediaGalleryResult> {
+  const searchParams = new URLSearchParams({
+    type,
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  const response = await apiClient.get<StrapiReviewMediaGalleryResponseRaw>(
+    `api/product-reviews/by-sku/${encodeURIComponent(
+      sku
+    )}/media?${searchParams.toString()}`,
+    {
+      next: {
+        tags: [CACHE_TAG_PRODUCT_REVIEWS],
+        revalidate: REVALIDATE_SECONDS_REVIEW_UGC,
+      },
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return {
+    items: (response.data ?? []).map(item => ({
+      ...normalizeReviewMedia(item),
+      reviewDocumentId: item.reviewDocumentId ?? null,
+      reviewTitle: item.reviewTitle ?? null,
+      reviewAuthor: item.reviewAuthor ?? null,
+      reviewCreatedAt: item.reviewCreatedAt ?? null,
+    })),
+    pagination: response.meta.pagination,
+    type: response.meta.type,
   };
 }
 
@@ -300,6 +501,8 @@ export async function submitReview(
     title: input.title,
     content: input.content,
     media: input.mediaIds,
+    review_tags: input.reviewTagSlugs ?? [],
+    dimension_ratings: input.dimensionRatings ?? [],
   };
   const trimmedMagento = input.magentoUserId?.trim();
   if (trimmedMagento) {

@@ -65,11 +65,22 @@ describe('ReviewForm', () => {
   });
 
   it('allows configurable-product submission without selecting a variant (falls back to product SKU)', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        message: 'submitted',
-      }),
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/reviews/tags')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            items: [],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          message: 'submitted',
+        }),
+      });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -104,10 +115,10 @@ describe('ReviewForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    const [, options] = fetchMock.mock.calls[0] as [
+    const [, options] = fetchMock.mock.calls[1] as [
       string,
       { method: string; headers: Record<string, string>; body: string }
     ];
@@ -179,22 +190,33 @@ describe('ReviewForm', () => {
 
   it('opens uploaded video media and closes the viewer with escape', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        items: [
-          {
-            id: 101,
-            kind: 'video',
-            url: 'https://example.com/uploaded-video.webm',
-            width: null,
-            height: null,
-            mime: 'video/webm',
-            alt: 'Uploaded review video',
-            posterUrl: null,
-          },
-        ],
-      }),
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/reviews/tags')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            items: [],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          items: [
+            {
+              id: 101,
+              kind: 'video',
+              url: 'https://example.com/uploaded-video.webm',
+              width: null,
+              height: null,
+              mime: 'video/webm',
+              alt: 'Uploaded review video',
+              posterUrl: null,
+            },
+          ],
+        }),
+      });
     });
     vi.stubGlobal('fetch', fetchMock);
 

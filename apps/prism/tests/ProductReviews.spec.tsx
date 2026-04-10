@@ -92,6 +92,8 @@ const review: ProductReview = {
       posterUrl: null,
     },
   ],
+  reviewTags: [],
+  dimensionRatings: [],
   verified: true,
   helpfulCount: 3,
   viewerHasMarkedHelpful: false,
@@ -203,7 +205,9 @@ describe('ProductReviews', () => {
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByLabelText('Review video')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /show next media/i }));
+    await user.click(
+      screen.getByRole('button', { name: /^show next media$/i })
+    );
 
     expect(
       screen.getByRole('dialog', { name: /media viewer image preview/i })

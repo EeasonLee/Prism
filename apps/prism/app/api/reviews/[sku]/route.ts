@@ -20,6 +20,8 @@ interface SubmitReviewRequestBody {
   title?: unknown;
   content?: unknown;
   mediaIds?: unknown;
+  reviewTagSlugs?: unknown;
+  dimensionRatings?: unknown;
 }
 
 function badRequest(message: string) {
@@ -32,6 +34,28 @@ function normalizeText(value: unknown) {
 
 function normalizeRating(value: unknown) {
   return typeof value === 'number' ? value : Number(value);
+}
+
+function parseCommaNumbers(value: string | null): number[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(item => Number(item.trim()))
+    .filter(
+      item =>
+        Number.isFinite(item) &&
+        item >= 1 &&
+        item <= 5 &&
+        item * 2 === Math.round(item * 2)
+    );
+}
+
+function parseCommaStrings(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
 export async function GET(
@@ -49,6 +73,12 @@ export async function GET(
   );
   const sort = request.nextUrl.searchParams.get('sort');
   const dedupeKey = request.nextUrl.searchParams.get('dedupeKey');
+  const ratings = parseCommaNumbers(
+    request.nextUrl.searchParams.get('ratings')
+  );
+  const tagSlugs = parseCommaStrings(
+    request.nextUrl.searchParams.get('tagSlugs')
+  );
 
   try {
     const reviews = await fetchReviewsBySku(
@@ -56,7 +86,11 @@ export async function GET(
       page,
       pageSize,
       sort === 'highest_rating' || sort === 'most_helpful' ? sort : 'newest',
-      dedupeKey
+      dedupeKey,
+      {
+        ratings,
+        tagSlugs,
+      }
     );
     return NextResponse.json(reviews);
   } catch (error) {
@@ -88,6 +122,29 @@ export async function POST(
     ? body.mediaIds
         .map(value => Number.parseInt(String(value), 10))
         .filter(Number.isInteger)
+    : [];
+  const reviewTagSlugs = Array.isArray(body.reviewTagSlugs)
+    ? body.reviewTagSlugs.map(value => normalizeText(value)).filter(Boolean)
+    : [];
+  const dimensionRatings = Array.isArray(body.dimensionRatings)
+    ? body.dimensionRatings
+        .map(item => {
+          if (!item || typeof item !== 'object') return null;
+          const tagSlug = normalizeText(
+            (item as { tagSlug?: unknown }).tagSlug
+          );
+          const score = Number((item as { score?: unknown }).score);
+          if (!tagSlug || !Number.isInteger(score) || score < 0 || score > 5) {
+            return null;
+          }
+          return {
+            tagSlug,
+            score,
+          };
+        })
+        .filter(
+          (value): value is { tagSlug: string; score: number } => value !== null
+        )
     : [];
 
   if (!productSku) return badRequest('productSku is required');
@@ -129,6 +186,8 @@ export async function POST(
         title,
         content,
         mediaIds,
+        reviewTagSlugs,
+        dimensionRatings,
       },
       authorization?.replace(/^Bearer\s+/i, '') ?? null
     );

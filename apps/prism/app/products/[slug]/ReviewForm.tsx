@@ -1,8 +1,12 @@
 'use client';
 
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { LoaderCircle, Upload, X } from 'lucide-react';
-import type { ProductReviewMedia } from '../../../lib/api/strapi/reviews';
+import type {
+  ProductReviewDimensionRating,
+  ProductReviewMedia,
+  ProductReviewTag,
+} from '../../../lib/api/strapi/reviews';
 import { useAuth } from '../../../lib/auth/context';
 import { useAuthModal } from '../../../lib/auth-modal/context';
 import type { ReviewTarget } from './ProductReviews';
@@ -154,6 +158,11 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [guestEmail, setGuestEmail] = useState('');
+  const [availableTags, setAvailableTags] = useState<ProductReviewTag[]>([]);
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+  const [dimensionScores, setDimensionScores] = useState<
+    Record<string, number>
+  >({});
 
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const uploadedMediaIds = uploads
@@ -167,6 +176,46 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
     upload => upload.kind === 'video'
   ).length;
   const isSubmitDisabled = isSubmitting || hasUploadingMedia || hasFailedMedia;
+  const scoredTags = useMemo(
+    () => availableTags.filter(tag => tag.isScored),
+    [availableTags]
+  );
+  const nonScoredTags = useMemo(
+    () => availableTags.filter(tag => !tag.isScored),
+    [availableTags]
+  );
+
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const response = await fetch('/api/reviews/tags', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+        const data = (await response.json().catch(() => null)) as {
+          items?: ProductReviewTag[];
+          error?: string;
+        } | null;
+        if (!response.ok || !data?.items) {
+          throw new Error(data?.error ?? 'Failed to fetch review tags');
+        }
+        setAvailableTags(data.items);
+        setDimensionScores(current => {
+          const next = { ...current };
+          for (const tag of data.items ?? []) {
+            if (tag.isScored && !Number.isInteger(next[tag.slug])) {
+              next[tag.slug] = 5;
+            }
+          }
+          return next;
+        });
+      } catch (_error) {
+        setAvailableTags([]);
+      }
+    };
+
+    void loadTags();
+  }, []);
 
   const handleFileSelection = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -317,6 +366,17 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
 
     setIsSubmitting(true);
     try {
+      const dimensionRatings: ProductReviewDimensionRating[] = scoredTags.map(
+        tag => ({
+          tagSlug: tag.slug,
+          score: Number.isInteger(dimensionScores[tag.slug])
+            ? dimensionScores[tag.slug]
+            : 5,
+        })
+      );
+      const reviewTagSlugs = Array.from(
+        new Set([...selectedTagSlugs, ...scoredTags.map(tag => tag.slug)])
+      );
       const response = await fetch(`/api/reviews/${encodeURIComponent(sku)}`, {
         method: 'POST',
         credentials: 'include',
@@ -335,6 +395,8 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
           title,
           content,
           mediaIds: uploadedMediaIds,
+          reviewTagSlugs,
+          dimensionRatings,
         }),
       });
 
@@ -360,6 +422,8 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
       setContent('');
       setRating(5);
       setUploads([]);
+      setSelectedTagSlugs([]);
+      setDimensionScores({});
       setSuccess(
         data?.message ??
           'Your review has been submitted and is pending approval.'
@@ -492,6 +556,86 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
               placeholder="What worked well, what did not, and how did this variant compare to your expectations?"
               className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
+          </div>
+
+          <div>
+            {availableTags.length > 0 && (
+              <div className="space-y-4">
+                {nonScoredTags.length > 0 && (
+                  <div>
+                    <p className="mb-2 block text-sm font-medium text-ink">
+                      Tags
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {nonScoredTags.map(tag => {
+                        const isSelected = selectedTagSlugs.includes(tag.slug);
+                        return (
+                          <button
+                            key={tag.slug}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTagSlugs(current => {
+                                if (current.includes(tag.slug)) {
+                                  const next = current.filter(
+                                    slug => slug !== tag.slug
+                                  );
+                                  return next;
+                                }
+                                return [...current, tag.slug];
+                              });
+                            }}
+                            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                              isSelected
+                                ? 'border-brand bg-brand/10 text-brand'
+                                : 'border-border text-ink hover:border-brand hover:text-brand'
+                            }`}
+                          >
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {scoredTags.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-ink">
+                      Rate dimensions (0-5)
+                    </p>
+                    {scoredTags.map(tag => (
+                      <label
+                        key={tag.slug}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background px-3 py-2"
+                      >
+                        <span className="text-sm text-ink">{tag.name}</span>
+                        <select
+                          value={String(
+                            Number.isInteger(dimensionScores[tag.slug])
+                              ? dimensionScores[tag.slug]
+                              : 5
+                          )}
+                          onChange={event => {
+                            const score = Number(event.target.value);
+                            setDimensionScores(current => ({
+                              ...current,
+                              [tag.slug]: Number.isInteger(score) ? score : 5,
+                            }));
+                          }}
+                          className="rounded-full border border-border bg-background px-3 py-1.5 text-sm text-ink focus:border-brand focus:outline-none"
+                        >
+                          {[0, 1, 2, 3, 4, 5].map(value => (
+                            <option key={value} value={value}>
+                              {value}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

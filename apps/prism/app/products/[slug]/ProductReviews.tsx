@@ -1,13 +1,23 @@
 'use client';
 
-import { BadgeCheck, LoaderCircle, Star, ThumbsUp } from 'lucide-react';
+import {
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+  LoaderCircle,
+  Star,
+  ThumbsUp,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   ProductReview,
   ProductReviewDistributionKey,
+  ProductReviewDimensionSummaryItem,
   ProductReviewListResult,
+  ProductReviewMediaGalleryItem,
   ProductReviewPagination,
   ProductReviewSummary,
+  ProductReviewTag,
 } from '../../../lib/api/strapi/reviews';
 import { Pagination } from '../../recipes/components/Pagination';
 import { getReviewVisitorKey } from './review-visitor-key';
@@ -36,6 +46,14 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
   { value: 'highest_rating', label: 'Highest rating' },
   { value: 'most_helpful', label: 'Most helpful' },
+] as const;
+const RATING_FILTER_OPTIONS = [
+  { value: 'all', label: 'All ratings' },
+  { value: '5', label: '5 stars' },
+  { value: '4', label: '4 stars' },
+  { value: '3', label: '3 stars' },
+  { value: '2', label: '2 stars' },
+  { value: '1', label: '1 star' },
 ] as const;
 
 export interface ReviewTarget {
@@ -202,6 +220,8 @@ function normalizeMockReviews(reviews: MockReview[]): ProductReview[] {
     title: review.title,
     content: review.content,
     media: [],
+    reviewTags: [],
+    dimensionRatings: [],
     verified: review.verified,
     helpfulCount: review.helpful,
     viewerHasMarkedHelpful: false,
@@ -234,6 +254,92 @@ function ReviewMediaStrip({ review }: { review: ProductReview }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function CustomerMediaGallery({
+  media,
+  activeTab,
+  onTabChange,
+}: {
+  media: ProductReviewMediaGalleryItem[];
+  activeTab: 'all' | 'image' | 'video';
+  onTabChange: (next: 'all' | 'image' | 'video') => void;
+}) {
+  const scrollerId = 'customer-media-scroller';
+  const scrollByStep = (direction: 'left' | 'right') => {
+    const node = document.getElementById(scrollerId);
+    if (!node) return;
+    const step = 280;
+    node.scrollBy({
+      left: direction === 'left' ? -step : step,
+      behavior: 'smooth',
+    });
+  };
+
+  return (
+    <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="heading-4 text-ink">Customer Images and Videos</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => scrollByStep('left')}
+            className="rounded-full border border-border p-2 text-ink transition hover:border-brand hover:text-brand"
+            aria-label="Show previous media items"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByStep('right')}
+            className="rounded-full border border-border p-2 text-ink transition hover:border-brand hover:text-brand"
+            aria-label="Show next media items"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {(['all', 'image', 'video'] as const).map(tab => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => onTabChange(tab)}
+            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+              activeTab === tab
+                ? 'border-brand bg-brand/10 text-brand'
+                : 'border-border text-ink hover:border-brand hover:text-brand'
+            }`}
+          >
+            {tab === 'all' ? 'All' : tab === 'image' ? 'Images' : 'Videos'}
+          </button>
+        ))}
+      </div>
+      {media.length > 0 ? (
+        <div id={scrollerId} className="flex gap-3 overflow-x-auto pb-1">
+          {media.map((item, index) => (
+            <div
+              key={`${item.id}-${index}`}
+              className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-muted"
+            >
+              <ReviewImagePreview
+                media={media}
+                initialIndex={index}
+                altFallback={item.reviewTitle ?? 'Review media'}
+                thumbnailClassName="h-full w-full object-cover"
+                buttonClassName="h-full w-full cursor-pointer"
+                previewLabel={`Preview customer media ${index + 1}`}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-ink-muted">
+          No customer media available for this filter.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -374,12 +480,31 @@ export function ProductReviews({
   );
   const [sort, setSort] =
     useState<(typeof SORT_OPTIONS)[number]['value']>('newest');
+  const [ratingFilter, setRatingFilter] =
+    useState<(typeof RATING_FILTER_OPTIONS)[number]['value']>('all');
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [helpfulPendingId, setHelpfulPendingId] = useState<number | null>(null);
+  const [availableTags, setAvailableTags] = useState<ProductReviewTag[]>([]);
+  const [customerMedia, setCustomerMedia] = useState<
+    ProductReviewMediaGalleryItem[]
+  >([]);
+  const [mediaTab, setMediaTab] = useState<'all' | 'image' | 'video'>('all');
+  const [dimensionSummary, setDimensionSummary] = useState<
+    ProductReviewDimensionSummaryItem[]
+  >([]);
+
+  const reviewFilters = useMemo(
+    () => ({
+      ratings: ratingFilter === 'all' ? [] : [Number(ratingFilter)],
+      tagSlugs: selectedTagSlugs,
+    }),
+    [ratingFilter, selectedTagSlugs]
+  );
 
   const loadPage = useCallback(
-    async (page: number, nextSort = sort) => {
+    async (page: number, nextSort = sort, nextFilters = reviewFilters) => {
       if (isMock) return;
       setIsLoading(true);
       setLoadError(null);
@@ -391,6 +516,12 @@ export function ProductReviews({
         });
         if (visitorKey) {
           params.set('dedupeKey', visitorKey);
+        }
+        if (nextFilters.ratings.length > 0) {
+          params.set('ratings', nextFilters.ratings.join(','));
+        }
+        if (nextFilters.tagSlugs.length > 0) {
+          params.set('tagSlugs', nextFilters.tagSlugs.join(','));
         }
 
         const response = await fetch(
@@ -423,14 +554,63 @@ export function ProductReviews({
         setIsLoading(false);
       }
     },
-    [isMock, pagination.pageSize, sku, sort, visitorKey]
+    [isMock, pagination.pageSize, sku, sort, visitorKey, reviewFilters]
   );
 
   useEffect(() => {
     if (isMock) return;
-    void loadPage(1, sort);
+    void loadPage(1, sort, reviewFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sku, isMock]);
+
+  useEffect(() => {
+    if (isMock) return;
+    const loadAuxData = async () => {
+      try {
+        const [tagResponse, mediaResponse, dimensionResponse] =
+          await Promise.all([
+            fetch('/api/reviews/tags', { method: 'GET', cache: 'no-store' }),
+            fetch(
+              `/api/reviews/${encodeURIComponent(
+                sku
+              )}/media?type=all&page=1&pageSize=36`,
+              {
+                method: 'GET',
+                cache: 'no-store',
+              }
+            ),
+            fetch(`/api/reviews/${encodeURIComponent(sku)}/dimension-summary`, {
+              method: 'GET',
+              cache: 'no-store',
+            }),
+          ]);
+
+        const tagData = (await tagResponse.json().catch(() => null)) as {
+          items?: ProductReviewTag[];
+        } | null;
+        const mediaData = (await mediaResponse.json().catch(() => null)) as {
+          items?: ProductReviewMediaGalleryItem[];
+        } | null;
+        const dimensionData = (await dimensionResponse
+          .json()
+          .catch(() => null)) as {
+          items?: ProductReviewDimensionSummaryItem[];
+        } | null;
+
+        setAvailableTags(tagResponse.ok ? tagData?.items ?? [] : []);
+        setCustomerMedia(mediaResponse.ok ? mediaData?.items ?? [] : []);
+        setDimensionSummary(
+          dimensionResponse.ok ? dimensionData?.items ?? [] : []
+        );
+      } catch (_error) {
+        setAvailableTags([]);
+        setCustomerMedia([]);
+        setDimensionSummary([]);
+      }
+    };
+
+    void loadAuxData();
+  }, [isMock, sku]);
 
   const handleHelpful = useCallback(
     async (review: ProductReview) => {
@@ -504,9 +684,54 @@ export function ProductReviews({
         <ReviewForm
           sku={sku}
           target={target}
-          onSubmitted={() => void loadPage(1, sort)}
+          onSubmitted={() => void loadPage(1, sort, reviewFilters)}
         />
       )}
+
+      {dimensionSummary.length > 0 && (
+        <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
+          <h3 className="heading-4 text-center text-ink">
+            Average Customer Ratings
+          </h3>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {dimensionSummary.map(item => (
+              <div
+                key={item.slug}
+                className="rounded-2xl border border-border bg-background px-4 py-3"
+              >
+                <p className="text-sm font-semibold text-ink">{item.name}</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {item.name}, {item.average.toFixed(1)} out of {item.scaleMax}
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-amber-400"
+                      style={{
+                        width: `${Math.max(
+                          0,
+                          Math.min(100, (item.average / item.scaleMax) * 100)
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold text-ink">
+                    {item.average.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <CustomerMediaGallery
+        media={customerMedia.filter(item =>
+          mediaTab === 'all' ? true : item.kind === mediaTab
+        )}
+        activeTab={mediaTab}
+        onTabChange={setMediaTab}
+      />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-12">
         <div className="lg:sticky lg:top-24 lg:self-start">
@@ -558,27 +783,87 @@ export function ProductReviews({
               </p>
             </div>
             {!isMock && (
-              <label className="flex items-center gap-3 text-sm text-ink-muted">
-                <span>Sort by</span>
-                <select
-                  value={sort}
-                  onChange={event => {
-                    const nextSort = event.target
-                      .value as (typeof SORT_OPTIONS)[number]['value'];
-                    setSort(nextSort);
-                    void loadPage(1, nextSort);
-                  }}
-                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
-                >
-                  {SORT_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-ink-muted">
+                  <span>Rating</span>
+                  <select
+                    value={ratingFilter}
+                    onChange={event => {
+                      const nextRating = event.target
+                        .value as (typeof RATING_FILTER_OPTIONS)[number]['value'];
+                      setRatingFilter(nextRating);
+                      const nextFilters = {
+                        ratings:
+                          nextRating === 'all' ? [] : [Number(nextRating)],
+                        tagSlugs: selectedTagSlugs,
+                      };
+                      void loadPage(1, sort, nextFilters);
+                    }}
+                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                  >
+                    {RATING_FILTER_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-ink-muted">
+                  <span>Sort by</span>
+                  <select
+                    value={sort}
+                    onChange={event => {
+                      const nextSort = event.target
+                        .value as (typeof SORT_OPTIONS)[number]['value'];
+                      setSort(nextSort);
+                      void loadPage(1, nextSort, reviewFilters);
+                    }}
+                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                  >
+                    {SORT_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             )}
           </div>
+
+          {!isMock && availableTags.length > 0 && (
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-ink-muted">Tags:</span>
+              {availableTags.map(tag => {
+                const isSelected = selectedTagSlugs.includes(tag.slug);
+                return (
+                  <button
+                    key={tag.slug}
+                    type="button"
+                    onClick={() => {
+                      const nextTagSlugs = isSelected
+                        ? selectedTagSlugs.filter(slug => slug !== tag.slug)
+                        : [...selectedTagSlugs, tag.slug];
+                      setSelectedTagSlugs(nextTagSlugs);
+                      const nextFilters = {
+                        ratings:
+                          ratingFilter === 'all' ? [] : [Number(ratingFilter)],
+                        tagSlugs: nextTagSlugs,
+                      };
+                      void loadPage(1, sort, nextFilters);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                      isSelected
+                        ? 'border-brand bg-brand/10 text-brand'
+                        : 'border-border text-ink hover:border-brand hover:text-brand'
+                    }`}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {loadError && (
             <p role="alert" className="mb-4 text-sm text-red-500">
@@ -610,7 +895,9 @@ export function ProductReviews({
                   </p>
                   <Pagination
                     pagination={pagination}
-                    onPageChange={page => void loadPage(page, sort)}
+                    onPageChange={page =>
+                      void loadPage(page, sort, reviewFilters)
+                    }
                     isLoading={isLoading}
                   />
                 </div>
