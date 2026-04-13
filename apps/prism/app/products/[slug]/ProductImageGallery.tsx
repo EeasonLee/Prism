@@ -2,27 +2,58 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+
+interface ProductGalleryVideo {
+  url: string;
+  poster?: string;
+}
 
 interface ProductImageGalleryProps {
   images: UnifiedProductImage[];
   productName: string;
+  featuredVideo?: ProductGalleryVideo;
+}
+
+interface ProductGalleryMediaItem {
+  type: 'video' | 'image';
+  url: string;
+  alt: string;
+  poster?: string;
 }
 
 export function ProductImageGallery({
   images,
   productName,
+  featuredVideo,
 }: ProductImageGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const mediaItems: ProductGalleryMediaItem[] = [
+    ...(featuredVideo
+      ? [
+          {
+            type: 'video' as const,
+            url: featuredVideo.url,
+            alt: `${productName} video`,
+            poster: featuredVideo.poster,
+          },
+        ]
+      : []),
+    ...images.map(image => ({
+      type: 'image' as const,
+      url: image.url,
+      alt: image.alt ?? productName,
+    })),
+  ];
 
   const goTo = (index: number) => {
-    setActiveIndex(Math.max(0, Math.min(images.length - 1, index)));
+    setActiveIndex(Math.max(0, Math.min(mediaItems.length - 1, index)));
   };
 
-  const activeImage = images[activeIndex];
+  const activeMedia = mediaItems[activeIndex];
 
-  if (images.length === 0) {
+  if (mediaItems.length === 0) {
     return (
       <div className="flex aspect-square items-center justify-center rounded-2xl bg-surface text-ink-muted/30">
         <svg
@@ -47,10 +78,10 @@ export function ProductImageGallery({
     <div>
       {/* 主图 */}
       <div className="group relative aspect-square max-h-[min(560px,68vh)] w-full overflow-hidden rounded-2xl bg-surface">
-        {activeImage && (
+        {activeMedia?.type === 'image' && (
           <Image
-            src={activeImage.url}
-            alt={activeImage.alt ?? productName}
+            src={activeMedia.url}
+            alt={activeMedia.alt}
             fill
             priority
             unoptimized
@@ -58,13 +89,28 @@ export function ProductImageGallery({
             className="object-contain p-6 transition-opacity duration-300"
           />
         )}
+        {activeMedia?.type === 'video' && (
+          <video
+            key={activeMedia.url}
+            src={activeMedia.url}
+            poster={activeMedia.poster}
+            className="h-full w-full object-contain p-2"
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label={`${productName} product video`}
+          />
+        )}
 
         {/* 左右切换箭头 */}
-        {images.length > 1 && (
+        {mediaItems.length > 1 && (
           <>
             <button
               type="button"
-              aria-label="Previous image"
+              aria-label="Previous media"
               onClick={() => goTo(activeIndex - 1)}
               disabled={activeIndex === 0}
               className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
@@ -73,9 +119,9 @@ export function ProductImageGallery({
             </button>
             <button
               type="button"
-              aria-label="Next image"
+              aria-label="Next media"
               onClick={() => goTo(activeIndex + 1)}
-              disabled={activeIndex === images.length - 1}
+              disabled={activeIndex === mediaItems.length - 1}
               className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
             >
               <ChevronRight className="h-5 w-5" />
@@ -84,27 +130,27 @@ export function ProductImageGallery({
         )}
 
         {/* 图片计数 badge */}
-        {images.length > 1 && (
+        {mediaItems.length > 1 && (
           <span className="absolute bottom-3 right-3 rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm">
-            {activeIndex + 1} / {images.length}
+            {activeIndex + 1} / {mediaItems.length}
           </span>
         )}
       </div>
 
       {/* 缩略图走廊 */}
-      {images.length > 1 && (
+      {mediaItems.length > 1 && (
         <div
           className="mt-3 flex gap-2 overflow-x-auto pb-1"
           role="listbox"
-          aria-label="Product image thumbnails"
+          aria-label="Product media thumbnails"
         >
-          {images.map((img, idx) => (
+          {mediaItems.map((item, idx) => (
             <button
               key={idx}
               type="button"
               role="option"
               aria-selected={idx === activeIndex}
-              aria-label={`View image ${idx + 1}: ${img.alt ?? productName}`}
+              aria-label={`View ${item.type} ${idx + 1}: ${item.alt}`}
               onClick={() => goTo(idx)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-surface transition-all ${
                 idx === activeIndex
@@ -112,14 +158,46 @@ export function ProductImageGallery({
                   : 'border-transparent hover:border-border'
               }`}
             >
-              <Image
-                src={img.url}
-                alt={img.alt ?? productName}
-                fill
-                unoptimized
-                sizes="64px"
-                className="object-contain p-1"
-              />
+              {item.type === 'image' ? (
+                <Image
+                  src={item.url}
+                  alt={item.alt}
+                  fill
+                  unoptimized
+                  sizes="64px"
+                  className="object-contain p-1"
+                />
+              ) : (
+                <>
+                  <div className="relative h-full w-full bg-surface-muted">
+                    {item.poster ? (
+                      <Image
+                        src={item.poster}
+                        alt={item.alt}
+                        fill
+                        unoptimized
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={item.url}
+                        className="h-full w-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                        aria-label={item.alt}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/15" />
+                  </div>
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-white">
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                    </span>
+                  </span>
+                </>
+              )}
             </button>
           ))}
         </div>
