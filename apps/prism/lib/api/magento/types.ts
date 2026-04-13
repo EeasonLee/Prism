@@ -317,21 +317,60 @@ export interface FetchProductsParams {
 
 // ─── 购物车 ─────────────────────────────────────────────────────────────────
 
+/** 与 Magento GraphQL Money 一致 */
+export interface CartMoney {
+  value: number;
+  currency: string;
+}
+
+/** 购物车级别价格汇总（来自 cart.prices） */
+export interface CartTotals {
+  grand_total: CartMoney | null;
+  grand_total_excluding_tax: CartMoney | null;
+  subtotal_excluding_tax: CartMoney | null;
+  subtotal_including_tax: CartMoney | null;
+  discount: CartMoney | null;
+  /** 例如 coupon code: SAVE20 */
+  coupon_code?: string | null;
+  /** 例如 Discount / Discount (SAVE20) 的标题来源 */
+  discount_reason?: string | null;
+}
+
+/** 行上可展示的选项（可配置 / 自定义等） */
+export interface CartLineOption {
+  label: string;
+  value: string;
+}
+
 export interface CartItem {
-  item_id: number;
+  /** Magento GraphQL cart line item uid (opaque string, not numeric REST id) */
+  item_id: string;
   sku: string;
   qty: number;
   name: string;
   price: number;
   product_type: string;
-  quote_id: string;
+  quote_id?: string;
+  /** 可配置选项、自定义选项等 */
+  options?: CartLineOption[];
+  /** 行小计（单价×数量，以商店计税规则为准） */
+  row_total?: number;
+  row_total_including_tax?: number;
+  /** 与 price / row_total 对应的货币代码 */
+  currency?: string;
+  thumbnail?: string | null;
 }
 
 /** /api/cart/items 实际响应结构 */
 export interface CartItemsResponse {
   cart_id: string;
+  /** 购物车行数 */
   items_count: number;
+  /** 商品总件数（与 Magento total_quantity 一致） */
+  total_quantity: number;
   items: CartItem[];
+  /** 购物车合计；无报价或未返回时为 null */
+  totals: CartTotals | null;
   redirect_link?: string;
   link_expires_at?: string;
 }

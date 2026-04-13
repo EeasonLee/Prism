@@ -282,6 +282,27 @@ export function Header() {
                           {user.email}
                         </p>
                       </div>
+                      <Link
+                        href="/account"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                      >
+                        My Account
+                      </Link>
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                      >
+                        My Orders
+                      </Link>
+                      <Link
+                        href="/account/addresses"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block border-b border-border px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                      >
+                        My Addresses
+                      </Link>
                       <button
                         type="button"
                         onClick={() => {

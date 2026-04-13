@@ -5,9 +5,17 @@ const serverSchema = z.object({
   STRAPI_API_TOKEN: z.string().optional(), // 服务端专用，不在客户端暴露
   STRAPI_INTERNAL_URL: z.string().url().optional(), // 服务端访问 Strapi 的内部地址
   MEILISEARCH_API_KEY: z.string().optional(), // 服务端专用，Meilisearch Admin/Search API Key
+  AUTH_TOKEN_SECRET: z.string().optional(),
+  AUTH_REFRESH_TOKEN_SECRET: z.string().optional(),
+  MAGENTO_JWT_SECRET: z.string().optional(), // Magento redirect token 签名密钥
+  USE_LOCAL_AUTH: z
+    .string()
+    .transform(val => val === 'true')
+    .optional(),
 });
 
 const clientSchema = z.object({
+  NEXT_PUBLIC_MAGENTOL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_API_URL: z.preprocess(
     val => (typeof val === 'string' && val.trim() === '' ? undefined : val),
@@ -36,6 +44,10 @@ const clientSchema = z.object({
     .transform(val => val === 'true')
     .optional(),
   NEXT_PUBLIC_APP_VERSION: z.string().optional(),
+  NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT: z
+    .string()
+    .transform(val => val === 'true')
+    .optional(),
   // Magento/SSO 服务地址（独立于 Strapi）
   NEXT_PUBLIC_MAGENTO_API_URL: z.string().url().optional(),
   // Magento GraphQL 端点（直接访问 Magento GraphQL，不经过 SSO 代理）
@@ -46,22 +58,40 @@ const clientSchema = z.object({
 
 const mergedSchema = serverSchema.merge(clientSchema);
 
-export const env = mergedSchema.parse({
+const parsedEnv = mergedSchema.parse({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_MAGENTOL: process.env.NEXT_PUBLIC_MAGENTOL,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_STRAPI_URL: process.env.NEXT_PUBLIC_STRAPI_URL,
   NEXT_PUBLIC_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_IMAGE_BASE_URL,
   NEXT_PUBLIC_LOG_LEVEL: process.env.NEXT_PUBLIC_LOG_LEVEL,
   NEXT_PUBLIC_USE_API_PROXY: process.env.NEXT_PUBLIC_USE_API_PROXY,
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
+  NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT:
+    process.env.NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT,
   NEXT_PUBLIC_MAGENTO_API_URL: process.env.NEXT_PUBLIC_MAGENTO_API_URL,
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL,
   NEXT_PUBLIC_MEILISEARCH_HOST: process.env.NEXT_PUBLIC_MEILISEARCH_HOST,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   STRAPI_API_TOKEN: process.env.STRAPI_API_TOKEN,
   STRAPI_INTERNAL_URL: process.env.STRAPI_INTERNAL_URL,
+  AUTH_TOKEN_SECRET: process.env.AUTH_TOKEN_SECRET,
+  AUTH_REFRESH_TOKEN_SECRET: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  MAGENTO_JWT_SECRET: process.env.MAGENTO_JWT_SECRET,
+  USE_LOCAL_AUTH: process.env.USE_LOCAL_AUTH,
 });
+
+if (
+  parsedEnv.USE_LOCAL_AUTH &&
+  (!parsedEnv.AUTH_TOKEN_SECRET || !parsedEnv.AUTH_REFRESH_TOKEN_SECRET)
+) {
+  throw new Error(
+    'AUTH_TOKEN_SECRET and AUTH_REFRESH_TOKEN_SECRET are required when USE_LOCAL_AUTH=true'
+  );
+}
+
+export const env = parsedEnv;
 
 export const IS_DEVELOPMENT = env.NODE_ENV === 'development';
 export const IS_PRODUCTION = env.NODE_ENV === 'production';

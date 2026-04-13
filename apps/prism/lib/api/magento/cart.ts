@@ -6,14 +6,46 @@ import type {
   AddCartItemParams,
   CartItem,
   CartItemsResponse,
+  CartMoney,
   CartRedirectResponse,
 } from './types';
+
+export function formatCartMoney(m: CartMoney | null | undefined): string {
+  if (!m) return '—';
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: m.currency,
+    }).format(m.value);
+  } catch {
+    return `${m.currency} ${m.value.toFixed(2)}`;
+  }
+}
+
+/** 行金额：优先 Magento row_total，否则单价×数量 */
+export function formatCartLineTotal(item: CartItem): string {
+  const currency = item.currency ?? 'USD';
+  const value =
+    typeof item.row_total === 'number' ? item.row_total : item.price * item.qty;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
+}
 
 class CartRequestError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);
     this.name = 'CartRequestError';
   }
+}
+
+function isUnauthorizedError(error: unknown): error is CartRequestError {
+  return error instanceof CartRequestError && error.status === 401;
 }
 
 interface SessionProbeResponse {
@@ -50,7 +82,7 @@ async function cartFetch<T>(
 
 async function recoverCartSession(): Promise<boolean> {
   try {
-    const sessionRes = await fetch('/api/auth/session', {
+    const sessionRes = await fetch('/api/v1/auth/session', {
       method: 'GET',
       credentials: 'include',
       headers: { Accept: 'application/json' },
@@ -67,7 +99,7 @@ async function recoverCartSession(): Promise<boolean> {
   }
 
   try {
-    const guestRes = await fetch('/api/auth/guest', {
+    const guestRes = await fetch('/api/v1/auth/guest', {
       method: 'POST',
       credentials: 'include',
       headers: { Accept: 'application/json' },
@@ -78,21 +110,23 @@ async function recoverCartSession(): Promise<boolean> {
   }
 }
 
-export async function addCartItem(
-  params: AddCartItemParams
-): Promise<CartItem> {
-  try {
-    return await cartFetch<CartItem>('/api/cart/items/add', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
-  } catch (error) {
-    const isUnauthorized =
-      error instanceof CartRequestError &&
-      error.status === 401 &&
-      error.message === 'Unauthorized';
+interface CartAuthStrategy {
+  preflightRefresh?: boolean;
+}
 
-    if (!isUnauthorized) {
+async function withCartAuthRecovery<T>(
+  operation: () => Promise<T>,
+  strategy: CartAuthStrategy = {}
+): Promise<T> {
+  if (strategy.preflightRefresh) {
+    // 预刷新：下单前先让服务端尝试 refresh，减少临界点 401 概率
+    await recoverCartSession();
+  }
+
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isUnauthorizedError(error)) {
       throw error;
     }
 
@@ -101,48 +135,74 @@ export async function addCartItem(
       throw error;
     }
 
-    return cartFetch<CartItem>('/api/cart/items/add', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
+    return operation();
   }
 }
 
+export async function addCartItem(
+  params: AddCartItemParams
+): Promise<CartItem> {
+  return withCartAuthRecovery(() =>
+    cartFetch<CartItem>('/api/v1/cart/items/add', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  );
+}
+
+export async function getCartSnapshot(): Promise<CartItemsResponse> {
+  return withCartAuthRecovery(() =>
+    cartFetch<CartItemsResponse>('/api/v1/cart/items')
+  );
+}
+
 export async function getCartItems(): Promise<CartItem[]> {
-  const res = await cartFetch<CartItemsResponse>('/api/cart/items');
+  const res = await getCartSnapshot();
   return res.items ?? [];
 }
 
-export function deleteCartItem(itemId: number): Promise<unknown> {
-  return cartFetch(`/api/cart/items/${itemId}`, {
-    method: 'DELETE',
-  });
+export function deleteCartItem(itemId: string): Promise<unknown> {
+  return withCartAuthRecovery(() =>
+    cartFetch(`/api/v1/cart/items/${encodeURIComponent(itemId)}`, {
+      method: 'DELETE',
+    })
+  );
 }
 
 export function clearCart(): Promise<unknown> {
-  return cartFetch('/api/cart/clear', {
-    method: 'DELETE',
-  });
+  return withCartAuthRecovery(() =>
+    cartFetch('/api/v1/cart/clear', {
+      method: 'DELETE',
+    })
+  );
 }
 
 export function updateCartItemQty(
-  itemId: number,
+  itemId: string,
   qty: number
 ): Promise<CartItem> {
-  return cartFetch<CartItem>(`/api/cart/items/${itemId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ qty }),
-  });
+  return withCartAuthRecovery(() =>
+    cartFetch<CartItem>(`/api/v1/cart/items/${encodeURIComponent(itemId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ qty }),
+    })
+  );
 }
 
 export function getCartRedirectLink(): Promise<CartRedirectResponse> {
-  return cartFetch<CartRedirectResponse>('/api/cart/redirect-link', {
-    method: 'POST',
-  });
+  return withCartAuthRecovery(() =>
+    cartFetch<CartRedirectResponse>('/api/v1/cart/redirect-link', {
+      method: 'POST',
+    })
+  );
 }
 
 export function getCheckoutRedirectLink(): Promise<CartRedirectResponse> {
-  return cartFetch<CartRedirectResponse>('/api/cart/checkout-redirect-link', {
-    method: 'POST',
-  });
+  return withCartAuthRecovery(
+    () =>
+      cartFetch<CartRedirectResponse>('/api/v1/checkout/session', {
+        method: 'POST',
+      }),
+    { preflightRefresh: true }
+  );
 }

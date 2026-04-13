@@ -13,9 +13,22 @@ import { MagentoApiError, MagentoServiceError } from '../magento/client';
 import type { MagentoResponse } from '../magento/types';
 
 function getMagentoBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_MAGENTO_API_URL;
-  if (!url) throw new Error('NEXT_PUBLIC_MAGENTO_API_URL is not configured');
-  return url.endsWith('/') ? url.slice(0, -1) : url;
+  const explicitUrl = process.env.NEXT_PUBLIC_MAGENTO_API_URL;
+  if (explicitUrl) {
+    return explicitUrl.endsWith('/') ? explicitUrl.slice(0, -1) : explicitUrl;
+  }
+
+  const magentoBaseUrl = process.env.NEXT_PUBLIC_MAGENTOL;
+  if (!magentoBaseUrl) {
+    throw new Error(
+      'NEXT_PUBLIC_MAGENTOL is not configured (or explicitly set NEXT_PUBLIC_MAGENTO_API_URL)'
+    );
+  }
+
+  const parsed = new URL(magentoBaseUrl);
+  const protocol = parsed.protocol === 'https:' ? 'http:' : parsed.protocol;
+  const inferredApiUrl = `${protocol}//${parsed.hostname}:13000`;
+  return inferredApiUrl;
 }
 
 interface ServerFetchOptions {
@@ -23,6 +36,13 @@ interface ServerFetchOptions {
   body?: string;
   accessToken?: string;
   signal?: AbortSignal;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  return value as Record<string, unknown>;
 }
 
 export async function magentoServerFetch<T>(
@@ -60,8 +80,16 @@ export async function magentoServerFetch<T>(
 
   // 处理错误响应
   if (!res.ok) {
-    const errMsg = json?.error?.message ?? json?.message ?? res.statusText;
-    const errCode = json?.error?.code ?? json?.code ?? 'UNKNOWN';
+    const jsonRecord = asRecord(json);
+    const errorRecord = asRecord(jsonRecord?.error);
+    const errMsg =
+      (typeof errorRecord?.message === 'string' ? errorRecord.message : null) ??
+      (typeof jsonRecord?.message === 'string' ? jsonRecord.message : null) ??
+      res.statusText;
+    const errCode =
+      (typeof errorRecord?.code === 'string' ? errorRecord.code : null) ??
+      (typeof jsonRecord?.code === 'string' ? jsonRecord.code : null) ??
+      'UNKNOWN';
 
     if (res.status === 502) {
       throw new MagentoServiceError(
@@ -75,14 +103,14 @@ export async function magentoServerFetch<T>(
       `${errMsg} (status: ${res.status}, code: ${errCode})`,
       errCode,
       res.status,
-      json.error ?? json
+      errorRecord ?? json
     );
   }
 
   // 兼容两种格式：
   // 1. { success: true, data: T } - 标准 MagentoResponse
   // 2. T - 直接返回数据（OSS 实际格式）
-  if ('success' in json) {
+  if (asRecord(json)?.success !== undefined) {
     const typed = json as MagentoResponse<T>;
     if (!typed.success) {
       const errCode = typed.error?.code ?? 'UNKNOWN';

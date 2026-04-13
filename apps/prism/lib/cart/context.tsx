@@ -35,11 +35,11 @@ interface CartContextValue {
   /** 加购：游客和注册用户均可使用 */
   addToCart: (params: AddCartItemParams) => Promise<void>;
   /** 删除购物车中的单个商品 */
-  removeFromCart: (itemId: number) => Promise<void>;
+  removeFromCart: (itemId: string) => Promise<void>;
   /** 清空购物车 */
   clearCart: () => Promise<void>;
   /** 更新购物车商品数量 */
-  updateItemQty: (itemId: number, qty: number) => Promise<void>;
+  updateItemQty: (itemId: string, qty: number) => Promise<void>;
   /** 重新从服务器同步购物车数量 */
   syncCart: () => Promise<void>;
 }
@@ -62,7 +62,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : 0;
       setItemCount(total);
     } catch {
-      // 购物车不存在或服务异常，静默处理
+      // 购物车不存在或服务异常时，避免角标卡在旧值
+      setItemCount(0);
     }
   }, [hasSession]);
 
@@ -96,6 +97,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hasSession, isAuthenticated, syncCart]);
 
+  // 从外部页面（如 Magento checkout）返回时重新同步角标
+  useEffect(() => {
+    if (!hasSession) {
+      return;
+    }
+
+    const handleFocus = () => {
+      void syncCart();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void syncCart();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [hasSession, syncCart]);
+
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {
       if (!hasSession) throw new Error('No active session, please try again.');
@@ -109,7 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
   const removeFromCart = useCallback(
-    async (itemId: number) => {
+    async (itemId: string) => {
       if (!hasSession) return;
       await deleteCartItemApi(itemId);
       await syncCart();
@@ -124,7 +150,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [hasSession, syncCart]);
 
   const updateItemQty = useCallback(
-    async (itemId: number, qty: number) => {
+    async (itemId: string, qty: number) => {
       if (!hasSession || qty < 1) return;
       await updateCartItemQtyApi(itemId, qty);
       await syncCart();

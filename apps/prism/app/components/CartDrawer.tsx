@@ -1,14 +1,16 @@
 'use client';
 
+import { env } from '@/lib/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  // getCartRedirectLink,
-  getCartItems,
+  formatCartLineTotal,
+  formatCartMoney,
+  getCartSnapshot,
   getCheckoutRedirectLink,
 } from '../../lib/api/magento/cart';
-import type { CartItem } from '../../lib/api/magento/types';
+import type { CartItem, CartTotals } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
 import { LoginModal } from './LoginModal';
@@ -25,31 +27,47 @@ export function CartDrawer() {
   } = useCart();
   const { hasSession, isGuest } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
   const [loadingItems, setLoadingItems] = useState(false);
   const [viewCartLoading, setViewCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
-  const [mutatingItemId, setMutatingItemId] = useState<number | null>(null);
+  const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // 打开抽屉时加载购物车详情
-  useEffect(() => {
-    if (!isCartOpen || !hasSession) return;
-    setLoadingItems(true);
-    setServiceError(null);
-    getCartItems()
-      .then(data => setItems(Array.isArray(data) ? data : []))
-      .catch(err => {
+  const loadCartData = useCallback(
+    async (opts?: { showSpinner?: boolean }) => {
+      if (!isCartOpen || !hasSession) return;
+      const showSpinner = opts?.showSpinner !== false;
+      if (showSpinner) {
+        setLoadingItems(true);
+      }
+      setServiceError(null);
+      try {
+        const snapshot = await getCartSnapshot();
+        setItems(snapshot.items ?? []);
+        setCartTotals(snapshot.totals);
+      } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         if (msg.includes('unavailable')) {
           setServiceError(
             'Shop service is temporarily unavailable, please try again later.'
           );
         }
-      })
-      .finally(() => setLoadingItems(false));
-  }, [isCartOpen, hasSession, itemCount]);
+      } finally {
+        if (showSpinner) {
+          setLoadingItems(false);
+        }
+      }
+    },
+    [isCartOpen, hasSession]
+  );
+
+  // 打开抽屉时加载购物车详情；itemCount 变化时同步（他处加购后）
+  useEffect(() => {
+    void loadCartData();
+  }, [itemCount, loadCartData]);
 
   const handleViewCart = useCallback(async () => {
     if (!hasSession) return;
@@ -68,7 +86,7 @@ export function CartDrawer() {
     if (!hasSession) return;
 
     // 游客直接弹出登录引导
-    if (isGuest) {
+    if (isGuest && env.NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT) {
       setShowLoginModal(true);
       return;
     }
@@ -81,7 +99,11 @@ export function CartDrawer() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
-        setShowLoginModal(true);
+        if (env.NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT) {
+          setShowLoginModal(true);
+        } else {
+          setServiceError(msg || 'Guest checkout is not available.');
+        }
       } else {
         setServiceError(
           msg.includes('unavailable')
@@ -95,12 +117,12 @@ export function CartDrawer() {
   }, [hasSession, isGuest]);
 
   const handleRemoveItem = useCallback(
-    async (itemId: number) => {
+    async (itemId: string) => {
       setMutatingItemId(itemId);
       setServiceError(null);
       try {
         await removeFromCart(itemId);
-        setItems(prev => prev.filter(i => i.item_id !== itemId));
+        await loadCartData({ showSpinner: false });
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -112,7 +134,7 @@ export function CartDrawer() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart]
+    [removeFromCart, loadCartData]
   );
 
   const handleClearCart = useCallback(async () => {
@@ -121,6 +143,7 @@ export function CartDrawer() {
     try {
       await clearCart();
       setItems([]);
+      setCartTotals(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       setServiceError(
@@ -134,15 +157,13 @@ export function CartDrawer() {
   }, [clearCart]);
 
   const handleUpdateQty = useCallback(
-    async (itemId: number, newQty: number) => {
+    async (itemId: string, newQty: number) => {
       if (newQty < 1) return;
       setMutatingItemId(itemId);
       setServiceError(null);
       try {
         await updateItemQty(itemId, newQty);
-        setItems(prev =>
-          prev.map(i => (i.item_id === itemId ? { ...i, qty: newQty } : i))
-        );
+        await loadCartData({ showSpinner: false });
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -154,10 +175,15 @@ export function CartDrawer() {
         setMutatingItemId(null);
       }
     },
-    [updateItemQty]
+    [updateItemQty, loadCartData]
   );
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotalFromMagento = useMemo(() => {
+    const t = cartTotals;
+    return t?.subtotal_excluding_tax ?? t?.subtotal_including_tax ?? null;
+  }, [cartTotals]);
+
+  const subtotalFallback = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const hasItems = items.length > 0;
 
   return (
@@ -234,6 +260,16 @@ export function CartDrawer() {
                     <p className="mt-0.5 text-xs text-ink-muted">
                       SKU: {item.sku}
                     </p>
+                    {item.options && item.options.length > 0 && (
+                      <ul className="mt-1.5 space-y-0.5 text-[11px] text-ink-muted">
+                        {item.options.map((opt, idx) => (
+                          <li key={`${item.item_id}-opt-${idx}`}>
+                            <span className="text-ink-faint">{opt.label}:</span>{' '}
+                            {opt.value}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <div className="mt-2 flex items-center gap-1">
                       <button
                         type="button"
@@ -266,7 +302,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <p className="text-sm font-semibold text-ink">
-                      ${(item.price * item.qty).toFixed(2)}
+                      {formatCartLineTotal(item)}
                     </p>
                     <button
                       type="button"
@@ -295,14 +331,33 @@ export function CartDrawer() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Subtotal</span>
               <span className="font-semibold text-ink">
-                ${subtotal.toFixed(2)}
+                {subtotalFromMagento
+                  ? formatCartMoney(subtotalFromMagento)
+                  : `$${subtotalFallback.toFixed(2)}`}
               </span>
             </div>
-            {isGuest && (
-              <p className="text-center text-xs text-ink-muted">
-                Sign in or create an account to checkout.
-              </p>
+            {cartTotals?.discount && cartTotals.discount.value !== 0 && (
+              <div className="flex items-center justify-between text-xs text-ink-muted">
+                <span>
+                  {(cartTotals.discount_reason ?? 'Discount') +
+                    (cartTotals.coupon_code
+                      ? ` (${cartTotals.coupon_code})`
+                      : '')}
+                </span>
+                <span className="font-semibold text-ink">
+                  {formatCartMoney(cartTotals.discount)}
+                </span>
+              </div>
             )}
+            {cartTotals?.grand_total && (
+              <div className="flex items-center justify-between text-xs text-ink-muted">
+                <span>Estimated total</span>
+                <span className="font-semibold text-ink">
+                  {formatCartMoney(cartTotals.grand_total)}
+                </span>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleClearCart}
