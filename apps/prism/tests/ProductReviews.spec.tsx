@@ -169,15 +169,15 @@ describe('ProductReviews', () => {
       .map(node => node.textContent?.trim() ?? '')
       .filter(Boolean);
 
-    expect(labels).toContain('5');
-    expect(labels).toContain('4');
-    expect(labels).toContain('3');
-    expect(labels).toContain('2');
-    expect(labels).toContain('1');
-    expect(labels).not.toContain('4.5');
-    expect(labels).not.toContain('3.5');
-    expect(labels).not.toContain('2.5');
-    expect(labels).not.toContain('1.5');
+    expect(labels).toContain('5 star');
+    expect(labels).toContain('4 star');
+    expect(labels).toContain('3 star');
+    expect(labels).toContain('2 star');
+    expect(labels).toContain('1 star');
+    expect(labels).not.toContain('4.5 star');
+    expect(labels).not.toContain('3.5 star');
+    expect(labels).not.toContain('2.5 star');
+    expect(labels).not.toContain('1.5 star');
   });
 
   it('shows a visual video thumbnail, opens review media, and navigates to the next image', async () => {

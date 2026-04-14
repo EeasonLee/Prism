@@ -6,6 +6,7 @@ import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutEffect, useRef } from 'react';
+import { formatPrice } from '@/lib/format-price';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -227,10 +228,10 @@ export function HomeProductListSection() {
                   </h3>
                   <div className="mt-1.5 flex items-baseline gap-1.5">
                     <span className="text-sm font-bold text-white">
-                      ${product.price}
+                      {formatPrice(product.price, 'USD')}
                     </span>
                     <span className="text-xs text-white/50 line-through">
-                      ${product.originalPrice}
+                      {formatPrice(product.originalPrice, 'USD')}
                     </span>
                   </div>
                 </div>

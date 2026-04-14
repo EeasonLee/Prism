@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { formatPrice } from '@/lib/format-price';
 import { fetchDiscoveryResult } from '../../lib/api/discovery/service';
 import type {
   DiscoverySortOption,
@@ -114,7 +115,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     <div className="mt-auto flex items-baseline gap-2">
                       {item.price != null && (
                         <span className="text-base font-bold text-ink">
-                          ${item.price.toFixed(2)}
+                          {formatPrice(item.price, item.currency)}
                         </span>
                       )}
                     </div>

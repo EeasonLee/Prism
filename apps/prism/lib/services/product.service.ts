@@ -14,8 +14,13 @@ interface GraphQLProduct {
   url_key: string | null;
   price_range: {
     minimum_price: {
+      regular_price: {
+        value: number;
+        currency: string;
+      };
       final_price: {
         value: number;
+        currency: string;
       };
     };
   };
@@ -55,8 +60,13 @@ const PRODUCTS_QUERY = `
         url_key
         price_range {
           minimum_price {
+            regular_price {
+              value
+              currency
+            }
             final_price {
               value
+              currency
             }
           }
         }
@@ -92,8 +102,13 @@ const PRODUCTS_QUERY_NO_FILTER = `
         url_key
         price_range {
           minimum_price {
+            regular_price {
+              value
+              currency
+            }
             final_price {
               value
+              currency
             }
           }
         }

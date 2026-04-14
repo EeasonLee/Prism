@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@prism/ui';
+import { formatPrice } from '@/lib/format-price';
 import { AddToCartButton } from '../../components/AddToCartButton';
 
 export interface SelectedVariantProduct {
@@ -184,10 +185,12 @@ function CustomizableOptionsSection({
   options,
   selections,
   onSelectionsChange,
+  currency,
 }: {
   options: MagentoCustomizableOption[];
   selections: Record<string, string | string[]>;
   onSelectionsChange: (s: Record<string, string | string[]>) => void;
+  currency: string | null | undefined;
 }) {
   if (options.length === 0) return null;
 
@@ -236,7 +239,7 @@ function CustomizableOptionsSection({
                         {v.title}
                         {v.price > 0 && (
                           <span className="text-ink-muted">
-                            {` (+$${v.price.toFixed(2)})`}
+                            {` (+${formatPrice(v.price, currency)})`}
                           </span>
                         )}
                       </SelectItem>
@@ -296,7 +299,7 @@ function CustomizableOptionsSection({
                           {v.title}
                           {v.price > 0 && (
                             <span className="text-ink-muted">
-                              {` (+$${v.price.toFixed(2)})`}
+                              {` (+${formatPrice(v.price, currency)})`}
                             </span>
                           )}
                         </span>
@@ -360,7 +363,7 @@ function CustomizableOptionsSection({
                           {v.title}
                           {v.price > 0 && (
                             <span className="text-ink-muted">
-                              {` (+$${v.price.toFixed(2)})`}
+                              {` (+${formatPrice(v.price, currency)})`}
                             </span>
                           )}
                         </span>
@@ -464,6 +467,7 @@ function SimpleOptions({
           options={customOptions}
           selections={customSelections}
           onSelectionsChange={setCustomSelections}
+          currency={product.currency}
         />
       )}
       <div className="flex items-center gap-3">
@@ -750,6 +754,7 @@ function ConfigurableOptions({
           options={customOptions}
           selections={customSelections}
           onSelectionsChange={setCustomSelections}
+          currency={product.currency}
         />
       )}
 
@@ -813,7 +818,7 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
                   {item.name}
                 </p>
                 <p className="text-xs text-ink-muted">
-                  ${item.price.toFixed(2)}
+                  {formatPrice(item.price, product.currency)}
                   {!item.is_in_stock && (
                     <span className="ml-2 text-red-500">Out of stock</span>
                   )}
@@ -962,7 +967,7 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
                     {sel.name}
                     {sel.price > 0 && (
                       <span className="ml-1 text-xs text-ink-muted">
-                        +${sel.price.toFixed(2)}
+                        +{formatPrice(sel.price, product.currency)}
                       </span>
                     )}
                   </button>
@@ -1008,7 +1013,7 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
                     <span className="flex-1 text-sm text-ink">{sel.name}</span>
                     {sel.price > 0 && (
                       <span className="text-xs text-ink-muted">
-                        +${sel.price.toFixed(2)}
+                        +{formatPrice(sel.price, product.currency)}
                       </span>
                     )}
                   </label>
@@ -1144,7 +1149,7 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
                   </div>
                   {link.price > 0 && (
                     <span className="shrink-0 text-sm font-semibold text-ink">
-                      ${link.price.toFixed(2)}
+                      {formatPrice(link.price, product.currency)}
                     </span>
                   )}
                   {link.sample_url && (

@@ -48,6 +48,7 @@ export interface RecommendedProduct {
   name: string;
   price: number;
   special_price?: number;
+  currency?: string;
   image: string;
   badge?: string;
 }

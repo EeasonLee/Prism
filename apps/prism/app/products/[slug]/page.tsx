@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { formatPrice } from '@/lib/format-price';
 import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
 import { PageContainer } from '@prism/ui';
 import { getProductDetailAggregate } from '../../../lib/api/bff/product/detail';
@@ -91,11 +92,11 @@ async function DeferredRelatedProductsSection({
                   </h3>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-ink">
-                      ${displayPrice.toFixed(2)}
+                      {formatPrice(displayPrice, item.currency)}
                     </span>
                     {hasDiscount ? (
                       <span className="text-ink-faint line-through">
-                        ${item.price.toFixed(2)}
+                        {formatPrice(item.price, item.currency)}
                       </span>
                     ) : null}
                   </div>

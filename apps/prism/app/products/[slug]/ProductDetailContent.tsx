@@ -309,6 +309,22 @@ export function ProductDetailContent({
 
   const priceAfterCoupon = Math.max(0, priceBeforeCoupon - couponOffAmount);
 
+  const currencyCode = useMemo(() => {
+    const code = product.currency?.trim().toUpperCase();
+    return code && code.length === 3 ? code : 'USD';
+  }, [product.currency]);
+
+  const formatPrice = useMemo(() => {
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return (value: number) => formatter.format(value);
+  }, [currencyCode]);
+
   const validUntilText =
     cpDateMs != null && !isCouponExpired
       ? new Intl.DateTimeFormat('en-US', {
@@ -422,7 +438,7 @@ export function ProductDetailContent({
         <div className="mb-4 flex items-baseline gap-3">
           {displayProduct.specialPrice != null && (
             <span className="text-2xl font-bold text-ink">
-              ${displayProduct.specialPrice.toFixed(2)}
+              {formatPrice(displayProduct.specialPrice)}
             </span>
           )}
           {displayProduct.price > 0 && (
@@ -433,15 +449,15 @@ export function ProductDetailContent({
                   : 'text-2xl font-bold text-ink'
               }
             >
-              ${displayProduct.price.toFixed(2)}
+              {formatPrice(displayProduct.price)}
             </span>
           )}
           {hasDiscount && (
             <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
-              Save $
-              {(
+              Save{' '}
+              {formatPrice(
                 displayProduct.price - (displayProduct.specialPrice ?? 0)
-              ).toFixed(2)}
+              )}
             </span>
           )}
         </div>
@@ -463,24 +479,24 @@ export function ProductDetailContent({
                   {couponOffAmount > 0 ? (
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold leading-none">
-                        ${priceAfterCoupon.toFixed(2)}
+                        {formatPrice(priceAfterCoupon)}
                       </span>
                       <span className="text-sm font-semibold text-white/70 line-through">
-                        ${priceBeforeCoupon.toFixed(2)}
+                        {formatPrice(priceBeforeCoupon)}
                       </span>
                     </div>
                   ) : hasDiscount && displayProduct.specialPrice != null ? (
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold leading-none">
-                        ${displayProduct.specialPrice.toFixed(2)}
+                        {formatPrice(displayProduct.specialPrice)}
                       </span>
                       <span className="text-sm font-semibold text-white/70 line-through">
-                        ${displayProduct.price.toFixed(2)}
+                        {formatPrice(displayProduct.price)}
                       </span>
                     </div>
                   ) : (
                     <div className="text-sm font-semibold text-white/90">
-                      Current price ${priceBeforeCoupon.toFixed(2)}
+                      Current price {formatPrice(priceBeforeCoupon)}
                     </div>
                   )}
                 </div>
@@ -488,7 +504,7 @@ export function ProductDetailContent({
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   {couponOffAmount > 0 ? (
                     <span className="font-medium">
-                      Use coupon for ${couponOffAmount.toFixed(2)} off
+                      Use coupon for {formatPrice(couponOffAmount)} off
                     </span>
                   ) : (
                     <span className="font-medium">

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { Plus, Check, Tag } from 'lucide-react';
+import { formatPrice } from '@/lib/format-price';
 import type { CrossSellAddon, BundleDeal } from './mock-data';
 
 // ─── 超值加购（Add-on accessories at discount） ───────────────────────────────
@@ -10,11 +11,13 @@ import type { CrossSellAddon, BundleDeal } from './mock-data';
 interface CrossSellAddonsProps {
   addons: CrossSellAddon[];
   mainProductPrice: number; // 主商品当前价
+  currency?: string | null;
 }
 
 export function CrossSellAddons({
   addons,
   mainProductPrice,
+  currency,
 }: CrossSellAddonsProps) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
@@ -74,8 +77,9 @@ export function CrossSellAddons({
                 className="sr-only"
                 checked={isSelected}
                 onChange={() => toggle(addon.id)}
-                aria-label={`Add ${addon.name} for $${addon.addon_price.toFixed(
-                  2
+                aria-label={`Add ${addon.name} for ${formatPrice(
+                  addon.addon_price,
+                  currency
                 )}`}
               />
 
@@ -104,13 +108,13 @@ export function CrossSellAddons({
               {/* Price */}
               <div className="shrink-0 text-right">
                 <p className="text-sm font-bold text-ink">
-                  +${addon.addon_price.toFixed(2)}
+                  +{formatPrice(addon.addon_price, currency)}
                 </p>
                 <p className="text-[10px] text-ink-muted line-through">
-                  ${addon.original_price.toFixed(2)}
+                  {formatPrice(addon.original_price, currency)}
                 </p>
                 <p className="text-[10px] font-semibold text-emerald-600">
-                  Save ${saving.toFixed(2)}
+                  Save {formatPrice(saving, currency)}
                 </p>
               </div>
             </label>
@@ -126,7 +130,7 @@ export function CrossSellAddons({
               {selected.size} add-on{selected.size > 1 ? 's' : ''} selected{' '}
             </span>
             <span className="font-semibold text-ink">
-              Total: ${total.toFixed(2)}
+              Total: {formatPrice(total, currency)}
             </span>
           </div>
           <button
@@ -146,9 +150,14 @@ export function CrossSellAddons({
 interface BundleDealsProps {
   deals: BundleDeal[];
   mainProduct: { name: string; image: string; price: number };
+  currency?: string | null;
 }
 
-export function BundleDeals({ deals, mainProduct }: BundleDealsProps) {
+export function BundleDeals({
+  deals,
+  mainProduct,
+  currency,
+}: BundleDealsProps) {
   const [activeDeal, setActiveDeal] = useState(0);
 
   const deal = deals[activeDeal];
@@ -237,14 +246,14 @@ export function BundleDeals({ deals, mainProduct }: BundleDealsProps) {
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-black text-ink">
-                ${deal.bundle_price.toFixed(2)}
+                {formatPrice(deal.bundle_price, currency)}
               </span>
               <span className="text-sm text-ink-muted line-through">
-                ${deal.original_total.toFixed(2)}
+                {formatPrice(deal.original_total, currency)}
               </span>
             </div>
             <span className="text-xs font-semibold text-emerald-600">
-              You save ${deal.savings.toFixed(2)}
+              You save {formatPrice(deal.savings, currency)}
             </span>
           </div>
           <button

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { formatPrice } from '@/lib/format-price';
 import { getCartItems } from '../../../lib/api/magento/cart';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 import { useCart } from '../../../lib/cart/context';
@@ -86,6 +87,7 @@ function StarRating({ percentage }: { percentage: number }) {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const priceValue = product.price.value;
+  const currencyCode = product.price.currency;
   const originalPrice = product.originalPrice;
   const hasDiscount =
     priceValue != null && originalPrice != null && originalPrice > priceValue;
@@ -374,7 +376,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <>
                 {hasDiscount && (
                   <span className="text-base font-bold text-ink">
-                    ${priceValue.toFixed(2)}
+                    {formatPrice(priceValue, currencyCode)}
                   </span>
                 )}
                 <span
@@ -384,7 +386,10 @@ export function ProductCard({ product }: ProductCardProps) {
                       : 'text-ink'
                   }`}
                 >
-                  ${(hasDiscount ? originalPrice : priceValue)?.toFixed(2)}
+                  {formatPrice(
+                    hasDiscount ? originalPrice ?? 0 : priceValue,
+                    currencyCode
+                  )}
                 </span>
               </>
             ) : (
@@ -466,19 +471,19 @@ export function ProductCard({ product }: ProductCardProps) {
                       </p>
                       <div className="mt-2 flex items-baseline gap-2">
                         <span className="text-2xl font-bold text-ink">
-                          $
-                          {(
+                          {formatPrice(
                             selectedVariant?.price ??
-                            priceValue ??
-                            originalPrice ??
-                            0
-                          ).toFixed(2)}
+                              priceValue ??
+                              originalPrice ??
+                              0,
+                            currencyCode
+                          )}
                         </span>
                         {selectedVariant == null &&
                           hasDiscount &&
                           originalPrice != null && (
                             <span className="text-sm text-ink-muted line-through">
-                              ${originalPrice.toFixed(2)}
+                              {formatPrice(originalPrice, currencyCode)}
                             </span>
                           )}
                       </div>

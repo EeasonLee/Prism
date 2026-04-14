@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountScaffold } from '../components/AccountScaffold';
+import { formatPrice } from '@/lib/format-price';
 import { useAuth } from '@/lib/auth/context';
 import { useAccount } from '@/lib/account/useAccount';
 
@@ -89,7 +90,7 @@ export default function AccountOrdersPage() {
                   </td>
                   <td className="px-2 py-3 text-ink">{order.status}</td>
                   <td className="px-2 py-3 text-ink">
-                    ${order.total.toFixed(2)}
+                    {formatPrice(order.total, order.currency)}
                   </td>
                 </tr>
               ))}

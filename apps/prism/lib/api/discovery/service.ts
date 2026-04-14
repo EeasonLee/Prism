@@ -6,6 +6,7 @@
  */
 
 import { env } from '../../env';
+import { formatPrice } from '../../format-price';
 import { fetchUnifiedProducts, type UnifiedProduct } from '../unified-product';
 import {
   fetchDiscoveryCategoryBySlug,
@@ -197,7 +198,7 @@ async function fetchDiscoveryResultFromMeilisearch(
             {
               key: 'price_min',
               value: query.price_min,
-              label: `Min $${query.price_min}`,
+              label: `Min ${formatPrice(query.price_min, 'USD')}`,
             },
           ]
         : []),
@@ -206,7 +207,7 @@ async function fetchDiscoveryResultFromMeilisearch(
             {
               key: 'price_max',
               value: query.price_max,
-              label: `Max $${query.price_max}`,
+              label: `Max ${formatPrice(query.price_max, 'USD')}`,
             },
           ]
         : []),
@@ -297,7 +298,7 @@ async function fetchDiscoveryResultFromMagento(
             {
               key: 'price_min',
               value: query.price_min,
-              label: `Min $${query.price_min}`,
+              label: `Min ${formatPrice(query.price_min, 'USD')}`,
             },
           ]
         : []),
@@ -306,7 +307,7 @@ async function fetchDiscoveryResultFromMagento(
             {
               key: 'price_max',
               value: query.price_max,
-              label: `Max $${query.price_max}`,
+              label: `Max ${formatPrice(query.price_max, 'USD')}`,
             },
           ]
         : []),

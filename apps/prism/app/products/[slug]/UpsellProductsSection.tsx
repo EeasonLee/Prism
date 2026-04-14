@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatPrice } from '@/lib/format-price';
 import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
 
 interface UpsellProductsSectionProps {
@@ -54,11 +55,11 @@ export function UpsellProductsSection({
                   </h3>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-ink">
-                      ${displayPrice.toFixed(2)}
+                      {formatPrice(displayPrice, item.currency)}
                     </span>
                     {hasDiscount ? (
                       <span className="text-ink-faint line-through">
-                        ${item.price.toFixed(2)}
+                        {formatPrice(item.price, item.currency)}
                       </span>
                     ) : null}
                   </div>

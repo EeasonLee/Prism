@@ -3,6 +3,7 @@
 import { ArrowRight, Check } from 'lucide-react';
 import Image from 'next/image';
 import type { FeaturedProductsProps } from '@/lib/api/cms-page.types';
+import { formatPrice } from '@/lib/format-price';
 
 export function FeaturedProducts({
   title,
@@ -79,12 +80,12 @@ export function FeaturedProducts({
                       <div className="mb-4 flex items-center gap-3">
                         {product.price && (
                           <span className="text-2xl font-bold text-brand">
-                            ${product.price}
+                            {formatPrice(product.price, 'USD')}
                           </span>
                         )}
                         {product.originalPrice && (
                           <span className="text-sm text-ink-faint line-through">
-                            ${product.originalPrice}
+                            {formatPrice(product.originalPrice, 'USD')}
                           </span>
                         )}
                         {product.discount && (

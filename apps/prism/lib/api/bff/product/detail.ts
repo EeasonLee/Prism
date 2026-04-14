@@ -104,6 +104,7 @@ function mapRelatedProducts(
     display_name: item.name,
     price: item.price,
     special_price: null,
+    currency: 'USD',
     type_id: 'simple',
     is_in_stock: item.inStock,
     review_count: 0,

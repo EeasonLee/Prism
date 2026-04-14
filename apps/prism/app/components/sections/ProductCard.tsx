@@ -3,6 +3,7 @@
 import { ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatPrice } from '@/lib/format-price';
 import type { UnifiedProduct } from '@/lib/api/unified-product';
 
 interface ProductCardProps {
@@ -22,6 +23,9 @@ export function ProductCard({
   const price = product.price_range?.minimum_price?.final_price?.value;
   const originalPrice =
     product.price_range?.minimum_price?.regular_price?.value;
+  const currency =
+    product.price_range?.minimum_price?.final_price?.currency ??
+    product.price_range?.minimum_price?.regular_price?.currency;
   const hasDiscount = originalPrice && price && originalPrice > price;
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -72,12 +76,12 @@ export function ProductCard({
           <div className="mt-1.5 flex items-baseline gap-1.5">
             {price && (
               <span className="text-sm font-bold text-white">
-                ${price.toFixed(2)}
+                {formatPrice(price, currency)}
               </span>
             )}
             {hasDiscount && originalPrice && (
               <span className="text-xs text-white/50 line-through">
-                ${originalPrice.toFixed(2)}
+                {formatPrice(originalPrice, currency)}
               </span>
             )}
           </div>

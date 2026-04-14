@@ -2,11 +2,10 @@
 
 import {
   BadgeCheck,
-  ChevronLeft,
-  ChevronRight,
+  ImageIcon,
   LoaderCircle,
-  Star,
   ThumbsUp,
+  Video,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -135,20 +134,16 @@ function RatingBar({
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="w-8 shrink-0 text-right text-xs font-medium text-ink-muted">
-        {label}
+      <span className="w-10 shrink-0 text-sm font-medium text-ink-muted">
+        {label} star
       </span>
-      <Star
-        className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400"
-        aria-hidden="true"
-      />
-      <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-amber-400"
+          className="absolute inset-y-0 left-0 rounded-full bg-brand"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-8 shrink-0 text-right text-xs text-ink-muted">
+      <span className="w-8 shrink-0 text-right text-sm text-ink-muted">
         {count}
       </span>
     </div>
@@ -269,62 +264,65 @@ function CustomerMediaGallery({
   activeTab: 'all' | 'image' | 'video';
   onTabChange: (next: 'all' | 'image' | 'video') => void;
 }) {
-  const scrollerId = 'customer-media-scroller';
-  const scrollByStep = (direction: 'left' | 'right') => {
-    const node = document.getElementById(scrollerId);
-    if (!node) return;
-    const step = 280;
-    node.scrollBy({
-      left: direction === 'left' ? -step : step,
-      behavior: 'smooth',
-    });
-  };
+  const mediaTabs: Array<{
+    key: 'all' | 'image' | 'video';
+    label: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  }> = [
+    { key: 'all', label: 'All' },
+    { key: 'image', label: 'Images', icon: ImageIcon },
+    { key: 'video', label: 'Videos', icon: Video },
+  ];
 
   return (
     <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="heading-4 text-ink">Customer Images and Videos</h3>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="heading-4 text-ink">Customer Photos &amp; Videos</h3>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => scrollByStep('left')}
-            className="rounded-full border border-border p-2 text-ink transition hover:border-brand hover:text-brand"
-            aria-label="Show previous media items"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollByStep('right')}
-            className="rounded-full border border-border p-2 text-ink transition hover:border-brand hover:text-brand"
-            aria-label="Show next media items"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          {mediaTabs.map(tab => {
+            const isActive = activeTab === tab.key;
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onTabChange(tab.key)}
+                className={`inline-flex h-8 items-center justify-center rounded-lg border text-sm transition ${
+                  tab.key === 'all'
+                    ? `px-3 font-medium ${
+                        isActive
+                          ? 'border-ink bg-ink text-background'
+                          : 'border-border text-ink hover:border-ink'
+                      }`
+                    : `w-8 ${
+                        isActive
+                          ? 'border-ink bg-ink text-background'
+                          : 'border-border text-ink-muted hover:border-ink hover:text-ink'
+                      }`
+                }`}
+                aria-label={`Filter by ${tab.label.toLowerCase()}`}
+                aria-pressed={isActive}
+              >
+                {Icon ? (
+                  <>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">{tab.label}</span>
+                  </>
+                ) : (
+                  tab.label
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(['all', 'image', 'video'] as const).map(tab => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => onTabChange(tab)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition ${
-              activeTab === tab
-                ? 'border-brand bg-brand/10 text-brand'
-                : 'border-border text-ink hover:border-brand hover:text-brand'
-            }`}
-          >
-            {tab === 'all' ? 'All' : tab === 'image' ? 'Images' : 'Videos'}
-          </button>
-        ))}
-      </div>
       {media.length > 0 ? (
-        <div id={scrollerId} className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex gap-3 overflow-x-auto pb-1">
           {media.map((item, index) => (
             <div
               key={`${item.id}-${index}`}
-              className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-muted"
+              className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-muted"
             >
               <ReviewImagePreview
                 media={media}
@@ -744,91 +742,97 @@ export function ProductReviews({
         )}
       </div>
 
-      {dimensionSummary.length > 0 && (
-        <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
-          <h3 className="heading-4 text-center text-ink">
-            Average Customer Ratings
-          </h3>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {dimensionSummary.map(item => (
-              <div
-                key={item.slug}
-                className="rounded-2xl border border-border bg-background px-4 py-3"
-              >
-                <p className="text-sm font-semibold text-ink">{item.name}</p>
-                <p className="mt-1 text-xs text-ink-muted">
-                  {item.name}, {item.average.toFixed(1)} out of {item.scaleMax}
-                </p>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full bg-amber-400"
-                      style={{
-                        width: `${Math.max(
-                          0,
-                          Math.min(100, (item.average / item.scaleMax) * 100)
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-sm font-semibold text-ink">
-                    {item.average.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <CustomerMediaGallery
-        media={customerMedia.filter(item =>
-          mediaTab === 'all' ? true : item.kind === mediaTab
-        )}
-        activeTab={mediaTab}
-        onTabChange={setMediaTab}
-      />
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start lg:gap-12">
-        <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="mt-8 space-y-8">
+        <div>
           <div
             data-testid="reviews-summary"
             className="rounded-[28px] border border-border bg-surface p-5 sm:p-6"
           >
-            <div className="flex items-end justify-between gap-4">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
-                <p className="micro-text uppercase tracking-[0.18em] text-ink-faint">
-                  Review snapshot
-                </p>
-                <div className="mt-3 flex items-end gap-3">
-                  <p className="text-5xl font-black tracking-tight text-ink">
-                    {(effectiveSummary?.average ?? 0).toFixed(1)}
-                  </p>
-                  <div className="pb-1">
-                    <StarRow
-                      rating={effectiveSummary?.average ?? 0}
-                      size="md"
-                    />
-                    <p className="mt-2 text-sm text-ink-muted">
-                      {totalReviews.toLocaleString()} reviews
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="micro-text uppercase tracking-[0.18em] text-ink-faint">
+                      Review snapshot
                     </p>
+                    <div className="mt-3 flex items-end gap-3">
+                      <p className="text-5xl font-black tracking-tight text-ink">
+                        {(effectiveSummary?.average ?? 0).toFixed(1)}
+                      </p>
+                      <div className="pb-1">
+                        <StarRow
+                          rating={effectiveSummary?.average ?? 0}
+                          size="md"
+                        />
+                        <p className="mt-2 text-sm text-ink-muted">
+                          Based on {totalReviews.toLocaleString()} reviews
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="mt-6 space-y-2.5">
-              {DISTRIBUTION_KEYS.map(key => (
-                <RatingBar
-                  key={key}
-                  label={key}
-                  count={summaryDistribution[key]}
-                  total={totalReviews}
-                />
-              ))}
+                <div className="mt-6 space-y-2.5">
+                  {DISTRIBUTION_KEYS.map(key => (
+                    <RatingBar
+                      key={key}
+                      label={key}
+                      count={summaryDistribution[key]}
+                      total={totalReviews}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {dimensionSummary.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    Rating Breakdown
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    {dimensionSummary.map(item => (
+                      <div key={item.slug}>
+                        <div className="mb-1 flex items-center justify-between gap-3">
+                          <p className="text-sm text-ink-muted">{item.name}</p>
+                          <span className="text-sm font-semibold text-ink">
+                            {item.average.toFixed(1)}
+                          </span>
+                        </div>
+                        <div
+                          className="relative h-2 overflow-hidden rounded-full bg-surface-muted"
+                          aria-label={`${item.name}, ${item.average.toFixed(
+                            1
+                          )} out of ${item.scaleMax}`}
+                        >
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-full bg-brand"
+                            style={{
+                              width: `${Math.max(
+                                0,
+                                Math.min(
+                                  100,
+                                  (item.average / item.scaleMax) * 100
+                                )
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        <CustomerMediaGallery
+          media={customerMedia.filter(item =>
+            mediaTab === 'all' ? true : item.kind === mediaTab
+          )}
+          activeTab={mediaTab}
+          onTabChange={setMediaTab}
+        />
 
         <div>
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

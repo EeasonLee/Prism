@@ -29,6 +29,7 @@ interface MagentoOrder {
   increment_id: string;
   status: string;
   grand_total: number;
+  order_currency_code?: string;
   created_at: string;
 }
 
@@ -47,6 +48,7 @@ interface MagentoCustomerOrdersGraphQLResponse {
         total?: {
           grand_total?: {
             value?: number | null;
+            currency?: string | null;
           } | null;
         } | null;
       }>;
@@ -148,6 +150,7 @@ function toOrder(order: MagentoOrder): Order {
     number: order.increment_id,
     status: order.status,
     total: order.grand_total,
+    currency: order.order_currency_code ?? null,
     createdAt: order.created_at,
   };
 }
@@ -169,6 +172,7 @@ function toOrderFromGraphQL(
     number: order.number ?? '',
     status: order.status ?? '',
     total: order.total?.grand_total?.value ?? 0,
+    currency: order.total?.grand_total?.currency ?? null,
     createdAt: order.order_date ?? '',
   };
 }
@@ -284,6 +288,7 @@ export class MagentoAccountService implements AccountService {
                   total {
                     grand_total {
                       value
+                      currency
                     }
                   }
                 }

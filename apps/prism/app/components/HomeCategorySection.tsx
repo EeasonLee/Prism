@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatPrice } from '@/lib/format-price';
 
 const CATEGORIES = [
   { id: 'soy-milk', label: 'Soy Milk Makers' },
@@ -512,7 +513,7 @@ export function HomeCategorySection() {
                   {product.name}
                 </h3>
                 <span className="shrink-0 text-sm font-bold text-ink">
-                  ${product.price}
+                  {formatPrice(product.price, 'USD')}
                 </span>
               </div>
 

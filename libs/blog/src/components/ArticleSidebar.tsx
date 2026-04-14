@@ -16,6 +16,15 @@ function formatDate(dateString: string): string {
   }).format(date);
 }
 
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export function ArticleSidebar({ article }: ArticleSidebarProps) {
   const hasProducts = article.products && article.products.length > 0;
   const hasRelatedArticles =
@@ -87,7 +96,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                         {product.price !== undefined &&
                           product.price !== null && (
                             <span className="text-sm font-bold text-gray-900">
-                              ${product.price.toFixed(2)}
+                              {formatMoney(product.price)}
                             </span>
                           )}
                       </div>

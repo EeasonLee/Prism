@@ -17,8 +17,13 @@ interface ProductListSourceItem {
   url_key: string | null;
   price_range?: {
     minimum_price?: {
+      regular_price?: {
+        value?: number;
+        currency?: string;
+      };
       final_price?: {
         value?: number;
+        currency?: string;
       };
     };
   };
@@ -45,8 +50,20 @@ function mapMagentoProductType(typeName?: string): string {
 }
 
 function mapProductCardItem(item: ProductListSourceItem): ProductCardItem {
+  const regularPriceValue =
+    item.price_range?.minimum_price?.regular_price?.value ?? null;
   const priceValue =
     item.price_range?.minimum_price?.final_price?.value ?? null;
+  const currencyCode =
+    item.price_range?.minimum_price?.final_price?.currency ??
+    item.price_range?.minimum_price?.regular_price?.currency ??
+    null;
+  const originalPrice =
+    regularPriceValue != null &&
+    priceValue != null &&
+    regularPriceValue > priceValue
+      ? regularPriceValue
+      : null;
 
   return {
     sku: item.sku,
@@ -56,9 +73,9 @@ function mapProductCardItem(item: ProductListSourceItem): ProductCardItem {
     image: item.thumbnail?.url ?? null,
     price: {
       value: priceValue,
-      currency: null,
+      currency: currencyCode,
     },
-    originalPrice: null,
+    originalPrice,
     inStock: item.stock_status === 'IN_STOCK',
     type: mapMagentoProductType(item.__typename),
     promotionLabel: null,

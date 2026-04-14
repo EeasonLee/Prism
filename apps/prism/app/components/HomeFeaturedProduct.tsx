@@ -6,6 +6,7 @@ import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
 import { ArrowRight, Check } from 'lucide-react';
 import Image from 'next/image';
 import { useLayoutEffect, useRef } from 'react';
+import { formatPrice } from '@/lib/format-price';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -149,10 +150,10 @@ export function HomeFeaturedProduct() {
                     {/* 价格与折扣一排 */}
                     <div className="mb-4 flex items-center gap-3">
                       <span className="text-2xl font-bold text-brand">
-                        ${product.price}
+                        {formatPrice(product.price, 'USD')}
                       </span>
                       <span className="text-sm text-ink-faint line-through">
-                        ${product.originalPrice}
+                        {formatPrice(product.originalPrice, 'USD')}
                       </span>
                       <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
                         Save {product.discount}%

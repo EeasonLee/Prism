@@ -16,6 +16,7 @@ export interface Order {
   number: string;
   status: string;
   total: number;
+  currency: string | null;
   createdAt: string;
 }
 

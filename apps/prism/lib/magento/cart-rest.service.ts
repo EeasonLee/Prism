@@ -174,6 +174,7 @@ export async function getGuestCart(
 
   // 获取 totals
   let totals: CartTotals | null = null;
+  let cartCurrency: string | null = null;
   try {
     const magentoTotals = await magentoRestFetch<MagentoTotals>(
       `guest-carts/${cartId}/totals`,
@@ -183,6 +184,7 @@ export async function getGuestCart(
       magentoTotals.quote_currency_code ??
       magentoTotals.base_currency_code ??
       'USD';
+    cartCurrency = currency;
     totals = transformTotals(magentoTotals, currency);
   } catch {
     // totals 获取失败不影响主流程
@@ -194,7 +196,7 @@ export async function getGuestCart(
     cart_id: cartId,
     items_count: items.length,
     total_quantity: totalQty,
-    items: items.map(transformCartItem),
+    items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
 }
@@ -220,6 +222,7 @@ export async function getCustomerCart(
 
   // 获取 totals
   let totals: CartTotals | null = null;
+  let cartCurrency: string | null = null;
   try {
     const magentoTotals = await magentoRestFetch<MagentoTotals>(
       'carts/mine/totals',
@@ -229,6 +232,7 @@ export async function getCustomerCart(
       magentoTotals.quote_currency_code ??
       magentoTotals.base_currency_code ??
       'USD';
+    cartCurrency = currency;
     totals = transformTotals(magentoTotals, currency);
   } catch {
     // totals 获取失败不影响主流程
@@ -240,7 +244,7 @@ export async function getCustomerCart(
     cart_id: '',
     items_count: items.length,
     total_quantity: totalQty,
-    items: items.map(transformCartItem),
+    items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
 }
@@ -600,7 +604,10 @@ export async function resolveGuestQuoteId(
 /**
  * 转换 Magento cart item 为前端格式
  */
-function transformCartItem(item: MagentoCartItem): CartItem {
+function transformCartItem(
+  item: MagentoCartItem,
+  fallbackCurrency?: string | null
+): CartItem {
   return {
     item_id: String(item.item_id),
     sku: item.sku,
@@ -609,5 +616,6 @@ function transformCartItem(item: MagentoCartItem): CartItem {
     price: item.price,
     product_type: item.product_type,
     quote_id: item.quote_id,
+    currency: fallbackCurrency ?? 'USD',
   };
 }

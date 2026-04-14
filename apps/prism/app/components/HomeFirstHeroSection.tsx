@@ -7,6 +7,7 @@ import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
+import { formatPrice } from '@/lib/format-price';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -116,9 +117,11 @@ export function HomeFirstHeroSection() {
               <div className="flex flex-wrap items-center gap-4">
                 {/* 价格模块 */}
                 <div className="flex items-baseline gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm">
-                  <span className="text-xl font-bold text-white">$229.99</span>
+                  <span className="text-xl font-bold text-white">
+                    {formatPrice(229.99, 'USD')}
+                  </span>
                   <span className="text-sm text-white/60 line-through">
-                    $279.99
+                    {formatPrice(279.99, 'USD')}
                   </span>
                 </div>
 

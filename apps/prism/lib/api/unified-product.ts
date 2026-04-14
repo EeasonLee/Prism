@@ -42,6 +42,7 @@ export interface UnifiedLinkedProduct {
   display_name: string;
   price: number;
   special_price: number | null;
+  currency: string;
   type_id: string;
   is_in_stock: boolean;
   review_count: number;
@@ -269,8 +270,8 @@ export function mapLinkedProduct(raw: {
   thumbnail: { url: string; label: string | null } | null;
   price_range: {
     minimum_price: {
-      regular_price: { value: number };
-      final_price: { value: number };
+      regular_price: { value: number; currency: string };
+      final_price: { value: number; currency: string };
     };
   };
   stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
@@ -286,6 +287,7 @@ export function mapLinkedProduct(raw: {
     display_name: raw.name,
     price: regularPrice,
     special_price: finalPrice < regularPrice ? finalPrice : null,
+    currency: raw.price_range.minimum_price.final_price.currency,
     type_id: 'simple',
     is_in_stock: raw.stock_status === 'IN_STOCK',
     review_count: 0,

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatPrice } from '@/lib/format-price';
 import type { RecommendedProduct } from './mock-data';
 
 interface RecommendedProductsProps {
@@ -59,11 +60,11 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
                   </p>
                   <div className="mt-auto flex items-baseline gap-1.5">
                     <span className="text-sm font-bold text-ink">
-                      ${displayPrice.toFixed(2)}
+                      {formatPrice(displayPrice, product.currency)}
                     </span>
                     {hasDiscount && (
                       <span className="text-xs text-ink-muted line-through">
-                        ${product.price.toFixed(2)}
+                        {formatPrice(product.price, product.currency)}
                       </span>
                     )}
                   </div>

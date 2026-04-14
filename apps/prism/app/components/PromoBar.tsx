@@ -1,3 +1,5 @@
+import { formatPrice } from '@/lib/format-price';
+
 export function PromoBar() {
   return (
     <div
@@ -5,7 +7,10 @@ export function PromoBar() {
       role="complementary"
       aria-label="Promotional offer"
     >
-      Free standard shipping on subscriptions and orders over $49
+      {`Free standard shipping on subscriptions and orders over ${formatPrice(
+        49,
+        'USD'
+      )}`}
     </div>
   );
 }

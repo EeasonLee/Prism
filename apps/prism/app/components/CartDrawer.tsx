@@ -4,6 +4,7 @@ import { env } from '@/lib/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatPrice } from '@/lib/format-price';
 import {
   formatCartLineTotal,
   formatCartMoney,
@@ -184,6 +185,7 @@ export function CartDrawer() {
   }, [cartTotals]);
 
   const subtotalFallback = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotalFallbackCurrency = items[0]?.currency ?? 'USD';
   const hasItems = items.length > 0;
 
   return (
@@ -333,7 +335,7 @@ export function CartDrawer() {
               <span className="font-semibold text-ink">
                 {subtotalFromMagento
                   ? formatCartMoney(subtotalFromMagento)
-                  : `$${subtotalFallback.toFixed(2)}`}
+                  : formatPrice(subtotalFallback, subtotalFallbackCurrency)}
               </span>
             </div>
             {cartTotals?.discount && cartTotals.discount.value !== 0 && (
