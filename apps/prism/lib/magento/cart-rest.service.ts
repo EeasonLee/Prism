@@ -487,6 +487,50 @@ export async function removeCustomerCartItem(
 }
 
 /**
+ * 清空 guest cart
+ */
+export async function clearGuestCart(
+  accessToken: string,
+  cartId: string
+): Promise<void> {
+  const items = await magentoRestFetch<MagentoCartItem[]>(
+    `guest-carts/${cartId}/items`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  await Promise.all(
+    items.map(item => removeGuestCartItem(accessToken, cartId, item.item_id))
+  );
+}
+
+/**
+ * 清空 customer cart
+ */
+export async function clearCustomerCart(accessToken: string): Promise<void> {
+  let items: MagentoCartItem[];
+  try {
+    items = await magentoRestFetch<MagentoCartItem[]>('carts/mine/items', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  } catch (error) {
+    if (!isCustomerCartMissingError(error)) {
+      throw error;
+    }
+    return;
+  }
+
+  await Promise.all(
+    items.map(item => removeCustomerCartItem(accessToken, item.item_id))
+  );
+}
+
+/**
  * 获取 guest cart ID (从 Magento REST API)
  */
 export async function getGuestCartId(
