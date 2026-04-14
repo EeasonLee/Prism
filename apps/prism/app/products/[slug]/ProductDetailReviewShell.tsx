@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
@@ -101,6 +101,11 @@ export function ProductDetailReviewShell({
     allSelected: false,
     customOptionPriceDelta: 0,
   });
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+
+  const handleWriteReview = useCallback(() => {
+    setIsReviewFormOpen(true);
+  }, []);
 
   const shareTarget = useMemo(() => {
     if (!pathname) {
@@ -144,11 +149,11 @@ export function ProductDetailReviewShell({
         ratingCount={ratingCount}
         selection={selection}
         onSelectionChange={setSelection}
+        onWriteReview={handleWriteReview}
         shareTarget={shareTarget}
       />
 
       <div id="section-reviews">
-        <div className="border-t border-border" />
         <ProductReviews
           sku={reviewSku}
           target={reviewTarget}
@@ -158,6 +163,8 @@ export function ProductDetailReviewShell({
           mockSummary={mockSummary}
           mockReviews={mockReviews}
           allowSubmit={allowSubmit}
+          isReviewFormOpen={isReviewFormOpen}
+          onReviewFormOpenChange={setIsReviewFormOpen}
         />
       </div>
 

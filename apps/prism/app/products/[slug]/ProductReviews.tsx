@@ -73,6 +73,8 @@ interface ProductReviewsProps {
   mockSummary?: ProductPageExtras['review_summary'];
   mockReviews?: MockReview[];
   allowSubmit?: boolean;
+  isReviewFormOpen?: boolean;
+  onReviewFormOpenChange?: (open: boolean) => void;
 }
 
 function StarRow({
@@ -475,6 +477,8 @@ export function ProductReviews({
   mockSummary,
   mockReviews,
   allowSubmit = true,
+  isReviewFormOpen,
+  onReviewFormOpenChange,
 }: ProductReviewsProps) {
   const isMock = !!mockSummary && !!mockReviews;
   const [visitorKey, setVisitorKey] = useState<string | null>(null);
@@ -525,7 +529,21 @@ export function ProductReviews({
   const [dimensionSummary, setDimensionSummary] = useState<
     ProductReviewDimensionSummaryItem[]
   >([]);
-  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [internalIsReviewFormOpen, setInternalIsReviewFormOpen] =
+    useState(false);
+
+  const effectiveIsReviewFormOpen =
+    isReviewFormOpen ?? internalIsReviewFormOpen;
+
+  const setReviewFormOpen = useCallback(
+    (open: boolean) => {
+      onReviewFormOpenChange?.(open);
+      if (isReviewFormOpen === undefined) {
+        setInternalIsReviewFormOpen(open);
+      }
+    },
+    [isReviewFormOpen, onReviewFormOpenChange]
+  );
 
   const reviewFilters = useMemo(
     () => ({
@@ -706,8 +724,8 @@ export function ProductReviews({
     [effectiveSummary?.distribution]
   );
   const closeReviewForm = useCallback(() => {
-    setIsReviewFormOpen(false);
-  }, []);
+    setReviewFormOpen(false);
+  }, [setReviewFormOpen]);
 
   return (
     <section aria-labelledby="reviews-heading" className="py-12 lg:py-16">
@@ -718,7 +736,7 @@ export function ProductReviews({
         {allowSubmit && (
           <button
             type="button"
-            onClick={() => setIsReviewFormOpen(true)}
+            onClick={() => setReviewFormOpen(true)}
             className="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold"
           >
             Write a review
@@ -955,7 +973,7 @@ export function ProductReviews({
         </div>
       </div>
 
-      {allowSubmit && isReviewFormOpen && (
+      {allowSubmit && effectiveIsReviewFormOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           role="dialog"

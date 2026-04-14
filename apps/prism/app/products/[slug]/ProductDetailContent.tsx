@@ -1,5 +1,6 @@
 'use client';
 
+import { Star } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ProductDetailClient,
@@ -21,6 +22,7 @@ interface ProductDetailContentProps {
   ratingCount: number;
   selection: ProductDetailSelection;
   onSelectionChange: (selection: ProductDetailSelection) => void;
+  onWriteReview: () => void;
   shareTarget?: ShareTarget;
 }
 
@@ -60,49 +62,102 @@ function FireworksIcon() {
 
 function StarRating({
   percentage,
-  count,
+  count: _count,
+  onNavigateToReviews,
+  onWriteReview,
 }: {
   percentage: number;
   count: number;
+  onNavigateToReviews: () => void;
+  onWriteReview: () => void;
 }) {
+  const previewRows = [
+    { label: '5', value: 46 },
+    { label: '4', value: 2 },
+    { label: '3', value: 0 },
+    { label: '2', value: 1 },
+    { label: '1', value: 0 },
+  ];
+  const previewMax = Math.max(...previewRows.map(row => row.value), 1);
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex gap-0.5" aria-hidden="true">
-        {Array.from({ length: 5 }, (_, i) => (
-          <svg
-            key={i}
-            className="h-4 w-4 text-ink-muted/25"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d={STAR_PATH} />
-          </svg>
-        ))}
-        <div
-          className="absolute inset-0 flex gap-0.5 overflow-hidden"
-          style={{ width: `${percentage}%` }}
+    <div className="relative flex items-center gap-3 leading-none">
+      <div className="group relative inline-flex items-center">
+        <button
+          type="button"
+          onClick={onNavigateToReviews}
+          className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          aria-label="Go to customer reviews"
         >
-          {Array.from({ length: 5 }, (_, i) => (
-            <svg
-              key={i}
-              className="h-4 w-4 shrink-0 text-amber-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+          <div className="relative flex gap-0.5" aria-hidden="true">
+            {Array.from({ length: 5 }, (_, i) => (
+              <svg
+                key={i}
+                className="h-4 w-4 text-ink-muted/25"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d={STAR_PATH} />
+              </svg>
+            ))}
+            <div
+              className="absolute inset-0 flex gap-0.5 overflow-hidden"
+              style={{ width: `${percentage}%` }}
             >
-              <path d={STAR_PATH} />
-            </svg>
-          ))}
+              {Array.from({ length: 5 }, (_, i) => (
+                <svg
+                  key={i}
+                  className="h-4 w-4 shrink-0 text-amber-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d={STAR_PATH} />
+                </svg>
+              ))}
+            </div>
+          </div>
+
+          <span className="text-sm leading-none text-ink-muted">
+            4.6 (6788)
+          </span>
+        </button>
+
+        <div className="pointer-events-none invisible absolute left-0 top-[calc(100%+10px)] z-20 w-[270px] rounded-md border border-border bg-card p-4 opacity-0 shadow-[0_16px_30px_rgba(15,23,42,0.18)] transition duration-150 group-hover:visible group-hover:opacity-100">
+          <div className="space-y-2.5">
+            {previewRows.map(row => (
+              <div key={row.label} className="flex items-center gap-2">
+                <span className="w-3 text-sm text-ink">{row.label}</span>
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
+                  <div
+                    className="h-full rounded-full bg-amber-400"
+                    style={{ width: `${(row.value / previewMax) * 100}%` }}
+                  />
+                </div>
+                <span className="w-6 text-right text-sm text-ink">
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onNavigateToReviews}
+            className="pointer-events-auto mt-3 text-sm font-semibold text-ink transition hover:text-brand"
+          >
+            Read 49 Reviews
+          </button>
         </div>
       </div>
-      <span
-        className="text-sm text-ink-muted"
-        aria-label={`${(percentage / 20).toFixed(
-          1
-        )} out of 5, ${count} reviews`}
+
+      <button
+        type="button"
+        onClick={onWriteReview}
+        className="text-sm font-medium leading-none text-ink transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        {(percentage / 20).toFixed(1)} ({count}{' '}
-        {count === 1 ? 'review' : 'reviews'})
-      </span>
+        Write a review
+      </button>
     </div>
   );
 }
@@ -114,6 +169,7 @@ export function ProductDetailContent({
   ratingCount,
   selection,
   onSelectionChange,
+  onWriteReview,
   shareTarget,
 }: ProductDetailContentProps) {
   const [showCouponToast, setShowCouponToast] = useState(false);
@@ -262,6 +318,15 @@ export function ProductDetailContent({
         }).format(new Date(cpDateMs))
       : null;
 
+  const handleGoToReviews = () => {
+    const reviewSection = document.getElementById('section-reviews');
+    if (!reviewSection) {
+      return;
+    }
+
+    reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleClaimCoupon = async () => {
     if (!cpCode) return;
     if (typeof navigator === 'undefined') return;
@@ -333,18 +398,23 @@ export function ProductDetailContent({
 
         <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           {displayProduct.isInStock ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-emerald-600">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               Item is in stock
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-500">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-red-500">
               <span className="h-2 w-2 rounded-full bg-red-400" />
               Item is out of stock
             </span>
           )}
           {ratingCount > 0 && (
-            <StarRating percentage={ratingPercentage} count={ratingCount} />
+            <StarRating
+              percentage={ratingPercentage}
+              count={ratingCount}
+              onNavigateToReviews={handleGoToReviews}
+              onWriteReview={onWriteReview}
+            />
           )}
         </div>
 

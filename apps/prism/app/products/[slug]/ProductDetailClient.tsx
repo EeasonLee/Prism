@@ -9,6 +9,13 @@ import type {
   MagentoProduct,
   MagentoCustomizableOption,
 } from '../../../lib/api/magento/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@prism/ui';
 import { AddToCartButton } from '../../components/AddToCartButton';
 
 export interface SelectedVariantProduct {
@@ -111,24 +118,59 @@ function QtyInput({
   min?: number;
   onChange: (v: number) => void;
 }) {
+  const [draftValue, setDraftValue] = useState(String(value));
+
+  useEffect(() => {
+    setDraftValue(String(value));
+  }, [value]);
+
+  const commitDraftValue = useCallback(() => {
+    const next = Number.parseInt(draftValue, 10);
+    if (Number.isNaN(next)) {
+      onChange(min);
+      setDraftValue(String(min));
+      return;
+    }
+
+    const clamped = Math.max(min, next);
+    onChange(clamped);
+    setDraftValue(String(clamped));
+  }, [draftValue, min, onChange]);
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="inline-flex items-center overflow-hidden rounded-xl border border-border bg-surface">
       <button
         type="button"
         aria-label="Decrease quantity"
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-ink transition hover:bg-surface"
+        className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-surface-muted"
       >
         −
       </button>
-      <span className="w-10 text-center text-sm font-semibold text-ink">
-        {value}
-      </span>
+
+      <input
+        type="number"
+        min={min}
+        step={1}
+        inputMode="numeric"
+        aria-label="Quantity"
+        value={draftValue}
+        onChange={e => setDraftValue(e.target.value)}
+        onBlur={commitDraftValue}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            commitDraftValue();
+            e.currentTarget.blur();
+          }
+        }}
+        className="h-11 w-12 border-x border-border bg-surface text-center text-sm font-semibold text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+
       <button
         type="button"
         aria-label="Increase quantity"
         onClick={() => onChange(value + 1)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-ink transition hover:bg-surface"
+        className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-surface-muted"
       >
         +
       </button>
@@ -156,7 +198,7 @@ function CustomizableOptionsSection({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {sorted.map(opt => {
         const key = String(opt.option_id);
         const type = opt.type;
@@ -172,61 +214,95 @@ function CustomizableOptionsSection({
 
           if (type === 'drop_down') {
             return (
-              <div key={key}>
-                <label className="mb-1 block text-sm font-medium text-ink">
+              <div key={key} className="space-y-2">
+                <label className="block text-sm font-semibold text-ink">
                   {opt.title}
                   {opt.required && <span className="text-red-500"> *</span>}
                 </label>
-                <select
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+                <Select
                   value={(selections[key] as string) ?? ''}
-                  onChange={e => handleChange(opt.option_id, e.target.value)}
+                  onValueChange={value => handleChange(opt.option_id, value)}
                 >
-                  <option value="">-- Select --</option>
-                  {values.map(v => (
-                    <option
-                      key={v.option_type_id}
-                      value={String(v.option_type_id)}
-                    >
-                      {v.title}
-                      {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="min-h-touch w-full rounded-xl border-border/70 bg-surface px-4 py-2.5 text-sm text-ink focus:border-brand focus:ring-brand/25 data-[placeholder]:text-ink-muted">
+                    <SelectValue placeholder="-- Select --" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-border/70 bg-surface p-1 shadow-lg">
+                    {values.map(v => (
+                      <SelectItem
+                        key={v.option_type_id}
+                        value={String(v.option_type_id)}
+                        className="min-h-touch cursor-pointer rounded-lg text-sm text-ink focus:bg-surface-muted focus:text-ink"
+                      >
+                        {v.title}
+                        {v.price > 0 && (
+                          <span className="text-ink-muted">
+                            {` (+$${v.price.toFixed(2)})`}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             );
           }
 
           if (type === 'radio') {
             return (
-              <fieldset key={key}>
-                <legend className="mb-1 text-sm font-medium text-ink">
+              <fieldset key={key} className="space-y-2">
+                <legend className="text-sm font-semibold text-ink">
                   {opt.title}
                   {opt.required && <span className="text-red-500"> *</span>}
                 </legend>
-                <div className="space-y-1">
-                  {values.map(v => (
-                    <label
-                      key={v.option_type_id}
-                      className="flex items-center gap-2 text-sm text-ink"
-                    >
-                      <input
-                        type="radio"
-                        name={`custom-opt-${key}`}
-                        value={String(v.option_type_id)}
-                        checked={
-                          (selections[key] as string) ===
-                          String(v.option_type_id)
-                        }
-                        onChange={e =>
-                          handleChange(opt.option_id, e.target.value)
-                        }
-                        className="accent-brand"
-                      />
-                      {v.title}
-                      {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
-                    </label>
-                  ))}
+                <div className="space-y-2">
+                  {values.map(v => {
+                    const isChecked =
+                      (selections[key] as string) === String(v.option_type_id);
+
+                    return (
+                      <label
+                        key={v.option_type_id}
+                        className={`flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                          isChecked
+                            ? 'border-brand bg-brand/5'
+                            : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`custom-opt-${key}`}
+                          value={String(v.option_type_id)}
+                          checked={isChecked}
+                          onChange={e =>
+                            handleChange(opt.option_id, e.target.value)
+                          }
+                          className="sr-only"
+                        />
+                        <span
+                          className={`relative h-4 w-4 shrink-0 rounded-full border transition ${
+                            isChecked ? 'border-brand' : 'border-border'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          <span
+                            className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand transition ${
+                              isChecked
+                                ? 'scale-100 opacity-100'
+                                : 'scale-0 opacity-0'
+                            }`}
+                          />
+                        </span>
+                        <span className="text-base text-ink">
+                          {v.title}
+                          {v.price > 0 && (
+                            <span className="text-ink-muted">
+                              {` (+$${v.price.toFixed(2)})`}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </fieldset>
             );
@@ -235,19 +311,24 @@ function CustomizableOptionsSection({
           if (isMulti) {
             const selected = (selections[key] as string[]) ?? [];
             return (
-              <fieldset key={key}>
-                <legend className="mb-1 text-sm font-medium text-ink">
+              <fieldset key={key} className="space-y-2">
+                <legend className="text-sm font-semibold text-ink">
                   {opt.title}
                   {opt.required && <span className="text-red-500"> *</span>}
                 </legend>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {values.map(v => {
                     const val = String(v.option_type_id);
                     const checked = selected.includes(val);
+
                     return (
                       <label
                         key={v.option_type_id}
-                        className="flex items-center gap-2 text-sm text-ink"
+                        className={`flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
+                          checked
+                            ? 'border-brand bg-brand/5'
+                            : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
+                        }`}
                       >
                         <input
                           type="checkbox"
@@ -259,10 +340,30 @@ function CustomizableOptionsSection({
                               : [...selected, val];
                             handleChange(opt.option_id, next);
                           }}
-                          className="accent-brand"
+                          className="sr-only"
                         />
-                        {v.title}
-                        {v.price > 0 && ` (+$${v.price.toFixed(2)})`}
+                        <span
+                          className={`relative h-4 w-4 shrink-0 rounded border transition ${
+                            checked ? 'border-brand bg-brand' : 'border-border'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          <span
+                            className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-brand-foreground transition ${
+                              checked
+                                ? 'scale-100 opacity-100'
+                                : 'scale-0 opacity-0'
+                            }`}
+                          />
+                        </span>
+                        <span className="text-base text-ink">
+                          {v.title}
+                          {v.price > 0 && (
+                            <span className="text-ink-muted">
+                              {` (+$${v.price.toFixed(2)})`}
+                            </span>
+                          )}
+                        </span>
                       </label>
                     );
                   })}
@@ -275,13 +376,13 @@ function CustomizableOptionsSection({
         if (type === 'field' || type === 'area') {
           const Tag = type === 'area' ? 'textarea' : 'input';
           return (
-            <div key={key}>
-              <label className="mb-1 block text-sm font-medium text-ink">
+            <div key={key} className="space-y-2">
+              <label className="block text-sm font-semibold text-ink">
                 {opt.title}
                 {opt.required && <span className="text-red-500"> *</span>}
               </label>
               <Tag
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+                className="min-h-touch w-full rounded-xl border border-border/70 bg-surface px-4 py-2.5 text-sm text-ink shadow-none transition hover:border-brand/40 focus:border-brand focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-brand/20"
                 value={(selections[key] as string) ?? ''}
                 onChange={e => handleChange(opt.option_id, e.target.value)}
                 maxLength={
@@ -289,10 +390,10 @@ function CustomizableOptionsSection({
                     ? opt.max_characters
                     : undefined
                 }
-                {...(type === 'area' ? { rows: 3 } : {})}
+                {...(type === 'area' ? { rows: 4 } : {})}
               />
               {opt.max_characters != null && opt.max_characters > 0 && (
-                <p className="mt-1 text-xs text-ink-muted">
+                <p className="micro-text text-ink-muted">
                   Max {opt.max_characters} characters
                 </p>
               )}
@@ -365,17 +466,19 @@ function SimpleOptions({
           onSelectionsChange={setCustomSelections}
         />
       )}
-      <div>
-        <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
+      <div className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
+        <div className="flex-1">
+          <AddToCartButton
+            sku={product.sku}
+            qty={qty}
+            productOptionsJson={productOptionsJson}
+            disabled={!allCustomRequiredSelected}
+            disabledLabel="Select required options"
+            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
       </div>
-      <AddToCartButton
-        sku={product.sku}
-        qty={qty}
-        productOptionsJson={productOptionsJson}
-        disabled={!allCustomRequiredSelected}
-        disabledLabel="Select required options"
-      />
     </div>
   );
 }
@@ -650,20 +753,22 @@ function ConfigurableOptions({
         />
       )}
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
+      <div className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
-      </div>
 
-      <AddToCartButton
-        sku={selectedChild?.sku ?? product.sku}
-        qty={qty}
-        productOptionsJson={productOptionsJson}
-        disabled={!allSelected || !allCustomRequiredSelected}
-        disabledLabel={
-          !allSelected ? 'Select Options' : 'Select required options'
-        }
-      />
+        <div className="flex-1">
+          <AddToCartButton
+            sku={selectedChild?.sku ?? product.sku}
+            qty={qty}
+            productOptionsJson={productOptionsJson}
+            disabled={!allSelected || !allCustomRequiredSelected}
+            disabledLabel={
+              !allSelected ? 'Select Options' : 'Select required options'
+            }
+            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -928,18 +1033,19 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
         </div>
       ))}
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
+      <div className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
+        <div className="flex-1">
+          <AddToCartButton
+            sku={product.sku}
+            qty={qty}
+            productOptionsJson={buildOptionsJson()}
+            disabled={!allRequiredSelected}
+            disabledLabel="Select required options"
+            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
       </div>
-
-      <AddToCartButton
-        sku={product.sku}
-        qty={qty}
-        productOptionsJson={buildOptionsJson()}
-        disabled={!allRequiredSelected}
-        disabledLabel="Select required options"
-      />
     </div>
   );
 }
@@ -1059,18 +1165,19 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
         </div>
       )}
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-ink">Quantity</p>
+      <div className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
+        <div className="flex-1">
+          <AddToCartButton
+            sku={product.sku}
+            qty={qty}
+            productOptionsJson={productOptionsJson}
+            disabled={!canAddToCart}
+            disabledLabel="Select at least one link"
+            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
       </div>
-
-      <AddToCartButton
-        sku={product.sku}
-        qty={qty}
-        productOptionsJson={productOptionsJson}
-        disabled={!canAddToCart}
-        disabledLabel="Select at least one link"
-      />
     </div>
   );
 }
