@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { AuthUser } from '../api/magento/types';
+import type { AuthUser, SessionResponse } from './types';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -24,16 +24,29 @@ interface AuthContextValue {
     lastName?: string
   ) => Promise<void>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<SessionResponse>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-interface SessionResponse {
-  hasSession: boolean;
-  isAuthenticated: boolean;
-  isGuest: boolean;
-  user?: AuthUser;
+async function waitForSessionEstablished(
+  refreshSession: () => Promise<SessionResponse>,
+  maxAttempts = 4
+): Promise<SessionResponse> {
+  let latest = await refreshSession();
+  if (latest.isAuthenticated) {
+    return latest;
+  }
+
+  for (let attempt = 1; attempt < maxAttempts; attempt += 1) {
+    await new Promise(resolve => setTimeout(resolve, 120 * attempt));
+    latest = await refreshSession();
+    if (latest.isAuthenticated) {
+      return latest;
+    }
+  }
+
+  return latest;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -45,8 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = useCallback(async (): Promise<SessionResponse> => {
     try {
-      const res = await fetch('/api/auth/session', {
+      const res = await fetch('/api/v1/auth/session', {
         credentials: 'include',
+        cache: 'no-store',
       });
       const data = (await res.json()) as SessionResponse;
       setHasSession(data.hasSession);
@@ -72,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const session = await refreshSession();
       if (!session.hasSession) {
         try {
-          await fetch('/api/auth/guest', {
+          await fetch('/api/v1/auth/guest', {
             method: 'POST',
             credentials: 'include',
           });
@@ -86,23 +100,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void initSession();
   }, [refreshSession]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data?.error?.message ?? 'Login failed');
-    }
-    const data = await res.json();
-    setUser(data.user);
-    setIsAuthenticated(true);
-    setIsGuest(false);
-    setHasSession(true);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error?.message ?? 'Login failed');
+      }
+      const session = await waitForSessionEstablished(refreshSession);
+      if (!session.isAuthenticated) {
+        throw new Error('Login succeeded but session was not established');
+      }
+    },
+    [refreshSession]
+  );
 
   const register = useCallback(
     async (
@@ -111,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName?: string,
       lastName?: string
     ) => {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -126,27 +142,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         throw new Error(data?.error?.message ?? 'Registration failed');
       }
-      const data = await res.json();
-      setUser(data.user);
-      setIsAuthenticated(true);
-      setIsGuest(false);
-      setHasSession(true);
+      const session = await waitForSessionEstablished(refreshSession);
+      if (!session.isAuthenticated) {
+        throw new Error(
+          'Registration succeeded but session was not established'
+        );
+      }
     },
-    []
+    [refreshSession]
   );
 
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', {
+    await fetch('/api/v1/auth/logout', {
       method: 'POST',
       credentials: 'include',
     }).catch(() => {
       /* 失败也继续 */
     });
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsGuest(true);
-    setHasSession(true);
-  }, []);
+    await refreshSession().catch(() => {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsGuest(false);
+      setHasSession(false);
+    });
+  }, [refreshSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

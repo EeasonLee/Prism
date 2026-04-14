@@ -1,5 +1,5 @@
 /**
- * 认证相关 API（通过 BFF /api/auth/* 路由，不直连 SSO 服务）
+ * 认证相关 API（通过 BFF /api/v1/auth/* 路由，不直连 SSO 服务）
  */
 
 import type { AuthResponse, GuestAuthResponse } from './types';
@@ -37,7 +37,7 @@ export interface LoginParams {
 
 export function login(params: LoginParams): Promise<AuthResponse> {
   const { email, password, guestSsoUserId, storeId } = params;
-  return authFetch<AuthResponse>('/api/auth/login', {
+  return authFetch<AuthResponse>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify({
       email,
@@ -60,7 +60,7 @@ export interface RegisterParams {
 export function register(params: RegisterParams): Promise<AuthResponse> {
   const { email, password, firstName, lastName, guestSsoUserId, storeId } =
     params;
-  return authFetch<AuthResponse>('/api/auth/register', {
+  return authFetch<AuthResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify({
       email,
@@ -74,21 +74,21 @@ export function register(params: RegisterParams): Promise<AuthResponse> {
 }
 
 export function logout(accessToken: string): Promise<void> {
-  return authFetch<void>('/api/auth/logout', {
+  return authFetch<void>('/api/v1/auth/logout', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
 export function refreshToken(token: string): Promise<AuthResponse> {
-  return authFetch<AuthResponse>('/api/auth/refresh', {
+  return authFetch<AuthResponse>('/api/v1/auth/refresh', {
     method: 'POST',
     body: JSON.stringify({ refreshToken: token }),
   });
 }
 
 export function guestLogin(): Promise<GuestAuthResponse> {
-  return authFetch<GuestAuthResponse>('/api/auth/guest', {
+  return authFetch<GuestAuthResponse>('/api/v1/auth/guest', {
     method: 'POST',
     body: JSON.stringify({}),
   });

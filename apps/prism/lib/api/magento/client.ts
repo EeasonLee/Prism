@@ -16,9 +16,11 @@ function getMagentoBaseUrl(): string {
   if (typeof window !== 'undefined' && env.NEXT_PUBLIC_USE_API_PROXY) {
     return '/magento-proxy';
   }
-  const url = env.NEXT_PUBLIC_MAGENTO_API_URL;
+  const url = env.NEXT_PUBLIC_MAGENTO_API_URL ?? env.NEXT_PUBLIC_MAGENTOL;
   if (!url) {
-    throw new Error('NEXT_PUBLIC_MAGENTO_API_URL is not configured');
+    throw new Error(
+      'NEXT_PUBLIC_MAGENTO_API_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+    );
   }
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }

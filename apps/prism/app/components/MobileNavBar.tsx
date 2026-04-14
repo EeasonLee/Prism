@@ -4,8 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ShoppingCart, UserRound } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/context';
-import { useAuthModal } from '../../lib/auth-modal/context';
 import { useCart } from '../../lib/cart/context';
 import { getNavBadgeValue } from './nav-config';
 
@@ -38,13 +38,17 @@ function MobileIconButton({
 }
 
 export function MobileNavBar() {
+  const router = useRouter();
   const { itemCount, openCart } = useCart();
   const { user, isAuthenticated } = useAuth();
-  const { openLogin } = useAuthModal();
 
   return (
     <div className="flex h-[73px] items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
-      <Link href="/" aria-label="Go to home page" className="flex shrink-0 items-center">
+      <Link
+        href="/"
+        aria-label="Go to home page"
+        className="flex shrink-0 items-center"
+      >
         <Image
           src="/images/logo.png"
           alt="Joydeem"
@@ -68,7 +72,9 @@ export function MobileNavBar() {
           label={
             isAuthenticated && user ? `Signed in as ${user.email}` : 'Sign in'
           }
-          onClick={() => openLogin('signin')}
+          onClick={() => {
+            router.push(isAuthenticated ? '/account' : '/login');
+          }}
         >
           <UserRound className="h-5 w-5" aria-hidden="true" />
         </MobileIconButton>

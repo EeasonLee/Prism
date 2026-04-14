@@ -1,13 +1,22 @@
 import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '../api/cache-policy';
 import { logRequest } from '../api/interceptors/request-logger';
+import { MagentoApiError } from '../api/magento/client';
 import { env } from '../env';
 
 function getMagentoGraphQLUrl(): string {
-  const url = env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL;
-  if (!url) {
-    throw new Error('NEXT_PUBLIC_MAGENTO_GRAPHQL_URL is not configured');
+  const explicitGraphqlUrl = env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL;
+  if (explicitGraphqlUrl) {
+    return explicitGraphqlUrl;
   }
-  return url;
+
+  const magentoBaseUrl = env.NEXT_PUBLIC_MAGENTOL;
+  if (magentoBaseUrl) {
+    return `${magentoBaseUrl.replace(/\/$/, '')}/graphql`;
+  }
+
+  throw new Error(
+    'NEXT_PUBLIC_MAGENTO_GRAPHQL_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+  );
 }
 
 interface GraphQLResponse<T> {
@@ -25,15 +34,16 @@ export class MagentoGraphQLError extends Error {
   }
 }
 
-export async function magentoGraphQL<T>(
+async function executeMagentoGraphQL<T>(
   query: string,
-  variables?: Record<string, unknown>
+  variables: Record<string, unknown> | undefined,
+  headers: Record<string, string>,
+  fetchOptions: Pick<RequestInit, 'cache'> & {
+    next?: { revalidate: number };
+  }
 ): Promise<T> {
   const url = getMagentoGraphQLUrl();
   const requestBody = { query, variables };
-  const headers = {
-    'Content-Type': 'application/json',
-  };
   const startTime = Date.now();
 
   let response: Response;
@@ -43,7 +53,7 @@ export async function magentoGraphQL<T>(
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
-      next: { revalidate: REVALIDATE_SECONDS_CATALOG_SNAPSHOT },
+      ...fetchOptions,
     });
   } catch (error) {
     logRequest({
@@ -100,6 +110,18 @@ export async function magentoGraphQL<T>(
   }
 
   if (json.errors && json.errors.length > 0) {
+    const authError = json.errors.find(error => {
+      const category = error.extensions?.category;
+      return (
+        typeof category === 'string' &&
+        category.toLowerCase().includes('authorization')
+      );
+    });
+
+    if (authError) {
+      throw new MagentoApiError(authError.message, 'TOKEN_EXPIRED', 401);
+    }
+
     throw new MagentoGraphQLError(json.errors[0].message, json.errors);
   }
 
@@ -108,4 +130,54 @@ export async function magentoGraphQL<T>(
   }
 
   return json.data;
+}
+
+export async function magentoGraphQL<T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  return executeMagentoGraphQL(
+    query,
+    variables,
+    {
+      'Content-Type': 'application/json',
+    },
+    {
+      next: { revalidate: REVALIDATE_SECONDS_CATALOG_SNAPSHOT },
+    }
+  );
+}
+
+export async function magentoGraphQLNoCache<T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  return executeMagentoGraphQL(
+    query,
+    variables,
+    {
+      'Content-Type': 'application/json',
+    },
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function authenticatedMagentoGraphQL<T>(
+  accessToken: string,
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  return executeMagentoGraphQL(
+    query,
+    variables,
+    {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    {
+      cache: 'no-store',
+    }
+  );
 }

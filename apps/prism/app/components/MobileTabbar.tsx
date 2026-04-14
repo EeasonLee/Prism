@@ -35,7 +35,8 @@ export function MobileTabbar() {
             'flex h-full min-w-0 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-medium transition-colors',
             isActive ? 'text-brand' : 'text-ink-muted hover:text-ink'
           );
-          const badge = item.key === 'cart' ? getNavBadgeValue(itemCount) : undefined;
+          const badge =
+            item.key === 'cart' ? getNavBadgeValue(itemCount) : undefined;
 
           if (item.key === 'cart') {
             return (
@@ -60,11 +61,29 @@ export function MobileTabbar() {
           }
 
           if (item.key === 'account') {
+            if (isAuthenticated) {
+              return (
+                <Link
+                  key={item.key}
+                  href="/account"
+                  aria-current={isActive ? 'page' : undefined}
+                  className={itemClassName}
+                >
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            }
+
             return (
               <button
                 key={item.key}
                 type="button"
-                aria-label={isAuthenticated && user ? `Signed in as ${user.email}` : 'Sign in'}
+                aria-label={
+                  isAuthenticated && user
+                    ? `Signed in as ${user.email}`
+                    : 'Sign in'
+                }
                 onClick={() => openLogin('signin')}
                 className={itemClassName}
               >
