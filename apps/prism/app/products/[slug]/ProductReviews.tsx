@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   Star,
   ThumbsUp,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
@@ -524,6 +525,7 @@ export function ProductReviews({
   const [dimensionSummary, setDimensionSummary] = useState<
     ProductReviewDimensionSummaryItem[]
   >([]);
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
 
   const reviewFilters = useMemo(
     () => ({
@@ -703,20 +705,26 @@ export function ProductReviews({
     () => mergeSummaryDistribution(effectiveSummary?.distribution),
     [effectiveSummary?.distribution]
   );
+  const closeReviewForm = useCallback(() => {
+    setIsReviewFormOpen(false);
+  }, []);
 
   return (
     <section aria-labelledby="reviews-heading" className="py-12 lg:py-16">
-      <h2 id="reviews-heading" className="heading-3 mb-8 text-center text-ink">
-        Customer Reviews
-      </h2>
-
-      {allowSubmit && (
-        <ReviewForm
-          sku={sku}
-          target={target}
-          onSubmitted={() => void loadPage(1, sort, reviewFilters)}
-        />
-      )}
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="reviews-heading" className="heading-3 text-ink">
+          Customer Reviews
+        </h2>
+        {allowSubmit && (
+          <button
+            type="button"
+            onClick={() => setIsReviewFormOpen(true)}
+            className="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold"
+          >
+            Write a review
+          </button>
+        )}
+      </div>
 
       {dimensionSummary.length > 0 && (
         <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
@@ -946,6 +954,38 @@ export function ProductReviews({
           )}
         </div>
       </div>
+
+      {allowSubmit && isReviewFormOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Write a review"
+          onClick={closeReviewForm}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-background shadow-2xl"
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeReviewForm}
+              aria-label="Close review form"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <ReviewForm
+              sku={sku}
+              target={target}
+              onSubmitted={() => {
+                closeReviewForm();
+                void loadPage(1, sort, reviewFilters);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

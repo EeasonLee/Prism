@@ -295,24 +295,31 @@ export function ProductDetailContent({
       </div>
 
       <div className="flex flex-col gap-0">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
-            SKU: {displayProduct.sku}
-          </span>
-          {debugCoupon && (
-            <span className="text-[11px] font-medium text-ink-muted">
-              [debugCoupon] cp_code={cpCode ?? 'null'}, cp_date=
-              {effectiveCpDate ?? 'null'}, cpDateMs={cpDateMs ?? 'null'},
-              expired=
-              {isCouponExpired ? 'true' : 'false'}, showBanner=
-              {showCouponBanner ? 'true' : 'false'}, cp_price=
-              {parsedCpPrice ?? 'null'}
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
+              SKU: {displayProduct.sku}
             </span>
-          )}
-          {displayPromotionLabel && (
-            <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
-              {displayPromotionLabel}
-            </span>
+            {debugCoupon && (
+              <span className="text-[11px] font-medium text-ink-muted">
+                [debugCoupon] cp_code={cpCode ?? 'null'}, cp_date=
+                {effectiveCpDate ?? 'null'}, cpDateMs={cpDateMs ?? 'null'},
+                expired=
+                {isCouponExpired ? 'true' : 'false'}, showBanner=
+                {showCouponBanner ? 'true' : 'false'}, cp_price=
+                {parsedCpPrice ?? 'null'}
+              </span>
+            )}
+            {displayPromotionLabel && (
+              <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
+                {displayPromotionLabel}
+              </span>
+            )}
+          </div>
+          {shareTarget && (
+            <div className="shrink-0">
+              <ShareTrigger target={shareTarget} />
+            </div>
           )}
         </div>
 
@@ -444,12 +451,6 @@ export function ProductDetailContent({
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {shareTarget && (
-          <div className="mb-4 flex items-center">
-            <ShareTrigger target={shareTarget} />
           </div>
         )}
 

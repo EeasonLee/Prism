@@ -98,7 +98,7 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
         aria-expanded={open}
         onClick={() => void handleTriggerClick()}
         className={[
-          'group inline-flex items-center gap-3 rounded-2xl border border-border/70 bg-surface/80 px-4 py-2.5 text-sm font-semibold text-ink shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+          'group inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-surface/80 px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
           open ? 'border-brand/30 bg-brand/5 text-brand' : '',
           className,
         ]
@@ -107,13 +107,13 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       >
         <span
           className={[
-            'flex h-8 w-8 items-center justify-center rounded-full bg-background text-ink-muted transition',
-            open ? 'bg-brand/10 text-brand' : 'group-hover:text-ink',
+            'flex h-4 w-4 items-center justify-center text-ink-muted transition',
+            open ? 'text-brand' : 'group-hover:text-ink',
           ]
             .filter(Boolean)
             .join(' ')}
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-3.5 w-3.5" />
         </span>
         <span>Share</span>
       </button>
