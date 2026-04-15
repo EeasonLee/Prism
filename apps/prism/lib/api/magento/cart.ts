@@ -206,3 +206,20 @@ export function getCheckoutRedirectLink(): Promise<CartRedirectResponse> {
     { preflightRefresh: true }
   );
 }
+
+export function applyCoupon(couponCode: string): Promise<CartItemsResponse> {
+  return withCartAuthRecovery(() =>
+    cartFetch<CartItemsResponse>('/api/v1/cart/coupon/apply', {
+      method: 'POST',
+      body: JSON.stringify({ couponCode }),
+    })
+  );
+}
+
+export function removeCoupon(): Promise<CartItemsResponse> {
+  return withCartAuthRecovery(() =>
+    cartFetch<CartItemsResponse>('/api/v1/cart/coupon', {
+      method: 'DELETE',
+    })
+  );
+}

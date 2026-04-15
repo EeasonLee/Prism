@@ -345,7 +345,7 @@ export function mapGQLProduct(
     configurable_options:
       raw.configurable_options?.map((opt, index) => ({
         id: index + 1,
-        attribute_id: opt.attribute_code,
+        attribute_id: String(opt.attribute_id),
         attribute_code: opt.attribute_code,
         label: opt.label,
         values: opt.values.map(v => ({
@@ -373,6 +373,12 @@ export function mapGQLProduct(
         stock_status: v.product.stock_status,
         attributes: v.attributes.reduce<Record<string, string>>((acc, attr) => {
           acc[attr.code] = String(attr.value_index);
+          const matchingOption = raw.configurable_options?.find(
+            opt => opt.attribute_code === attr.code
+          );
+          if (matchingOption) {
+            acc[String(matchingOption.attribute_id)] = String(attr.value_index);
+          }
           return acc;
         }, {}),
         media_gallery: v.product.media_gallery.map((m, idx) => ({

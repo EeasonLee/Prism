@@ -7,12 +7,17 @@
 
 import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
 import { MagentoApiError } from '@/lib/api/magento/client';
+import {
+  authenticatedMagentoGraphQL,
+  magentoGraphQLNoCache,
+} from '@/lib/services/magento-graphql.client';
 import type {
   CartItem,
   CartItemsResponse,
   AddCartItemParams,
   CartTotals,
   CartMoney,
+  MagentoProduct,
 } from '@/lib/api/magento/types';
 
 function isCustomerCartMissingError(error: unknown): boolean {
@@ -87,6 +92,363 @@ interface MagentoCart {
   extension_attributes?: {
     shipping_assignments?: unknown[];
   };
+}
+
+function toRecordOfNumbers(value: unknown): Record<string, number> {
+  if (typeof value !== 'object' || value === null) {
+    return {};
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([key, rawValue]) => [key, Number(rawValue)] as const)
+    .filter(([, numValue]) => Number.isFinite(numValue));
+
+  return Object.fromEntries(entries);
+}
+
+async function normalizeSuperAttributes(
+  accessToken: string,
+  sku: string,
+  superAttr: Record<string, number>
+): Promise<Record<string, number>> {
+  const keys = Object.keys(superAttr);
+  if (keys.length === 0 || keys.every(key => /^\d+$/.test(key))) {
+    return superAttr;
+  }
+
+  try {
+    const product = await magentoRestFetch<MagentoProduct>(
+      `products/${encodeURIComponent(sku)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const configurableOptions =
+      product.extension_attributes?.configurable_product_options ??
+      product.configurable_options ??
+      [];
+
+    const optionKeyToId = new Map<string, string>();
+    for (const option of configurableOptions) {
+      const optionId = String(option.attribute_id ?? option.id);
+      if (!/^\d+$/.test(optionId)) {
+        continue;
+      }
+      if (option.attribute_code) {
+        optionKeyToId.set(option.attribute_code, optionId);
+      }
+      if (option.label) {
+        optionKeyToId.set(option.label.toLowerCase(), optionId);
+      }
+    }
+
+    const normalized: Record<string, number> = {};
+    for (const [rawKey, rawValue] of Object.entries(superAttr)) {
+      const resolvedKey = /^\d+$/.test(rawKey)
+        ? rawKey
+        : optionKeyToId.get(rawKey) ??
+          optionKeyToId.get(rawKey.toLowerCase()) ??
+          rawKey;
+      normalized[resolvedKey] = rawValue;
+    }
+    return normalized;
+  } catch {
+    const fallback: Record<string, number> = {};
+    for (const [key, value] of Object.entries(superAttr)) {
+      if (/^\d+$/.test(key)) {
+        fallback[key] = value;
+      }
+    }
+    return fallback;
+  }
+}
+
+function extractCartOptions(
+  item: MagentoCartItem
+): Array<{ label: string; value: string }> {
+  const extensionAttributes = item.product_option?.extension_attributes;
+  if (!extensionAttributes) {
+    return [];
+  }
+
+  const normalized: Array<{ label: string; value: string }> = [];
+
+  for (const option of extensionAttributes.configurable_item_options ?? []) {
+    normalized.push({
+      label: `Configurable ${option.option_id}`,
+      value: String(option.option_value),
+    });
+  }
+
+  for (const option of extensionAttributes.custom_options ?? []) {
+    normalized.push({
+      label: `Custom ${option.option_id}`,
+      value: option.option_value,
+    });
+  }
+
+  return normalized;
+}
+
+function buildLineMatchKey(
+  item: Pick<CartItem, 'sku' | 'name' | 'qty' | 'price'>
+): string {
+  return `${item.sku}__${item.name}__${item.qty}__${item.price}`;
+}
+
+function mergeGraphqlOptions(
+  restItems: CartItem[],
+  graphqlItems: CartItem[]
+): CartItem[] {
+  const optionBuckets = new Map<string, Array<CartItem['options']>>();
+
+  for (const gqlItem of graphqlItems) {
+    const key = buildLineMatchKey(gqlItem);
+    const bucket = optionBuckets.get(key) ?? [];
+    bucket.push(gqlItem.options);
+    optionBuckets.set(key, bucket);
+  }
+
+  return restItems.map(restItem => {
+    const key = buildLineMatchKey(restItem);
+    const bucket = optionBuckets.get(key);
+    if (!bucket || bucket.length === 0) {
+      return restItem;
+    }
+    const nextOptions = bucket.shift();
+    return {
+      ...restItem,
+      options:
+        Array.isArray(nextOptions) && nextOptions.length > 0
+          ? nextOptions
+          : undefined,
+    };
+  });
+}
+
+interface GraphqlCartOptionItem {
+  quantity: number;
+  product: {
+    sku: string;
+    name: string;
+  };
+  prices: {
+    price: {
+      value: number;
+    };
+  };
+  configurable_options?: Array<{
+    option_label: string;
+    value_label: string;
+  }>;
+  customizable_options?: Array<{
+    label: string;
+    values: Array<{
+      label: string;
+      value: string;
+    }>;
+  }>;
+}
+
+interface CustomerCartOptionsResponse {
+  customerCart: {
+    items: GraphqlCartOptionItem[];
+  };
+}
+
+interface GuestCartOptionsResponse {
+  cart: {
+    items: GraphqlCartOptionItem[];
+  } | null;
+}
+
+const CUSTOMER_CART_OPTIONS_QUERY = `
+  query CustomerCartOptions {
+    customerCart {
+      items {
+        __typename
+        quantity
+        product {
+          sku
+          name
+        }
+        prices {
+          price {
+            value
+          }
+        }
+        ... on ConfigurableCartItem {
+          configurable_options {
+            option_label
+            value_label
+          }
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on SimpleCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on VirtualCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on BundleCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on DownloadableCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const GUEST_CART_OPTIONS_QUERY = `
+  query GuestCartOptions($cartId: String!) {
+    cart(cart_id: $cartId) {
+      items {
+        __typename
+        quantity
+        product {
+          sku
+          name
+        }
+        prices {
+          price {
+            value
+          }
+        }
+        ... on ConfigurableCartItem {
+          configurable_options {
+            option_label
+            value_label
+          }
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on SimpleCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on VirtualCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on BundleCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+        ... on DownloadableCartItem {
+          customizable_options {
+            label
+            values {
+              label
+              value
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+function transformGraphqlOptionItem(item: GraphqlCartOptionItem): CartItem {
+  const options: Array<{ label: string; value: string }> = [];
+  for (const option of item.configurable_options ?? []) {
+    options.push({
+      label: option.option_label,
+      value: option.value_label,
+    });
+  }
+  for (const option of item.customizable_options ?? []) {
+    const value = option.values.map(v => v.value || v.label).join(', ');
+    options.push({
+      label: option.label,
+      value,
+    });
+  }
+
+  return {
+    item_id: '',
+    sku: item.product.sku,
+    name: item.product.name,
+    qty: item.quantity,
+    price: item.prices.price.value,
+    product_type: '',
+    options,
+  };
+}
+
+async function loadCustomerGraphqlOptionItems(
+  accessToken: string
+): Promise<CartItem[]> {
+  const response =
+    await authenticatedMagentoGraphQL<CustomerCartOptionsResponse>(
+      accessToken,
+      CUSTOMER_CART_OPTIONS_QUERY
+    );
+  return (response.customerCart.items ?? []).map(transformGraphqlOptionItem);
+}
+
+async function loadGuestGraphqlOptionItems(
+  cartId: string
+): Promise<CartItem[]> {
+  const response = await magentoGraphQLNoCache<GuestCartOptionsResponse>(
+    GUEST_CART_OPTIONS_QUERY,
+    { cartId }
+  );
+  return (response.cart?.items ?? []).map(transformGraphqlOptionItem);
 }
 
 /**
@@ -192,13 +554,23 @@ export async function getGuestCart(
 
   const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
 
-  return {
+  const restSnapshot: CartItemsResponse = {
     cart_id: cartId,
     items_count: items.length,
     total_quantity: totalQty,
     items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
+
+  try {
+    const gqlItems = await loadGuestGraphqlOptionItems(cartId);
+    return {
+      ...restSnapshot,
+      items: mergeGraphqlOptions(restSnapshot.items, gqlItems),
+    };
+  } catch {
+    return restSnapshot;
+  }
 }
 
 /**
@@ -239,14 +611,29 @@ export async function getCustomerCart(
   }
 
   const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
+  const customerCartIdFromItems = items.find(item => item.quote_id)?.quote_id;
+  const customerCartId =
+    customerCartIdFromItems && customerCartIdFromItems.length > 0
+      ? customerCartIdFromItems
+      : await ensureCustomerCartQuoteId(accessToken);
 
-  return {
-    cart_id: '',
+  const restSnapshot: CartItemsResponse = {
+    cart_id: customerCartId,
     items_count: items.length,
     total_quantity: totalQty,
     items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
+
+  try {
+    const gqlItems = await loadCustomerGraphqlOptionItems(accessToken);
+    return {
+      ...restSnapshot,
+      items: mergeGraphqlOptions(restSnapshot.items, gqlItems),
+    };
+  } catch {
+    return restSnapshot;
+  }
 }
 
 /**
@@ -276,15 +663,23 @@ export async function addGuestCartItem(
         options.super_attribute &&
         typeof options.super_attribute === 'object'
       ) {
-        const superAttr = options.super_attribute as Record<string, number>;
-        productOption.extension_attributes = {
-          configurable_item_options: Object.entries(superAttr).map(
-            ([optionId, value]) => ({
-              option_id: optionId,
-              option_value: value,
-            })
-          ),
-        };
+        const superAttr = toRecordOfNumbers(options.super_attribute);
+        const normalizedSuperAttr = await normalizeSuperAttributes(
+          accessToken,
+          params.sku,
+          superAttr
+        );
+        const configurableItemOptions = Object.entries(normalizedSuperAttr).map(
+          ([optionId, value]) => ({
+            option_id: optionId,
+            option_value: value,
+          })
+        );
+        if (configurableItemOptions.length > 0) {
+          productOption.extension_attributes = {
+            configurable_item_options: configurableItemOptions,
+          };
+        }
       }
 
       if (Array.isArray(options.custom_options)) {
@@ -344,15 +739,23 @@ export async function addCustomerCartItem(
         options.super_attribute &&
         typeof options.super_attribute === 'object'
       ) {
-        const superAttr = options.super_attribute as Record<string, number>;
-        productOption.extension_attributes = {
-          configurable_item_options: Object.entries(superAttr).map(
-            ([optionId, value]) => ({
-              option_id: optionId,
-              option_value: value,
-            })
-          ),
-        };
+        const superAttr = toRecordOfNumbers(options.super_attribute);
+        const normalizedSuperAttr = await normalizeSuperAttributes(
+          accessToken,
+          params.sku,
+          superAttr
+        );
+        const configurableItemOptions = Object.entries(normalizedSuperAttr).map(
+          ([optionId, value]) => ({
+            option_id: optionId,
+            option_value: value,
+          })
+        );
+        if (configurableItemOptions.length > 0) {
+          productOption.extension_attributes = {
+            configurable_item_options: configurableItemOptions,
+          };
+        }
       }
 
       if (Array.isArray(options.custom_options)) {
@@ -602,12 +1005,79 @@ export async function resolveGuestQuoteId(
 }
 
 /**
+ * 为 guest cart 应用 coupon code
+ */
+export async function applyGuestCoupon(
+  accessToken: string,
+  cartId: string,
+  couponCode: string
+): Promise<boolean> {
+  const result = await magentoRestFetch<boolean>(
+    `guest-carts/${cartId}/coupons/${encodeURIComponent(couponCode)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+  return result;
+}
+
+/**
+ * 为 customer cart 应用 coupon code
+ */
+export async function applyCustomerCoupon(
+  accessToken: string,
+  couponCode: string
+): Promise<boolean> {
+  const result = await magentoRestFetch<boolean>(
+    `carts/mine/coupons/${encodeURIComponent(couponCode)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+  return result;
+}
+
+/**
+ * 移除 guest cart coupon
+ */
+export async function removeGuestCoupon(
+  accessToken: string,
+  cartId: string
+): Promise<void> {
+  await magentoRestFetch<boolean>(`guest-carts/${cartId}/coupons`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * 移除 customer cart coupon
+ */
+export async function removeCustomerCoupon(accessToken: string): Promise<void> {
+  await magentoRestFetch<boolean>('carts/mine/coupons', {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
  * 转换 Magento cart item 为前端格式
  */
 function transformCartItem(
   item: MagentoCartItem,
   fallbackCurrency?: string | null
 ): CartItem {
+  const options = extractCartOptions(item);
   return {
     item_id: String(item.item_id),
     sku: item.sku,
@@ -617,5 +1087,6 @@ function transformCartItem(
     product_type: item.product_type,
     quote_id: item.quote_id,
     currency: fallbackCurrency ?? 'USD',
+    options: options.length > 0 ? options : undefined,
   };
 }
