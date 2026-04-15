@@ -1,6 +1,6 @@
 import type { UnifiedProduct } from '../../../lib/api/unified-product';
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
-import type { ProductPageCms } from './mock-data';
+import type { ProductPageCms } from './product-page-types';
 
 export type ProductDetailCms = Partial<ProductPageCms>;
 

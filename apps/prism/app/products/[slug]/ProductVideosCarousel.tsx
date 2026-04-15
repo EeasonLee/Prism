@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@prism/shared';
-import type { ProductVideoCard } from './mock-data';
+import type { ProductVideoCard } from './product-page-types';
 
 interface ProductVideosCarouselProps {
   videos: ProductVideoCard[];

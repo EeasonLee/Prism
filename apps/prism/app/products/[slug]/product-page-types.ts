@@ -1,9 +1,7 @@
 /**
  * PDP 区块结构类型定义。
- * 说明：历史 mock 数据已下线，仅保留类型用于页面与 API 组装。
+ * 仅包含类型声明，不包含任何 mock 数据。
  */
-
-// ─── 扩展区块类型定义 ─────────────────────────────────────────────────────────
 
 export interface KeyPoint {
   icon: string; // lucide icon name
@@ -122,5 +120,5 @@ export interface ProductPageExtras {
   bundle_deals: BundleDeal[];
 }
 
-/** PDP 中非 UnifiedProduct 的 CMS / 营销区块；与下方组件 props 对齐，未来由 Strapi 等填充 */
+/** PDP 中非 UnifiedProduct 的 CMS / 营销区块；未来由 Strapi 填充 */
 export type ProductPageCms = ProductPageExtras;

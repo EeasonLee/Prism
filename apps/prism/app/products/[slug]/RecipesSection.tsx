@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Clock, Users } from 'lucide-react';
-import type { Recipe } from './mock-data';
+import type { Recipe } from './product-page-types';
 
 const DIFFICULTY_COLORS: Record<Recipe['difficulty'], string> = {
   Easy: 'bg-emerald-100 text-emerald-700',

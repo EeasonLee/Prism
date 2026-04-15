@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import type { DetailSection } from './mock-data';
+import type { DetailSection } from './product-page-types';
 
 interface RichDetailSectionsProps {
   sections: DetailSection[];

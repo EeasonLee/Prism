@@ -1,6 +1,5 @@
 'use client';
 
-import { Star } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ProductDetailClient,
@@ -28,8 +27,6 @@ interface ProductDetailContentProps {
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
-const PDP_PLACEHOLDER_VIDEO_URL =
-  'http://localhost:1337/uploads/beysdczkxtpzdff3o9xd_80c1a88765.webm';
 
 function FireworksIcon() {
   return (
@@ -62,7 +59,7 @@ function FireworksIcon() {
 
 function StarRating({
   percentage,
-  count: _count,
+  count,
   onNavigateToReviews,
   onWriteReview,
 }: {
@@ -71,85 +68,48 @@ function StarRating({
   onNavigateToReviews: () => void;
   onWriteReview: () => void;
 }) {
-  const previewRows = [
-    { label: '5', value: 46 },
-    { label: '4', value: 2 },
-    { label: '3', value: 0 },
-    { label: '2', value: 1 },
-    { label: '1', value: 0 },
-  ];
-  const previewMax = Math.max(...previewRows.map(row => row.value), 1);
+  const averageRating = Math.max(0, Math.min(5, percentage / 20));
+  const countText = count.toLocaleString();
 
   return (
-    <div className="relative flex items-center gap-3 leading-none">
-      <div className="group relative inline-flex items-center">
-        <button
-          type="button"
-          onClick={onNavigateToReviews}
-          className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          aria-label="Go to customer reviews"
-        >
-          <div className="relative flex gap-0.5" aria-hidden="true">
+    <div className="flex items-center gap-3 leading-none">
+      <button
+        type="button"
+        onClick={onNavigateToReviews}
+        className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        aria-label="Go to customer reviews"
+      >
+        <div className="relative flex gap-0.5" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, i) => (
+            <svg
+              key={i}
+              className="h-4 w-4 text-ink-muted/25"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d={STAR_PATH} />
+            </svg>
+          ))}
+          <div
+            className="absolute inset-0 flex gap-0.5 overflow-hidden"
+            style={{ width: `${percentage}%` }}
+          >
             {Array.from({ length: 5 }, (_, i) => (
               <svg
                 key={i}
-                className="h-4 w-4 text-ink-muted/25"
+                className="h-4 w-4 shrink-0 text-amber-400"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
                 <path d={STAR_PATH} />
               </svg>
             ))}
-            <div
-              className="absolute inset-0 flex gap-0.5 overflow-hidden"
-              style={{ width: `${percentage}%` }}
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <svg
-                  key={i}
-                  className="h-4 w-4 shrink-0 text-amber-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d={STAR_PATH} />
-                </svg>
-              ))}
-            </div>
           </div>
-
-          <span className="text-sm leading-none text-ink-muted">
-            4.6 (6788)
-          </span>
-        </button>
-
-        <div className="pointer-events-none invisible absolute left-0 top-[calc(100%+10px)] z-20 w-[270px] rounded-md border border-border bg-card p-4 opacity-0 shadow-[0_16px_30px_rgba(15,23,42,0.18)] transition duration-150 group-hover:visible group-hover:opacity-100">
-          <div className="space-y-2.5">
-            {previewRows.map(row => (
-              <div key={row.label} className="flex items-center gap-2">
-                <span className="w-3 text-sm text-ink">{row.label}</span>
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
-                  <div
-                    className="h-full rounded-full bg-amber-400"
-                    style={{ width: `${(row.value / previewMax) * 100}%` }}
-                  />
-                </div>
-                <span className="w-6 text-right text-sm text-ink">
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={onNavigateToReviews}
-            className="pointer-events-auto mt-3 text-sm font-semibold text-ink transition hover:text-brand"
-          >
-            Read 49 Reviews
-          </button>
         </div>
-      </div>
+        <span className="text-sm leading-none text-ink-muted">
+          {averageRating.toFixed(1)} ({countText})
+        </span>
+      </button>
 
       <button
         type="button"
@@ -369,9 +329,6 @@ export function ProductDetailContent({
         <ProductImageGallery
           images={displayProduct.images}
           productName={displayTitle}
-          featuredVideo={{
-            url: PDP_PLACEHOLDER_VIDEO_URL,
-          }}
         />
       </div>
 

@@ -5,7 +5,7 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '../../../lib/api/strapi/product-content';
-import type { ProductPageCms } from './mock-data';
+import type { ProductPageCms } from './product-page-types';
 
 /**
  * 商品详情页服务端组装结果。

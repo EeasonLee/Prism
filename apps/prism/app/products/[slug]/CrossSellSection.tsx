@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { Plus, Check, Tag } from 'lucide-react';
 import { formatPrice } from '@/lib/format-price';
-import type { CrossSellAddon, BundleDeal } from './mock-data';
+import type { CrossSellAddon, BundleDeal } from './product-page-types';
 
 // ─── 超值加购（Add-on accessories at discount） ───────────────────────────────
 

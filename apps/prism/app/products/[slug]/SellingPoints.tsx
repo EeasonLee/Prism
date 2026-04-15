@@ -9,7 +9,7 @@ import {
   Thermometer,
   type LucideIcon,
 } from 'lucide-react';
-import type { KeyPoint } from './mock-data';
+import type { KeyPoint } from './product-page-types';
 
 // 支持的 icon 名称映射
 const ICON_MAP: Record<string, LucideIcon> = {

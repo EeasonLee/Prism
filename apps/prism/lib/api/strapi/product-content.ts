@@ -3,7 +3,7 @@ import type { Recipe } from '../../../app/recipes/types';
 import type {
   BlogPost,
   ProductVideoCard,
-} from '../../../app/products/[slug]/mock-data';
+} from '../../../app/products/[slug]/product-page-types';
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '../cache-policy';
 import { apiClient } from '../client';
 import { getStrapiBaseUrl } from '../config';

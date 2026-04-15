@@ -25,7 +25,7 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '@/lib/api/strapi/product-content';
-import type { ProductPageCms } from '@/app/products/[slug]/mock-data';
+import type { ProductPageCms } from '@/app/products/[slug]/product-page-types';
 
 export interface ProductPriceInfo {
   regular: number;

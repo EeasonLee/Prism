@@ -1,4 +1,4 @@
-import type { ProductVideoCard } from './mock-data';
+import type { ProductVideoCard } from './product-page-types';
 import { ProductVideosCarousel } from './ProductVideosCarousel';
 
 interface ProductVideosSectionProps {
