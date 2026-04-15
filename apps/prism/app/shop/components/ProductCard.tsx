@@ -3,12 +3,13 @@
 import type { Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ShoppingCart } from 'lucide-react';
+import { useState } from 'react';
 import { formatPrice } from '@/lib/format-price';
 import { getCartItems } from '../../../lib/api/magento/cart';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 import { useCart } from '../../../lib/cart/context';
+import { QuickAddModal } from './QuickAddModal';
 
 interface ProductCardProps {
   product: ProductCardItem;
@@ -85,7 +86,7 @@ function StarRating({ percentage }: { percentage: number }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart();
+  const { addToCart, openCart } = useCart();
   const priceValue = product.price.value;
   const currencyCode = product.price.currency;
   const originalPrice = product.originalPrice;
@@ -99,54 +100,22 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [cartQty, setCartQty] = useState(0);
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [loadingVariants, setLoadingVariants] = useState(false);
-  const [variantError, setVariantError] = useState<string | null>(null);
-  const [variantData, setVariantData] = useState<{
-    options: Array<{
-      code: string;
-      label: string;
-      values: Array<{ label: string; value: string }>;
-    }>;
-    variants: Array<{
-      sku: string;
-      attributes: Record<string, string>;
-      inStock: boolean;
-      price: number;
-    }>;
-  } | null>(null);
-  const [selectedAttributes, setSelectedAttributes] = useState<
-    Record<string, string>
-  >({});
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [quickViewData, setQuickViewData] = useState<
+    Parameters<typeof QuickAddModal>[0]['variantData'] | null
+  >(null);
+  const [quickViewLoading, setQuickViewLoading] = useState(false);
+  const [quickViewError, setQuickViewError] = useState<string | null>(null);
 
   const imageUrl = product.image;
-
-  const allConfigOptionsSelected = useMemo(() => {
-    if (!variantData) return false;
-    return variantData.options.every(option =>
-      Boolean(selectedAttributes[option.code])
-    );
-  }, [selectedAttributes, variantData]);
-
-  const selectedVariant = useMemo(() => {
-    if (!variantData || !allConfigOptionsSelected) return null;
-    return (
-      variantData.variants.find(variant =>
-        variantData.options.every(
-          option =>
-            variant.attributes[option.code] === selectedAttributes[option.code]
-        )
-      ) ?? null
-    );
-  }, [allConfigOptionsSelected, selectedAttributes, variantData]);
 
   const refreshCardQtyFromCart = async () => {
     try {
       const items = await getCartItems();
-      if (typeKey === 'configurable' && variantData) {
+      if (typeKey === 'configurable' && quickViewData) {
         const variantSkuSet = new Set([
           product.sku,
-          ...variantData.variants.map(variant => variant.sku),
+          ...quickViewData.variants.map(variant => variant.sku),
         ]);
         const total = items.reduce((sum, item) => {
           if (!variantSkuSet.has(item.sku)) return sum;
@@ -172,6 +141,7 @@ export function ProductCard({ product }: ProductCardProps) {
     try {
       await addToCart({ sku: product.sku, qty: 1 });
       await refreshCardQtyFromCart();
+      openCart();
     } catch (error) {
       setAddError(
         error instanceof Error
@@ -184,9 +154,9 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const fetchConfigurableVariants = async () => {
-    if (variantData || loadingVariants) return;
-    setLoadingVariants(true);
-    setVariantError(null);
+    if (quickViewLoading) return;
+    setQuickViewLoading(true);
+    setQuickViewError(null);
     try {
       const response = await fetch(
         `/api/products/${encodeURIComponent(product.sku)}/variants`
@@ -195,9 +165,17 @@ export function ProductCard({ product }: ProductCardProps) {
         success: boolean;
         data?: {
           options: Array<{
+            attribute_id: number;
             code: string;
             label: string;
             values: Array<{ label: string; value: string }>;
+          }>;
+          customizable_options: Array<{
+            option_id: number;
+            title: string;
+            required: boolean;
+            type: string;
+            values?: Array<{ option_type_id: number; title: string }>;
           }>;
           variants: Array<{
             sku: string;
@@ -211,14 +189,14 @@ export function ProductCard({ product }: ProductCardProps) {
       if (!response.ok || !payload.success || !payload.data) {
         throw new Error(payload.error?.message ?? 'Failed to load variants.');
       }
-      setVariantData(payload.data);
+      setQuickViewData(payload.data);
       await refreshCardQtyFromCart();
     } catch (error) {
-      setVariantError(
+      setQuickViewError(
         error instanceof Error ? error.message : 'Failed to load variants.'
       );
     } finally {
-      setLoadingVariants(false);
+      setQuickViewLoading(false);
     }
   };
 
@@ -228,39 +206,14 @@ export function ProductCard({ product }: ProductCardProps) {
     if (isOutOfStock || isAdding) return;
 
     if (typeKey === 'configurable') {
-      setIsConfigModalOpen(true);
+      setIsQuickViewOpen(true);
       setAddError(null);
-      setVariantError(null);
+      setQuickViewError(null);
       await fetchConfigurableVariants();
       return;
     }
 
     await addSimpleProduct();
-  };
-
-  const handleConfigurableAdd = async () => {
-    if (!selectedVariant) return;
-    setAddError(null);
-    setIsAdding(true);
-    try {
-      await addToCart({
-        sku: selectedVariant.sku,
-        qty: 1,
-        productOptionsJson: JSON.stringify({
-          super_attribute: selectedAttributes,
-        }),
-      });
-      await refreshCardQtyFromCart();
-      setIsConfigModalOpen(false);
-    } catch (error) {
-      setAddError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to add item to cart. Please try again.'
-      );
-    } finally {
-      setIsAdding(false);
-    }
   };
 
   return (
@@ -402,155 +355,23 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
 
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-background p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-ink">
-                  Select options
-                </h3>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {product.displayName}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsConfigModalOpen(false)}
-                aria-label="Close options dialog"
-                className="rounded-md p-1 text-ink-muted transition hover:bg-surface hover:text-ink"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {loadingVariants && (
-              <p className="text-sm text-ink-muted">Loading options...</p>
-            )}
-            {variantError && (
-              <p className="text-sm text-red-500">{variantError}</p>
-            )}
-
-            {!loadingVariants && !variantError && variantData && (
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
-                  <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-surface">
-                    {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={product.displayName}
-                        fill
-                        unoptimized
-                        className="object-contain p-3"
-                        sizes="180px"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-ink-muted/30">
-                        <svg
-                          className="h-10 w-10"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 space-y-4">
-                    <div>
-                      <p className="line-clamp-2 text-sm text-ink-muted">
-                        {product.displayName}
-                      </p>
-                      <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-ink">
-                          {formatPrice(
-                            selectedVariant?.price ??
-                              priceValue ??
-                              originalPrice ??
-                              0,
-                            currencyCode
-                          )}
-                        </span>
-                        {selectedVariant == null &&
-                          hasDiscount &&
-                          originalPrice != null && (
-                            <span className="text-sm text-ink-muted line-through">
-                              {formatPrice(originalPrice, currencyCode)}
-                            </span>
-                          )}
-                      </div>
-                    </div>
-
-                    {variantData.options.map(option => (
-                      <div key={option.code}>
-                        <p className="mb-2 text-sm font-medium text-ink">
-                          {option.label}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {option.values.map(value => {
-                            const selected =
-                              selectedAttributes[option.code] === value.value;
-                            return (
-                              <button
-                                key={value.value}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedAttributes(prev => ({
-                                    ...prev,
-                                    [option.code]: value.value,
-                                  }))
-                                }
-                                className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                                  selected
-                                    ? 'border-brand bg-brand/10 text-brand'
-                                    : 'border-border text-ink hover:border-brand/40 hover:bg-surface'
-                                }`}
-                              >
-                                {value.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {allConfigOptionsSelected && !selectedVariant && (
-                  <p className="text-sm text-red-500">
-                    This combination is unavailable.
-                  </p>
-                )}
-
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsConfigModalOpen(false)}
-                    className="rounded-lg border border-border px-4 py-2 text-sm text-ink transition hover:bg-surface"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleConfigurableAdd()}
-                    disabled={!selectedVariant || isAdding}
-                    className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isAdding ? 'Adding...' : 'Add to Cart'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      {isQuickViewOpen && (
+        <QuickAddModal
+          product={product}
+          variantData={
+            quickViewData ?? {
+              options: [],
+              customizable_options: [],
+              variants: [],
+            }
+          }
+          error={quickViewError}
+          onClose={() => setIsQuickViewOpen(false)}
+          onAdded={async () => {
+            await refreshCardQtyFromCart();
+            openCart();
+          }}
+        />
       )}
     </>
   );

@@ -6,10 +6,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/format-price';
 import {
+  applyCoupon,
   formatCartLineTotal,
   formatCartMoney,
   getCartSnapshot,
   getCheckoutRedirectLink,
+  removeCoupon,
 } from '../../lib/api/magento/cart';
 import type { CartItem, CartTotals } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
@@ -36,6 +38,9 @@ export function CartDrawer() {
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const loadCartData = useCallback(
     async (opts?: { showSpinner?: boolean }) => {
@@ -156,6 +161,51 @@ export function CartDrawer() {
       setClearLoading(false);
     }
   }, [clearCart]);
+
+  const handleApplyCoupon = useCallback(async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    setServiceError(null);
+    try {
+      const snapshot = await applyCoupon(code);
+      setItems(snapshot.items ?? []);
+      setCartTotals(snapshot.totals);
+      setCouponCode('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setCouponError(
+        msg.includes('unavailable')
+          ? 'Service temporarily unavailable, please try again later.'
+          : msg ||
+              'Failed to apply coupon. Please check the code and try again.'
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  }, [couponCode]);
+
+  const handleRemoveCoupon = useCallback(async () => {
+    setCouponLoading(true);
+    setCouponError(null);
+    setServiceError(null);
+    try {
+      const snapshot = await removeCoupon();
+      setItems(snapshot.items ?? []);
+      setCartTotals(snapshot.totals);
+      setCouponCode('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setCouponError(
+        msg.includes('unavailable')
+          ? 'Service temporarily unavailable, please try again later.'
+          : msg || 'Failed to remove coupon. Please try again.'
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  }, []);
 
   const handleUpdateQty = useCallback(
     async (itemId: string, newQty: number) => {
@@ -330,6 +380,55 @@ export function CartDrawer() {
 
         {hasItems && (
           <div className="space-y-3 border-t border-border px-5 py-4">
+            {/* Coupon code */}
+            <div className="space-y-2">
+              {cartTotals?.coupon_code ? (
+                <div className="flex items-center justify-between rounded-lg bg-surface px-3 py-2">
+                  <span className="text-sm text-ink">
+                    Coupon:{' '}
+                    <span className="font-semibold">
+                      {cartTotals.coupon_code}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    disabled={couponLoading}
+                    className="text-sm text-red-500 transition hover:text-red-600 disabled:opacity-50"
+                  >
+                    {couponLoading ? 'Removing…' : 'Remove'}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        void handleApplyCoupon();
+                      }
+                    }}
+                    placeholder="Enter coupon code"
+                    className="min-h-touch flex-1 rounded-xl border border-border/70 bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand"
+                    disabled={couponLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleApplyCoupon()}
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {couponLoading ? '…' : 'Apply'}
+                  </button>
+                </div>
+              )}
+              {couponError && (
+                <p className="text-xs text-red-500">{couponError}</p>
+              )}
+            </div>
+
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Subtotal</span>
               <span className="font-semibold text-ink">

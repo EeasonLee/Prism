@@ -54,7 +54,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const prevAuthenticatedRef = useRef<boolean>(false);
 
   const syncCart = useCallback(async () => {
-    if (!hasSession) return;
     try {
       const items = await getCartItems();
       const total = Array.isArray(items)
@@ -65,7 +64,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // 购物车不存在或服务异常时，避免角标卡在旧值
       setItemCount(0);
     }
-  }, [hasSession]);
+  }, []);
 
   // session 变化时同步购物车
   useEffect(() => {
@@ -86,13 +85,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSession]);
 
-  // 登出后 hasSession 仍为 true（游客），仅靠 hasSession 不会触发上面的重置
+  // 登录/登出后 isAuthenticated 变化时同步购物车
   useEffect(() => {
     const wasAuthenticated = prevAuthenticatedRef.current;
     prevAuthenticatedRef.current = isAuthenticated;
 
     if (wasAuthenticated && !isAuthenticated && hasSession) {
+      // 登出：游客 session 仍在，重置角标并同步
       setItemCount(0);
+      void syncCart();
+    }
+
+    if (!wasAuthenticated && isAuthenticated && hasSession) {
+      // 登录成功：购物车合并后需要立即刷新角标
       void syncCart();
     }
   }, [hasSession, isAuthenticated, syncCart]);
@@ -124,7 +129,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {
-      if (!hasSession) throw new Error('No active session, please try again.');
+      if (!hasSession) {
+        try {
+          const res = await fetch('/api/v1/auth/guest', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (!res.ok) {
+            throw new Error('No active session, please try again.');
+          }
+        } catch {
+          throw new Error('No active session, please try again.');
+        }
+      }
       await addCartItem(params);
       await syncCart();
     },

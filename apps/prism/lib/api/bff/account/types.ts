@@ -20,6 +20,38 @@ export interface Order {
   createdAt: string;
 }
 
+export interface OrderItem {
+  id: number;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
+export interface OrderAddress {
+  firstname: string;
+  lastname: string;
+  street: string;
+  city: string;
+  region?: string;
+  postcode?: string;
+  country: string;
+  telephone?: string;
+}
+
+export interface OrderDetail extends Order {
+  items: OrderItem[];
+  billingAddress: OrderAddress;
+  shippingAddress: OrderAddress;
+  shippingMethod: string;
+  paymentMethod: string;
+  subtotal: number;
+  shippingAmount: number;
+  taxAmount: number;
+  discountAmount: number;
+}
+
 export interface Address {
   id: number;
   firstname: string;

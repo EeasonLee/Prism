@@ -17,6 +17,7 @@ interface GQLMediaGallery {
 }
 
 interface GQLConfigurableOption {
+  attribute_id: number;
   attribute_code: string;
   label: string;
   values: Array<{ value_index: number; label: string }>;
@@ -239,6 +240,7 @@ const PRODUCT_DETAIL_QUERY = `
         }
         ... on ConfigurableProduct {
           configurable_options {
+            attribute_id
             attribute_code
             label
             values { value_index label }
@@ -361,6 +363,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         }
         ... on ConfigurableProduct {
           configurable_options {
+            attribute_id
             attribute_code
             label
             values { value_index label }

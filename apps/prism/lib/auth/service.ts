@@ -245,8 +245,14 @@ export async function logout(request: Request): Promise<NextResponse> {
   }
 
   const guestResponse = await createGuestSession();
-  clearSessionCookies(guestResponse);
-
+  // 登出后清除旧的 cart_id，避免新 guest session 误用旧 cart
+  guestResponse.cookies.set('magento_cart_id', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
   return guestResponse;
 }
 

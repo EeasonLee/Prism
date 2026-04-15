@@ -86,9 +86,23 @@ interface MagentoProductDetail {
     url_path: string | null;
   }>;
   configurable_options: Array<{
+    attribute_id: number;
     attribute_code: string;
     label: string;
     values: Array<{ value_index: number; label: string }>;
+  }> | null;
+  options?: Array<{
+    option_id: number;
+    title: string;
+    required: boolean;
+    type?: string;
+    __typename?: string;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price?: number;
+      price_type?: string;
+    }>;
   }> | null;
   variants: Array<{
     product: {
@@ -182,9 +196,17 @@ export interface ProductVariant {
 
 export interface ProductVariantsResponse {
   options: Array<{
+    attribute_id: number;
     code: string;
     label: string;
     values: Array<{ label: string; value: string }>;
+  }>;
+  customizable_options: Array<{
+    option_id: number;
+    title: string;
+    required: boolean;
+    type: string;
+    values?: Array<{ option_type_id: number; title: string; price: number }>;
   }>;
   variants: ProductVariant[];
 }
@@ -193,6 +215,7 @@ export function mapProductVariants(
   raw: MagentoProductDetail
 ): ProductVariantsResponse {
   const options = (raw.configurable_options ?? []).map(opt => ({
+    attribute_id: Number(opt.attribute_id),
     code: opt.attribute_code,
     label: opt.label,
     values: opt.values.map(v => ({
@@ -201,10 +224,62 @@ export function mapProductVariants(
     })),
   }));
 
+  const customizable_options = (raw.options ?? []).map(opt => {
+    const derivedType =
+      opt.type ||
+      (opt.__typename
+        ? opt.__typename
+            .replace('Customizable', '')
+            .replace('Option', '')
+            .toLowerCase()
+            .replace('dropdown', 'drop_down')
+        : '');
+
+    const optRecord = opt as unknown as Record<string, unknown>;
+    const selectionValue =
+      optRecord.dropdownValue ??
+      optRecord.drop_down_value ??
+      optRecord.radioValue ??
+      optRecord.radio_value ??
+      optRecord.checkboxValue ??
+      optRecord.checkbox_value ??
+      optRecord.multipleValue ??
+      optRecord.multiple_value ??
+      null;
+
+    const values = Array.isArray(selectionValue)
+      ? (
+          selectionValue as Array<{
+            option_type_id: number;
+            title: string;
+            price?: number;
+          }>
+        ).map(v => ({
+          option_type_id: v.option_type_id,
+          title: v.title,
+          price: (v as { price?: number }).price ?? 0,
+        }))
+      : undefined;
+
+    return {
+      option_id: opt.option_id,
+      title: opt.title,
+      required: opt.required,
+      type: derivedType,
+      values,
+    };
+  });
+
   const variants = (raw.variants ?? []).map(v => {
     const attributes = v.attributes.reduce<Record<string, string>>(
       (acc, attr) => {
         acc[attr.code] = String(attr.value_index);
+        const matchingOption = raw.configurable_options?.find(
+          opt => opt.attribute_code === attr.code
+        );
+        if (matchingOption) {
+          acc[String(matchingOption.attribute_id)] = String(attr.value_index);
+        }
         return acc;
       },
       {}
@@ -221,5 +296,5 @@ export function mapProductVariants(
     };
   });
 
-  return { options, variants };
+  return { options, customizable_options, variants };
 }
