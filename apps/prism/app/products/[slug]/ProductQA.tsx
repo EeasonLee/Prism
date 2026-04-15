@@ -1,7 +1,7 @@
 'use client';
 
-import { FormEvent, useCallback, useMemo, useState } from 'react';
-import { LoaderCircle } from 'lucide-react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { LoaderCircle, Plus, X } from 'lucide-react';
 import { useAuth } from '../../../lib/auth/context';
 import { useAuthModal } from '../../../lib/auth-modal/context';
 import type {
@@ -48,6 +48,7 @@ export function ProductQA({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAskModalOpen, setIsAskModalOpen] = useState(false);
 
   const pagination = result.pagination;
   const { pageCount } = pagination;
@@ -160,26 +161,58 @@ export function ProductQA({
   };
 
   const items = result.items;
+  const answeredItems = useMemo(
+    () =>
+      items.filter(
+        item => item.answerText !== null && item.answerText.trim().length > 0
+      ),
+    [items]
+  );
+  const [expandedQuestionId, setExpandedQuestionId] = useState<number | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (answeredItems.length === 0) {
+      setExpandedQuestionId(null);
+      return;
+    }
+
+    const hasActiveQuestion = answeredItems.some(
+      item => item.id === expandedQuestionId
+    );
+    if (!hasActiveQuestion) {
+      setExpandedQuestionId(null);
+    }
+  }, [answeredItems, expandedQuestionId]);
 
   const listBody = useMemo(() => {
-    if (items.length === 0) {
+    if (answeredItems.length === 0) {
       return (
         <p className="body-text text-ink-muted">
-          There are no public questions for this product yet.
+          There are no public questions with published answers yet.
         </p>
       );
     }
 
     return (
-      <ul className="space-y-4">
-        {items.map(item => (
-          <li key={item.id}>
-            <QaCard item={item} />
+      <ul className="border-y border-border">
+        {answeredItems.map(item => (
+          <li key={item.id} className="border-b border-border last:border-b-0">
+            <QaAccordionItem
+              item={item}
+              isOpen={expandedQuestionId === item.id}
+              onToggle={() => {
+                setExpandedQuestionId(current =>
+                  current === item.id ? null : item.id
+                );
+              }}
+            />
           </li>
         ))}
       </ul>
     );
-  }, [items]);
+  }, [answeredItems, expandedQuestionId]);
 
   return (
     <section className="mt-10" aria-labelledby="product-qa-heading">
@@ -245,114 +278,151 @@ export function ProductQA({
         )}
 
         {allowSubmit && (
-          <div className="mt-10 rounded-[26px] border border-border bg-card p-5 sm:p-6">
-            <h3 className="text-base font-semibold text-ink">Ask a question</h3>
-            <p className="mt-1 text-sm text-ink-muted">
-              Ask about this product. We typically respond within a few business
-              days. Guests: enter your email only (not shown publicly); your
-              public label uses the part before @ in that address.
-            </p>
-            {!isAuthenticated && (
-              <p className="mt-2 text-sm text-ink-muted">
-                <button
-                  type="button"
-                  onClick={() => openLogin('signin')}
-                  className="font-medium text-brand underline-offset-2 hover:underline"
-                >
-                  Sign in
-                </button>{' '}
-                to use your account details automatically.
-              </p>
-            )}
-
-            <form
-              className="mt-4 space-y-4"
-              onSubmit={e => void handleSubmit(e)}
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsAskModalOpen(true)}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition hover:bg-brand/90"
             >
-              <div>
-                <label
-                  htmlFor="product-qa-question"
-                  className="mb-2 block text-sm font-medium text-ink"
-                >
-                  Your question
-                </label>
-                <textarea
-                  id="product-qa-question"
-                  value={questionText}
-                  onChange={e => setQuestionText(e.target.value)}
-                  rows={4}
-                  maxLength={500}
-                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
-                  placeholder="Ask something other customers may want to know…"
-                  aria-invalid={!!clientError}
-                  aria-describedby={
-                    clientError ? 'product-qa-client-error' : undefined
-                  }
-                />
-                <p className="mt-1 text-xs text-ink-muted">
-                  {questionText.trim().length} / 500 characters (minimum 10)
+              Ask a question
+            </button>
+          </div>
+        )}
+
+        {allowSubmit && isAskModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ask a question"
+            onClick={() => setIsAskModalOpen(false)}
+          >
+            <div
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-background shadow-2xl"
+              onClick={event => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setIsAskModalOpen(false)}
+                aria-label="Close ask a question form"
+                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="p-5 sm:p-6">
+                <h3 className="text-base font-semibold text-ink">
+                  Ask a question
+                </h3>
+                <p className="mt-1 text-sm text-ink-muted">
+                  Ask about this product. We typically respond within a few
+                  business days. Guests: enter your email only (not shown
+                  publicly); your public label uses the part before @ in that
+                  address.
                 </p>
-                {clientError && (
-                  <p
-                    id="product-qa-client-error"
-                    role="alert"
-                    className="mt-2 text-sm text-destructive"
-                  >
-                    {clientError}
+                {!isAuthenticated && (
+                  <p className="mt-2 text-sm text-ink-muted">
+                    <button
+                      type="button"
+                      onClick={() => openLogin('signin')}
+                      className="font-medium text-brand underline-offset-2 hover:underline"
+                    >
+                      Sign in
+                    </button>{' '}
+                    to use your account details automatically.
                   </p>
                 )}
-              </div>
 
-              {!isAuthenticated && (
-                <div>
-                  <label
-                    htmlFor="product-qa-guest-email"
-                    className="mb-2 block text-sm font-medium text-ink"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="product-qa-guest-email"
-                    type="email"
-                    autoComplete="email"
-                    maxLength={254}
-                    value={guestEmail}
-                    onChange={e => setGuestEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
-                  />
-                </div>
-              )}
-
-              {submitError && (
-                <p role="alert" className="text-sm text-destructive">
-                  {submitError}
-                </p>
-              )}
-              {successMessage && (
-                <p role="status" className="text-sm text-brand">
-                  {successMessage}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <>
-                    <LoaderCircle
-                      className="mr-2 h-4 w-4 animate-spin"
-                      aria-hidden
+                <form
+                  className="mt-4 space-y-4"
+                  onSubmit={e => void handleSubmit(e)}
+                >
+                  <div>
+                    <label
+                      htmlFor="product-qa-question"
+                      className="mb-2 block text-sm font-medium text-ink"
+                    >
+                      Your question
+                    </label>
+                    <textarea
+                      id="product-qa-question"
+                      value={questionText}
+                      onChange={e => setQuestionText(e.target.value)}
+                      rows={4}
+                      maxLength={500}
+                      className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
+                      placeholder="Ask something other customers may want to know…"
+                      aria-invalid={!!clientError}
+                      aria-describedby={
+                        clientError ? 'product-qa-client-error' : undefined
+                      }
                     />
-                    Submitting…
-                  </>
-                ) : (
-                  'Submit question'
-                )}
-              </button>
-            </form>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {questionText.trim().length} / 500 characters (minimum 10)
+                    </p>
+                    {clientError && (
+                      <p
+                        id="product-qa-client-error"
+                        role="alert"
+                        className="mt-2 text-sm text-destructive"
+                      >
+                        {clientError}
+                      </p>
+                    )}
+                  </div>
+
+                  {!isAuthenticated && (
+                    <div>
+                      <label
+                        htmlFor="product-qa-guest-email"
+                        className="mb-2 block text-sm font-medium text-ink"
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="product-qa-guest-email"
+                        type="email"
+                        autoComplete="email"
+                        maxLength={254}
+                        value={guestEmail}
+                        onChange={e => setGuestEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
+                      />
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {submitError}
+                    </p>
+                  )}
+                  {successMessage && (
+                    <p role="status" className="text-sm text-brand">
+                      {successMessage}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <LoaderCircle
+                          className="mr-2 h-4 w-4 animate-spin"
+                          aria-hidden
+                        />
+                        Submitting…
+                      </>
+                    ) : (
+                      'Submit question'
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -360,54 +430,36 @@ export function ProductQA({
   );
 }
 
-function QaCard({ item }: { item: ProductQuestion }) {
-  const hasAnswer =
-    item.answerText !== null && item.answerText.trim().length > 0;
-  const isPublishedUserQa =
-    item.kind === 'user_qa' &&
-    hasAnswer &&
-    (item.status === 'answered' || item.status === 'published');
-  const isFaq = item.kind === 'faq';
-  const isAnswered = isFaq || isPublishedUserQa;
-
-  const kindLabel = item.kind === 'faq' ? 'Official FAQ' : 'Customer Q&A';
-
+function QaAccordionItem({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: ProductQuestion;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <article className="rounded-[26px] border border-border bg-card p-5 sm:p-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${
-            isAnswered
-              ? 'bg-brand/10 text-brand'
-              : 'bg-surface-muted text-ink-muted'
-          }`}
-        >
-          {isAnswered ? 'Answered' : 'Open question'}
-        </span>
-        <span className="text-xs text-ink-muted">{kindLabel}</span>
-      </div>
-
-      <h3 className="mt-3 text-base font-semibold text-ink">
-        {item.questionText}
-      </h3>
-      <p className="mt-1 text-xs text-ink-muted">
-        {item.kind === 'faq' ? 'Official' : item.authorName}
-        {item.createdAt && (
-          <>
-            {' '}
-            ·{' '}
-            {new Date(item.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })}
-          </>
+    <article className="bg-background">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex w-full items-center justify-between gap-4 py-5 text-left"
+      >
+        <h3 className="text-[clamp(0.95rem,1.4vw,1.45rem)] font-semibold uppercase tracking-wide text-ink">
+          {item.questionText}
+        </h3>
+        {isOpen ? (
+          <X className="h-5 w-5 shrink-0 text-ink" aria-hidden />
+        ) : (
+          <Plus className="h-5 w-5 shrink-0 text-ink" aria-hidden />
         )}
-      </p>
+      </button>
 
-      {isAnswered && item.answerText && (
+      {isOpen && item.answerText && (
         <div
-          className="prose prose-sm mt-4 max-w-none border-t border-border pt-4 text-ink-muted [&_p]:my-1"
+          className="prose prose-sm max-w-none pb-5 text-ink-muted [&_p]:my-1"
           dangerouslySetInnerHTML={{ __html: item.answerText }}
         />
       )}

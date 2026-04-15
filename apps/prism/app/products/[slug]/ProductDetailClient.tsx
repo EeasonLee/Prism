@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Calendar, ShieldCheck, Truck } from 'lucide-react';
 import type {
   MagentoConfigurableOption,
   MagentoMediaGalleryItem,
@@ -49,6 +50,47 @@ interface ProductDetailClientProps {
 const EMPTY_CUSTOMIZABLE_OPTIONS: MagentoCustomizableOption[] = [];
 const EMPTY_CONFIGURABLE_OPTIONS: MagentoConfigurableOption[] = [];
 const EMPTY_CHILDREN = [] as NonNullable<MagentoProduct['children']>;
+const PURCHASE_BENEFITS = [
+  {
+    label: '1-Year Limited Warranty',
+    href: 'https://www.joydeem.com/warrant',
+    icon: ShieldCheck,
+  },
+  {
+    label: 'Free Shipping',
+    href: 'https://www.joydeem.com/shipping-policy',
+    icon: Truck,
+  },
+  {
+    label: '30-Day Risk-Free Returns',
+    href: 'https://www.joydeem.com/return-policy',
+    icon: Calendar,
+  },
+] as const;
+
+function PurchaseBenefitsBar() {
+  return (
+    <div className="grid grid-cols-3 divide-x divide-border rounded-md bg-surface-muted">
+      {PURCHASE_BENEFITS.map(item => {
+        const Icon = item.icon;
+        return (
+          <a
+            key={item.href}
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-20 flex-col items-center justify-center gap-2 px-2 py-3 text-center transition hover:bg-surface"
+          >
+            <Icon className="h-4 w-4 text-ink" />
+            <span className="text-xs font-medium leading-5 text-ink">
+              {item.label}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 function calculateCustomOptionPriceDelta(
   options: MagentoCustomizableOption[],
@@ -487,6 +529,7 @@ function SimpleOptions({
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
     </div>
   );
 }
@@ -778,6 +821,7 @@ function ConfigurableOptions({
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
     </div>
   );
 }
@@ -845,6 +889,7 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
         disabled={!hasAny}
         disabledLabel="Select at least one item"
       />
+      <PurchaseBenefitsBar />
     </div>
   );
 }
@@ -1055,6 +1100,7 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
     </div>
   );
 }
@@ -1187,6 +1233,7 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
     </div>
   );
 }

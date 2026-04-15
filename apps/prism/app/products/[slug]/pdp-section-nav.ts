@@ -1,6 +1,7 @@
 import type { UnifiedProduct } from '../../../lib/api/unified-product';
 import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
 import type { ProductPageCms } from './product-page-types';
+import { PDP_FEATURES } from './pdp-features';
 
 export type ProductDetailCms = Partial<ProductPageCms>;
 
@@ -49,7 +50,7 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-recipes', label: 'Recipes' });
   }
 
-  if ((cms?.blog_posts?.length ?? 0) > 0) {
+  if (PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0) {
     sections.push({ id: 'section-blog', label: 'Blog' });
   }
 

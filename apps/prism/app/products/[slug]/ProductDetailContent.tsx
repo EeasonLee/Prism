@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ProductDetailClient,
   type ProductDetailSelection,
@@ -132,11 +132,45 @@ export function ProductDetailContent({
   onWriteReview,
   shareTarget,
 }: ProductDetailContentProps) {
+  const PRODUCT_DETAILS_COLLAPSED_HEIGHT = 240;
   const [showCouponToast, setShowCouponToast] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [canExpandDetails, setCanExpandDetails] = useState(false);
+  const productDetailsRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     setNowMs(Date.now());
   }, []);
+
+  useEffect(() => {
+    const detailsElement = productDetailsRef.current;
+    if (!detailsElement) {
+      setCanExpandDetails(false);
+      return;
+    }
+
+    const updateExpandableState = () => {
+      const fullHeight = detailsElement.scrollHeight;
+      setCanExpandDetails(fullHeight > PRODUCT_DETAILS_COLLAPSED_HEIGHT);
+    };
+
+    updateExpandableState();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateExpandableState();
+    });
+    resizeObserver.observe(detailsElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [product.product_detail_html, PRODUCT_DETAILS_COLLAPSED_HEIGHT]);
+
+  useEffect(() => {
+    if (!canExpandDetails && isDetailsExpanded) {
+      setIsDetailsExpanded(false);
+    }
+  }, [canExpandDetails, isDetailsExpanded]);
 
   const debugCoupon =
     typeof window !== 'undefined' &&
@@ -325,11 +359,62 @@ export function ProductDetailContent({
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-      <div className="lg:sticky lg:top-[89px]">
+      <div>
         <ProductImageGallery
           images={displayProduct.images}
           productName={displayTitle}
         />
+
+        {product.product_detail_html && (
+          <section id="section-details" className="mt-6 lg:mt-8">
+            <h2 className="mb-3 text-lg font-semibold text-ink">
+              Product details
+            </h2>
+
+            <div className="relative">
+              <div
+                id="product-details-content"
+                ref={productDetailsRef}
+                className={`prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4 [&_strong]:font-semibold transition-[max-height] duration-300 ${
+                  !isDetailsExpanded && canExpandDetails
+                    ? 'max-h-[240px] overflow-hidden'
+                    : ''
+                }`}
+                dangerouslySetInnerHTML={{
+                  __html: product.product_detail_html,
+                }}
+              />
+
+              {!isDetailsExpanded && canExpandDetails && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-background via-background/20 to-transparent pb-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailsExpanded(true)}
+                    className="pointer-events-auto inline-flex items-center justify-center rounded-full border border-border bg-background/95 px-4 py-2 text-sm font-medium text-ink shadow-sm backdrop-blur-sm transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    aria-expanded={false}
+                    aria-controls="product-details-content"
+                  >
+                    Show more
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {canExpandDetails && isDetailsExpanded && (
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setIsDetailsExpanded(prev => !prev)}
+                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  aria-expanded={isDetailsExpanded}
+                  aria-controls="product-details-content"
+                >
+                  Show less
+                </button>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <div className="flex flex-col gap-0">
@@ -508,26 +593,26 @@ export function ProductDetailContent({
           </div>
         )}
 
+        <ProductDetailClient
+          product={product}
+          onSelectionChange={onSelectionChange}
+        />
+
         {product.short_description_html ? (
           <div
-            className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{
               __html: product.short_description_html,
             }}
           />
         ) : product.short_description ? (
           <div
-            className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{
               __html: product.short_description,
             }}
           />
         ) : null}
-
-        <ProductDetailClient
-          product={product}
-          onSelectionChange={onSelectionChange}
-        />
       </div>
     </div>
   );

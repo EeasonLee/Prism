@@ -22,6 +22,7 @@ import { ProductSpecifications } from './ProductSpecifications';
 import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
+import { PDP_FEATURES } from './pdp-features';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -316,7 +317,7 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       )}
 
-      {(cms?.blog_posts?.length ?? 0) > 0 && (
+      {PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <div className="border-t border-border" />
           <BlogSection posts={cms?.blog_posts ?? []} />
