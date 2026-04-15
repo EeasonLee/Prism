@@ -20,7 +20,6 @@ import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
 import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
-import { MOCK_PRODUCT_SKU, mockProduct, mockProductExtras } from './mock-data';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 
@@ -119,17 +118,7 @@ async function DeferredUpsellProductsSection({
   return <UpsellProductsSection initialProducts={upsellProducts} />;
 }
 
-export async function generateMetadata({ params }: Props) {
-  const { slug } = await params;
-  const decodedSku = decodeURIComponent(slug);
-
-  if (decodedSku === MOCK_PRODUCT_SKU) {
-    return {
-      title: `${mockProduct.seo_title} - Joydeem`,
-      description: mockProduct.seo_description,
-    };
-  }
-
+export async function generateMetadata() {
   return {
     title: 'Product - Joydeem',
     description: 'Product details',
@@ -140,7 +129,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
   const decodedSku = decodeURIComponent(slug);
 
-  let data: ProductDetailPageData;
   let reviewSummary: ProductReviewSummary | null = null;
   let reviewList: ProductReviewListResult = {
     items: [],
@@ -167,37 +155,32 @@ export default async function ProductDetailPage({ params }: Props) {
   let deferredRelated: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
   let deferredUpsell: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
 
-  if (decodedSku === MOCK_PRODUCT_SKU) {
-    data = { product: mockProduct, cms: mockProductExtras };
-  } else {
-    const aggregate = await getProductDetailAggregate(decodedSku).catch(
-      () => null
-    );
+  const aggregate = await getProductDetailAggregate(decodedSku).catch(
+    () => null
+  );
 
-    if (!aggregate) notFound();
+  if (!aggregate) notFound();
 
-    const fetchedProduct = aggregate.core.product;
+  const fetchedProduct = aggregate.core.product;
 
-    const [fetchedReviewsData, fetchedProductQa, fetchedCms] =
-      await Promise.all([
-        aggregate.deferred.reviews,
-        aggregate.deferred.productQa,
-        aggregate.deferred.cms,
-      ]);
+  const [fetchedReviewsData, fetchedProductQa, fetchedCms] = await Promise.all([
+    aggregate.deferred.reviews,
+    aggregate.deferred.productQa,
+    aggregate.deferred.cms,
+  ]);
 
-    data = {
-      product: fetchedProduct,
-      cms: fetchedCms,
-    };
-    reviewSummary = fetchedReviewsData.summary;
-    reviewList = {
-      items: fetchedReviewsData.items,
-      pagination: fetchedReviewsData.pagination,
-    };
-    initialProductQa = fetchedProductQa;
-    deferredRelated = aggregate.deferred.related;
-    deferredUpsell = aggregate.deferred.upsell;
-  }
+  const data: ProductDetailPageData = {
+    product: fetchedProduct,
+    cms: fetchedCms,
+  };
+  reviewSummary = fetchedReviewsData.summary;
+  reviewList = {
+    items: fetchedReviewsData.items,
+    pagination: fetchedReviewsData.pagination,
+  };
+  initialProductQa = fetchedProductQa;
+  deferredRelated = aggregate.deferred.related;
+  deferredUpsell = aggregate.deferred.upsell;
 
   const { product, cms } = data;
   const reviewSku = product.sku;
@@ -261,36 +244,16 @@ export default async function ProductDetailPage({ params }: Props) {
         ratingPercentage={ratingPercentage}
         ratingCount={ratingCount}
         reviewSku={reviewSku}
-        summary={
-          decodedSku === MOCK_PRODUCT_SKU
-            ? undefined
-            : reviewSummary ?? emptyReviewSummary(reviewSku)
-        }
-        initialReviews={
-          decodedSku === MOCK_PRODUCT_SKU ? undefined : reviewList.items
-        }
-        initialPagination={
-          decodedSku === MOCK_PRODUCT_SKU ? undefined : reviewList.pagination
-        }
-        mockSummary={
-          decodedSku === MOCK_PRODUCT_SKU
-            ? mockProductExtras.review_summary
-            : undefined
-        }
-        mockReviews={
-          decodedSku === MOCK_PRODUCT_SKU
-            ? mockProductExtras.reviews
-            : undefined
-        }
-        allowSubmit={decodedSku !== MOCK_PRODUCT_SKU}
+        summary={reviewSummary ?? emptyReviewSummary(reviewSku)}
+        initialReviews={reviewList.items}
+        initialPagination={reviewList.pagination}
+        allowSubmit
         initialProductQa={initialProductQa}
       />
 
-      {decodedSku !== MOCK_PRODUCT_SKU && (
-        <Suspense fallback={null}>
-          <DeferredRelatedProductsSection promise={deferredRelated} />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <DeferredRelatedProductsSection promise={deferredRelated} />
+      </Suspense>
 
       {sectionNavItems.length > 0 && (
         <ProductSectionNav sections={sectionNavItems} />
@@ -360,11 +323,9 @@ export default async function ProductDetailPage({ params }: Props) {
         </div>
       )}
 
-      {decodedSku !== MOCK_PRODUCT_SKU && (
-        <Suspense fallback={null}>
-          <DeferredUpsellProductsSection promise={deferredUpsell} />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <DeferredUpsellProductsSection promise={deferredUpsell} />
+      </Suspense>
     </PageContainer>
   );
 }

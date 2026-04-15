@@ -23,7 +23,6 @@ import { Pagination } from '../../recipes/components/Pagination';
 import { getReviewVisitorKey } from './review-visitor-key';
 import { ReviewForm } from './ReviewForm';
 import { ReviewImagePreview } from './ReviewImagePreview';
-import type { ProductPageExtras, Review as MockReview } from './mock-data';
 
 interface SummaryDistribution {
   '1': number;
@@ -69,8 +68,6 @@ interface ProductReviewsProps {
   summary?: ProductReviewSummary;
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
-  mockSummary?: ProductPageExtras['review_summary'];
-  mockReviews?: MockReview[];
   allowSubmit?: boolean;
   isReviewFormOpen?: boolean;
   onReviewFormOpenChange?: (open: boolean) => void;
@@ -182,51 +179,6 @@ function mergeSummaryDistribution(
     '2': Number(distribution?.['2'] ?? 0) + Number(distribution?.['2.5'] ?? 0),
     '1': Number(distribution?.['1'] ?? 0) + Number(distribution?.['1.5'] ?? 0),
   };
-}
-
-function normalizeMockSummary(
-  summary: ProductPageExtras['review_summary']
-): ProductReviewSummary {
-  return {
-    sku: 'mock',
-    average: summary.average,
-    total: summary.total,
-    distribution: {
-      '1': Number(summary.distribution[1] ?? 0),
-      '1.5': 0,
-      '2': Number(summary.distribution[2] ?? 0),
-      '2.5': 0,
-      '3': Number(summary.distribution[3] ?? 0),
-      '3.5': 0,
-      '4': Number(summary.distribution[4] ?? 0),
-      '4.5': 0,
-      '5': Number(summary.distribution[5] ?? 0),
-    },
-  };
-}
-
-function normalizeMockReviews(reviews: MockReview[]): ProductReview[] {
-  return reviews.map(review => ({
-    id: review.id,
-    documentId: String(review.id),
-    sku: 'mock',
-    productSku: 'mock',
-    purchasedSku: 'mock',
-    purchasedVariantLabel: null,
-    authorName: review.author,
-    rating: review.rating,
-    title: review.title,
-    content: review.content,
-    media: [],
-    reviewTags: [],
-    dimensionRatings: [],
-    verified: review.verified,
-    helpfulCount: review.helpful,
-    viewerHasMarkedHelpful: false,
-    status: 'approved',
-    createdAt: review.date,
-    updatedAt: review.date,
-  }));
 }
 
 function ReviewMediaStrip({ review }: { review: ProductReview }) {
@@ -412,20 +364,36 @@ function ReviewCard({
       </p>
 
       {reviewDimensionRatings.length > 0 && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {reviewDimensionRatings.map(item => (
-            <div
-              key={item.slug}
-              className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2"
-            >
-              <span className="text-xs font-medium text-ink-muted">
-                {item.name}
-              </span>
-              <span className="text-xs font-semibold text-ink">
-                {item.score} / 5
-              </span>
-            </div>
-          ))}
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+            Attribute ratings
+          </p>
+          <div className="space-y-3">
+            {reviewDimensionRatings.map(item => (
+              <div key={item.slug}>
+                <div className="mb-1 flex items-center justify-between gap-3">
+                  <span className="text-sm text-ink-muted">{item.name}</span>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">
+                    {item.score.toFixed(1)}
+                  </span>
+                </div>
+                <div
+                  className="relative h-1.5 overflow-hidden rounded-full bg-surface-muted"
+                  aria-hidden="true"
+                >
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-brand"
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(100, (item.score / 5) * 100)
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -472,13 +440,10 @@ export function ProductReviews({
   summary,
   initialReviews,
   initialPagination,
-  mockSummary,
-  mockReviews,
   allowSubmit = true,
   isReviewFormOpen,
   onReviewFormOpenChange,
 }: ProductReviewsProps) {
-  const isMock = !!mockSummary && !!mockReviews;
   const [visitorKey, setVisitorKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -488,26 +453,14 @@ export function ProductReviews({
   const fallbackPagination = useMemo<ProductReviewPagination>(
     () => ({
       page: 1,
-      pageSize: isMock ? Math.max(mockReviews?.length ?? 0, 1) : 10,
-      pageCount: isMock && mockReviews ? 1 : 0,
-      total: isMock && mockReviews ? mockReviews.length : 0,
+      pageSize: 10,
+      pageCount: 0,
+      total: 0,
     }),
-    [isMock, mockReviews]
+    []
   );
-
-  const normalizedMockSummary = useMemo(
-    () => (mockSummary ? normalizeMockSummary(mockSummary) : undefined),
-    [mockSummary]
-  );
-  const normalizedMockReviews = useMemo(
-    () => (mockReviews ? normalizeMockReviews(mockReviews) : undefined),
-    [mockReviews]
-  );
-
-  const effectiveSummary = summary ?? normalizedMockSummary;
-  const [reviews, setReviews] = useState<ProductReview[]>(
-    initialReviews ?? normalizedMockReviews ?? []
-  );
+  const effectiveSummary = summary;
+  const [reviews, setReviews] = useState<ProductReview[]>(initialReviews ?? []);
   const [pagination, setPagination] = useState<ProductReviewPagination>(
     initialPagination ?? fallbackPagination
   );
@@ -553,7 +506,6 @@ export function ProductReviews({
 
   const loadPage = useCallback(
     async (page: number, nextSort = sort, nextFilters = reviewFilters) => {
-      if (isMock) return;
       setIsLoading(true);
       setLoadError(null);
       try {
@@ -602,17 +554,15 @@ export function ProductReviews({
         setIsLoading(false);
       }
     },
-    [isMock, pagination.pageSize, sku, sort, visitorKey, reviewFilters]
+    [pagination.pageSize, sku, sort, visitorKey, reviewFilters]
   );
 
   useEffect(() => {
-    if (isMock) return;
     void loadPage(1, sort, reviewFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sku, isMock]);
+  }, [sku]);
 
   useEffect(() => {
-    if (isMock) return;
     const loadAuxData = async () => {
       try {
         const [tagResponse, mediaResponse, dimensionResponse] =
@@ -658,11 +608,11 @@ export function ProductReviews({
     };
 
     void loadAuxData();
-  }, [isMock, sku]);
+  }, [sku]);
 
   const handleHelpful = useCallback(
     async (review: ProductReview) => {
-      if (!review.documentId || !visitorKey || isMock) {
+      if (!review.documentId || !visitorKey) {
         return;
       }
 
@@ -712,7 +662,7 @@ export function ProductReviews({
         setHelpfulPendingId(null);
       }
     },
-    [isMock, visitorKey]
+    [visitorKey]
   );
 
   const totalReviews =
@@ -842,56 +792,53 @@ export function ProductReviews({
                 All approved reviews for this product, including every variant.
               </p>
             </div>
-            {!isMock && (
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 text-sm text-ink-muted">
-                  <span>Rating</span>
-                  <select
-                    value={ratingFilter}
-                    onChange={event => {
-                      const nextRating = event.target
-                        .value as (typeof RATING_FILTER_OPTIONS)[number]['value'];
-                      setRatingFilter(nextRating);
-                      const nextFilters = {
-                        ratings:
-                          nextRating === 'all' ? [] : [Number(nextRating)],
-                        tagSlugs: selectedTagSlugs,
-                      };
-                      void loadPage(1, sort, nextFilters);
-                    }}
-                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
-                  >
-                    {RATING_FILTER_OPTIONS.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-ink-muted">
-                  <span>Sort by</span>
-                  <select
-                    value={sort}
-                    onChange={event => {
-                      const nextSort = event.target
-                        .value as (typeof SORT_OPTIONS)[number]['value'];
-                      setSort(nextSort);
-                      void loadPage(1, nextSort, reviewFilters);
-                    }}
-                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
-                  >
-                    {SORT_OPTIONS.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-ink-muted">
+                <span>Rating</span>
+                <select
+                  value={ratingFilter}
+                  onChange={event => {
+                    const nextRating = event.target
+                      .value as (typeof RATING_FILTER_OPTIONS)[number]['value'];
+                    setRatingFilter(nextRating);
+                    const nextFilters = {
+                      ratings: nextRating === 'all' ? [] : [Number(nextRating)],
+                      tagSlugs: selectedTagSlugs,
+                    };
+                    void loadPage(1, sort, nextFilters);
+                  }}
+                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                >
+                  {RATING_FILTER_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-ink-muted">
+                <span>Sort by</span>
+                <select
+                  value={sort}
+                  onChange={event => {
+                    const nextSort = event.target
+                      .value as (typeof SORT_OPTIONS)[number]['value'];
+                    setSort(nextSort);
+                    void loadPage(1, nextSort, reviewFilters);
+                  }}
+                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                >
+                  {SORT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
 
-          {!isMock && availableTags.length > 0 && (
+          {availableTags.length > 0 && (
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="text-sm text-ink-muted">Tags:</span>
               {availableTags.map(tag => {
@@ -943,7 +890,7 @@ export function ProductReviews({
                   />
                 ))}
               </div>
-              {!isMock && pagination.pageCount > 1 && (
+              {pagination.pageCount > 1 && (
                 <div className="mt-6">
                   <p className="mb-3 text-sm text-ink-muted">
                     Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}

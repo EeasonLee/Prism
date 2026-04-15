@@ -435,9 +435,9 @@ export function ProductDetailContent({
         </div>
 
         {/* 主价格区：仅展示未使用 cp_code / cp_price 的售价（特价 vs 原价）；券后价只在下方优惠券横幅展示 */}
-        <div className="mb-4 flex items-baseline gap-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           {displayProduct.specialPrice != null && (
-            <span className="text-2xl font-bold text-ink">
+            <span className="text-2xl font-bold leading-none text-ink">
               {formatPrice(displayProduct.specialPrice)}
             </span>
           )}
@@ -445,15 +445,15 @@ export function ProductDetailContent({
             <span
               className={
                 hasDiscount
-                  ? 'text-base text-ink-muted line-through'
-                  : 'text-2xl font-bold text-ink'
+                  ? 'text-base leading-none text-ink-muted line-through'
+                  : 'text-2xl font-bold leading-none text-ink'
               }
             >
               {formatPrice(displayProduct.price)}
             </span>
           )}
           {hasDiscount && (
-            <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
+            <span className="inline-flex items-center rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold leading-none text-brand">
               Save{' '}
               {formatPrice(
                 displayProduct.price - (displayProduct.specialPrice ?? 0)

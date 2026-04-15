@@ -19,7 +19,6 @@ import type {
   UnifiedProduct,
   UnifiedProductImage,
 } from '../../../lib/api/unified-product';
-import type { ProductPageExtras, Review as MockReview } from './mock-data';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -30,8 +29,6 @@ interface ProductDetailReviewShellProps {
   summary?: ProductReviewSummary;
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
-  mockSummary?: ProductPageExtras['review_summary'];
-  mockReviews?: MockReview[];
   allowSubmit?: boolean;
   initialProductQa: ProductQaListResult;
 }
@@ -90,8 +87,6 @@ export function ProductDetailReviewShell({
   summary,
   initialReviews,
   initialPagination,
-  mockSummary,
-  mockReviews,
   allowSubmit = true,
   initialProductQa,
 }: ProductDetailReviewShellProps) {
@@ -160,8 +155,6 @@ export function ProductDetailReviewShell({
           summary={summary}
           initialReviews={initialReviews}
           initialPagination={initialPagination}
-          mockSummary={mockSummary}
-          mockReviews={mockReviews}
           allowSubmit={allowSubmit}
           isReviewFormOpen={isReviewFormOpen}
           onReviewFormOpenChange={setIsReviewFormOpen}

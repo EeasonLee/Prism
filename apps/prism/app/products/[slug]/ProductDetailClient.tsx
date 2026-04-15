@@ -46,6 +46,10 @@ interface ProductDetailClientProps {
   onSelectionChange?: (selection: ProductDetailSelection) => void;
 }
 
+const EMPTY_CUSTOMIZABLE_OPTIONS: MagentoCustomizableOption[] = [];
+const EMPTY_CONFIGURABLE_OPTIONS: MagentoConfigurableOption[] = [];
+const EMPTY_CHILDREN = [] as NonNullable<MagentoProduct['children']>;
+
 function calculateCustomOptionPriceDelta(
   options: MagentoCustomizableOption[],
   selections: Record<string, string | string[]>,
@@ -424,7 +428,7 @@ function SimpleOptions({
     Record<string, string | string[]>
   >({});
 
-  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const customOptions = product.options ?? EMPTY_CUSTOMIZABLE_OPTIONS;
   const customOptionPriceDelta = useMemo(
     () =>
       calculateCustomOptionPriceDelta(
@@ -498,12 +502,12 @@ function ConfigurableOptions({
 }) {
   const searchParams = useSearchParams();
 
-  const configurableOptions: MagentoConfigurableOption[] =
+  const configurableOptions =
     product.configurable_options ??
     product.extension_attributes?.configurable_product_options ??
-    [];
+    EMPTY_CONFIGURABLE_OPTIONS;
 
-  const children = product.children ?? [];
+  const children = product.children ?? EMPTY_CHILDREN;
   const variantSku = searchParams?.get('variant') ?? null;
 
   const [selectedAttributes, setSelectedAttributes] = useState<
@@ -663,7 +667,7 @@ function ConfigurableOptions({
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [allSelected, selectedAttributes, variantSku, findChildSku]);
 
-  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const customOptions = product.options ?? EMPTY_CUSTOMIZABLE_OPTIONS;
   const [customSelections, setCustomSelections] = useState<
     Record<string, string | string[]>
   >({});
@@ -705,7 +709,7 @@ function ConfigurableOptions({
   useEffect(() => {
     onSelectionChange?.({
       selectedVariant: selectedChild,
-      allSelected: allSelected && allCustomRequiredSelected,
+      allSelected,
       customOptionPriceDelta,
     });
   }, [

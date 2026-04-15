@@ -105,6 +105,23 @@ describe('mergeProduct specifications', () => {
     );
     expect(result.product_detail_html).toBe(result.description_html);
   });
+
+  it('decodes serialized html descriptions before rendering', () => {
+    const product: MagentoProduct = {
+      ...baseProduct,
+      short_description:
+        '"<p class=\\"intro\\">Fast heat<\\/p><ul><li>Crisp finish<\\/li><\\/ul>"',
+      description: '&lt;p&gt;Deep clean&lt;/p&gt;',
+    };
+
+    const result = mergeProduct(product);
+
+    expect(result.short_description_html).toBe(
+      '<p class="intro">Fast heat</p><ul><li>Crisp finish</li></ul>'
+    );
+    expect(result.description_html).toBe('<p>Deep clean</p>');
+    expect(result.product_detail_html).toBe('<p>Deep clean</p>');
+  });
 });
 
 describe('product detail aggregate', () => {

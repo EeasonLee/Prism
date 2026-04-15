@@ -59,7 +59,12 @@ export default async function TestGraphQLPage() {
       </section>
 
       <section style={{ marginTop: '2rem' }}>
-        <h2>✅ Category Tree</h2>
+        <h2>
+          <span role="img" aria-label="success">
+            ✅
+          </span>{' '}
+          Category Tree
+        </h2>
         {categoryError ? (
           <pre
             style={{
@@ -87,7 +92,12 @@ export default async function TestGraphQLPage() {
       </section>
 
       <section style={{ marginTop: '2rem' }}>
-        <h2>✅ Products (first 5)</h2>
+        <h2>
+          <span role="img" aria-label="success">
+            ✅
+          </span>{' '}
+          Products (first 5)
+        </h2>
         {productError ? (
           <pre
             style={{
