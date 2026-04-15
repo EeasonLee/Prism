@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AccountScaffold } from '../components/AccountScaffold';
 import { formatPrice } from '@/lib/format-price';
@@ -83,7 +84,12 @@ export default function AccountOrdersPage() {
               {orders.map(order => (
                 <tr key={order.id} className="border-b border-border/60">
                   <td className="px-2 py-3 font-medium text-ink">
-                    {order.number}
+                    <Link
+                      href={`/account/orders/${order.id}`}
+                      className="text-brand hover:underline"
+                    >
+                      {order.number}
+                    </Link>
                   </td>
                   <td className="px-2 py-3 text-ink-muted">
                     {new Date(order.createdAt).toLocaleString('en-US')}
