@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
@@ -21,6 +22,7 @@ import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
+import { AddToCartButton } from '../../components/AddToCartButton';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -70,7 +72,7 @@ async function DeferredRelatedProductsSection({
       className="py-8 lg:py-10"
     >
       <div className="pt-8">
-        <h2 id="related-products-heading" className="heading-4 mb-6 text-ink">
+        <h2 id="related-products-heading" className="heading-3 mb-8 text-ink">
           Related products
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
@@ -80,15 +82,32 @@ async function DeferredRelatedProductsSection({
               item.special_price != null && item.special_price < item.price;
 
             return (
-              <Link
+              <div
                 key={item.sku}
-                href={`/products/${item.url_key ?? item.sku}`}
                 className="group overflow-hidden rounded-xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-card"
               >
+                <Link href={`/products/${item.url_key ?? item.sku}`}>
+                  <div className="relative aspect-square bg-surface-muted">
+                    {item.unified_thumbnail ? (
+                      <Image
+                        src={item.unified_thumbnail}
+                        alt={item.display_name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      />
+                    ) : null}
+                  </div>
+                </Link>
                 <div className="space-y-2 p-4">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-ink">
-                    {item.display_name}
-                  </h3>
+                  <Link
+                    href={`/products/${item.url_key ?? item.sku}`}
+                    className="block"
+                  >
+                    <h3 className="line-clamp-2 text-sm font-semibold text-ink">
+                      {item.display_name}
+                    </h3>
+                  </Link>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-ink">
                       {formatPrice(displayPrice, item.currency)}
@@ -99,8 +118,12 @@ async function DeferredRelatedProductsSection({
                       </span>
                     ) : null}
                   </div>
+                  <AddToCartButton
+                    sku={item.sku}
+                    className="btn-primary flex h-9 w-full items-center justify-center gap-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  />
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -251,6 +274,11 @@ export default async function ProductDetailPage({ params }: Props) {
         initialPagination={reviewList.pagination}
         allowSubmit
         initialProductQa={initialProductQa}
+        beforeVideos={
+          <Suspense fallback={null}>
+            <DeferredUpsellProductsSection promise={deferredUpsell} />
+          </Suspense>
+        }
         videos={cms?.product_videos ?? []}
         recipes={cms?.recipes ?? []}
       />
@@ -279,9 +307,6 @@ export default async function ProductDetailPage({ params }: Props) {
           <BlogSection posts={cms?.blog_posts ?? []} />
         </div>
       )}
-      <Suspense fallback={null}>
-        <DeferredUpsellProductsSection promise={deferredUpsell} />
-      </Suspense>
     </PageContainer>
   );
 }

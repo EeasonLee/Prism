@@ -202,9 +202,17 @@ export async function getProductDetailAggregate(
     isLowStock: false,
   }));
 
-  const relatedPromise = productPromise
-    .then(product => getRelatedProductsBFF(product.sku))
-    .then(mapRelatedProducts);
+  const relatedPromise = rawProductPromise.then(async raw => {
+    const relatedFromMagento = (raw.related_products ?? []).map(
+      mapLinkedProduct
+    );
+    if (relatedFromMagento.length > 0) {
+      return relatedFromMagento;
+    }
+
+    const relatedFromBff = await getRelatedProductsBFF(raw.sku);
+    return mapRelatedProducts(relatedFromBff);
+  });
   const upsellPromise = rawProductPromise.then(raw =>
     (raw.upsell_products ?? []).map(mapLinkedProduct)
   );

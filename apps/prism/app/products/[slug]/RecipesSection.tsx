@@ -49,7 +49,7 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
                 <h3 className="mb-2 line-clamp-2 text-lg font-semibold leading-snug text-ink">
                   {recipe.title}
                 </h3>
-                <p className="mb-3 line-clamp-2 body-text text-ink-muted">
+                <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-ink-muted">
                   {safeDescription}
                 </p>
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
 import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
+import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
 import { env } from '../../../lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
@@ -35,6 +36,7 @@ interface ProductDetailReviewShellProps {
   initialPagination?: ProductReviewPagination;
   allowSubmit?: boolean;
   initialProductQa: ProductQaListResult;
+  beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
   recipes?: Recipe[];
 }
@@ -95,6 +97,7 @@ export function ProductDetailReviewShell({
   initialPagination,
   allowSubmit = true,
   initialProductQa,
+  beforeVideos,
   videos = [],
   recipes = [],
 }: ProductDetailReviewShellProps) {
@@ -156,6 +159,8 @@ export function ProductDetailReviewShell({
         shareTarget={shareTarget}
       />
 
+      {beforeVideos}
+
       {videos.length > 0 && (
         <div id="section-videos">
           <ProductVideosSection videos={videos} />
@@ -193,6 +198,8 @@ export function ProductDetailReviewShell({
           allowSubmit={allowSubmit}
         />
       </div>
+
+      <ProductBackToTopButton />
     </>
   );
 }

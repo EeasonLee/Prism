@@ -195,12 +195,11 @@ export function ProductDetailContent({
     () => parseSpecificationSections(product.specifications),
     [product.specifications]
   );
-  const [expandedSpecificationIndex, setExpandedSpecificationIndex] = useState<
-    number | null
-  >(null);
+  const [expandedSpecificationIndexes, setExpandedSpecificationIndexes] =
+    useState<number[]>([]);
 
   useEffect(() => {
-    setExpandedSpecificationIndex(null);
+    setExpandedSpecificationIndexes([]);
   }, [specificationSections]);
 
   useEffect(() => {
@@ -598,7 +597,7 @@ export function ProductDetailContent({
             className="mt-6 border-t border-border"
           >
             {specificationSections.map((section, index) => {
-              const isExpanded = expandedSpecificationIndex === index;
+              const isExpanded = expandedSpecificationIndexes.includes(index);
 
               return (
                 <article
@@ -609,8 +608,10 @@ export function ProductDetailContent({
                     type="button"
                     className="flex w-full items-center justify-between gap-4 py-5 text-left"
                     onClick={() =>
-                      setExpandedSpecificationIndex(prev =>
-                        prev === index ? null : index
+                      setExpandedSpecificationIndexes(prev =>
+                        prev.includes(index)
+                          ? prev.filter(item => item !== index)
+                          : [...prev, index]
                       )
                     }
                     aria-expanded={isExpanded}

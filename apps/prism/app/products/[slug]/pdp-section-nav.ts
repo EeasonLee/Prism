@@ -12,6 +12,12 @@ export function buildPdpSectionNav(
   reviewSummary?: ProductReviewSummary | null
 ): Array<{ id: string; label: string }> {
   const sections: Array<{ id: string; label: string }> = [];
+  const upsellCount = product.upsell_products?.length ?? 0;
+  const relatedCount = product.related_products?.length ?? 0;
+
+  if (upsellCount > 0) {
+    sections.push({ id: 'section-upsell-products', label: 'Explore Upgrades' });
+  }
 
   if ((cms?.product_videos?.length ?? 0) > 0) {
     sections.push({ id: 'section-videos', label: 'Videos' });
@@ -43,6 +49,13 @@ export function buildPdpSectionNav(
 
   if (PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0) {
     sections.push({ id: 'section-blog', label: 'Blog' });
+  }
+
+  if (relatedCount > 0) {
+    sections.push({
+      id: 'section-related-products',
+      label: 'Related products',
+    });
   }
 
   const hasFeatures =
