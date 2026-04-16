@@ -368,6 +368,7 @@ export function mapGQLProduct(
     cp_price: normalizeCpPrice(raw.cp_price),
     meta_title: raw.meta_title ?? null,
     meta_description: raw.meta_description ?? null,
+    specifications: raw.specifications ?? null,
     price: regularPrice,
     final_price: finalPrice,
     special_price: finalPrice < regularPrice ? finalPrice : null,

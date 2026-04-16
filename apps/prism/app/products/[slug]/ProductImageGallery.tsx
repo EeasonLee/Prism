@@ -75,72 +75,11 @@ export function ProductImageGallery({
   }
 
   return (
-    <div>
-      {/* 主图 */}
-      <div className="group relative aspect-square max-h-[min(560px,68vh)] w-full overflow-hidden rounded-2xl bg-surface">
-        {activeMedia?.type === 'image' && (
-          <Image
-            src={activeMedia.url}
-            alt={activeMedia.alt}
-            fill
-            priority
-            unoptimized
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-contain p-6 transition-opacity duration-300"
-          />
-        )}
-        {activeMedia?.type === 'video' && (
-          <video
-            key={activeMedia.url}
-            src={activeMedia.url}
-            poster={activeMedia.poster}
-            className="h-full w-full object-contain p-2"
-            controls
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-label={`${productName} product video`}
-          />
-        )}
-
-        {/* 左右切换箭头 */}
-        {mediaItems.length > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label="Previous media"
-              onClick={() => goTo(activeIndex - 1)}
-              disabled={activeIndex === 0}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next media"
-              onClick={() => goTo(activeIndex + 1)}
-              disabled={activeIndex === mediaItems.length - 1}
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </>
-        )}
-
-        {/* 图片计数 badge */}
-        {mediaItems.length > 1 && (
-          <span className="absolute bottom-3 right-3 rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm">
-            {activeIndex + 1} / {mediaItems.length}
-          </span>
-        )}
-      </div>
-
-      {/* 缩略图走廊 */}
+    <div className="lg:flex lg:items-start lg:gap-3">
+      {/* 缩略图走廊：桌面端放左侧，移动端放底部 */}
       {mediaItems.length > 1 && (
         <div
-          className="mt-3 flex gap-2 overflow-x-auto pb-1"
+          className="order-2 mt-3 flex gap-2 overflow-x-auto pb-1 lg:order-1 lg:mt-0 lg:max-h-[640px] lg:w-20 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0 lg:pr-1"
           role="listbox"
           aria-label="Product media thumbnails"
         >
@@ -152,7 +91,7 @@ export function ProductImageGallery({
               aria-selected={idx === activeIndex}
               aria-label={`View ${item.type} ${idx + 1}: ${item.alt}`}
               onClick={() => goTo(idx)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-surface transition-all ${
+              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-surface transition-all lg:h-20 lg:w-20 ${
                 idx === activeIndex
                   ? 'border-brand shadow-sm'
                   : 'border-transparent hover:border-border'
@@ -164,8 +103,8 @@ export function ProductImageGallery({
                   alt={item.alt}
                   fill
                   unoptimized
-                  sizes="64px"
-                  className="object-contain p-1"
+                  sizes="80px"
+                  className="object-cover"
                 />
               ) : (
                 <>
@@ -176,7 +115,7 @@ export function ProductImageGallery({
                         alt={item.alt}
                         fill
                         unoptimized
-                        sizes="64px"
+                        sizes="80px"
                         className="object-cover"
                       />
                     ) : (
@@ -202,6 +141,69 @@ export function ProductImageGallery({
           ))}
         </div>
       )}
+
+      {/* 主图 */}
+      <div className="order-1 w-full lg:order-2 lg:flex-1">
+        <div className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background">
+          {activeMedia?.type === 'image' && (
+            <Image
+              src={activeMedia.url}
+              alt={activeMedia.alt}
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-opacity duration-300"
+            />
+          )}
+          {activeMedia?.type === 'video' && (
+            <video
+              key={activeMedia.url}
+              src={activeMedia.url}
+              poster={activeMedia.poster}
+              className="h-full w-full object-cover"
+              controls
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label={`${productName} product video`}
+            />
+          )}
+
+          {/* 左右切换箭头 */}
+          {mediaItems.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous media"
+                onClick={() => goTo(activeIndex - 1)}
+                disabled={activeIndex === 0}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next media"
+                onClick={() => goTo(activeIndex + 1)}
+                disabled={activeIndex === mediaItems.length - 1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+
+          {/* 图片计数 badge */}
+          {mediaItems.length > 1 && (
+            <span className="absolute bottom-3 right-3 rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm">
+              {activeIndex + 1} / {mediaItems.length}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

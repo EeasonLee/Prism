@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ProductDetailClient,
   type ProductDetailSelection,
@@ -23,6 +23,63 @@ interface ProductDetailContentProps {
   onSelectionChange: (selection: ProductDetailSelection) => void;
   onWriteReview: () => void;
   shareTarget?: ShareTarget;
+}
+
+interface SpecificationSection {
+  title: string;
+  contentHtml: string;
+}
+
+const SPEC_TITLE_PATTERN = /<h1\b[^>]*>([\s\S]*?)<\/h1>/gi;
+
+function stripTags(value: string): string {
+  return value.replace(/<[^>]+>/g, '');
+}
+
+function decodeCommonEntities(value: string): string {
+  return value
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'");
+}
+
+function normalizeText(value: string): string {
+  return decodeCommonEntities(stripTags(value)).replace(/\s+/g, ' ').trim();
+}
+
+function parseSpecificationSections(
+  specifications: unknown
+): SpecificationSection[] {
+  if (typeof specifications !== 'string') return [];
+  const source = specifications.trim();
+  if (!source) return [];
+
+  const headings = Array.from(source.matchAll(SPEC_TITLE_PATTERN));
+  if (headings.length === 0) return [];
+
+  return headings
+    .map((heading, index) => {
+      const headingMarkup = heading[1] ?? '';
+      const title = normalizeText(headingMarkup);
+      if (!title) return null;
+
+      const start = (heading.index ?? 0) + heading[0].length;
+      const end =
+        index + 1 < headings.length
+          ? headings[index + 1].index ?? source.length
+          : source.length;
+      const contentHtml = source.slice(start, end).trim();
+      const contentText = normalizeText(contentHtml);
+
+      return {
+        title,
+        contentHtml: contentText ? contentHtml : '<p></p>',
+      };
+    })
+    .filter((section): section is SpecificationSection => section != null);
 }
 
 const STAR_PATH =
@@ -132,45 +189,23 @@ export function ProductDetailContent({
   onWriteReview,
   shareTarget,
 }: ProductDetailContentProps) {
-  const PRODUCT_DETAILS_COLLAPSED_HEIGHT = 240;
   const [showCouponToast, setShowCouponToast] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
-  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
-  const [canExpandDetails, setCanExpandDetails] = useState(false);
-  const productDetailsRef = useRef<HTMLDivElement | null>(null);
+  const specificationSections = useMemo(
+    () => parseSpecificationSections(product.specifications),
+    [product.specifications]
+  );
+  const [expandedSpecificationIndex, setExpandedSpecificationIndex] = useState<
+    number | null
+  >(null);
+
+  useEffect(() => {
+    setExpandedSpecificationIndex(null);
+  }, [specificationSections]);
+
   useEffect(() => {
     setNowMs(Date.now());
   }, []);
-
-  useEffect(() => {
-    const detailsElement = productDetailsRef.current;
-    if (!detailsElement) {
-      setCanExpandDetails(false);
-      return;
-    }
-
-    const updateExpandableState = () => {
-      const fullHeight = detailsElement.scrollHeight;
-      setCanExpandDetails(fullHeight > PRODUCT_DETAILS_COLLAPSED_HEIGHT);
-    };
-
-    updateExpandableState();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateExpandableState();
-    });
-    resizeObserver.observe(detailsElement);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [product.product_detail_html, PRODUCT_DETAILS_COLLAPSED_HEIGHT]);
-
-  useEffect(() => {
-    if (!canExpandDetails && isDetailsExpanded) {
-      setIsDetailsExpanded(false);
-    }
-  }, [canExpandDetails, isDetailsExpanded]);
 
   const debugCoupon =
     typeof window !== 'undefined' &&
@@ -358,63 +393,15 @@ export function ProductDetailContent({
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-      <div>
+    <div
+      id="product-main"
+      className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12"
+    >
+      <div className="lg:sticky lg:top-24 lg:self-start">
         <ProductImageGallery
           images={displayProduct.images}
           productName={displayTitle}
         />
-
-        {product.product_detail_html && (
-          <section id="section-details" className="mt-6 lg:mt-8">
-            <h2 className="mb-3 text-lg font-semibold text-ink">
-              Product details
-            </h2>
-
-            <div className="relative">
-              <div
-                id="product-details-content"
-                ref={productDetailsRef}
-                className={`prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4 [&_strong]:font-semibold transition-[max-height] duration-300 ${
-                  !isDetailsExpanded && canExpandDetails
-                    ? 'max-h-[240px] overflow-hidden'
-                    : ''
-                }`}
-                dangerouslySetInnerHTML={{
-                  __html: product.product_detail_html,
-                }}
-              />
-
-              {!isDetailsExpanded && canExpandDetails && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-background via-background/20 to-transparent pb-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsDetailsExpanded(true)}
-                    className="pointer-events-auto inline-flex items-center justify-center rounded-full border border-border bg-background/95 px-4 py-2 text-sm font-medium text-ink shadow-sm backdrop-blur-sm transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                    aria-expanded={false}
-                    aria-controls="product-details-content"
-                  >
-                    Show more
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {canExpandDetails && isDetailsExpanded && (
-              <div className="mt-3 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setIsDetailsExpanded(prev => !prev)}
-                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  aria-expanded={isDetailsExpanded}
-                  aria-controls="product-details-content"
-                >
-                  Show less
-                </button>
-              </div>
-            )}
-          </section>
-        )}
       </div>
 
       <div className="flex flex-col gap-0">
@@ -445,15 +432,12 @@ export function ProductDetailContent({
             </div>
           )}
         </div>
-
         <h1 className="mb-2 text-2xl font-bold leading-tight text-ink sm:text-3xl">
           {displayTitle}
         </h1>
-
         {product.subtitle && (
           <p className="mb-3 text-base text-ink-muted">{product.subtitle}</p>
         )}
-
         <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           {displayProduct.isInStock ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-emerald-600">
@@ -475,7 +459,6 @@ export function ProductDetailContent({
             />
           )}
         </div>
-
         {/* 主价格区：仅展示未使用 cp_code / cp_price 的售价（特价 vs 原价）；券后价只在下方优惠券横幅展示 */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {displayProduct.specialPrice != null && (
@@ -503,7 +486,6 @@ export function ProductDetailContent({
             </span>
           )}
         </div>
-
         {showCouponBanner && (
           <div className="mb-4 relative overflow-hidden rounded-2xl bg-destructive px-5 py-4 text-white">
             <div className="pointer-events-none absolute inset-0 opacity-20">
@@ -581,7 +563,6 @@ export function ProductDetailContent({
             )}
           </div>
         )}
-
         {displayPromotionLabel && !showCouponBanner && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
             <span className="text-sm font-medium text-brand">
@@ -592,12 +573,10 @@ export function ProductDetailContent({
             </span>
           </div>
         )}
-
         <ProductDetailClient
           product={product}
           onSelectionChange={onSelectionChange}
         />
-
         {product.short_description_html ? (
           <div
             className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
@@ -613,6 +592,64 @@ export function ProductDetailContent({
             }}
           />
         ) : null}
+        {specificationSections.length > 0 && (
+          <section
+            aria-label="Product specifications sections"
+            className="mt-6 border-t border-border"
+          >
+            {specificationSections.map((section, index) => {
+              const isExpanded = expandedSpecificationIndex === index;
+
+              return (
+                <article
+                  key={`${section.title}-${index}`}
+                  className="border-b border-border"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-4 py-5 text-left"
+                    onClick={() =>
+                      setExpandedSpecificationIndex(prev =>
+                        prev === index ? null : index
+                      )
+                    }
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="text-2xl font-semibold text-ink">
+                      {section.title}
+                    </span>
+                    <svg
+                      className={`h-6 w-6 shrink-0 text-ink transition-transform ${
+                        isExpanded ? 'rotate-45' : ''
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="pb-5">
+                      <div
+                        className="prose prose-sm max-w-none text-ink-muted [&_a]:text-ink [&_a]:underline hover:[&_a]:text-brand [&_strong]:font-semibold [&_strong]:text-ink"
+                        dangerouslySetInnerHTML={{
+                          __html: section.contentHtml,
+                        }}
+                      />
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
       </div>
     </div>
   );

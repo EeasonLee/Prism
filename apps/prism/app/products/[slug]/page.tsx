@@ -15,7 +15,6 @@ import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
-import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
@@ -238,7 +237,6 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
         <span className="text-ink">{product.display_name}</span>
       </nav>
-
       <ProductDetailReviewShell
         product={product}
         galleryImages={galleryImages}
@@ -250,16 +248,14 @@ export default async function ProductDetailPage({ params }: Props) {
         initialPagination={reviewList.pagination}
         allowSubmit
         initialProductQa={initialProductQa}
+        videos={cms?.product_videos ?? []}
       />
-
       <Suspense fallback={null}>
         <DeferredRelatedProductsSection promise={deferredRelated} />
       </Suspense>
-
       {sectionNavItems.length > 0 && (
         <ProductSectionNav sections={sectionNavItems} />
       )}
-
       {cms &&
         ((cms?.key_points?.length ?? 0) > 0 ||
           (cms?.guarantees?.length ?? 0) > 0) && (
@@ -272,58 +268,24 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
         )}
-
-      {product.product_detail_html && (
-        <div id="section-details">
-          <div className="my-10 border-t border-border" />
-          <section
-            aria-labelledby="product-detail-heading"
-            className="pb-10 lg:pb-16"
-          >
-            <h2
-              id="product-detail-heading"
-              className="heading-3 mb-8 text-center text-ink"
-            >
-              Product details
-            </h2>
-            <div
-              className="prose prose-sm mx-auto max-w-3xl text-ink [&_li]:my-0.5 [&_ul]:pl-4"
-              dangerouslySetInnerHTML={{
-                __html: product.product_detail_html,
-              }}
-            />
-          </section>
-        </div>
-      )}
-
       {specificationGroups.length > 0 && (
         <div id="section-specifications">
           <div className="border-t border-border" />
           <ProductSpecifications groups={specificationGroups} />
         </div>
       )}
-
-      {(cms?.product_videos?.length ?? 0) > 0 && (
-        <div id="section-videos">
-          <div className="border-t border-border" />
-          <ProductVideosSection videos={cms?.product_videos ?? []} />
-        </div>
-      )}
-
       {(cms?.recipes?.length ?? 0) > 0 && (
         <div id="section-recipes">
           <div className="border-t border-border" />
           <RecipesSection recipes={cms?.recipes ?? []} />
         </div>
       )}
-
       {PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <div className="border-t border-border" />
           <BlogSection posts={cms?.blog_posts ?? []} />
         </div>
       )}
-
       <Suspense fallback={null}>
         <DeferredUpsellProductsSection promise={deferredUpsell} />
       </Suspense>

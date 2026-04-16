@@ -3,7 +3,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
+import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
+import { ProductVideosSection } from './ProductVideosSection';
 import { buildProductShareTarget } from './build-product-share-target';
 import { env } from '../../../lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
@@ -19,6 +21,7 @@ import type {
   UnifiedProduct,
   UnifiedProductImage,
 } from '../../../lib/api/unified-product';
+import type { ProductVideoCard } from './product-page-types';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -31,6 +34,7 @@ interface ProductDetailReviewShellProps {
   initialPagination?: ProductReviewPagination;
   allowSubmit?: boolean;
   initialProductQa: ProductQaListResult;
+  videos?: ProductVideoCard[];
 }
 
 function buildVariantLabel(
@@ -89,6 +93,7 @@ export function ProductDetailReviewShell({
   initialPagination,
   allowSubmit = true,
   initialProductQa,
+  videos = [],
 }: ProductDetailReviewShellProps) {
   const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
@@ -147,6 +152,17 @@ export function ProductDetailReviewShell({
         onWriteReview={handleWriteReview}
         shareTarget={shareTarget}
       />
+
+      {videos.length > 0 && (
+        <div id="section-videos">
+          <div className="border-t border-border" />
+          <ProductVideosSection videos={videos} />
+        </div>
+      )}
+
+      {product.product_detail_html && (
+        <ProductDetailsSection detailsHtml={product.product_detail_html} />
+      )}
 
       <div id="section-reviews">
         <ProductReviews
