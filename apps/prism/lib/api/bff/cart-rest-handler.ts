@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/requireAuth';
-import { getCartId, CART_ID_COOKIE } from '@/lib/auth/cookies';
+import { getCartId, getGuestId, CART_ID_COOKIE } from '@/lib/auth/cookies';
 import { extractLocalAccessTokenPayload } from '@/lib/auth/session-tokens';
 import { env } from '@/lib/env';
 import * as cartRestService from '@/lib/magento/cart-rest.service';
@@ -34,19 +34,38 @@ function isGuestSession(accessToken: string): boolean {
 }
 
 /**
+ * 判定当前请求是否应按 guest 处理：
+ * 1) 本地 access_token 可解析时，以 token 类型为准；
+ * 2) token 不可用（如过期）时，回退 guest_id cookie，避免误走 customer 分支。
+ */
+function resolveIsGuestSession(request: Request): boolean {
+  const accessToken = request.headers
+    .get('cookie')
+    ?.match(/access_token=([^;]+)/)?.[1];
+
+  if (accessToken) {
+    try {
+      return isGuestSession(accessToken);
+    } catch {
+      // token 失效时回退 guest_id 判定
+    }
+  }
+
+  return Boolean(getGuestId(request));
+}
+
+/**
  * 确保 guest 有 cart_id，如果没有则创建
  */
 async function ensureGuestCartId(
   request: Request,
   magentoAccessToken: string
 ): Promise<string> {
-  const existingCartId = getCartId(request);
-  if (existingCartId) {
-    return existingCartId;
-  }
-
-  // 创建新的 guest cart
-  return await cartRestService.createGuestCart(magentoAccessToken);
+  const existingCartId = getCartId(request) ?? undefined;
+  return await cartRestService.getGuestCartId(
+    magentoAccessToken,
+    existingCartId
+  );
 }
 
 export async function authenticatedCartRequest<T>(
@@ -58,10 +77,7 @@ export async function authenticatedCartRequest<T>(
   ) => Promise<T>
 ): Promise<NextResponse> {
   const response = await requireAuth(request, async magentoAccessToken => {
-    const accessToken = request.headers
-      .get('cookie')
-      ?.match(/access_token=([^;]+)/)?.[1];
-    const isGuest = accessToken ? isGuestSession(accessToken) : false;
+    const isGuest = resolveIsGuestSession(request);
 
     let cartId: string | null = null;
 

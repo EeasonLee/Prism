@@ -8,6 +8,7 @@ const serverSchema = z.object({
   AUTH_TOKEN_SECRET: z.string().optional(),
   AUTH_REFRESH_TOKEN_SECRET: z.string().optional(),
   MAGENTO_JWT_SECRET: z.string().optional(), // Magento redirect token 签名密钥
+  MAGENTO_STORE_CODE: z.string().min(1).default('default'),
   USE_LOCAL_AUTH: z
     .enum(['true', 'false'])
     .optional()
@@ -79,6 +80,10 @@ const parsedEnv = mergedSchema.parse({
   AUTH_TOKEN_SECRET: process.env.AUTH_TOKEN_SECRET,
   AUTH_REFRESH_TOKEN_SECRET: process.env.AUTH_REFRESH_TOKEN_SECRET,
   MAGENTO_JWT_SECRET: process.env.MAGENTO_JWT_SECRET,
+  MAGENTO_STORE_CODE:
+    process.env.MAGENTO_STORE_CODE ??
+    process.env.NEXT_PUBLIC_MAGENTO_STORE_CODE ??
+    'default',
   USE_LOCAL_AUTH: process.env.USE_LOCAL_AUTH,
 });
 

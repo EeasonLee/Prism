@@ -43,7 +43,11 @@ async function executeMagentoGraphQL<T>(
   }
 ): Promise<T> {
   const url = getMagentoGraphQLUrl();
-  const requestBody = { query, variables };
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    throw new Error('GraphQL query cannot be empty');
+  }
+  const requestBody = { query: normalizedQuery, variables };
   const startTime = Date.now();
 
   let response: Response;
@@ -110,6 +114,16 @@ async function executeMagentoGraphQL<T>(
   }
 
   if (json.errors && json.errors.length > 0) {
+    const hasUnexpectedEof = json.errors.some(error =>
+      error.message.includes('Unexpected <EOF>')
+    );
+    // Magento 偶发会返回空查询语法错误，重试一次 no-store 以绕过缓存层异常。
+    if (hasUnexpectedEof && fetchOptions.cache !== 'no-store') {
+      return executeMagentoGraphQL(query, variables, headers, {
+        cache: 'no-store',
+      });
+    }
+
     const authError = json.errors.find(error => {
       const category = error.extensions?.category;
       return (
