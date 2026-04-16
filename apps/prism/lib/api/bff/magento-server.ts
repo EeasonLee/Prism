@@ -19,16 +19,15 @@ function getMagentoBaseUrl(): string {
   }
 
   const magentoBaseUrl = process.env.NEXT_PUBLIC_MAGENTOL;
-  if (!magentoBaseUrl) {
-    throw new Error(
-      'NEXT_PUBLIC_MAGENTOL is not configured (or explicitly set NEXT_PUBLIC_MAGENTO_API_URL)'
-    );
+  if (magentoBaseUrl) {
+    return magentoBaseUrl.endsWith('/')
+      ? magentoBaseUrl.slice(0, -1)
+      : magentoBaseUrl;
   }
 
-  const parsed = new URL(magentoBaseUrl);
-  const protocol = parsed.protocol === 'https:' ? 'http:' : parsed.protocol;
-  const inferredApiUrl = `${protocol}//${parsed.hostname}:13000`;
-  return inferredApiUrl;
+  throw new Error(
+    'NEXT_PUBLIC_MAGENTO_API_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+  );
 }
 
 interface ServerFetchOptions {

@@ -9,9 +9,9 @@ const serverSchema = z.object({
   AUTH_REFRESH_TOKEN_SECRET: z.string().optional(),
   MAGENTO_JWT_SECRET: z.string().optional(), // Magento redirect token 签名密钥
   USE_LOCAL_AUTH: z
-    .string()
-    .transform(val => val === 'true')
-    .optional(),
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => (val ? val === 'true' : false)),
 });
 
 const clientSchema = z.object({

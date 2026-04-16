@@ -94,6 +94,21 @@ interface MagentoCart {
   };
 }
 
+function withGuestAuthHeader(
+  accessToken: string,
+  headers: Record<string, string> = {}
+): Record<string, string> {
+  const token = accessToken.trim();
+  if (!token || token.startsWith('guest-local:')) {
+    return headers;
+  }
+
+  return {
+    ...headers,
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 function toRecordOfNumbers(value: unknown): Record<string, number> {
   if (typeof value !== 'object' || value === null) {
     return {};
@@ -457,9 +472,7 @@ async function loadGuestGraphqlOptionItems(
 export async function createGuestCart(accessToken: string): Promise<string> {
   const cartId = await magentoRestFetch<string>('guest-carts', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: withGuestAuthHeader(accessToken),
   });
   return cartId;
 }
@@ -531,7 +544,7 @@ export async function getGuestCart(
   // 获取 cart items
   const items = await magentoRestFetch<MagentoCartItem[]>(
     `guest-carts/${cartId}/items`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
+    { headers: withGuestAuthHeader(accessToken) }
   );
 
   // 获取 totals
@@ -540,7 +553,7 @@ export async function getGuestCart(
   try {
     const magentoTotals = await magentoRestFetch<MagentoTotals>(
       `guest-carts/${cartId}/totals`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      { headers: withGuestAuthHeader(accessToken) }
     );
     const currency =
       magentoTotals.quote_currency_code ??
@@ -703,10 +716,9 @@ export async function addGuestCartItem(
     `guest-carts/${cartId}/items`,
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+      headers: withGuestAuthHeader(accessToken, {
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({ cartItem }),
     }
   );
@@ -817,10 +829,9 @@ export async function updateGuestCartItem(
     `guest-carts/${cartId}/items/${itemId}`,
     {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+      headers: withGuestAuthHeader(accessToken, {
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({
         cartItem: {
           item_id: itemId,
@@ -872,9 +883,7 @@ export async function removeGuestCartItem(
 ): Promise<void> {
   await magentoRestFetch<boolean>(`guest-carts/${cartId}/items/${itemId}`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: withGuestAuthHeader(accessToken),
   });
 }
 
@@ -902,11 +911,7 @@ export async function clearGuestCart(
 ): Promise<void> {
   const items = await magentoRestFetch<MagentoCartItem[]>(
     `guest-carts/${cartId}/items`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
+    { headers: withGuestAuthHeader(accessToken) }
   );
 
   await Promise.all(
@@ -969,9 +974,7 @@ export async function resolveGuestQuoteId(
   try {
     const cart = await magentoRestFetch<MagentoCart>(
       `guest-carts/${maskedCartId}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      { headers: withGuestAuthHeader(accessToken) }
     );
     if (
       typeof cart.id === 'number' &&
@@ -988,7 +991,7 @@ export async function resolveGuestQuoteId(
   try {
     const items = await magentoRestFetch<MagentoCartItem[]>(
       `guest-carts/${maskedCartId}/items`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      { headers: withGuestAuthHeader(accessToken) }
     );
     const quoteId = items.find(item =>
       /^\d+$/.test(String(item.quote_id))
@@ -1016,9 +1019,7 @@ export async function applyGuestCoupon(
     `guest-carts/${cartId}/coupons/${encodeURIComponent(couponCode)}`,
     {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: withGuestAuthHeader(accessToken),
     }
   );
   return result;
@@ -1052,9 +1053,7 @@ export async function removeGuestCoupon(
 ): Promise<void> {
   await magentoRestFetch<boolean>(`guest-carts/${cartId}/coupons`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: withGuestAuthHeader(accessToken),
   });
 }
 
