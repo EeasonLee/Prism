@@ -3,6 +3,7 @@
  */
 
 import { MagentoApiError, MagentoServiceError } from '../magento/client';
+import { env } from '@/lib/env';
 
 // 确保 Node.js 接受自签名证书（与 .env.local 中 NODE_TLS_REJECT_UNAUTHORIZED=0 一致）
 if (
@@ -13,9 +14,10 @@ if (
 }
 
 function getMagentoRestBaseUrl(): string {
+  const storeCode = encodeURIComponent(env.MAGENTO_STORE_CODE);
   const magentoBaseUrl = process.env.NEXT_PUBLIC_MAGENTOL;
   if (magentoBaseUrl) {
-    return `${magentoBaseUrl.replace(/\/$/, '')}/rest/default/V1`;
+    return `${magentoBaseUrl.replace(/\/$/, '')}/rest/${storeCode}/V1`;
   }
 
   const graphqlUrl = process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL;
@@ -26,13 +28,30 @@ function getMagentoRestBaseUrl(): string {
   }
 
   const url = new URL(graphqlUrl);
-  return `${url.protocol}//${url.host}/rest/default/V1`;
+  return `${url.protocol}//${url.host}/rest/${storeCode}/V1`;
 }
 
 interface MagentoRestFetchOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
+}
+
+function shouldLogMagentoRestDebug(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.DEBUG_MAGENTO_REST === 'true'
+  );
+}
+
+function summarizeBody(body: string | undefined): string | undefined {
+  if (!body) {
+    return undefined;
+  }
+  const normalized = body.replace(/\s+/g, ' ').trim();
+  return normalized.length > 500
+    ? `${normalized.slice(0, 500)}...`
+    : normalized;
 }
 
 export async function magentoRestFetch<T>(
@@ -42,17 +61,31 @@ export async function magentoRestFetch<T>(
   const base = getMagentoRestBaseUrl();
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   const url = `${base}/${cleanPath}`;
+  const method = options.method ?? 'GET';
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
-  const res = await fetch(url, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: options.body,
+    });
+  } catch (error) {
+    if (shouldLogMagentoRestDebug()) {
+      console.error('[Magento REST request failed]', {
+        method,
+        url,
+        requestBody: summarizeBody(options.body),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    throw error;
+  }
 
   let json: unknown;
   try {
@@ -64,6 +97,16 @@ export async function magentoRestFetch<T>(
   if (!res.ok) {
     const errMsg = (json as { message?: string })?.message ?? res.statusText;
     const errCode = 'MAGENTO_REST_ERROR';
+    if (shouldLogMagentoRestDebug()) {
+      console.error('[Magento REST response error]', {
+        method,
+        url,
+        status: res.status,
+        statusText: res.statusText,
+        requestBody: summarizeBody(options.body),
+        responseBody: json,
+      });
+    }
 
     if (res.status === 502) {
       throw new MagentoServiceError(
@@ -74,7 +117,7 @@ export async function magentoRestFetch<T>(
     }
 
     throw new MagentoApiError(
-      `Magento REST API error: ${errMsg} (status: ${res.status})`,
+      `Magento REST API error: ${errMsg} (status: ${res.status}, ${method} ${url})`,
       errCode,
       res.status,
       json

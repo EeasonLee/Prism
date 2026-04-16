@@ -1,6 +1,5 @@
-import { magentoServerFetch } from '@/lib/api/bff/magento-server';
+import { randomUUID } from 'node:crypto';
 import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import type { GuestAuthResponse } from '@/lib/api/magento/types';
 import type {
   AuthProviderGuestSessionResult,
   AuthProviderLoginResult,
@@ -102,18 +101,12 @@ export const magentoAuthProvider: MagentoAuthProvider = {
     };
   },
   async createGuestSession() {
-    const data = await magentoServerFetch<GuestAuthResponse>(
-      '/api/auth/guest',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-      }
-    );
-
+    const guestId = randomUUID();
     return {
-      guestId: data.guest_id,
-      magentoAccessToken: data.tokens.accessToken,
-      magentoRefreshToken: data.tokens.refreshToken,
+      guestId,
+      // guest 在 REST guest-carts 链路中不依赖 customer token，
+      // 使用本地占位符避免继续依赖旧 /api/auth/guest 网关。
+      magentoAccessToken: `guest-local:${guestId}`,
     };
   },
   async refreshCustomerSession() {
