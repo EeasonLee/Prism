@@ -15,7 +15,6 @@ import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
-import { RecipesSection } from './RecipesSection';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
 import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
@@ -66,10 +65,11 @@ async function DeferredRelatedProductsSection({
 
   return (
     <section
+      id="section-related-products"
       aria-labelledby="related-products-heading"
       className="py-8 lg:py-10"
     >
-      <div className="border-t border-border pt-8">
+      <div className="pt-8">
         <h2 id="related-products-heading" className="heading-4 mb-6 text-ink">
           Related products
         </h2>
@@ -237,6 +237,9 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
         <span className="text-ink">{product.display_name}</span>
       </nav>
+      {sectionNavItems.length > 0 && (
+        <ProductSectionNav sections={sectionNavItems} />
+      )}
       <ProductDetailReviewShell
         product={product}
         galleryImages={galleryImages}
@@ -249,13 +252,11 @@ export default async function ProductDetailPage({ params }: Props) {
         allowSubmit
         initialProductQa={initialProductQa}
         videos={cms?.product_videos ?? []}
+        recipes={cms?.recipes ?? []}
       />
       <Suspense fallback={null}>
         <DeferredRelatedProductsSection promise={deferredRelated} />
       </Suspense>
-      {sectionNavItems.length > 0 && (
-        <ProductSectionNav sections={sectionNavItems} />
-      )}
       {cms &&
         ((cms?.key_points?.length ?? 0) > 0 ||
           (cms?.guarantees?.length ?? 0) > 0) && (
@@ -270,19 +271,11 @@ export default async function ProductDetailPage({ params }: Props) {
         )}
       {specificationGroups.length > 0 && (
         <div id="section-specifications">
-          <div className="border-t border-border" />
           <ProductSpecifications groups={specificationGroups} />
-        </div>
-      )}
-      {(cms?.recipes?.length ?? 0) > 0 && (
-        <div id="section-recipes">
-          <div className="border-t border-border" />
-          <RecipesSection recipes={cms?.recipes ?? []} />
         </div>
       )}
       {PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
-          <div className="border-t border-border" />
           <BlogSection posts={cms?.blog_posts ?? []} />
         </div>
       )}

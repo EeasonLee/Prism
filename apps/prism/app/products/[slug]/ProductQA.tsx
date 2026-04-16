@@ -216,7 +216,6 @@ export function ProductQA({
 
   return (
     <section className="mt-10" aria-labelledby="product-qa-heading">
-      <div className="border-t border-border" />
       <div className="py-10">
         <h2
           id="product-qa-heading"

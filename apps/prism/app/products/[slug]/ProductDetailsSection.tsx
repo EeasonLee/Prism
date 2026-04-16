@@ -6,7 +6,7 @@ interface ProductDetailsSectionProps {
   detailsHtml: string;
 }
 
-const PRODUCT_DETAILS_COLLAPSED_HEIGHT = 180;
+const PRODUCT_DETAILS_COLLAPSED_HEIGHT = 300;
 const EXPAND_THRESHOLD_TOLERANCE = 8;
 
 export function ProductDetailsSection({
@@ -54,19 +54,16 @@ export function ProductDetailsSection({
   }, [canExpand, isExpanded]);
 
   return (
-    <section
-      id="section-details"
-      className="mt-6 border-t border-border pt-6 lg:mt-8"
-    >
+    <section id="section-details" className="mt-6 pt-2 lg:mt-8">
       <div className="mx-auto w-full max-w-4xl">
-        <h2 className="mb-3 text-lg font-semibold text-ink">Product details</h2>
+        <h2 className="heading-3 mb-6 text-center text-ink">Details</h2>
 
         <div className="relative">
           <div
             id="product-details-content"
             ref={contentRef}
             className={`prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4 [&_strong]:font-semibold transition-[max-height] duration-300 ${
-              !isExpanded && canExpand ? 'max-h-[240px] overflow-hidden' : ''
+              !isExpanded && canExpand ? 'max-h-[800px] overflow-hidden' : ''
             }`}
             dangerouslySetInnerHTML={{ __html: detailsHtml }}
           />

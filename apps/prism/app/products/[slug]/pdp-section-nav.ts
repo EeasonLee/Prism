@@ -13,10 +13,8 @@ export function buildPdpSectionNav(
 ): Array<{ id: string; label: string }> {
   const sections: Array<{ id: string; label: string }> = [];
 
-  const hasFeatures =
-    (cms?.key_points?.length ?? 0) > 0 || (cms?.guarantees?.length ?? 0) > 0;
-  if (hasFeatures) {
-    sections.push({ id: 'section-features', label: 'Features' });
+  if ((cms?.product_videos?.length ?? 0) > 0) {
+    sections.push({ id: 'section-videos', label: 'Videos' });
   }
 
   if (
@@ -26,9 +24,8 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-details', label: 'Details' });
   }
 
-  const specRaw = product.specifications as unknown;
-  if (Array.isArray(specRaw) && specRaw.length > 0) {
-    sections.push({ id: 'section-specifications', label: 'Specifications' });
+  if ((cms?.recipes?.length ?? 0) > 0) {
+    sections.push({ id: 'section-recipes', label: 'Recipes' });
   }
 
   const reviewTotal = reviewSummary?.total ?? cms?.review_summary?.total ?? 0;
@@ -42,16 +39,21 @@ export function buildPdpSectionNav(
     });
   }
 
-  if ((cms?.product_videos?.length ?? 0) > 0) {
-    sections.push({ id: 'section-videos', label: 'Videos' });
-  }
-
-  if ((cms?.recipes?.length ?? 0) > 0) {
-    sections.push({ id: 'section-recipes', label: 'Recipes' });
-  }
+  sections.push({ id: 'section-product-qa', label: 'Q&A' });
 
   if (PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0) {
     sections.push({ id: 'section-blog', label: 'Blog' });
+  }
+
+  const hasFeatures =
+    (cms?.key_points?.length ?? 0) > 0 || (cms?.guarantees?.length ?? 0) > 0;
+  if (hasFeatures) {
+    sections.push({ id: 'section-features', label: 'Features' });
+  }
+
+  const specRaw = product.specifications as unknown;
+  if (Array.isArray(specRaw) && specRaw.length > 0) {
+    sections.push({ id: 'section-specifications', label: 'Specifications' });
   }
 
   return sections;

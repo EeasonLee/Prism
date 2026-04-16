@@ -6,6 +6,7 @@ import { ProductDetailContent } from './ProductDetailContent';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
 import { ProductVideosSection } from './ProductVideosSection';
+import { RecipesSection } from './RecipesSection';
 import { buildProductShareTarget } from './build-product-share-target';
 import { env } from '../../../lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
@@ -21,7 +22,7 @@ import type {
   UnifiedProduct,
   UnifiedProductImage,
 } from '../../../lib/api/unified-product';
-import type { ProductVideoCard } from './product-page-types';
+import type { ProductVideoCard, Recipe } from './product-page-types';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -35,6 +36,7 @@ interface ProductDetailReviewShellProps {
   allowSubmit?: boolean;
   initialProductQa: ProductQaListResult;
   videos?: ProductVideoCard[];
+  recipes?: Recipe[];
 }
 
 function buildVariantLabel(
@@ -94,6 +96,7 @@ export function ProductDetailReviewShell({
   allowSubmit = true,
   initialProductQa,
   videos = [],
+  recipes = [],
 }: ProductDetailReviewShellProps) {
   const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
@@ -155,13 +158,18 @@ export function ProductDetailReviewShell({
 
       {videos.length > 0 && (
         <div id="section-videos">
-          <div className="border-t border-border" />
           <ProductVideosSection videos={videos} />
         </div>
       )}
 
       {product.product_detail_html && (
         <ProductDetailsSection detailsHtml={product.product_detail_html} />
+      )}
+
+      {recipes.length > 0 && (
+        <div id="section-recipes">
+          <RecipesSection recipes={recipes} />
+        </div>
       )}
 
       <div id="section-reviews">
