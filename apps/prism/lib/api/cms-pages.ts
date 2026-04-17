@@ -31,6 +31,12 @@ import type {
   ContentCard,
   VideoShowcaseProps,
   VideoItem,
+  DealBannerProps,
+  DealBannerSlide,
+  DealCategoryNavProps,
+  DealCategoryNavItem,
+  DealProductBlocksProps,
+  DealProductBlockItem,
 } from './cms-page.types';
 
 /** Strapi Media / Image 嵌套结构（API 原始形态，字段可选） */
@@ -253,6 +259,33 @@ interface RawVideoItem {
   videoUrl?: string;
   title?: string;
   thumbnail?: StrapiImageRaw | null;
+}
+
+interface RawDealBannerSlide {
+  id?: number;
+  image?: StrapiImageRaw | null;
+  title?: string | null;
+  subtitle?: string | null;
+  ctaText?: string;
+  ctaLink?: string;
+  theme?: string;
+}
+
+interface RawDealCategoryNavItem {
+  id?: number;
+  categoryUrlKey?: string;
+  label?: string;
+  image?: StrapiImageRaw | null;
+  link?: string;
+}
+
+interface RawDealProductBlockItem {
+  id?: number;
+  categoryName?: string;
+  categoryUrlKey?: string;
+  categoryLink?: string;
+  productSkus?: string;
+  layout?: string;
 }
 
 /**
@@ -537,6 +570,98 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
       };
     }
 
+    case 'page.deal-banner': {
+      const slideList = Array.isArray(rawProps.slides) ? rawProps.slides : [];
+      const slides: DealBannerSlide[] = slideList.map(
+        (slide): DealBannerSlide => {
+          const s = slide as RawDealBannerSlide;
+          return {
+            id: s.id ?? 0,
+            image: transformImage(s.image) as StrapiImage,
+            title: s.title ?? '',
+            subtitle: s.subtitle ?? '',
+            ctaText: s.ctaText,
+            ctaLink: s.ctaLink,
+            theme: s.theme === 'light' || s.theme === 'dark' ? s.theme : 'dark',
+          };
+        }
+      );
+
+      return {
+        __component,
+        id,
+        props: {
+          slides,
+          autoPlayInterval: rawProps.autoPlayInterval,
+          showArrows: rawProps.showArrows !== false,
+          showDots: rawProps.showDots !== false,
+        } as DealBannerProps,
+      };
+    }
+
+    case 'page.deal-category-nav': {
+      const itemList = Array.isArray(rawProps.items) ? rawProps.items : [];
+      const items: DealCategoryNavItem[] = itemList.map(
+        (item): DealCategoryNavItem => {
+          const i = item as RawDealCategoryNavItem;
+          return {
+            id: i.id ?? 0,
+            categoryUrlKey: i.categoryUrlKey ?? '',
+            label: i.label ?? '',
+            image: transformImage(i.image) as StrapiImage,
+            link: i.link,
+          };
+        }
+      );
+
+      return {
+        __component,
+        id,
+        props: {
+          title: rawProps.title,
+          items,
+        } as DealCategoryNavProps,
+      };
+    }
+
+    case 'page.deal-product-blocks': {
+      const blockList = Array.isArray(rawProps.blocks) ? rawProps.blocks : [];
+      const blocks: DealProductBlockItem[] = blockList.map(
+        (block): DealProductBlockItem => {
+          const b = block as RawDealProductBlockItem;
+          const skus = b.productSkus
+            ? (b.productSkus as string)
+                .split(',')
+                .map(sku => sku.trim())
+                .filter(sku => sku.length > 0)
+            : [];
+          const layout =
+            b.layout === 'grid-2' ||
+            b.layout === 'grid-3' ||
+            b.layout === 'grid-4' ||
+            b.layout === 'grid-6'
+              ? b.layout
+              : 'grid-4';
+          return {
+            id: b.id ?? 0,
+            categoryName: b.categoryName ?? '',
+            categoryUrlKey: b.categoryUrlKey ?? '',
+            categoryLink: b.categoryLink,
+            productSkus: skus,
+            layout,
+          };
+        }
+      );
+
+      return {
+        __component,
+        id,
+        props: {
+          blocks,
+        } as DealProductBlocksProps,
+      };
+    }
+
     default:
       console.warn(`Unknown section type: ${__component}`);
       return null;
@@ -573,6 +698,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
       'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
+      'populate[sections][on][page.deal-banner][populate][slides][populate]=*',
+      'populate[sections][on][page.deal-category-nav][populate][items][populate]=*',
+      'populate[sections][on][page.deal-product-blocks]=true',
       'populate[seo][populate]=*',
       'populate[featuredImage]=true',
     ].join('&');

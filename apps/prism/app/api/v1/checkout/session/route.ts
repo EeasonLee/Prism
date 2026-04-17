@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import { authenticatedCartRequest } from '@/lib/api/bff/cart-rest-handler';
 import { issueCheckoutRedirectToken } from '@/lib/auth/checkout-redirect-token';
 import { extractLocalAccessTokenPayload } from '@/lib/auth/session-tokens';
-import { env } from '@/lib/env';
 
 export async function POST(request: Request) {
   return authenticatedCartRequest(
     request,
-    async (magentoAccessToken, cartId, isGuest) => {
+    async (magentoAccessToken, _cartId, isGuest) => {
       const accessToken = request.headers
         .get('cookie')
         ?.match(/access_token=([^;]+)/)?.[1];
@@ -22,17 +21,15 @@ export async function POST(request: Request) {
       let guestId: string | undefined;
       let customerEmail: string | undefined;
 
-      if (env.USE_LOCAL_AUTH) {
-        try {
-          const payload = extractLocalAccessTokenPayload(accessToken);
-          if (payload.type === 'guest') {
-            guestId = payload.guestId;
-          } else {
-            customerEmail = payload.customerEmail;
-          }
-        } catch {
-          // Token 解析失败
+      try {
+        const payload = extractLocalAccessTokenPayload(accessToken);
+        if (payload.type === 'guest') {
+          guestId = payload.guestId;
+        } else {
+          customerEmail = payload.customerEmail;
         }
+      } catch {
+        // Token 解析失败
       }
 
       const token = issueCheckoutRedirectToken({

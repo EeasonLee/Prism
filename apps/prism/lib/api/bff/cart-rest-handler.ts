@@ -5,8 +5,10 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/requireAuth';
 import { getCartId, getGuestId, CART_ID_COOKIE } from '@/lib/auth/cookies';
-import { extractLocalAccessTokenPayload } from '@/lib/auth/session-tokens';
-import { env } from '@/lib/env';
+import {
+  extractLocalAccessTokenPayload,
+  validateRefreshToken,
+} from '@/lib/auth/session-tokens';
 import * as cartRestService from '@/lib/magento/cart-rest.service';
 
 const CART_ID_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
@@ -22,9 +24,6 @@ const BASE_OPTIONS = {
  * 判断当前用户是否是 guest
  */
 function isGuestSession(accessToken: string): boolean {
-  if (!env.USE_LOCAL_AUTH) {
-    return false;
-  }
   try {
     const payload = extractLocalAccessTokenPayload(accessToken);
     return payload.type === 'guest';
@@ -39,15 +38,24 @@ function isGuestSession(accessToken: string): boolean {
  * 2) token 不可用（如过期）时，回退 guest_id cookie，避免误走 customer 分支。
  */
 function resolveIsGuestSession(request: Request): boolean {
-  const accessToken = request.headers
-    .get('cookie')
-    ?.match(/access_token=([^;]+)/)?.[1];
+  const cookies = request.headers.get('cookie') ?? '';
+  const accessToken = cookies.match(/access_token=([^;]+)/)?.[1];
 
   if (accessToken) {
     try {
       return isGuestSession(accessToken);
     } catch {
-      // token 失效时回退 guest_id 判定
+      // token 失效时回退 refresh_token 判定
+    }
+  }
+
+  const refreshToken = cookies.match(/refresh_token=([^;]+)/)?.[1];
+  if (refreshToken) {
+    try {
+      const payload = validateRefreshToken(refreshToken);
+      return payload.type === 'guest';
+    } catch {
+      // refresh token 也无效时回退 guest_id
     }
   }
 

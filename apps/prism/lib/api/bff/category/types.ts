@@ -18,6 +18,7 @@ export interface CategoryContext {
 export interface CategoryProductQuery {
   slug?: string;
   categoryId?: number;
+  categoryName?: string;
   page?: number;
   pageSize?: number;
 }

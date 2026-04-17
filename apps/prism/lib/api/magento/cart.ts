@@ -142,11 +142,13 @@ async function withCartAuthRecovery<T>(
 export async function addCartItem(
   params: AddCartItemParams
 ): Promise<CartItem> {
-  return withCartAuthRecovery(() =>
-    cartFetch<CartItem>('/api/v1/cart/items/add', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    })
+  return withCartAuthRecovery(
+    () =>
+      cartFetch<CartItem>('/api/v1/cart/items/add', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+    { preflightRefresh: true }
   );
 }
 

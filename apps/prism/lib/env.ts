@@ -9,10 +9,6 @@ const serverSchema = z.object({
   AUTH_REFRESH_TOKEN_SECRET: z.string().optional(),
   MAGENTO_JWT_SECRET: z.string().optional(), // Magento redirect token 签名密钥
   MAGENTO_STORE_CODE: z.string().min(1).default('default'),
-  USE_LOCAL_AUTH: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform(val => (val ? val === 'true' : false)),
 });
 
 const clientSchema = z.object({
@@ -84,15 +80,15 @@ const parsedEnv = mergedSchema.parse({
     process.env.MAGENTO_STORE_CODE ??
     process.env.NEXT_PUBLIC_MAGENTO_STORE_CODE ??
     'default',
-  USE_LOCAL_AUTH: process.env.USE_LOCAL_AUTH,
 });
 
+// 仅在服务端校验敏感密钥（客户端无权限访问非 NEXT_PUBLIC_ 变量）
 if (
-  parsedEnv.USE_LOCAL_AUTH &&
+  typeof window === 'undefined' &&
   (!parsedEnv.AUTH_TOKEN_SECRET || !parsedEnv.AUTH_REFRESH_TOKEN_SECRET)
 ) {
   throw new Error(
-    'AUTH_TOKEN_SECRET and AUTH_REFRESH_TOKEN_SECRET are required when USE_LOCAL_AUTH=true'
+    'AUTH_TOKEN_SECRET and AUTH_REFRESH_TOKEN_SECRET are required'
   );
 }
 

@@ -1,18 +1,32 @@
+import { notFound } from 'next/navigation';
 import { getPageBySlug } from '@/lib/api/cms-pages';
 import { renderSections } from '../components/sections/blockMap';
-import { notFound } from 'next/navigation';
+import { getCategoryContextBySlug } from '../../lib/api/bff/category/list';
+import { CategoryPageContent } from '../categories/components/CategoryPageContent';
 
 // Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.
 export const revalidate = 60; // ISR + On-Demand
 
-export async function generateMetadata({
-  params,
-}: {
+interface Props {
   params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const page = await getPageBySlug(slug);
+  searchParams: Promise<Record<string, string>>;
+}
 
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params;
+
+  // Try category first for best SEO
+  const categoryData = await getCategoryContextBySlug(slug).catch(() => null);
+  if (categoryData?.currentCategory) {
+    const name = categoryData.currentCategory.name;
+    return {
+      title: `${name} - Shop - Joydeem`,
+      description: `Shop ${name} at Joydeem. Browse our selection of quality products.`,
+    };
+  }
+
+  // Fallback to CMS page
+  const page = await getPageBySlug(slug);
   if (!page || !page.seo) {
     return {
       title: 'Page Not Found',
@@ -32,15 +46,25 @@ export async function generateMetadata({
   };
 }
 
-export default async function DynamicPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function DynamicPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const page = await getPageBySlug(slug);
+  const sp = await searchParams;
 
-  // 如果页面不存在或没有 sections，返回 404
+  // 1. Try category first for flat SEO-friendly URLs like /{category-slug}
+  const categoryData = await getCategoryContextBySlug(slug).catch(() => null);
+  if (categoryData?.currentCategory) {
+    return (
+      <CategoryPageContent
+        slug={slug}
+        currentCategory={categoryData.currentCategory}
+        categoryTree={categoryData.categoryTree}
+        searchParams={sp}
+      />
+    );
+  }
+
+  // 2. Fallback to CMS page
+  const page = await getPageBySlug(slug);
   if (!page || page.sections.length === 0) {
     notFound();
   }

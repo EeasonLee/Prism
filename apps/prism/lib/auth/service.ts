@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { magentoServerFetch } from '@/lib/api/bff/magento-server';
-import type { AuthResponse, GuestAuthResponse } from '@/lib/api/magento/types';
-import { env } from '@/lib/env';
 import { magentoAuthProvider } from '@/lib/magento/auth';
+import { MagentoApiError } from '@/lib/api/magento/client';
 import {
   clearSessionCookies,
   getAccessToken,
@@ -22,33 +20,6 @@ interface AuthPayload {
   password: string;
   first_name?: string;
   last_name?: string;
-}
-
-async function handleAuthMutation(
-  request: Request,
-  path: '/api/auth/login' | '/api/auth/register'
-): Promise<NextResponse> {
-  const body = (await request.json()) as AuthPayload;
-  const guestId = getGuestId(request);
-
-  const data = await magentoServerFetch<AuthResponse>(path, {
-    method: 'POST',
-    body: JSON.stringify({
-      ...body,
-      ...(guestId ? { guestSsoUserId: guestId } : {}),
-      storeId: 1,
-    }),
-  });
-
-  const response = NextResponse.json({
-    user: data.user,
-    cartMergeStatus: data.cartMergeStatus,
-  });
-
-  setSessionCookies(response, data.tokens);
-  response.cookies.delete('guest_id');
-
-  return response;
 }
 
 export function createAuthErrorResponse(
@@ -78,17 +49,25 @@ export function createAuthErrorResponse(
 }
 
 export async function login(request: Request): Promise<NextResponse> {
-  if (!env.USE_LOCAL_AUTH) {
-    return handleAuthMutation(request, '/api/auth/login');
-  }
-
   const body = (await request.json()) as AuthPayload;
   const guestId = getGuestId(request);
-  const data = await magentoAuthProvider.login({
-    email: body.email,
-    password: body.password,
-    guestId: guestId ?? undefined,
-  });
+  let data;
+  try {
+    data = await magentoAuthProvider.login({
+      email: body.email,
+      password: body.password,
+      guestId: guestId ?? undefined,
+    });
+  } catch (error) {
+    if (error instanceof MagentoApiError && error.status === 401) {
+      throw new MagentoApiError(
+        'Invalid email or password',
+        'INVALID_CREDENTIALS',
+        401
+      );
+    }
+    throw error;
+  }
 
   const localTokens = issueCustomerSessionTokens({
     customerId: data.user.id,
@@ -122,10 +101,6 @@ export async function login(request: Request): Promise<NextResponse> {
 }
 
 export async function register(request: Request): Promise<NextResponse> {
-  if (!env.USE_LOCAL_AUTH) {
-    return handleAuthMutation(request, '/api/auth/register');
-  }
-
   const body = (await request.json()) as AuthPayload;
   const guestId = getGuestId(request);
   const data = await magentoAuthProvider.register({
@@ -170,19 +145,6 @@ export async function register(request: Request): Promise<NextResponse> {
 export async function createGuestSession(): Promise<NextResponse> {
   const response = NextResponse.json({ hasSession: true });
 
-  if (!env.USE_LOCAL_AUTH) {
-    const data = await magentoServerFetch<GuestAuthResponse>(
-      '/api/auth/guest',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-      }
-    );
-
-    setSessionCookies(response, data.tokens, data.guest_id);
-    return response;
-  }
-
   const data = await magentoAuthProvider.createGuestSession();
   const localTokens = issueGuestSessionTokens({
     guestId: data.guestId,
@@ -205,18 +167,6 @@ export async function refreshSession(request: Request): Promise<NextResponse> {
     );
   }
 
-  if (!env.USE_LOCAL_AUTH) {
-    const data = await magentoServerFetch<AuthResponse>('/api/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    const response = NextResponse.json({ success: true });
-    setSessionCookies(response, data.tokens);
-
-    return response;
-  }
-
   const localTokens = await renewSessionTokensFromRefreshToken(refreshToken);
   const response = NextResponse.json({ success: true });
   setSessionCookies(response, localTokens);
@@ -228,18 +178,9 @@ export async function logout(request: Request): Promise<NextResponse> {
   const accessToken = getAccessToken(request);
 
   if (accessToken) {
-    const resolvedAccessToken = env.USE_LOCAL_AUTH
-      ? extractWrappedMagentoAccessToken(accessToken)
-      : accessToken;
+    const resolvedAccessToken = extractWrappedMagentoAccessToken(accessToken);
 
-    const logoutRequest = env.USE_LOCAL_AUTH
-      ? magentoAuthProvider.logout(resolvedAccessToken)
-      : magentoServerFetch('/api/auth/logout', {
-          method: 'POST',
-          accessToken: resolvedAccessToken,
-        });
-
-    await logoutRequest.catch(() => {
+    await magentoAuthProvider.logout(resolvedAccessToken).catch(() => {
       /* 失败也继续 */
     });
   }

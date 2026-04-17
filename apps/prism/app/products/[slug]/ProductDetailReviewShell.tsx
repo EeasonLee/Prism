@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '../../../lib/env';
+import { env } from '@/lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
   ProductReview,

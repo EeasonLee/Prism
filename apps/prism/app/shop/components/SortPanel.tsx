@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useCallback } from 'react';
-import type { DiscoverySortOption } from '../../../lib/api/discovery/types';
 
-const SORT_LABELS: Record<DiscoverySortOption, string> = {
+export type ShopSortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest';
+
+const SORT_LABELS: Record<ShopSortOption, string> = {
   featured: 'Featured',
   price_asc: 'Price: Low to High',
   price_desc: 'Price: High to Low',
@@ -12,17 +13,22 @@ const SORT_LABELS: Record<DiscoverySortOption, string> = {
 };
 
 interface SortPanelProps {
-  sortOptions: DiscoverySortOption[];
-  currentSort?: DiscoverySortOption;
+  sortOptions: ShopSortOption[];
+  currentSort?: ShopSortOption;
+  onChange?: () => void;
 }
 
-export function SortPanel({ sortOptions, currentSort }: SortPanelProps) {
+export function SortPanel({
+  sortOptions,
+  currentSort,
+  onChange,
+}: SortPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const handleSort = useCallback(
-    (sort: DiscoverySortOption) => {
+    (sort: ShopSortOption) => {
       const params = new URLSearchParams(searchParams.toString());
       params.delete('page');
       if (sort === 'featured') {
@@ -31,8 +37,9 @@ export function SortPanel({ sortOptions, currentSort }: SortPanelProps) {
         params.set('sort', sort);
       }
       router.push(`${pathname}?${params.toString()}`);
+      onChange?.();
     },
-    [router, pathname, searchParams]
+    [router, pathname, searchParams, onChange]
   );
 
   return (
@@ -40,7 +47,7 @@ export function SortPanel({ sortOptions, currentSort }: SortPanelProps) {
       <span className="text-sm text-ink-muted">Sort:</span>
       <select
         value={currentSort ?? 'featured'}
-        onChange={e => handleSort(e.target.value as DiscoverySortOption)}
+        onChange={e => handleSort(e.target.value as ShopSortOption)}
         className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-brand"
         aria-label="Sort products"
       >

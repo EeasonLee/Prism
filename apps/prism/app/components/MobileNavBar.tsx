@@ -3,11 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ShoppingCart, UserRound } from 'lucide-react';
+import { Search, ShoppingCart, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
 import { getNavBadgeValue } from './nav-config';
+import { GlobalSearch } from './GlobalSearch';
 
 function MobileIconButton({
   label,
@@ -41,44 +43,55 @@ export function MobileNavBar() {
   const router = useRouter();
   const { itemCount, openCart } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="flex h-[73px] items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
-      <Link
-        href="/"
-        aria-label="Go to home page"
-        className="flex shrink-0 items-center"
-      >
-        <Image
-          src="/images/logo.png"
-          alt="Joydeem"
-          width={132}
-          height={44}
-          className="h-11 w-auto"
-          priority
-        />
-      </Link>
-
-      <div className="flex items-center gap-2">
-        <MobileIconButton
-          label="Open cart"
-          badge={getNavBadgeValue(itemCount)}
-          onClick={openCart}
+    <>
+      <div className="flex h-[73px] items-center justify-between gap-3 px-4 sm:px-6 md:hidden">
+        <Link
+          href="/"
+          aria-label="Go to home page"
+          className="flex shrink-0 items-center"
         >
-          <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-        </MobileIconButton>
+          <Image
+            src="/images/logo.png"
+            alt="Joydeem"
+            width={132}
+            height={44}
+            className="h-11 w-auto"
+            priority
+          />
+        </Link>
 
-        <MobileIconButton
-          label={
-            isAuthenticated && user ? `Signed in as ${user.email}` : 'Sign in'
-          }
-          onClick={() => {
-            router.push(isAuthenticated ? '/account' : '/login');
-          }}
-        >
-          <UserRound className="h-5 w-5" aria-hidden="true" />
-        </MobileIconButton>
+        <div className="flex items-center gap-2">
+          <MobileIconButton
+            label="Search"
+            onClick={() => setIsSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </MobileIconButton>
+
+          <MobileIconButton
+            label="Open cart"
+            badge={getNavBadgeValue(itemCount)}
+            onClick={openCart}
+          >
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+          </MobileIconButton>
+
+          <MobileIconButton
+            label={
+              isAuthenticated && user ? `Signed in as ${user.email}` : 'Sign in'
+            }
+            onClick={() => {
+              router.push(isAuthenticated ? '/account' : '/login');
+            }}
+          >
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+          </MobileIconButton>
+        </div>
       </div>
-    </div>
+      <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+    </>
   );
 }

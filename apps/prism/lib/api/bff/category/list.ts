@@ -72,6 +72,8 @@ export async function getCategoryProductList(
 ): Promise<CategoryProductListResult> {
   return getProductListBFF({
     categoryId: query.categoryId,
+    categoryName: query.categoryName,
+    categorySlug: query.slug,
     page: query.page ?? 1,
     limit: query.pageSize ?? 24,
   });

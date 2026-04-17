@@ -1,6 +1,5 @@
 import { MagentoApiError } from '@/lib/api/magento/client';
 import { getAccessToken, getRefreshToken } from '@/lib/auth/cookies';
-import { env } from '@/lib/env';
 import { extractWrappedMagentoAccessToken } from '@/lib/auth/session-tokens';
 import { validateRefreshToken } from '@/lib/auth/session-tokens';
 import {
@@ -209,10 +208,6 @@ async function resolveMagentoAccessToken(request: Request): Promise<string> {
   const refreshToken = getRefreshToken(request);
 
   if (token) {
-    if (!env.USE_LOCAL_AUTH) {
-      return token;
-    }
-
     try {
       return extractWrappedMagentoAccessToken(token);
     } catch {
@@ -232,14 +227,6 @@ async function resolveMagentoAccessToken(request: Request): Promise<string> {
   }
 
   if (refreshToken) {
-    if (!env.USE_LOCAL_AUTH) {
-      throw new AccountServiceError(
-        'NO_ACCESS_TOKEN',
-        401,
-        'Authentication required'
-      );
-    }
-
     try {
       const payload = validateRefreshToken(refreshToken);
       return payload.magentoAccessToken;

@@ -208,6 +208,73 @@ export interface VideoShowcaseProps {
   videos: VideoItem[];
 }
 
+/**
+ * Deal Banner Slide
+ * 专题页 Banner 单张幻灯片
+ */
+export interface DealBannerSlide {
+  id: number;
+  image: StrapiImage;
+  title: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  theme: 'light' | 'dark';
+}
+
+/**
+ * Deal Banner Props
+ * 专题页顶部 Banner
+ */
+export interface DealBannerProps {
+  slides: DealBannerSlide[];
+  autoPlayInterval?: number;
+  showArrows?: boolean;
+  showDots?: boolean;
+}
+
+/**
+ * Deal Category Nav Item
+ * 专题页分类导航项（图片+文字）
+ */
+export interface DealCategoryNavItem {
+  id: number;
+  categoryUrlKey: string;
+  label: string;
+  image: StrapiImage;
+  link?: string;
+}
+
+/**
+ * Deal Category Nav Props
+ * 专题页分类图片导航
+ */
+export interface DealCategoryNavProps {
+  title?: string;
+  items: DealCategoryNavItem[];
+}
+
+/**
+ * Deal Product Block Item
+ * 单个分类产品区块配置
+ */
+export interface DealProductBlockItem {
+  id: number;
+  categoryName: string;
+  categoryUrlKey: string;
+  categoryLink?: string;
+  productSkus: string[];
+  layout: 'grid-2' | 'grid-3' | 'grid-4' | 'grid-6';
+}
+
+/**
+ * Deal Product Blocks Props
+ * 专题页多个分类产品区块
+ */
+export interface DealProductBlocksProps {
+  blocks: DealProductBlockItem[];
+}
+
 // ============ Section Union Type ============
 
 export type SectionType =
@@ -218,7 +285,10 @@ export type SectionType =
   | 'page.image-text-block'
   | 'page.featured-products'
   | 'page.content-carousel'
-  | 'page.video-showcase';
+  | 'page.video-showcase'
+  | 'page.deal-banner'
+  | 'page.deal-category-nav'
+  | 'page.deal-product-blocks';
 
 export interface Section<T = unknown> {
   __component: SectionType;
@@ -234,7 +304,10 @@ export type PageSection =
   | Section<ImageTextBlockProps>
   | Section<FeaturedProductsProps>
   | Section<ContentCarouselProps>
-  | Section<VideoShowcaseProps>;
+  | Section<VideoShowcaseProps>
+  | Section<DealBannerProps>
+  | Section<DealCategoryNavProps>
+  | Section<DealProductBlocksProps>;
 
 // ============ Page Schema ============
 

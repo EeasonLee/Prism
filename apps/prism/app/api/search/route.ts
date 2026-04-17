@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
-import { fetchDiscoveryResult } from '../../../lib/api/discovery/service';
-import type {
-  DiscoverySortOption,
-  ProductDiscoveryQuery,
-} from '../../../lib/api/discovery/types';
+import { fetchProductSearchResult } from '../../search/lib/service';
+import type { SearchSortOption, ProductSearchQuery } from '../../search/types';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  const query: ProductDiscoveryQuery = {
+  const query: ProductSearchQuery = {
     q: searchParams.get('q') ?? undefined,
     page: searchParams.has('page')
       ? Math.max(1, Number(searchParams.get('page')))
@@ -23,11 +20,11 @@ export async function GET(request: Request) {
     price_max: searchParams.has('price_max')
       ? Number(searchParams.get('price_max'))
       : undefined,
-    sort: (searchParams.get('sort') as DiscoverySortOption) || undefined,
+    sort: (searchParams.get('sort') as SearchSortOption) || undefined,
   };
 
   try {
-    const result = await fetchDiscoveryResult(query);
+    const result = await fetchProductSearchResult(query);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

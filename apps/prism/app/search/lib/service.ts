@@ -1,33 +1,36 @@
 /**
- * 商品发现 service 层
+ * Search / Category 商品检索 service
  *
- * 优先使用 Meilisearch 检索；Meilisearch 不可用时（仅分类页）降级到 Magento 链路。
+ * 优先走 Meilisearch；Meilisearch 不可用时（仅分类页）降级到 Magento 链路。
  * 搜索页（无 slug）必须依赖 Meilisearch，无法降级。
  */
 
-import { env } from '../../env';
-import { formatPrice } from '../../format-price';
-import { fetchUnifiedProducts, type UnifiedProduct } from '../unified-product';
+import { env } from '../../../lib/env';
+import { formatPrice } from '../../../lib/format-price';
+import {
+  fetchUnifiedProducts,
+  type UnifiedProduct,
+} from '../../../lib/api/unified-product';
 import {
   fetchDiscoveryCategoryBySlug,
   fetchDiscoveryCategoryMapping,
   fetchDiscoveryFilterConfig,
-} from '../strapi/discovery';
+} from '../../../lib/api/strapi/discovery';
 import { searchProducts } from './meilisearch';
 import type {
-  DiscoveryAvailableFilter,
-  DiscoveryCategory,
-  DiscoveryFilterConfig,
-  DiscoverySortOption,
+  SearchAvailableFilter,
+  SearchCategory,
+  SearchFilterConfig,
+  SearchSortOption,
   ProductCardItem,
-  ProductDiscoveryQuery,
-  ProductDiscoveryResult,
-} from './types';
+  ProductSearchQuery,
+  ProductSearchResult,
+} from '../types';
 
-// ─── Magento fallback 工具函数 ────────────────────────────────────────────────
+// ――― Magento fallback 工具函数 ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 // TODO: remove after Meilisearch products index is live
 
-function mapSortToMagento(sort?: DiscoverySortOption): {
+function mapSortToMagento(sort?: SearchSortOption): {
   sort?: 'entity_id' | 'price' | 'position';
   order?: 'asc' | 'desc';
 } {
@@ -47,8 +50,8 @@ function mapSortToMagento(sort?: DiscoverySortOption): {
 function toProductCardItemFromMagento(
   product: UnifiedProduct
 ): ProductCardItem {
-  const childPrices = product.children
-    .map(child => child.price)
+  const childPrices = (product.children ?? [])
+    .map((child: { price?: number | null }) => child.price)
     .filter((price): price is number => typeof price === 'number' && price > 0);
   const hasPriceRange = childPrices.length > 1;
 
@@ -69,46 +72,48 @@ function toProductCardItemFromMagento(
 }
 
 function buildAvailableFiltersFromConfig(
-  filterConfig: DiscoveryFilterConfig | null
-): DiscoveryAvailableFilter[] {
+  filterConfig: SearchFilterConfig | null
+): SearchAvailableFilter[] {
   if (!filterConfig?.is_enabled) return [];
 
-  return filterConfig.enabled_filters.flatMap(filterKey => {
-    if (filterKey === 'brand') {
-      return [
-        {
-          key: 'brand',
-          label: 'Brand',
-          type: 'checkbox' as const,
-          options: [],
-        },
-      ];
+  return filterConfig.enabled_filters.flatMap(
+    (filterKey): SearchAvailableFilter[] => {
+      if (filterKey === 'brand') {
+        return [
+          {
+            key: 'brand',
+            label: 'Brand',
+            type: 'checkbox' as const,
+            options: [],
+          },
+        ];
+      }
+      if (filterKey === 'price') {
+        return [
+          {
+            key: 'price',
+            label: 'Price',
+            type: 'range' as const,
+            options: filterConfig.price_ranges.map(range => ({
+              value: range.label,
+              label: range.label,
+            })),
+          },
+        ];
+      }
+      return [];
     }
-    if (filterKey === 'price') {
-      return [
-        {
-          key: 'price',
-          label: 'Price',
-          type: 'range' as const,
-          options: filterConfig.price_ranges.map(range => ({
-            value: range.label,
-            label: range.label,
-          })),
-        },
-      ];
-    }
-    return [];
-  });
+  );
 }
 
-// ─── Meilisearch 工具函数 ──────────────────────────────────────────────────────
+// ――― Meilisearch 工具函数 ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 function buildAvailableFiltersFromFacets(
   facetDistribution?: Record<string, Record<string, number>>
-): DiscoveryAvailableFilter[] {
+): SearchAvailableFilter[] {
   if (!facetDistribution) return [];
 
-  const filters: DiscoveryAvailableFilter[] = [];
+  const filters: SearchAvailableFilter[] = [];
 
   if (facetDistribution.brand) {
     filters.push({
@@ -125,20 +130,46 @@ function buildAvailableFiltersFromFacets(
     });
   }
 
+  if (facetDistribution.size) {
+    filters.push({
+      key: 'size',
+      label: 'Size',
+      type: 'checkbox',
+      options: Object.entries(facetDistribution.size).map(([value, count]) => ({
+        value,
+        label: value,
+        count,
+      })),
+    });
+  }
+
+  if (facetDistribution.categories) {
+    filters.push({
+      key: 'category',
+      label: 'Category',
+      type: 'checkbox',
+      options: Object.entries(facetDistribution.categories).map(
+        ([value, count]) => ({
+          value,
+          label: value,
+          count,
+        })
+      ),
+    });
+  }
+
   return filters;
 }
 
-// ─── 公开 API ─────────────────────────────────────────────────────────────────
+// ――― 公开 API ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 /**
  * 将前台分类 slug 翻译为 Magento 分类 ID 集合，并返回筛选配置。
  * TODO: remove after Meilisearch products index is live
  */
-export async function resolveDiscoveryQuery(
-  query: ProductDiscoveryQuery
-): Promise<{
+export async function resolveCategoryQuery(query: ProductSearchQuery): Promise<{
   magentoCategoryIds: number[];
-  filterConfig: DiscoveryFilterConfig | null;
+  filterConfig: SearchFilterConfig | null;
 }> {
   if (!query.slug) {
     return { magentoCategoryIds: [], filterConfig: null };
@@ -160,11 +191,11 @@ export async function resolveDiscoveryQuery(
   };
 }
 
-async function fetchDiscoveryResultFromMeilisearch(
-  query: ProductDiscoveryQuery
-): Promise<ProductDiscoveryResult> {
+async function fetchFromMeilisearch(
+  query: ProductSearchQuery
+): Promise<ProductSearchResult> {
   // 分类页需要同时获取 Strapi 分类信息（banner、SEO 等）
-  const categoryPromise: Promise<DiscoveryCategory | null> = query.slug
+  const categoryPromise: Promise<SearchCategory | null> = query.slug
     ? fetchDiscoveryCategoryBySlug(query.slug)
     : Promise.resolve(null);
 
@@ -173,18 +204,20 @@ async function fetchDiscoveryResultFromMeilisearch(
       q: query.q,
       slug: query.slug,
       brand: query.brand,
+      size: query.size,
+      category: query.category,
       priceMin: query.price_min,
       priceMax: query.price_max,
       sort: query.sort,
       page: query.page,
       pageSize: query.pageSize,
-      facets: ['brand'],
+      facets: ['brand', 'size', 'categories'],
     }),
     categoryPromise,
   ]);
 
   if (query.slug && !category) {
-    throw new Error(`Discovery category not found for slug: ${query.slug}`);
+    throw new Error(`Search category not found for slug: ${query.slug}`);
   }
 
   return {
@@ -223,16 +256,16 @@ async function fetchDiscoveryResultFromMeilisearch(
 }
 
 // TODO: remove after Meilisearch products index is live
-async function fetchDiscoveryResultFromMagento(
-  query: ProductDiscoveryQuery
-): Promise<ProductDiscoveryResult> {
+async function fetchFromMagento(
+  query: ProductSearchQuery
+): Promise<ProductSearchResult> {
   const slug = query.slug as string;
   const category = await fetchDiscoveryCategoryBySlug(slug);
   if (!category) {
-    throw new Error(`Discovery category not found for slug: ${slug}`);
+    throw new Error(`Search category not found for slug: ${slug}`);
   }
 
-  const { magentoCategoryIds, filterConfig } = await resolveDiscoveryQuery(
+  const { magentoCategoryIds, filterConfig } = await resolveCategoryQuery(
     query
   );
   const effectiveSort =
@@ -260,7 +293,7 @@ async function fetchDiscoveryResultFromMagento(
 
   const mergedProducts = Array.from(
     productResponses
-      .flatMap(response => response.items)
+      .flatMap((response: { items: UnifiedProduct[] }) => response.items)
       .reduce<Map<string, UnifiedProduct>>((acc, product) => {
         if (!acc.has(product.sku)) acc.set(product.sku, product);
         return acc;
@@ -268,7 +301,7 @@ async function fetchDiscoveryResultFromMagento(
       .values()
   );
 
-  const filteredProducts = mergedProducts.filter(product => {
+  const filteredProducts = mergedProducts.filter((product: UnifiedProduct) => {
     const matchesBrand =
       !query.brand ||
       String(product.extra_attributes?.brand ?? '').toLowerCase() ===
@@ -331,20 +364,20 @@ async function fetchDiscoveryResultFromMagento(
 }
 
 /**
- * 聚合商品发现结果，优先使用 Meilisearch，不可用时降级到 Magento（仅分类页）。
+ * 聚合商品搜索结果，优先使用 Meilisearch，不可用时降级到 Magento（仅分类页）。
  */
-export async function fetchDiscoveryResult(
-  query: ProductDiscoveryQuery
-): Promise<ProductDiscoveryResult> {
+export async function fetchProductSearchResult(
+  query: ProductSearchQuery
+): Promise<ProductSearchResult> {
   if (env.NEXT_PUBLIC_MEILISEARCH_HOST) {
     try {
-      return await fetchDiscoveryResultFromMeilisearch(query);
+      return await fetchFromMeilisearch(query);
     } catch (err) {
       // 搜索页（无 slug）无法降级到 Magento
       if (!query.slug) throw err;
       // TODO: remove after Meilisearch products index is live
       console.warn(
-        '[discovery] Meilisearch unavailable, falling back to Magento:',
+        '[search] Meilisearch unavailable, falling back to Magento:',
         err
       );
     }
@@ -356,5 +389,5 @@ export async function fetchDiscoveryResult(
       'Search page requires NEXT_PUBLIC_MEILISEARCH_HOST to be configured'
     );
   }
-  return fetchDiscoveryResultFromMagento(query);
+  return fetchFromMagento(query);
 }
