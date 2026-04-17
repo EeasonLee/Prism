@@ -49,9 +49,7 @@ vi.mock('../lib/auth-modal/context', () => ({
 
 function createTarget(partial?: Partial<ReviewTarget>): ReviewTarget {
   return {
-    productSku: 'PARENT',
-    purchasedSku: 'CHILD',
-    purchasedVariantLabel: 'Black / 2 Pack',
+    sku: 'PARENT',
     requiresVariantSelection: false,
     ...partial,
   };
@@ -64,7 +62,7 @@ describe('ReviewForm', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  it('allows configurable-product submission without selecting a variant (falls back to product SKU)', async () => {
+  it('allows configurable-product submission without selecting a variant', async () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/api/reviews/tags')) {
@@ -90,8 +88,6 @@ describe('ReviewForm', () => {
       <ReviewForm
         sku="PARENT"
         target={createTarget({
-          purchasedSku: null,
-          purchasedVariantLabel: null,
           requiresVariantSelection: true,
         })}
         onSubmitted={onSubmitted}
@@ -122,14 +118,11 @@ describe('ReviewForm', () => {
       string,
       { method: string; headers: Record<string, string>; body: string }
     ];
-    const payload = JSON.parse(options.body) as {
-      purchasedSku?: string;
-      productSku?: string;
-    };
+    const payload = JSON.parse(options.body) as Record<string, unknown>;
 
-    expect(payload.productSku).toBe('PARENT');
-    // purchasedSku must be required by the API; we fall back to product SKU.
-    expect(payload.purchasedSku).toBe('PARENT');
+    expect(payload).not.toHaveProperty('productSku');
+    expect(payload).not.toHaveProperty('purchasedSku');
+    expect(payload).not.toHaveProperty('purchasedVariantLabel');
 
     await waitFor(() => {
       expect(onSubmitted).toHaveBeenCalled();

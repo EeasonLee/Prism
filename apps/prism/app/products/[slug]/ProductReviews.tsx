@@ -57,9 +57,7 @@ const RATING_FILTER_OPTIONS = [
 ] as const;
 
 export interface ReviewTarget {
-  productSku: string;
-  purchasedSku: string | null;
-  purchasedVariantLabel: string | null;
+  sku: string;
   requiresVariantSelection: boolean;
 }
 
@@ -351,19 +349,11 @@ function ReviewCard({
           </div>
 
           <dl className="space-y-1.5 text-sm">
-            {review.purchasedVariantLabel && (
-              <div className="flex items-start justify-between gap-3">
-                <dt className="text-ink-faint">Variant</dt>
-                <dd className="text-right font-medium text-ink">
-                  {review.purchasedVariantLabel}
-                </dd>
-              </div>
-            )}
-            {!review.purchasedVariantLabel && review.purchasedSku && (
+            {review.sku && (
               <div className="flex items-start justify-between gap-3">
                 <dt className="text-ink-faint">SKU</dt>
                 <dd className="text-right font-medium text-ink">
-                  {review.purchasedSku}
+                  {review.sku}
                 </dd>
               </div>
             )}
@@ -824,7 +814,7 @@ export function ProductReviews({
             <div>
               <p className="text-sm font-semibold text-ink">Browse reviews</p>
               <p className="text-sm text-ink-muted">
-                All approved reviews for this product, including every variant.
+                All approved reviews for this product.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">

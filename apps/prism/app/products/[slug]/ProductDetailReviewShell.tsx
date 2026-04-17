@@ -18,7 +18,6 @@ import type {
 } from '../../../lib/api/strapi/reviews';
 import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
 import { ProductQA } from './ProductQA';
-import type { MagentoConfigurableOption } from '../../../lib/api/magento/types';
 import type {
   UnifiedProduct,
   UnifiedProductImage,
@@ -39,51 +38,6 @@ interface ProductDetailReviewShellProps {
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
   recipes?: Recipe[];
-}
-
-function buildVariantLabel(
-  product: UnifiedProduct,
-  selection: ProductDetailSelection
-) {
-  if (
-    product.type_id !== 'configurable' ||
-    !selection.allSelected ||
-    !selection.selectedVariant
-  ) {
-    return null;
-  }
-
-  const configurableOptions: MagentoConfigurableOption[] =
-    product.configurable_options ??
-    product.extension_attributes?.configurable_product_options ??
-    [];
-  const attributes = product.children?.find(
-    item => item.sku === selection.selectedVariant?.sku
-  )?.attributes;
-
-  if (!attributes) {
-    return null;
-  }
-
-  const labels = configurableOptions
-    .map(option => {
-      const rawValue =
-        attributes[option.attribute_id] ??
-        (option.attribute_code ? attributes[option.attribute_code] : undefined);
-      if (!rawValue) {
-        return null;
-      }
-
-      const matched = option.values.find(
-        value =>
-          String(value.value_index) === rawValue || value.label === rawValue
-      );
-
-      return matched?.label ?? rawValue;
-    })
-    .filter((value): value is string => Boolean(value));
-
-  return labels.length > 0 ? labels.join(' / ') : null;
 }
 
 export function ProductDetailReviewShell({
@@ -127,22 +81,10 @@ export function ProductDetailReviewShell({
   }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {
-    if (product.type_id === 'configurable') {
-      return {
-        productSku: product.sku,
-        purchasedSku: selection.allSelected
-          ? selection.selectedVariant?.sku ?? null
-          : null,
-        purchasedVariantLabel: buildVariantLabel(product, selection),
-        requiresVariantSelection: !selection.allSelected,
-      };
-    }
-
     return {
-      productSku: product.sku,
-      purchasedSku: product.sku,
-      purchasedVariantLabel: null,
-      requiresVariantSelection: false,
+      sku: product.sku,
+      requiresVariantSelection:
+        product.type_id === 'configurable' ? !selection.allSelected : false,
     };
   }, [product, selection]);
 

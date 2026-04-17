@@ -10,9 +10,6 @@ import {
 } from '../../../../lib/validation/email';
 
 interface SubmitReviewRequestBody {
-  productSku?: unknown;
-  purchasedSku?: unknown;
-  purchasedVariantLabel?: unknown;
   authorName?: unknown;
   authorEmail?: unknown;
   magentoUserId?: unknown;
@@ -109,9 +106,7 @@ export async function POST(
     .json()
     .catch(() => ({}))) as SubmitReviewRequestBody;
 
-  const productSku = normalizeText(body.productSku) || decodeURIComponent(sku);
-  const purchasedSku = normalizeText(body.purchasedSku);
-  const purchasedVariantLabel = normalizeText(body.purchasedVariantLabel);
+  const requestSku = decodeURIComponent(sku);
   const authorName = normalizeText(body.authorName);
   const authorEmail = normalizeText(body.authorEmail);
   const magentoUserId = normalizeText(body.magentoUserId);
@@ -147,8 +142,6 @@ export async function POST(
         )
     : [];
 
-  if (!productSku) return badRequest('productSku is required');
-  if (!purchasedSku) return badRequest('purchasedSku is required');
   if (!authorEmail) return badRequest('authorEmail is required');
   if (!isReasonableEmail(authorEmail)) {
     return badRequest('authorEmail is invalid');
@@ -175,10 +168,7 @@ export async function POST(
   try {
     const result = await submitReview(
       {
-        sku: decodeURIComponent(sku),
-        productSku,
-        purchasedSku,
-        purchasedVariantLabel: purchasedVariantLabel || null,
+        sku: requestSku,
         authorName: resolvedAuthorName,
         authorEmail,
         ...(magentoUserId ? { magentoUserId } : {}),

@@ -20,10 +20,7 @@ interface StrapiReviewMediaRaw {
 interface StrapiReviewRaw {
   id: number;
   documentId?: string;
-  sku: string;
-  product_sku?: string;
-  purchased_sku?: string;
-  purchased_variant_label?: string | null;
+  sku?: string | null;
   author_name: string;
   rating: number;
   title: string;
@@ -139,9 +136,6 @@ export interface ProductReview {
   id: number;
   documentId?: string;
   sku: string;
-  productSku: string;
-  purchasedSku: string;
-  purchasedVariantLabel: string | null;
   authorName: string;
   rating: number;
   title: string;
@@ -219,9 +213,6 @@ export interface ReviewQueryFilters {
 
 export interface SubmitProductReviewInput {
   sku: string;
-  productSku: string;
-  purchasedSku: string;
-  purchasedVariantLabel: string | null;
   authorName: string;
   authorEmail: string;
   /** 登录用户传入 Magento 用户 ID；游客省略 */
@@ -302,10 +293,7 @@ function normalizeReview(review: StrapiReviewRaw): ProductReview {
   return {
     id: review.id,
     documentId: review.documentId,
-    sku: review.sku,
-    productSku: review.product_sku ?? review.sku,
-    purchasedSku: review.purchased_sku ?? review.sku,
-    purchasedVariantLabel: review.purchased_variant_label ?? null,
+    sku: review.sku ?? '',
     authorName: review.author_name,
     rating: Number(review.rating ?? 0),
     title: review.title,
@@ -489,9 +477,6 @@ export async function submitReview(
 ): Promise<SubmitProductReviewResult> {
   const dataPayload: Record<string, unknown> = {
     sku: input.sku,
-    product_sku: input.productSku,
-    purchased_sku: input.purchasedSku,
-    purchased_variant_label: input.purchasedVariantLabel,
     author_name: input.authorName,
     author_email: input.authorEmail,
     rating: input.rating,
