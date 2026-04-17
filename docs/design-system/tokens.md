@@ -2,7 +2,7 @@
 
 Token 是设计系统的语言。本文档解释每个 Token 的**语义**（什么时候用），Token 的**值**（具体颜色/大小）活在代码里，不在这里重复。
 
-> 查看实际值：`apps/prism/app/globals.css` `:root { ... }` 段落
+> 查看实际值：`libs/tokens/src/tokens.css`（`apps/prism/app/globals.css` 负责引入）
 
 ---
 

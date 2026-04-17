@@ -17,7 +17,7 @@ Prism 项目的设计系统文档。本目录是设计系统的**说明层**，�
 设计系统遵循**单一真相源**原则，所有视觉规范从一个地方定义，逐层传递：
 
 ```
-CSS Variables (globals.css)   ← 唯一真相源，改这里全局生效
+CSS Variables (libs/tokens/src/tokens.css)   ← 唯一真相源，改这里全局生效
         ↓
 Tailwind Config               ← 映射为 bg-brand / text-ink 等工具类
         ↓
@@ -34,7 +34,7 @@ App 页面 / 业务组件            ← 只消费，不定义
 
 ```
 Primitive（原始层）
-  具体 HSL 值，写在 globals.css 注释里
+  具体 HSL 值，写在 libs/tokens/src/tokens.css 注释里
   开发者不直接使用此层
        ↓
 Semantic（语义层）          ← 开发者日常使用这一层
@@ -110,13 +110,13 @@ import { Button } from '@prism/ui';
 
 ## 文件位置速查
 
-| 内容                 | 文件                            |
-| -------------------- | ------------------------------- |
-| CSS 变量（Token 值） | `apps/prism/app/globals.css`    |
-| Tailwind 主题扩展    | `apps/prism/tailwind.config.js` |
-| 基础组件库           | `libs/ui/src/components/`       |
-| 工具函数（cn）       | `libs/shared/src/utils/cn.ts`   |
-| 设计系统文档         | `docs/design-system/`           |
+| 内容                 | 文件                                 |
+| -------------------- | ------------------------------------ |
+| CSS 变量（Token 值） | `libs/tokens/src/tokens.css`         |
+| Tailwind 主题扩展    | `libs/tokens/src/tailwind-preset.js` |
+| 基础组件库           | `libs/ui/src/components/`            |
+| 工具函数（cn）       | `libs/shared/src/utils/cn.ts`        |
+| 设计系统文档         | `docs/design-system/`                |
 
 ---
 
@@ -124,7 +124,7 @@ import { Button } from '@prism/ui';
 
 Token 层（CSS 变量）零框架依赖，可在任何项目中使用：
 
-1. 复制 `globals.css` 中 `:root { ... }` 的变量定义到新项目
+1. 复制 `libs/tokens/src/tokens.css` 中 `:root { ... }` 的变量定义到新项目
 2. 引入 `libs/ui/` 组件（Nx 工作区内直接依赖）
 3. CSS Variables 在 React / Vue / Svelte / 原生 HTML 中同样有效
 

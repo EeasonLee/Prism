@@ -70,6 +70,24 @@ export default [
     },
   },
   {
+    files: ['**/*.tsx'],
+    ignores: [
+      '**/app/components/HomeCategorySection.tsx',
+      '**/app/components/HomeModernLivingSection.tsx',
+      '**/app/test-graphql/page.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Literal[value=/^#[0-9A-Fa-f]{3,8}$/]",
+          message:
+            '禁止硬编码 HEX 颜色，请使用 Design Token（如 bg-brand / text-ink / bg-success）。',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.js', '**/*.jsx'],
     plugins: {
       '@next/next': nextPlugin,
