@@ -1,35 +1,42 @@
 /**
- * Meilisearch 商品检索客户端
+ * Search 页面专用 Meilisearch 客户端
  *
- * 使用原生 fetch 调用 Meilisearch REST API，封装商品索引查询逻辑。
  * 索引名：products
  * 主键：id（= sku）
  */
 
-import { env } from '../../env';
+import { env } from '../../../lib/env';
 import type {
-  DiscoverySortOption,
+  SearchSortOption,
   ProductCardItem,
-  DiscoveryPagination,
-} from './types';
+  SearchPagination,
+} from '../types';
 
 const INDEX_UID = 'products';
 
-// ─── Meilisearch 响应结构 ──────────────────────────────────────────────────────
+// ――― Meilisearch 响应结构 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 interface MeilisearchHit {
   id: string; // sku
   name: string;
+  display_name?: string | null;
+  url_key?: string | null;
   subtitle?: string | null;
   brand?: string | null;
+  size?: string | null;
+  categories?: string[];
   promotion_label?: string | null;
   discovery_category_slugs?: string[];
   thumbnail?: string | null;
+  thumbnail_url?: string | null;
+  image_url?: string | null;
   href?: string | null;
   price: number | null;
   special_price?: number | null;
+  currency?: string | null;
   in_stock?: boolean;
   is_active?: boolean;
+  type_id?: string | null;
   created_at?: number;
 }
 
@@ -42,15 +49,17 @@ interface MeilisearchSearchResponse {
   facetDistribution?: Record<string, Record<string, number>>;
 }
 
-// ─── 查询参数与结果类型 ────────────────────────────────────────────────────────
+// ――― 查询参数与结果类型 ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface MeilisearchSearchParams {
   q?: string;
   slug?: string;
   brand?: string;
+  size?: string;
+  category?: string;
   priceMin?: number;
   priceMax?: number;
-  sort?: DiscoverySortOption;
+  sort?: SearchSortOption;
   page?: number;
   pageSize?: number;
   facets?: string[];
@@ -58,20 +67,26 @@ export interface MeilisearchSearchParams {
 
 export interface MeilisearchSearchResult {
   items: ProductCardItem[];
-  pagination: DiscoveryPagination;
+  pagination: SearchPagination;
   facetDistribution?: Record<string, Record<string, number>>;
 }
 
-// ─── 工具函数 ─────────────────────────────────────────────────────────────────
+// ――― 工具函数 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 function buildFilter(params: MeilisearchSearchParams): string[] {
-  const filters: string[] = ['is_active = true'];
+  const filters: string[] = ['status = "1"', 'visibility = "4"'];
 
   if (params.slug) {
     filters.push(`discovery_category_slugs = "${params.slug}"`);
   }
+  if (params.category) {
+    filters.push(`categories = "${params.category}"`);
+  }
   if (params.brand) {
     filters.push(`brand = "${params.brand}"`);
+  }
+  if (params.size) {
+    filters.push(`size = "${params.size}"`);
   }
   if (params.priceMin !== undefined) {
     filters.push(`price >= ${params.priceMin}`);
@@ -83,7 +98,7 @@ function buildFilter(params: MeilisearchSearchParams): string[] {
   return filters;
 }
 
-function buildSort(sort?: DiscoverySortOption): string[] {
+function buildSort(sort?: SearchSortOption): string[] {
   switch (sort) {
     case 'price_asc':
       return ['price:asc'];
@@ -100,9 +115,9 @@ function buildSort(sort?: DiscoverySortOption): string[] {
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
   return {
     sku: hit.id,
-    name: hit.name,
+    name: hit.display_name ?? hit.name,
     subtitle: hit.subtitle ?? undefined,
-    thumbnail: hit.thumbnail ?? undefined,
+    thumbnail: hit.thumbnail_url ?? hit.thumbnail ?? undefined,
     price: hit.special_price ?? hit.price,
     in_stock: hit.in_stock ?? true,
     promotion_label: hit.promotion_label ?? undefined,
@@ -110,7 +125,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
   };
 }
 
-// ─── 主函数 ───────────────────────────────────────────────────────────────────
+// ――― 主函数 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export async function searchProducts(
   params: MeilisearchSearchParams

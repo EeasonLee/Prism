@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
@@ -8,6 +8,31 @@ import { useAuth } from '@/lib/auth/context';
 type Tab = 'signin' | 'register';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginSkeleton />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginSkeleton() {
+  return (
+    <main className="mx-auto w-full max-w-md px-4 py-10 sm:px-6">
+      <div className="rounded-2xl border border-border bg-background p-6 shadow-sm sm:p-8">
+        <div className="h-6 w-3/4 animate-pulse rounded bg-surface" />
+        <div className="mt-2 h-4 w-1/2 animate-pulse rounded bg-surface" />
+        <div className="mt-5 h-10 animate-pulse rounded bg-surface" />
+        <div className="mt-6 space-y-4">
+          <div className="h-10 animate-pulse rounded bg-surface" />
+          <div className="h-10 animate-pulse rounded bg-surface" />
+          <div className="h-12 animate-pulse rounded bg-surface" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, register, isAuthenticated, isLoading } = useAuth();

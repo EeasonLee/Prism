@@ -6,13 +6,13 @@ import {
 } from '../cache-policy';
 import { apiClient } from '../client';
 import type {
-  DiscoveryCategory,
-  DiscoveryFilterConfig,
-  DiscoveryPriceRange,
-  DiscoverySeo,
-  DiscoverySortOption,
-  DiscoveryLayoutType,
-} from '../discovery/types';
+  SearchCategory,
+  SearchFilterConfig,
+  SearchPriceRange,
+  SearchSeo,
+  SearchSortOption,
+  SearchLayoutType,
+} from '../../../app/search/types';
 import { getStrapiBaseUrl } from '../config';
 
 interface StrapiImageLike {
@@ -32,8 +32,8 @@ interface StrapiDiscoveryCategoryRaw {
   level?: 1 | 2 | 3 | null;
   sort_order?: number | null;
   is_visible?: boolean | null;
-  default_sort?: DiscoverySortOption | null;
-  layout_type?: DiscoveryLayoutType | null;
+  default_sort?: SearchSortOption | null;
+  layout_type?: SearchLayoutType | null;
   description?: string | null;
   icon?: StrapiImageLike | null;
   banner?: StrapiImageLike | null;
@@ -61,8 +61,8 @@ interface StrapiDiscoveryFilterConfigRaw {
   id: number;
   documentId: string;
   enabled_filters?: string[] | null;
-  sort_options?: DiscoverySortOption[] | null;
-  default_sort?: DiscoverySortOption | null;
+  sort_options?: SearchSortOption[] | null;
+  default_sort?: SearchSortOption | null;
   price_ranges?: StrapiPriceRangeRaw[] | null;
   is_enabled?: boolean | null;
   discovery_category?: {
@@ -80,7 +80,7 @@ function resolveStrapiUrl(url: string | null | undefined): string | undefined {
   return `${getStrapiBaseUrl()}${url}`;
 }
 
-function normalizeSeo(raw?: StrapiSeoRaw | null): DiscoverySeo | undefined {
+function normalizeSeo(raw?: StrapiSeoRaw | null): SearchSeo | undefined {
   if (!raw) return undefined;
   return {
     title: raw.title ?? undefined,
@@ -90,12 +90,12 @@ function normalizeSeo(raw?: StrapiSeoRaw | null): DiscoverySeo | undefined {
 
 function normalizeCategory(
   raw: StrapiDiscoveryCategoryRaw
-): DiscoveryCategory | null {
+): SearchCategory | null {
   if (!raw.name || !raw.slug) return null;
 
   const children = (raw.children ?? [])
     .map(normalizeCategory)
-    .filter((item): item is DiscoveryCategory => item !== null);
+    .filter((item): item is SearchCategory => item !== null);
 
   return {
     id: raw.id,
@@ -117,9 +117,9 @@ function normalizeCategory(
 
 function normalizePriceRanges(
   ranges: StrapiPriceRangeRaw[] | null | undefined
-): DiscoveryPriceRange[] {
+): SearchPriceRange[] {
   return (ranges ?? [])
-    .map(range => {
+    .map((range): SearchPriceRange | null => {
       const label = range.label?.trim();
       if (!label) return null;
       return {
@@ -128,12 +128,12 @@ function normalizePriceRanges(
         max: range.max ?? undefined,
       };
     })
-    .filter((item): item is DiscoveryPriceRange => item !== null);
+    .filter((item): item is SearchPriceRange => item !== null);
 }
 
 function normalizeFilterConfig(
   raw: StrapiDiscoveryFilterConfigRaw
-): DiscoveryFilterConfig {
+): SearchFilterConfig {
   return {
     id: raw.id,
     documentId: raw.documentId,
@@ -153,7 +153,7 @@ function normalizeFilterConfig(
 
 export async function fetchDiscoveryCategoryBySlug(
   slug: string
-): Promise<DiscoveryCategory | null> {
+): Promise<SearchCategory | null> {
   const encodedSlug = encodeURIComponent(slug);
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryCategoryRaw>
@@ -194,7 +194,7 @@ export async function fetchDiscoveryCategoryMapping(
 
 export async function fetchDiscoveryFilterConfig(
   discoveryCategoryId: string
-): Promise<DiscoveryFilterConfig | null> {
+): Promise<SearchFilterConfig | null> {
   const data = await apiClient.get<
     StrapiListResponse<StrapiDiscoveryFilterConfigRaw>
   >('api/discovery-filter-configs?populate=*', {

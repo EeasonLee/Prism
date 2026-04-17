@@ -9,7 +9,7 @@ import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '../../../lib/env';
+import { env } from '@/lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
   ProductReview,

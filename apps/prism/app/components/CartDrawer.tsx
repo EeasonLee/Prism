@@ -101,7 +101,8 @@ export function CartDrawer() {
     setServiceError(null);
     try {
       const { redirect_url } = await getCheckoutRedirectLink();
-      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+      closeCart();
+      window.location.assign(redirect_url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
@@ -120,7 +121,7 @@ export function CartDrawer() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [hasSession, isGuest]);
+  }, [closeCart, hasSession, isGuest]);
 
   const handleRemoveItem = useCallback(
     async (itemId: string) => {

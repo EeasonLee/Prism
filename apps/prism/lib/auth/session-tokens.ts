@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { magentoServerFetch } from '@/lib/api/bff/magento-server';
-import type { AuthResponse } from '@/lib/api/magento/types';
 import {
   issueLocalAccessToken,
   issueLocalRefreshToken,
@@ -100,6 +98,12 @@ export function validateRefreshToken(
 export function reissueSessionTokensFromRefreshToken(
   refreshToken: string
 ): LocalSessionTokens {
+  // TODO: 安全加固 - 实现 Refresh Token Rotation
+  // 当前每次 refresh 只是重新签发新 token 对，旧 refresh token 在
+  // 原始 exp 到达前仍可被重复使用。应实现:
+  // 1. 每次 refresh 时使旧 refresh token 立即失效
+  // 2. 检测到已用过的 refresh token 再次使用时，触发安全告警并
+  //    强制登出该用户所有设备
   const payload = validateRefreshToken(refreshToken);
 
   if (payload.type === 'customer' && !payload.customerEmail) {
@@ -126,40 +130,5 @@ export function reissueSessionTokensFromRefreshToken(
 export async function renewSessionTokensFromRefreshToken(
   refreshToken: string
 ): Promise<LocalSessionTokens> {
-  const payload = validateRefreshToken(refreshToken);
-
-  if (!payload.magentoRefreshToken) {
-    return reissueSessionTokensFromRefreshToken(refreshToken);
-  }
-
-  try {
-    const refreshed = await magentoServerFetch<AuthResponse>(
-      '/api/auth/refresh',
-      {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken: payload.magentoRefreshToken }),
-      }
-    );
-
-    if (payload.type === 'customer') {
-      return issueCustomerSessionTokens({
-        customerId: payload.sub,
-        customerEmail: payload.customerEmail ?? refreshed.user.email,
-        magentoAccessToken: refreshed.tokens.accessToken,
-        magentoRefreshToken: refreshed.tokens.refreshToken,
-        guestId: payload.guestId,
-        sessionId: payload.sessionId,
-      });
-    }
-
-    return issueGuestSessionTokens({
-      guestId: payload.guestId ?? payload.sub,
-      magentoAccessToken: refreshed.tokens.accessToken,
-      magentoRefreshToken: refreshed.tokens.refreshToken,
-      sessionId: payload.sessionId,
-    });
-  } catch {
-    // 上游 refresh 失败时兜底保留旧行为，避免直接把用户踢下线。
-    return reissueSessionTokensFromRefreshToken(refreshToken);
-  }
+  return reissueSessionTokensFromRefreshToken(refreshToken);
 }

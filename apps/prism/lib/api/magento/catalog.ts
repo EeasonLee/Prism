@@ -13,6 +13,7 @@ import type {
   MagentoGroupedItem,
   MagentoProduct,
   MagentoProductListResponse,
+  CustomizableOptionType,
 } from './types';
 
 function buildQuery(params: Record<string, unknown>): string {
@@ -208,6 +209,22 @@ type RawDownloadableSample = {
   sample_url?: string | null;
 };
 
+type RawCustomizableOption = {
+  option_id?: number | null;
+  title?: string | null;
+  required?: boolean | null;
+  sort_order?: number | null;
+  type?: string | null;
+  max_characters?: number | null;
+  values?: Array<{
+    option_type_id?: number | null;
+    title?: string | null;
+    price?: number | null;
+    price_type?: string | null;
+    sort_order?: number | null;
+  }> | null;
+};
+
 type RawMagentoProduct = {
   __typename?: string | null;
   id?: number | null;
@@ -249,6 +266,7 @@ type RawMagentoProduct = {
   downloadable_product_samples?: RawDownloadableSample[] | null;
   media_gallery?: RawMediaGalleryItem[] | null;
   extra_attributes?: Record<string, unknown> | null;
+  options?: RawCustomizableOption[] | null;
 };
 
 type RawMagentoProductListResponse = {
@@ -617,6 +635,24 @@ function normalizeProduct(raw: RawMagentoProduct): MagentoProduct {
     description: raw.description ?? null,
     short_description: raw.short_description ?? null,
     extra_attributes: raw.extra_attributes ?? null,
+    options: (raw.options ?? []).map(option => ({
+      option_id: option.option_id ?? 0,
+      title: option.title ?? '',
+      required: option.required ?? false,
+      sort_order: option.sort_order ?? 0,
+      type: (option.type ?? 'field') as CustomizableOptionType,
+      values: option.values?.map(v => ({
+        option_type_id: v.option_type_id ?? 0,
+        title: v.title ?? '',
+        price: v.price ?? 0,
+        price_type: (v.price_type ?? 'fixed') as
+          | 'fixed'
+          | 'percent'
+          | 'dynamic',
+        sort_order: v.sort_order ?? 0,
+      })),
+      max_characters: option.max_characters ?? null,
+    })),
   };
 }
 

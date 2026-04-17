@@ -1,11 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/format-price';
-import { fetchDiscoveryResult } from '../../lib/api/discovery/service';
-import type {
-  DiscoverySortOption,
-  ProductDiscoveryQuery,
-} from '../../lib/api/discovery/types';
+import { fetchProductSearchResult } from './lib/service';
+import type { SearchSortOption, ProductSearchQuery } from './types';
 
 interface Props {
   searchParams: Promise<{
@@ -29,19 +26,19 @@ export default async function SearchPage({ searchParams }: Props) {
   const sp = await searchParams;
   const q = sp.q?.trim() ?? '';
 
-  const query: ProductDiscoveryQuery = {
+  const query: ProductSearchQuery = {
     q,
     page: sp.page ? Math.max(1, Number(sp.page)) : 1,
     pageSize: 24,
     brand: sp.brand,
     price_min: sp.price_min ? Number(sp.price_min) : undefined,
     price_max: sp.price_max ? Number(sp.price_max) : undefined,
-    sort: (sp.sort as DiscoverySortOption) || undefined,
+    sort: (sp.sort as SearchSortOption) || undefined,
   };
 
   let result;
   try {
-    result = await fetchDiscoveryResult(query);
+    result = await fetchProductSearchResult(query);
   } catch {
     result = null;
   }

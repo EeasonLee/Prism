@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { magentoServerFetch } from '@/lib/api/bff/magento-server';
-import type { AuthResponse } from '@/lib/api/magento/types';
-import { env } from '@/lib/env';
 import { verifyLocalAccessToken } from './token';
 import { clearSession } from './clearSession';
 import { getAccessToken, getGuestId, getRefreshToken } from './cookies';
@@ -14,8 +11,7 @@ export function readSessionState(request: Request): SessionState {
   const refreshToken = getRefreshToken(request);
   const guestId = getGuestId(request);
 
-  // 本地鉴权模式下，优先信任 access_token 里的用户类型，避免残留 guest_id 误判。
-  if (accessToken && env.USE_LOCAL_AUTH) {
+  if (accessToken) {
     try {
       const payload = verifyLocalAccessToken(accessToken);
       const isGuest = payload.type === 'guest';
@@ -28,7 +24,7 @@ export function readSessionState(request: Request): SessionState {
         isGuest,
       };
     } catch {
-      // token 无效时回退到 cookie 粗判，后续会在 getSessionResponse 中继续 refresh/清理
+      // token 无效时回退 cookie 粗判，后续会在 getSessionResponse 中继续 refresh/清理
     }
   }
 
@@ -98,22 +94,9 @@ export async function getSessionResponse(
 
   if (session.accessToken) {
     try {
-      if (env.USE_LOCAL_AUTH) {
-        return NextResponse.json<SessionResponse>(
-          localCustomerSessionFromToken(session.accessToken)
-        );
-      }
-
-      const data = await magentoServerFetch<AuthResponse>('/api/auth/me', {
-        accessToken: session.accessToken,
-      });
-
-      return NextResponse.json<SessionResponse>({
-        hasSession: true,
-        isAuthenticated: true,
-        isGuest: false,
-        user: data.user,
-      });
+      return NextResponse.json<SessionResponse>(
+        localCustomerSessionFromToken(session.accessToken)
+      );
     } catch {
       // access_token 过期，继续尝试 refresh_token
     }
@@ -121,30 +104,14 @@ export async function getSessionResponse(
 
   if (session.refreshToken) {
     try {
-      if (env.USE_LOCAL_AUTH) {
-        const newTokens = await renewSessionTokensFromRefreshToken(
-          session.refreshToken
-        );
-        const response = NextResponse.json<SessionResponse>(
-          localCustomerSessionFromToken(newTokens.accessToken)
-        );
+      const newTokens = await renewSessionTokensFromRefreshToken(
+        session.refreshToken
+      );
+      const response = NextResponse.json<SessionResponse>(
+        localCustomerSessionFromToken(newTokens.accessToken)
+      );
 
-        return setSession(response, newTokens);
-      }
-
-      const data = await magentoServerFetch<AuthResponse>('/api/auth/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken: session.refreshToken }),
-      });
-
-      const response = NextResponse.json<SessionResponse>({
-        hasSession: true,
-        isAuthenticated: true,
-        isGuest: false,
-        user: data.user,
-      });
-
-      return setSession(response, data.tokens);
+      return setSession(response, newTokens);
     } catch {
       const response = NextResponse.json<SessionResponse>({
         hasSession: false,

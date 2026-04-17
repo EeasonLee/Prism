@@ -5,7 +5,7 @@
  * 作为产品详情页 related products 内部 service 的主要数据源。
  */
 
-import { searchProducts } from '../../api/discovery/meilisearch';
+import { searchProducts } from '../../../app/search/lib/meilisearch';
 
 export interface RelatedProductItem {
   sku: string;

@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { MagentoApiError } from '@/lib/api/magento/client';
-import type { AuthResponse, AuthTokens } from '@/lib/api/magento/types';
-import { magentoServerFetch } from '@/lib/api/bff/magento-server';
+import type { AuthTokens } from '@/lib/api/magento/types';
 import { withRefreshLock } from '@/lib/api/bff/refresh-lock';
-import { env } from '@/lib/env';
 import {
   extractWrappedMagentoAccessToken,
+  extractLocalAccessTokenPayload,
   renewSessionTokensFromRefreshToken,
 } from './session-tokens';
 import { clearSession } from './clearSession';
@@ -16,16 +15,7 @@ async function refreshViaMagento(
   refreshToken: string
 ): Promise<AuthTokens | null> {
   try {
-    if (env.USE_LOCAL_AUTH) {
-      return await renewSessionTokensFromRefreshToken(refreshToken);
-    }
-
-    const data = await magentoServerFetch<AuthResponse>('/api/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    return data.tokens;
+    return await renewSessionTokensFromRefreshToken(refreshToken);
   } catch {
     return null;
   }
@@ -70,9 +60,9 @@ export async function requireAuth<T>(
     }
 
     try {
-      const retryAccessToken = env.USE_LOCAL_AUTH
-        ? extractWrappedMagentoAccessToken(newTokens.accessToken)
-        : newTokens.accessToken;
+      const retryAccessToken = extractWrappedMagentoAccessToken(
+        newTokens.accessToken
+      );
       const data = await handler(retryAccessToken);
       const response = NextResponse.json(data);
       return setSession(response, newTokens);
@@ -97,10 +87,30 @@ export async function requireAuth<T>(
   }
 
   let resolvedAccessToken: string;
+  let preRefreshedTokens: AuthTokens | null = null;
   try {
-    resolvedAccessToken = env.USE_LOCAL_AUTH
-      ? extractWrappedMagentoAccessToken(accessToken)
-      : accessToken;
+    const payload = extractLocalAccessTokenPayload(accessToken);
+    const now = Math.floor(Date.now() / 1000);
+    const refreshToken = getRefreshToken(request);
+    // 临期主动刷新（5 分钟阈值），避免把过期/临期的 local access token 发给 Magento。
+    // 本地 auth customer 没有 magentoRefreshToken，但 Magento Customer Token 已延长到 7 天，
+    // 因此 proactive refresh 仍然有效：用本地 refresh token 重新签发新的 access token，
+    // 包装的是仍然有效的 Magento token。
+    if (refreshToken && payload.exp - now < 5 * 60) {
+      const newTokens = await withRefreshLock(() =>
+        refreshViaMagento(refreshToken)
+      );
+      if (newTokens) {
+        preRefreshedTokens = newTokens;
+        resolvedAccessToken = extractWrappedMagentoAccessToken(
+          newTokens.accessToken
+        );
+      } else {
+        resolvedAccessToken = payload.magentoAccessToken;
+      }
+    } else {
+      resolvedAccessToken = payload.magentoAccessToken;
+    }
   } catch {
     // Local token expired, try refresh
     const refreshToken = getRefreshToken(request);
@@ -126,9 +136,9 @@ export async function requireAuth<T>(
     }
 
     try {
-      resolvedAccessToken = env.USE_LOCAL_AUTH
-        ? extractWrappedMagentoAccessToken(newTokens.accessToken)
-        : newTokens.accessToken;
+      resolvedAccessToken = extractWrappedMagentoAccessToken(
+        newTokens.accessToken
+      );
       const data = await handler(resolvedAccessToken);
       const response = NextResponse.json(data);
       return setSession(response, newTokens);
@@ -149,7 +159,11 @@ export async function requireAuth<T>(
 
   try {
     const data = await handler(resolvedAccessToken);
-    return NextResponse.json(data);
+    const response = NextResponse.json(data);
+    if (preRefreshedTokens) {
+      return setSession(response, preRefreshedTokens);
+    }
+    return response;
   } catch (error) {
     if (error instanceof MagentoApiError && error.status === 401) {
       const refreshToken = getRefreshToken(request);
@@ -177,9 +191,9 @@ export async function requireAuth<T>(
       }
 
       try {
-        const retryAccessToken = env.USE_LOCAL_AUTH
-          ? extractWrappedMagentoAccessToken(newTokens.accessToken)
-          : newTokens.accessToken;
+        const retryAccessToken = extractWrappedMagentoAccessToken(
+          newTokens.accessToken
+        );
         const retryData = await handler(retryAccessToken);
         const response = NextResponse.json(retryData);
         return setSession(response, newTokens);

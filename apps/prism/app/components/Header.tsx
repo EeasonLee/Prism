@@ -8,6 +8,7 @@ import { useAuth } from '../../lib/auth/context';
 import { useAuthModal } from '../../lib/auth-modal/context';
 import { useCart } from '../../lib/cart/context';
 import { CartDrawer } from './CartDrawer';
+import { GlobalSearch } from './GlobalSearch';
 import { MobileNavBar } from './MobileNavBar';
 
 type NavLink = {
@@ -121,6 +122,7 @@ function UserAvatar({ name, email }: { name: string; email: string }) {
 
 export function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { openLogin } = useAuthModal();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { itemCount, openCart, isCartOpen } = useCart();
@@ -230,21 +232,21 @@ export function Header() {
           </nav>
 
           <div className="hidden shrink-0 items-center justify-end gap-1 sm:gap-2 md:flex">
-            {/* <IconButton label="Search">
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="6" />
-              <path d="m15.5 15.5 3.5 3.5" />
-            </svg>
-          </IconButton> */}
+            <IconButton label="Search" onClick={() => setIsSearchOpen(true)}>
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="6" />
+                <path d="m15.5 15.5 3.5 3.5" />
+              </svg>
+            </IconButton>
 
             {isAuthenticated && user ? (
               <div ref={userMenuRef} className="relative">
@@ -379,6 +381,7 @@ export function Header() {
           <MobileNavBar />
         </div>
       </header>
+      <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </>
   );
 }
