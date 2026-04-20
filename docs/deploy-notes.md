@@ -92,7 +92,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_PUBLIC_API_URL=http://192.168.50.4:1337
-ENV NEXT_PUBLIC_STRAPI_URL=http://192.168.50.4:1337
+ENV STRAPI_URL=http://192.168.50.4:1337
 
 RUN pnpm nx build prism
 

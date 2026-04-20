@@ -52,7 +52,6 @@ export async function getCategoryContextBySlug(slug?: string): Promise<{
     rootId: SHOP_ROOT_CATEGORY_ID,
   });
   const categoryTree = (rawTree.children ?? []).map(mapCategoryNode);
-
   const currentCategory = slug
     ? findCategoryBySlug(categoryTree, slug)
     : undefined;
@@ -65,6 +64,33 @@ export async function getCategoryContextBySlug(slug?: string): Promise<{
     categoryTree,
     currentCategory,
   };
+}
+
+/**
+ * 轻量分类解析：只返回分类基础信息（id / name / slug），不返回完整树。
+ * 内部复用 getCategoryContextBySlug，未来可替换为 Redis/缓存查询。
+ */
+export async function resolveCategoryBySlug(
+  slug: string
+): Promise<CategoryContext | null> {
+  try {
+    const result = await getCategoryContextBySlug(slug);
+    if (result.currentCategory) {
+      return result.currentCategory;
+    }
+  } catch {
+    /* 浅层树未包含该 slug（例如第三层以下），继续按 url_key 查询 */
+  }
+
+  try {
+    const row = await categoryService.getCategoryByUrlKey(slug);
+    if (!row) {
+      return null;
+    }
+    return { id: row.id, name: row.name, slug: row.url_key };
+  } catch {
+    return null;
+  }
 }
 
 export async function getCategoryProductList(

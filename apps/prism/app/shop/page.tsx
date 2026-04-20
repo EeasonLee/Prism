@@ -1,7 +1,7 @@
 import { ProductCard } from './components/ProductCard';
 import { FilterPanel } from './components/FilterPanel';
 import { SortPanel, type ShopSortOption } from './components/SortPanel';
-import { searchShopProducts } from './lib/meilisearch';
+import { searchProducts } from './lib/meilisearch';
 
 export const metadata = {
   title: 'Shop - Joydeem',
@@ -42,7 +42,7 @@ function buildPageHref(
 export default async function ShopPage({ searchParams }: Props) {
   const sp = await searchParams;
 
-  const result = await searchShopProducts({
+  const result = await searchProducts({
     q: sp.q?.trim(),
     page: sp.page ? Math.max(1, Number(sp.page)) : 1,
     pageSize: 24,
@@ -52,7 +52,6 @@ export default async function ShopPage({ searchParams }: Props) {
     priceMin: sp.price_min ? Number(sp.price_min) : undefined,
     priceMax: sp.price_max ? Number(sp.price_max) : undefined,
     sort: (sp.sort as ShopSortOption) || undefined,
-    facets: ['brand', 'size', 'categories'],
   }).catch(() => null);
 
   const products = result?.items ?? [];

@@ -92,11 +92,11 @@ export function buildMagentoRedirectUrl(
   tokenType: 'cart_redirect' | 'checkout_redirect'
 ): string {
   const magentoBaseUrl =
-    env.NEXT_PUBLIC_MAGENTOL ??
+    env.MAGENTO_URL ??
     env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL?.replace(/\/graphql$/, '');
   if (!magentoBaseUrl) {
     throw new Error(
-      'NEXT_PUBLIC_MAGENTOL or NEXT_PUBLIC_MAGENTO_GRAPHQL_URL is not configured'
+      'MAGENTO_URL or NEXT_PUBLIC_MAGENTO_GRAPHQL_URL is not configured'
     );
   }
 

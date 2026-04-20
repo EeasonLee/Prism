@@ -18,7 +18,7 @@ function getMagentoBaseUrl(): string {
     return explicitUrl.endsWith('/') ? explicitUrl.slice(0, -1) : explicitUrl;
   }
 
-  const magentoBaseUrl = process.env.NEXT_PUBLIC_MAGENTOL;
+  const magentoBaseUrl = process.env.MAGENTO_URL;
   if (magentoBaseUrl) {
     return magentoBaseUrl.endsWith('/')
       ? magentoBaseUrl.slice(0, -1)
@@ -26,7 +26,7 @@ function getMagentoBaseUrl(): string {
   }
 
   throw new Error(
-    'NEXT_PUBLIC_MAGENTO_API_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+    'NEXT_PUBLIC_MAGENTO_API_URL or MAGENTO_URL is not configured'
   );
 }
 

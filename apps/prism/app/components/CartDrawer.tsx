@@ -92,7 +92,7 @@ export function CartDrawer() {
     if (!hasSession) return;
 
     // 游客直接弹出登录引导
-    if (isGuest && env.NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT) {
+    if (isGuest && env.REQUIRE_LOGIN_FOR_CHECKOUT) {
       setShowLoginModal(true);
       return;
     }
@@ -106,7 +106,7 @@ export function CartDrawer() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
-        if (env.NEXT_PUBLIC_REQUIRE_LOGIN_FOR_CHECKOUT) {
+        if (env.REQUIRE_LOGIN_FOR_CHECKOUT) {
           setShowLoginModal(true);
         } else {
           setServiceError(msg || 'Guest checkout is not available.');

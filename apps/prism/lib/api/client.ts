@@ -73,12 +73,13 @@ class ApiClient {
 
       // 先解析响应体（Response body 只能读取一次）
       let data: T;
+      const clonedResponse = response.clone();
       try {
         data = await response.json();
       } catch {
         // 如果不是 JSON，尝试作为文本处理
         try {
-          const text = await response.text();
+          const text = await clonedResponse.text();
           throw new Error(
             `Response is not valid JSON: ${text.substring(0, 100)}`
           );

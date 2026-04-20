@@ -80,10 +80,10 @@ export function getApiBaseUrl(): string {
 }
 
 export function getStrapiBaseUrl(): string {
-  const baseUrl = env.NEXT_PUBLIC_STRAPI_URL ?? env.NEXT_PUBLIC_API_URL;
+  const baseUrl = env.STRAPI_URL ?? env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) {
     throw new Error(
-      'NEXT_PUBLIC_STRAPI_URL or NEXT_PUBLIC_API_URL is required'
+      'STRAPI_URL or NEXT_PUBLIC_API_URL is required'
     );
   }
 
@@ -93,11 +93,11 @@ export function getStrapiBaseUrl(): string {
 export function getStrapiServerBaseUrl(): string {
   const baseUrl =
     env.STRAPI_INTERNAL_URL ??
-    env.NEXT_PUBLIC_STRAPI_URL ??
+    env.STRAPI_URL ??
     env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) {
     throw new Error(
-      'STRAPI_INTERNAL_URL, NEXT_PUBLIC_STRAPI_URL, or NEXT_PUBLIC_API_URL is required'
+      'STRAPI_INTERNAL_URL, STRAPI_URL, or NEXT_PUBLIC_API_URL is required'
     );
   }
 

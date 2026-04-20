@@ -60,7 +60,7 @@ _(此阶段可以由人工完成或使用独立子代理执行)_
       修改 `apps/prism/lib/env.ts` 增加验证逻辑：
 
 ```typescript
-NEXT_PUBLIC_MEILISEARCH_HOST: z.string().url().optional(),
+MEILISEARCH_HOST: z.string().url().optional(),
 MEILISEARCH_API_KEY: z.string().optional(),
 ```
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { magentoAuthProvider } from '@/lib/magento/auth';
-import { MagentoApiError } from '@/lib/api/magento/client';
+import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
 import {
   clearSessionCookies,
   getAccessToken,
@@ -59,7 +59,7 @@ export async function login(request: Request): Promise<NextResponse> {
       guestId: guestId ?? undefined,
     });
   } catch (error) {
-    if (error instanceof MagentoApiError && error.status === 401) {
+    if (isMagentoApiError(error) && error.status === 401) {
       throw new MagentoApiError(
         'Invalid email or password',
         'INVALID_CREDENTIALS',

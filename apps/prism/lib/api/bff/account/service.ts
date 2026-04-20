@@ -1,4 +1,4 @@
-import { MagentoApiError } from '@/lib/api/magento/client';
+import { MagentoApiError, isMagentoApiError, MagentoServiceError } from '@/lib/api/magento/client';
 import { getAccessToken, getRefreshToken } from '@/lib/auth/cookies';
 import { extractWrappedMagentoAccessToken } from '@/lib/auth/session-tokens';
 import { validateRefreshToken } from '@/lib/auth/session-tokens';
@@ -388,7 +388,7 @@ function toAccountServiceError(error: unknown): AccountServiceError {
     return error;
   }
 
-  if (error instanceof MagentoApiError) {
+  if (isMagentoApiError(error)) {
     return new AccountServiceError(
       'MAGENTO_API_ERROR',
       error.status || 502,
@@ -547,7 +547,7 @@ export class MagentoAccountService implements AccountService {
         throw error;
       }
 
-      if (error instanceof MagentoApiError) {
+      if (isMagentoApiError(error)) {
         if (error.status === 401) {
           throw new AccountServiceError(
             'UPSTREAM_UNAUTHORIZED',

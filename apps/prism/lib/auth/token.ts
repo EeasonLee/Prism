@@ -91,10 +91,7 @@ export function issueLocalRefreshToken(
       iat: now,
       exp: now + ttlSeconds,
     },
-    getRequiredSecret(
-      env.AUTH_REFRESH_TOKEN_SECRET,
-      'AUTH_REFRESH_TOKEN_SECRET'
-    )
+    getRequiredSecret(env.AUTH_TOKEN_SECRET, 'AUTH_TOKEN_SECRET')
   );
 }
 
@@ -112,9 +109,6 @@ export function verifyLocalRefreshToken(
 ): LocalRefreshTokenPayload {
   return verifyHmacToken<LocalRefreshTokenPayload>(
     token,
-    getRequiredSecret(
-      env.AUTH_REFRESH_TOKEN_SECRET,
-      'AUTH_REFRESH_TOKEN_SECRET'
-    )
+    getRequiredSecret(env.AUTH_TOKEN_SECRET, 'AUTH_TOKEN_SECRET')
   );
 }

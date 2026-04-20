@@ -6,6 +6,10 @@
  */
 
 import { magentoGraphQL } from '../magento-graphql.client';
+import type {
+  ProductCardItem,
+  ProductListResult,
+} from '../../api/bff/product/types';
 
 // ─── GraphQL 类型 ──────────────────────────────────────────────────────────────
 

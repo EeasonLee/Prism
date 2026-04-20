@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 import {
-  searchShopProducts,
+  searchProducts,
   type ShopSortOption,
 } from '../../../shop/lib/meilisearch';
+import { resolveCategoryBySlug } from '../../../../lib/api/bff/category/list';
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
   const { searchParams } = new URL(request.url);
 
-  const q = searchParams.get('q') ?? undefined;
-  const category = searchParams.get('category') ?? undefined;
   const brand = searchParams.get('brand') ?? undefined;
   const size = searchParams.get('size') ?? undefined;
+  const stockStatus = searchParams.get('stock_status') ?? undefined;
   const priceMin = searchParams.get('price_min');
   const priceMax = searchParams.get('price_max');
   const sort = (searchParams.get('sort') as ShopSortOption) || undefined;
@@ -21,17 +25,28 @@ export async function GET(request: Request) {
   );
 
   try {
-    const result = await searchShopProducts({
-      q: q?.trim(),
-      category,
-      brand,
-      size,
-      priceMin: priceMin ? Number(priceMin) : undefined,
-      priceMax: priceMax ? Number(priceMax) : undefined,
-      sort,
+    // 解析分类
+    // 解析分类
+    const category = await resolveCategoryBySlug(slug).catch(() => null);
+    if (!category) {
+      return NextResponse.json(
+        { success: false, error: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    // 搜索产品（仅走 Meilisearch）
+    const result = await searchProducts({
+      categoryId: Number(category.id),
+      categorySlug: slug,
       page,
       pageSize,
-      facets: ['brand', 'size'],
+      sort,
+      brand,
+      size,
+      stockStatus,
+      priceMin: priceMin ? Number(priceMin) : undefined,
+      priceMax: priceMax ? Number(priceMax) : undefined,
     });
 
     return NextResponse.json({ success: true, data: result });

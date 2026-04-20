@@ -6,7 +6,7 @@ const { join } = require('path');
 const useApiProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const magentoApiUrl =
-  process.env.NEXT_PUBLIC_MAGENTO_API_URL ?? process.env.NEXT_PUBLIC_MAGENTOL;
+  process.env.NEXT_PUBLIC_MAGENTO_API_URL ?? process.env.MAGENTO_URL;
 const imageBaseUrl = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
 
 function createRemotePattern(url, pathname = '/**') {
@@ -89,6 +89,7 @@ const nextConfig = {
   output: 'standalone',
   env: {
     NEXT_PUBLIC_APP_VERSION: prismPkg.version,
+    REQUIRE_LOGIN_FOR_CHECKOUT: process.env.REQUIRE_LOGIN_FOR_CHECKOUT,
   },
   reactStrictMode: true,
   typedRoutes: true,

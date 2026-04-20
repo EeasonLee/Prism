@@ -684,10 +684,11 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
  * }
  * ```
  */
+import { getStrapiBaseUrl } from './config';
+
 export async function getPageBySlug(slug: string): Promise<Page | null> {
   try {
     // Strapi v5 对于 Dynamic Zone，必须使用 populate[field][on][component.name] 语法
-    // 针对不同的 component 类型使用不同的 populate 规则
     const populateParams = [
       'populate[sections][on][page.hero-banner][populate][slides][populate]=*',
       'populate[sections][on][page.category-grid][populate]=*',
@@ -705,19 +706,32 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[featuredImage]=true',
     ].join('&');
 
-    const response = await apiClient.get<StrapiPageResponse>(
-      `api/pages?filters[slug][$eq]=${encodeURIComponent(
-        slug
-      )}&${populateParams}`,
-      {
-        next: {
-          revalidate: REVALIDATE_SECONDS_CMS_PAGE,
-          tags: [cacheTagCmsPage(slug)],
-        },
-      }
-    );
+    const strapiUrl = `${getStrapiBaseUrl()}/api/pages?filters[slug][$eq]=${encodeURIComponent(
+      slug
+    )}&${populateParams}`;
 
-    const pageData = response.data[0];
+    const response = await fetch(strapiUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      next: {
+        revalidate: REVALIDATE_SECONDS_CMS_PAGE,
+        tags: [cacheTagCmsPage(slug)],
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`Page not found: ${slug}`);
+        return null;
+      }
+      throw new Error(`Strapi request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = (await response.json()) as StrapiPageResponse;
+
+    const pageData = responseData.data[0];
     if (!pageData) {
       console.warn(`Page not found: ${slug}`);
       return null;

@@ -20,6 +20,7 @@ interface FilterPanelProps {
   appliedBrand?: string;
   appliedSize?: string;
   appliedCategory?: string;
+  appliedStockStatus?: string;
   appliedPriceMin?: number;
   appliedPriceMax?: number;
   onChange?: () => void;
@@ -30,6 +31,7 @@ export function FilterPanel({
   appliedBrand,
   appliedSize,
   appliedCategory,
+  appliedStockStatus,
   appliedPriceMin,
   appliedPriceMax,
   onChange,
@@ -86,23 +88,22 @@ export function FilterPanel({
     [updateParams]
   );
 
-  const brandFilter = availableFilters.find(f => f.key === 'brand');
-  const sizeFilter = availableFilters.find(f => f.key === 'size');
-  const categoryFilter = availableFilters.find(f => f.key === 'category');
-
-  const hasFilters =
-    (brandFilter && brandFilter.options.length > 0) ||
-    (sizeFilter && sizeFilter.options.length > 0) ||
-    (categoryFilter && categoryFilter.options.length > 0);
+  const hasFilters = availableFilters.length > 0;
 
   const hasApplied =
     appliedBrand !== undefined ||
     appliedSize !== undefined ||
     appliedCategory !== undefined ||
+    appliedStockStatus !== undefined ||
     appliedPriceMin !== undefined ||
     appliedPriceMax !== undefined;
 
   if (!hasFilters && !hasApplied) return null;
+
+  const brandFilter = availableFilters.find(f => f.key === 'brand');
+  const sizeFilter = availableFilters.find(f => f.key === 'size');
+  const categoryFilter = availableFilters.find(f => f.key === 'category');
+  const stockStatusFilter = availableFilters.find(f => f.key === 'stock_status');
 
   return (
     <div className="space-y-6">
@@ -205,6 +206,39 @@ export function FilterPanel({
         </div>
       )}
 
+      {stockStatusFilter && stockStatusFilter.options.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-ink">Availability</h3>
+          <div className="space-y-2">
+            {stockStatusFilter.options.map(option => (
+              <label
+                key={option.value}
+                className="flex cursor-pointer items-center gap-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={appliedStockStatus === option.value}
+                  onChange={e => {
+                    updateParams({
+                      stock_status: e.target.checked ? option.value : undefined,
+                    });
+                  }}
+                  className="h-4 w-4 rounded border-border text-brand focus:ring-brand"
+                />
+                <span className="text-sm text-ink">
+                  {option.label === 'in_stock' ? 'In Stock' : option.label === 'out_of_stock' ? 'Out of Stock' : option.label}
+                  {option.count !== undefined && (
+                    <span className="ml-1 text-ink-muted">
+                      ({option.count})
+                    </span>
+                  )}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <h3 className="mb-3 text-sm font-semibold text-ink">Price</h3>
         <div className="flex items-center gap-2">
@@ -248,6 +282,7 @@ export function FilterPanel({
               brand: undefined,
               size: undefined,
               category: undefined,
+              stock_status: undefined,
               price_min: undefined,
               price_max: undefined,
             })

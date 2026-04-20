@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
 import { categoryService } from '@/lib/services/category.service';
-import { mapCategoryDetail } from '@/lib/mappers/category.mapper';
-
-// Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_CATEGORY_DETAIL in cache-policy.ts
-export const revalidate = 300;
+import { mapBreadcrumbs } from '@/lib/mappers/category.mapper';
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { id } = await params;
-  const categoryId = Number(id);
+  const { slug } = await params;
+  const categoryId = Number(slug);
 
-  if (isNaN(categoryId)) {
+  if (Number.isNaN(categoryId)) {
     return NextResponse.json(
       {
         success: false,
@@ -25,9 +22,11 @@ export async function GET(
 
   try {
     const detail = await categoryService.getCategoryDetail(categoryId);
+    const breadcrumbs = mapBreadcrumbs(detail.breadcrumbs ?? []);
+
     return NextResponse.json({
       success: true,
-      data: mapCategoryDetail(detail),
+      data: breadcrumbs,
       error: null,
     });
   } catch (error) {
@@ -36,9 +35,11 @@ export async function GET(
         success: false,
         data: null,
         error: {
-          code: 'CATEGORY_FETCH_ERROR',
+          code: 'BREADCRUMB_FETCH_ERROR',
           message:
-            error instanceof Error ? error.message : 'Failed to fetch category',
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch breadcrumbs',
         },
       },
       { status: 500 }

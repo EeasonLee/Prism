@@ -6,7 +6,7 @@
  */
 
 import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import { MagentoApiError } from '@/lib/api/magento/client';
+import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
 import {
   authenticatedMagentoGraphQL,
   magentoGraphQLNoCache,
@@ -21,7 +21,7 @@ import type {
 } from '@/lib/api/magento/types';
 
 function isCustomerCartMissingError(error: unknown): boolean {
-  if (!(error instanceof MagentoApiError)) {
+  if (!isMagentoApiError(error)) {
     return false;
   }
 

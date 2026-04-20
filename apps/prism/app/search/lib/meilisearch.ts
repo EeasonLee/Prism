@@ -1,18 +1,19 @@
 /**
  * Search 页面专用 Meilisearch 客户端
  *
- * 索引名：products
+ * 索引名使用动态配置（默认 joydeem_product_en）
  * 主键：id（= sku）
  */
 
 import { env } from '../../../lib/env';
+import { notifyError } from '../../../lib/notify';
 import type {
   SearchSortOption,
   ProductCardItem,
   SearchPagination,
 } from '../types';
 
-const INDEX_UID = 'products';
+const INDEX_UID = env.MEILISEARCH_INDEX_NAME ?? `${env.MEILISEARCH_INDEX_PREFIX}_${env.MAGENTO_STORE_CODE}`;
 
 // ――― Meilisearch 响应结构 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
@@ -26,7 +27,6 @@ interface MeilisearchHit {
   size?: string | null;
   categories?: string[];
   promotion_label?: string | null;
-  discovery_category_slugs?: string[];
   thumbnail?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
@@ -74,11 +74,8 @@ export interface MeilisearchSearchResult {
 // ――― 工具函数 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 function buildFilter(params: MeilisearchSearchParams): string[] {
-  const filters: string[] = ['status = "1"', 'visibility = "4"'];
+  const filters: string[] = [];
 
-  if (params.slug) {
-    filters.push(`discovery_category_slugs = "${params.slug}"`);
-  }
   if (params.category) {
     filters.push(`categories = "${params.category}"`);
   }
@@ -130,11 +127,11 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
 export async function searchProducts(
   params: MeilisearchSearchParams
 ): Promise<MeilisearchSearchResult> {
-  const host = env.NEXT_PUBLIC_MEILISEARCH_HOST;
+  const host = env.MEILISEARCH_HOST;
   const apiKey = env.MEILISEARCH_API_KEY;
 
   if (!host) {
-    throw new Error('NEXT_PUBLIC_MEILISEARCH_HOST is not configured');
+    throw new Error('MEILISEARCH_HOST is not configured');
   }
 
   const page = params.page ?? 1;
@@ -156,31 +153,40 @@ export async function searchProducts(
     body.facets = params.facets;
   }
 
-  const response = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      `Meilisearch search failed: ${response.status} ${response.statusText}`
-    );
+    if (!response.ok) {
+      throw new Error(
+        `Meilisearch search failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = (await response.json()) as MeilisearchSearchResponse;
+
+    return {
+      items: data.hits.map(toProductCardItem),
+      pagination: {
+        page: data.page,
+        pageSize: data.hitsPerPage,
+        total: data.totalHits,
+        totalPages: data.totalPages,
+      },
+      facetDistribution: data.facetDistribution,
+    };
+  } catch (error) {
+    await notifyError({
+      title: 'Meilisearch Search Failed',
+      message: `Search failed for query: ${params.q ?? ''}, slug: ${params.slug ?? ''}`,
+      error,
+    });
+    throw error;
   }
-
-  const data = (await response.json()) as MeilisearchSearchResponse;
-
-  return {
-    items: data.hits.map(toProductCardItem),
-    pagination: {
-      page: data.page,
-      pageSize: data.hitsPerPage,
-      total: data.totalHits,
-      totalPages: data.totalPages,
-    },
-    facetDistribution: data.facetDistribution,
-  };
 }
