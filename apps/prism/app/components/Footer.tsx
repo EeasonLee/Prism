@@ -232,12 +232,14 @@ export function Footer() {
                       Mon–Fri, 10 AM – 6 PM EST
                     </span>
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-600">
-                    HK: Room A, 9/F, Eton Building, 288 Des Voeux Rd Central,
-                    Sheung Wan, Hong Kong
+                  <p className="text-xs leading-relaxed text-neutral-500">
+                    Company Address:
                   </p>
                   <p className="text-xs leading-relaxed text-neutral-600">
-                    CA: 23 Hubner Ave, Markham ON L6C 0S8, Canada
+                    US Address: 1926 Kingston Meadow Ln, Katy, TX 77494 US
+                  </p>
+                  <p className="text-xs leading-relaxed text-neutral-600">
+                    Canada Address: 23 Hubner Ave Markham ON L6C 0S8 Canada
                   </p>
                 </div>
               </div>
