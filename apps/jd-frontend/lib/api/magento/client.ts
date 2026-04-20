@@ -1,0 +1,195 @@
+/**
+ * Magento/SSO 代理服务独立 HTTP 客户端
+ *
+ * 与 Strapi 客户端完全独立：
+ * - 读取 NEXT_PUBLIC_MAGENTO_API_URL（不共享 Strapi 的 NEXT_PUBLIC_API_URL）
+ * - 自动解包 { success, data, error } 三层响应
+ * - 服务端使用，不再支持客户端 token 注入
+ */
+
+import { logRequest } from '../../api/interceptors/request-logger';
+import { env } from '../../env';
+import type { MagentoResponse } from './types';
+
+function getMagentoBaseUrl(): string {
+  // 浏览器端走 Next.js 代理，避免跨域；服务端直连
+  if (typeof window !== 'undefined' && env.NEXT_PUBLIC_USE_API_PROXY) {
+    return '/magento-proxy';
+  }
+  const url = env.NEXT_PUBLIC_MAGENTO_API_URL ?? env.MAGENTO_URL;
+  if (!url) {
+    throw new Error(
+      'NEXT_PUBLIC_MAGENTO_API_URL or MAGENTO_URL is not configured'
+    );
+  }
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+interface RequestOptions {
+  method?: string;
+  body?: string;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
+
+async function magentoFetch<T>(
+  path: string,
+  options: RequestOptions = {}
+): Promise<T> {
+  const base = getMagentoBaseUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${base}${cleanPath}`;
+  const method = options.method ?? 'GET';
+  const startTime = Date.now();
+
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...options.headers,
+  };
+  // 有 body 时才设置 Content-Type，否则部分服务端会拒绝空 body + application/json
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: options.body,
+      signal: options.signal,
+    });
+  } catch (networkErr) {
+    logRequest({
+      method,
+      url,
+      endpoint: cleanPath,
+      duration: Date.now() - startTime,
+      requestHeaders: headers,
+      requestBody: options.body ? tryParseJson(options.body) : undefined,
+      error:
+        networkErr instanceof Error
+          ? networkErr
+          : new Error(String(networkErr)),
+    });
+    throw networkErr;
+  }
+
+  const duration = Date.now() - startTime;
+
+  let json: MagentoResponse<T>;
+  try {
+    json = (await res.json()) as MagentoResponse<T>;
+  } catch (parseErr) {
+    logRequest({
+      method,
+      url,
+      endpoint: cleanPath,
+      status: res.status,
+      statusText: res.statusText,
+      duration,
+      requestHeaders: headers,
+      error:
+        parseErr instanceof Error ? parseErr : new Error('JSON parse failed'),
+    });
+    throw parseErr;
+  }
+
+  // 统一记录请求日志（与 Strapi 客户端格式完全一致）
+  logRequest({
+    method,
+    url,
+    endpoint: cleanPath,
+    status: res.status,
+    statusText: res.statusText,
+    duration,
+    requestHeaders: headers,
+    responseHeaders: res.headers,
+    requestBody: options.body ? tryParseJson(options.body) : undefined,
+    responseBody: json.data,
+  });
+
+  if (!res.ok || !json.success) {
+    const errCode = json.error?.code ?? 'UNKNOWN';
+    const errMsg = json.error?.message ?? res.statusText;
+
+    if (res.status === 502) {
+      throw new MagentoServiceError(
+        'Shop service is temporarily unavailable, please try again later',
+        'EXTERNAL_SERVICE_ERROR',
+        502
+      );
+    }
+
+    throw new MagentoApiError(errMsg, errCode, res.status, json.error);
+  }
+
+  return json.data;
+}
+
+function tryParseJson(str: string): unknown {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return str;
+  }
+}
+
+export class MagentoApiError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public status: number,
+    public detail: unknown = null
+  ) {
+    super(message);
+    this.name = 'MagentoApiError';
+  }
+}
+
+export class MagentoServiceError extends MagentoApiError {
+  constructor(message: string, code: string, status: number) {
+    super(message, code, status);
+    this.name = 'MagentoServiceError';
+  }
+}
+
+/**
+ * Duck-typing check for MagentoApiError that works even when
+ * multiple module copies exist (e.g. due to bundling aliases).
+ */
+export function isMagentoApiError(error: unknown): error is MagentoApiError {
+  if (error instanceof MagentoApiError) return true;
+  return (
+    error instanceof Error &&
+    (error.name === 'MagentoApiError' ||
+      error.name === 'MagentoServiceError') &&
+    typeof (error as { status?: unknown }).status === 'number'
+  );
+}
+
+export const magentoClient = {
+  get<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'body'>) {
+    return magentoFetch<T>(path, { ...opts, method: 'GET' });
+  },
+
+  post<T>(path: string, data?: unknown, opts?: Omit<RequestOptions, 'method'>) {
+    return magentoFetch<T>(path, {
+      ...opts,
+      method: 'POST',
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  put<T>(path: string, data?: unknown, opts?: Omit<RequestOptions, 'method'>) {
+    return magentoFetch<T>(path, {
+      ...opts,
+      method: 'PUT',
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  delete<T>(path: string, opts?: Omit<RequestOptions, 'method' | 'body'>) {
+    return magentoFetch<T>(path, { ...opts, method: 'DELETE' });
+  },
+};

@@ -13,8 +13,8 @@ pnpm typecheck        # TypeScript type check
 pnpm check            # typecheck + lint together
 pnpm check:fix        # Auto-fix all issues
 pnpm test             # Run Vitest unit tests
-pnpm nx test prism -- --run  # Run tests once (no watch mode)
-pnpm nx test prism -- --run --reporter=verbose  # Run tests with verbose output
+pnpm nx test jd-frontend -- --run  # Run tests once (no watch mode)
+pnpm nx test jd-frontend -- --run --reporter=verbose  # Run tests with verbose output
 pnpm e2e              # Run Playwright E2E tests (install browsers first with: pnpm exec playwright install)
 pnpm storybook        # Start Storybook
 pnpm commit           # Interactive Conventional Commit (via Commitizen)
@@ -38,12 +38,12 @@ All commands run via Nx under the hood, enabling build caching and affected-proj
 This is an **Nx monorepo** with a layered dependency hierarchy that flows strictly one direction:
 
 ```
-apps/prism  →  libs/blog, libs/ui  →  libs/shared
+apps/jd-frontend  →  libs/blog, libs/ui  →  libs/shared
 ```
 
 ### Key Packages
 
-- `**apps/prism/**` — Next.js 15 app with App Router. Pages live under `app/`, app-specific components under `app/components/`, API wrappers under `lib/api/`. Recipe domain is handled entirely within this app (no separate lib).
+- `**apps/jd-frontend/**` — Next.js 15 app with App Router. Pages live under `app/`, app-specific components under `app/components/`, API wrappers under `lib/api/`. Recipe domain is handled entirely within this app (no separate lib).
 - `**libs/shared/**` (`@prism/shared`) — Shared base: API types, utility functions, type guards. Cannot depend on anything else.
 - `**libs/ui/**` (`@prism/ui`) — Reusable UI components (Button, PageContainer, etc.) using shadcn/ui pattern. No business logic.
 - `**libs/blog/**` (`@prism/blog`) — Blog domain: components, API adapters, hooks.
@@ -53,7 +53,7 @@ apps/prism  →  libs/blog, libs/ui  →  libs/shared
 
 - `libs/shared` can only depend on itself
 - `libs/ui` and domain libs (`libs/blog`, etc.) can only depend on `libs/shared`
-- `apps/prism` can depend on all libs
+- `apps/jd-frontend` can depend on all libs
 - **No circular dependencies** — if two libs need to share code, extract to `libs/shared`
 
 ### Path Aliases
@@ -65,15 +65,15 @@ Defined in `tsconfig.base.json` (cross-project):
 - `@prism/blog` → `libs/blog/src/index.ts`
 - `@prism/tokens` → `libs/tokens/src/index.ts`
 
-Defined in `apps/prism/tsconfig.app.json` (app-only):
+Defined in `apps/jd-frontend/tsconfig.app.json` (app-only):
 
-- `@/app/`_, `@/components/_`, `@/lib/\*`→ corresponding paths under`apps/prism/`
+- `@/app/`_, `@/components/_`, `@/lib/\*`→ corresponding paths under`apps/jd-frontend/`
 
 Within the same library, use relative imports. Never use deep path imports like `../../libs/ui/src/components/button`—always go through the alias.
 
 ### API Client
 
-Use `apps/prism/lib/api/client.ts` as the default app-side API entry point unless the task explicitly requires bypassing it. Error types (`ApiError`, `AuthenticationError`, etc.) come from `@prism/shared`.
+Use `apps/jd-frontend/lib/api/client.ts` as the default app-side API entry point unless the task explicitly requires bypassing it. Error types (`ApiError`, `AuthenticationError`, etc.) come from `@prism/shared`.
 
 ### Observability
 
@@ -91,7 +91,7 @@ When a task involves product enrichment, discovery, SEO, rich content, category 
 - Make contract changes explicit before editing: field names, nullable fields, slug rules, SKU mapping, category mapping, filter config, pagination, and localization assumptions
 - In analysis and implementation updates, separate findings into `Prism changes`, `Strapi changes`, `API/schema contract changes`, and `Verification steps`
 - Prefer the minimum viable cross-repo change; do not patch around backend contract mismatches purely in frontend unless the task explicitly asks for a frontend-only workaround
-- If current worktree is `D:\WORK\prism`, treat the Strapi repo as an external dependency to inspect when needed, while keeping Prisma/Next changes scoped to this repository unless asked to edit the backend too
+- If current worktree is `D:\WORK\jd-frontend`, treat the Strapi repo as an external dependency to inspect when needed, while keeping Prisma/Next changes scoped to this repository unless asked to edit the backend too
 - For reusable task prompts and checklists, see `docs/claude-workflows.md`
 
 ## Coding Constraints

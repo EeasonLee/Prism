@@ -4,7 +4,7 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/prism"
+      "path": "./apps/jd-frontend"
     },
     {
       "path": "./libs/shared"

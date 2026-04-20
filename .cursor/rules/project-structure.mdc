@@ -3,16 +3,16 @@ description: Nx Monorepo 项目结构规范，模块组织、依赖管理和任�
 globs: **/*.{ts,tsx,json}
 alwaysApply: true
 ---
-# Nx Monorepo 项目规范（Prism 专属）
+# Nx Monorepo 项目规范（jd-frontend 专属）
 
-本文档定义了 Prism 项目的 Nx Monorepo 结构规范。
+本文档定义了 jd-frontend 项目的 Nx Monorepo 结构规范。
 
 ## 项目结构
 
 ```
-prism/                          # 工作区根目录
+jd-frontend/                    # 工作区根目录
 ├── apps/
-│   ├── prism/                  # Next.js 主应用
+│   ├── jd-frontend/            # Next.js 主应用
 │   ├── blog/                   # 博客应用
 │   └── shared/                 # 共享应用配置
 ├── libs/
@@ -25,7 +25,7 @@ prism/                          # 工作区根目录
 ## 模块边界规范
 
 **在正确的位置创建代码：**
-- `apps/prism/` - 仅应用级别的页面、路由和配置
+- `apps/jd-frontend/` - 仅应用级别的页面、路由和配置
 - `libs/ui/` - 跨应用复用的 UI 组件
 - `libs/tokens/` - 设计系统令牌（颜色、字体、间距）
 - `apps/shared/` - 跨应用共享的业务逻辑和工具
@@ -45,15 +45,15 @@ import { Button } from '../../libs/ui/src/components/Button';
 ```bash
 # 开发
 pnpm dev                    # 启动主应用开发服务器
-pnpm nx dev prism           # 等同于上面
+pnpm nx dev jd-frontend     # 等同于上面
 
 # 构建
 pnpm build                  # 构建主应用
-pnpm nx build prism         # 同上
+pnpm nx build jd-frontend   # 同上
 
 # 测试
 pnpm test                   # 运行测试
-pnpm nx test prism          # 运行主应用测试
+pnpm nx test jd-frontend    # 运行主应用测试
 
 # 代码质量
 pnpm lint                   # 运行 ESLint

@@ -1,4 +1,4 @@
-import { getProductListBFF } from './apps/prism/lib/api/bff/product/list';
+import { getProductListBFF } from './apps/jd-frontend/lib/api/bff/product/list';
 
 async function main() {
   const result = await getProductListBFF({ page: 1, limit: 5 });

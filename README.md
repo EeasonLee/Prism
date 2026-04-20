@@ -1,4 +1,4 @@
-# Prism
+# jd-frontend
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -14,20 +14,20 @@
 
 在安装依赖前，请先阅读《[开发环境约定](docs/dev-env.md)》，确保 Node/pnpm 与 Volta 设置正确。
 
-启动 prism 应用的开发服务器（所有命令均通过 Nx 运行，保证缓存与受影响分析可用）：
+启动 jd-frontend 应用的开发服务器（所有命令均通过 Nx 运行，保证缓存与受影响分析可用）：
 
 ```sh
-pnpm dev        # 等同于 nx dev prism
+pnpm dev        # 等同于 nx dev jd-frontend
 ```
 
 应用将在 `http://localhost:3000` 启动。
 
 ### 构建生产版本
 
-构建 prism 应用的生产版本：
+构建 jd-frontend 应用的生产版本：
 
 ```sh
-pnpm build      # 等同于 nx build prism
+pnpm build      # 等同于 nx build jd-frontend
 ```
 
 ### 查看项目信息
@@ -35,15 +35,15 @@ pnpm build      # 等同于 nx build prism
 常用命令均有脚本别名（`pnpm dev/build/lint/test/typecheck`），完整任务列表可通过以下命令查看：
 
 ```sh
-pnpm nx show project prism
+pnpm nx show project jd-frontend
 ```
 
 ## 🏗️ 项目结构
 
 ```
-Prism/
+jd-frontend/
 ├── apps/
-│   └── prism/                 # Next.js 应用
+│   └── jd-frontend/           # Next.js 应用
 │       ├── app/              # Next.js App Router
 │       │   ├── layout.tsx    # 根布局
 │       │   ├── page.tsx      # 首页
@@ -73,7 +73,7 @@ Prism/
 - **定义 token**：在 `libs/tokens/src/tokens.css` 中新增/修改 CSS 变量（含 dark 值）。
 - **映射 Tailwind**：在 `libs/tokens/src/tailwind-preset.js` 增加语义类映射。
 - **Storybook 校验**：访问 `Design Tokens/Overview` 检查亮/暗模式展示与语义覆盖。
-- **Lint 约束**：`apps/prism/eslint.config.mjs` 会拦截新增硬编码 HEX 颜色，要求改用 token 类。
+- **Lint 约束**：`apps/jd-frontend/eslint.config.mjs` 会拦截新增硬编码 HEX 颜色，要求改用 token 类。
 
 ## 📦 添加新项目
 
@@ -116,36 +116,36 @@ pnpm nx graph
 ### 构建生产版本
 
 ```sh
-pnpm nx run prism:build
+pnpm nx run jd-frontend:build
 ```
 
 ### 启动生产服务器
 
 ```sh
-pnpm nx run prism:start
+pnpm nx run jd-frontend:start
 ```
 
 ## 📋 常用命令
 
-| 命令                                 | 描述                               |
-| ------------------------------------ | ---------------------------------- |
-| `pnpm nx dev prism`                  | 启动开发服务器                     |
-| `pnpm nx build prism`                | 构建生产版本                       |
-| `pnpm nx lint prism`                 | 代码检查                           |
-| `pnpm nx test prism`                 | 运行 Vitest + RTL                  |
-| `pnpm nx run prism:e2e` / `pnpm e2e` | Playwright E2E（需安装浏览器依赖） |
-| `pnpm nx graph`                      | 查看依赖图                         |
+| 命令                                       | 描述                               |
+| ------------------------------------------ | ---------------------------------- |
+| `pnpm nx dev jd-frontend`                  | 启动开发服务器                     |
+| `pnpm nx build jd-frontend`                | 构建生产版本                       |
+| `pnpm nx lint jd-frontend`                 | 代码检查                           |
+| `pnpm nx test jd-frontend`                 | 运行 Vitest + RTL                  |
+| `pnpm nx run jd-frontend:e2e` / `pnpm e2e` | Playwright E2E（需安装浏览器依赖） |
+| `pnpm nx graph`                            | 查看依赖图                         |
 
 ## 🧪 测试
 
-- **单元 / 组件**：`pnpm test`（或 `pnpm nx test prism`）调用 Vitest + React Testing Library，配置位于 `apps/prism/vite.config.ts` 与 `tests/setup.ts`。
-- **端到端**：`pnpm e2e`（或 `pnpm nx run prism:e2e`）调用 Playwright，配置在 `apps/prism/playwright.config.js`。第一次运行前请执行 `pnpm exec playwright install`，如在 Linux/WSL 需按提示安装 `playwright install-deps`。
+- **单元 / 组件**：`pnpm test`（或 `pnpm nx test jd-frontend`）调用 Vitest + React Testing Library，配置位于 `apps/jd-frontend/vite.config.ts` 与 `tests/setup.ts`。
+- **端到端**：`pnpm e2e`（或 `pnpm nx run jd-frontend:e2e`）调用 Playwright，配置在 `apps/jd-frontend/playwright.config.js`。第一次运行前请执行 `pnpm exec playwright install`，如在 Linux/WSL 需按提示安装 `playwright install-deps`。
 - 如需 IDE 内运行 Vitest，可使用 `vitest.workspace.ts` 自动发现测试配置。
 
 ## 🧱 Next.js 应用底座特性
 
-- **Typed Routes**：`apps/prism/next.config.js` 已启用 `typedRoutes`，避免手写路由字符串。
-- **环境变量校验**：`apps/prism/lib/env.ts` 使用 Zod 在构建期校验环境变量，详见《[环境变量配置](docs/env-config.md)》。
+- **Typed Routes**：`apps/jd-frontend/next.config.js` 已启用 `typedRoutes`，避免手写路由字符串。
+- **环境变量校验**：`apps/jd-frontend/lib/env.ts` 使用 Zod 在构建期校验环境变量，详见《[环境变量配置](docs/env-config.md)》。
 - **全局 Providers**：`app/providers.tsx` 提供 `AppConfig` 上下文并在客户端记录日志，可扩展主题、鉴权等全局状态。
 - **标准 Loading / Error**：`app/loading.tsx`、`app/error.tsx` 提供统一体验，错误页自动记录日志并允许一键重试。
 
