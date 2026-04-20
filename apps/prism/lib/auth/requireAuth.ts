@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MagentoApiError } from '@/lib/api/magento/client';
+import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
 import type { AuthTokens } from '@/lib/api/magento/types';
 import { withRefreshLock } from '@/lib/api/bff/refresh-lock';
 import {
@@ -29,7 +29,7 @@ export async function requireAuth<T>(
     NextResponse.json({ error: { message } }, { status: 401 });
 
   const asUnauthorizedIfNeeded = (error: unknown): NextResponse | null => {
-    if (error instanceof MagentoApiError && error.status === 401) {
+    if (isMagentoApiError(error) && error.status === 401) {
       const response = unauthorizedResponse('Session expired');
       return clearSession(response);
     }
@@ -165,7 +165,7 @@ export async function requireAuth<T>(
     }
     return response;
   } catch (error) {
-    if (error instanceof MagentoApiError && error.status === 401) {
+    if (isMagentoApiError(error) && error.status === 401) {
       const refreshToken = getRefreshToken(request);
 
       if (!refreshToken) {
@@ -223,7 +223,7 @@ export async function requireAuth<T>(
           message: error instanceof Error ? error.message : 'Request failed',
         },
       },
-      { status: error instanceof MagentoApiError ? error.status : 500 }
+      { status: isMagentoApiError(error) ? error.status : 500 }
     );
   }
 }

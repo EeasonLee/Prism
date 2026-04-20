@@ -9,13 +9,13 @@ function getMagentoGraphQLUrl(): string {
     return explicitGraphqlUrl;
   }
 
-  const magentoBaseUrl = env.NEXT_PUBLIC_MAGENTOL;
+  const magentoBaseUrl = env.MAGENTO_URL;
   if (magentoBaseUrl) {
     return `${magentoBaseUrl.replace(/\/$/, '')}/graphql`;
   }
 
   throw new Error(
-    'NEXT_PUBLIC_MAGENTO_GRAPHQL_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+    'NEXT_PUBLIC_MAGENTO_GRAPHQL_URL or MAGENTO_URL is not configured'
   );
 }
 

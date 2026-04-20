@@ -7,26 +7,22 @@ import {
   type ShopSortOption,
 } from '../../shop/components/SortPanel';
 import {
-  searchShopProducts,
+  searchProducts,
   type ShopSearchResult,
 } from '../../shop/lib/meilisearch';
-import type {
-  CategoryContext,
-  CategoryTreeNode,
-} from '../../../lib/api/bff/category/types';
+import type { CategoryContext } from '../../../lib/api/bff/category/types';
 import { MobileFilterButton } from './MobileFilterButton';
 import { CategoryProductGrid } from './CategoryProductGrid';
 import { CategoryProductGridSkeleton } from './CategoryProductGridSkeleton';
 import { CategoryFilterSkeleton } from './CategoryFilterSkeleton';
 
 interface CategoryPageContentProps {
-  slug: string;
   currentCategory: CategoryContext;
-  categoryTree: CategoryTreeNode[];
   searchParams: {
     page?: string;
     brand?: string;
     size?: string;
+    stock_status?: string;
     price_min?: string;
     price_max?: string;
     sort?: string;
@@ -50,6 +46,7 @@ async function CategoryFilterSidebar({
       availableFilters={availableFilters}
       appliedBrand={sp.brand}
       appliedSize={sp.size}
+      appliedStockStatus={sp.stock_status}
       appliedPriceMin={sp.price_min ? Number(sp.price_min) : undefined}
       appliedPriceMax={sp.price_max ? Number(sp.price_max) : undefined}
     />
@@ -107,6 +104,7 @@ async function CategoryProductList({
           filters={{
             brand: sp.brand,
             size: sp.size,
+            stockStatus: sp.stock_status,
             priceMin: sp.price_min ? Number(sp.price_min) : undefined,
             priceMax: sp.price_max ? Number(sp.price_max) : undefined,
             sort: (sp.sort as ShopSortOption) || undefined,
@@ -132,6 +130,7 @@ async function CategoryMobileFilters({
       availableFilters={availableFilters}
       appliedBrand={sp.brand}
       appliedSize={sp.size}
+      appliedStockStatus={sp.stock_status}
       appliedPriceMin={sp.price_min ? Number(sp.price_min) : undefined}
       appliedPriceMax={sp.price_max ? Number(sp.price_max) : undefined}
       currentSort={(sp.sort as ShopSortOption) || undefined}
@@ -142,21 +141,20 @@ async function CategoryMobileFilters({
 // Main component ----------------------------------------------------------
 
 export function CategoryPageContent({
-  slug: _slug,
   currentCategory,
   searchParams: sp,
 }: CategoryPageContentProps) {
-  const searchPromise = searchShopProducts({
-    category: currentCategory.name,
+  const searchPromise = searchProducts({
     categoryId: currentCategory.id,
+    categorySlug: currentCategory.slug,
     page: sp.page ? Math.max(1, Number(sp.page)) : 1,
     pageSize: 24,
     brand: sp.brand,
     size: sp.size,
+    stockStatus: sp.stock_status,
     priceMin: sp.price_min ? Number(sp.price_min) : undefined,
     priceMax: sp.price_max ? Number(sp.price_max) : undefined,
     sort: (sp.sort as ShopSortOption) || undefined,
-    facets: ['brand', 'size'],
   }).catch(() => null);
 
   return (
@@ -215,7 +213,7 @@ export function CategoryPageContent({
           >
             <CategoryProductList
               searchPromise={searchPromise}
-              slug={currentCategory.name}
+              slug={currentCategory.slug}
               sp={sp}
             />
           </Suspense>

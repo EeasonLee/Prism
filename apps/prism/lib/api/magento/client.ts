@@ -16,10 +16,10 @@ function getMagentoBaseUrl(): string {
   if (typeof window !== 'undefined' && env.NEXT_PUBLIC_USE_API_PROXY) {
     return '/magento-proxy';
   }
-  const url = env.NEXT_PUBLIC_MAGENTO_API_URL ?? env.NEXT_PUBLIC_MAGENTOL;
+  const url = env.NEXT_PUBLIC_MAGENTO_API_URL ?? env.MAGENTO_URL;
   if (!url) {
     throw new Error(
-      'NEXT_PUBLIC_MAGENTO_API_URL or NEXT_PUBLIC_MAGENTOL is not configured'
+      'NEXT_PUBLIC_MAGENTO_API_URL or MAGENTO_URL is not configured'
     );
   }
   return url.endsWith('/') ? url.slice(0, -1) : url;
@@ -152,6 +152,19 @@ export class MagentoServiceError extends MagentoApiError {
     super(message, code, status);
     this.name = 'MagentoServiceError';
   }
+}
+
+/**
+ * Duck-typing check for MagentoApiError that works even when
+ * multiple module copies exist (e.g. due to bundling aliases).
+ */
+export function isMagentoApiError(error: unknown): error is MagentoApiError {
+  if (error instanceof MagentoApiError) return true;
+  return (
+    error instanceof Error &&
+    (error.name === 'MagentoApiError' || error.name === 'MagentoServiceError') &&
+    typeof (error as { status?: unknown }).status === 'number'
+  );
 }
 
 export const magentoClient = {

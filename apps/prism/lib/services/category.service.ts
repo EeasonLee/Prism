@@ -71,6 +71,16 @@ const CATEGORY_TREE_QUERY = `
   }
 `;
 
+const CATEGORY_BY_URL_KEY_QUERY = `
+  query CategoryByUrlKey($urlKey: String!) {
+    categoryList(filters: { url_key: { eq: $urlKey } }) {
+      id
+      name
+      url_key
+    }
+  }
+`;
+
 const CATEGORY_DETAIL_QUERY = `
   query GetCategory($id: String!) {
     categoryList(filters: { ids: { eq: $id } }) {
@@ -105,6 +115,29 @@ export class CategoryService {
     }
 
     return response.categoryList[0];
+  }
+
+  /**
+   * 按 Magento 的 url_key 解析分类（不依赖浅层 children 树）。
+   */
+  async getCategoryByUrlKey(
+    urlKey: string
+  ): Promise<{ id: number; name: string; url_key: string } | null> {
+    const trimmed = urlKey.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const response = await magentoGraphQL<{
+      categoryList: Array<{ id: number; name: string; url_key: string }>;
+    }>(CATEGORY_BY_URL_KEY_QUERY, { urlKey: trimmed });
+
+    const row = response.categoryList?.[0];
+    if (!row?.url_key) {
+      return null;
+    }
+
+    return row;
   }
 
   async getCategoryDetail(categoryId: number): Promise<GraphQLCategoryDetail> {

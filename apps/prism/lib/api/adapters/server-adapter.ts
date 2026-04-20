@@ -1,5 +1,32 @@
 import { env } from '../../env';
-import { getApiBaseUrl } from '../config';
+import { getApiBaseUrl, getStrapiServerBaseUrl } from '../config';
+
+/**
+ * Strapi 自定义路由均以 ``api/`` 为前缀。服务端若配置了 ``STRAPI_URL`` /
+ * ``STRAPI_INTERNAL_URL``，应直连 Strapi，避免再用 ``NEXT_PUBLIC_API_URL``
+ * 走公网/nginx 回环到 Next（易极慢、超时、看起来像「疯狂重试」）。
+ */
+function resolveServerSideBaseUrl(cleanUrl: string): string {
+  if (cleanUrl.startsWith('http')) {
+    return getApiBaseUrl();
+  }
+  const strapiStylePath =
+    cleanUrl.startsWith('api/') && !cleanUrl.startsWith('api-proxy/');
+  if (!strapiStylePath) {
+    return getApiBaseUrl();
+  }
+  const hasExplicitStrapiHost =
+    Boolean((env.STRAPI_INTERNAL_URL || '').trim()) ||
+    Boolean((env.STRAPI_URL || '').trim());
+  if (!hasExplicitStrapiHost) {
+    return getApiBaseUrl();
+  }
+  try {
+    return getStrapiServerBaseUrl();
+  } catch {
+    return getApiBaseUrl();
+  }
+}
 
 /**
  * 服务端请求选项（扩展 Next.js fetch 选项）
@@ -25,8 +52,8 @@ export async function serverRequest(
 
   // 构建完整的 URL
   // url 应该以 api/ 开头（如 api/recipes）
-  const baseUrl = getApiBaseUrl();
   const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const baseUrl = resolveServerSideBaseUrl(cleanUrl);
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}/${cleanUrl}`;
 
   // 准备请求头

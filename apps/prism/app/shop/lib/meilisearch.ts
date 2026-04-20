@@ -1,17 +1,9 @@
-/**
- * Shop 页面专用 Meilisearch 客户端
- * 不依赖 lib/api/discovery，直接调用 Meilisearch REST API
- */
-
-import { env } from '@/lib/env';
+import { env } from '../../../lib/env';
+import { notifyError } from '../../../lib/notify';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
-import {
-  fetchPricesStock,
-  type PriceStockDocument,
-} from '../../../lib/api/bff/product/catalog-sync.client';
-import { fetchProductListFromMagento } from '../../../lib/api/bff/product/magento-fallback';
 
-const INDEX_UID = 'products';
+const INDEX_UID =
+  env.MEILISEARCH_INDEX_NAME ?? `${env.MEILISEARCH_INDEX_PREFIX}_${env.MAGENTO_STORE_CODE}`;
 
 export type ShopSortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest';
 
@@ -20,6 +12,7 @@ export interface ShopSearchParams {
   slug?: string;
   brand?: string;
   size?: string;
+  stockStatus?: string;
   category?: string;
   categorySlug?: string;
   categoryId?: number;
@@ -28,7 +21,6 @@ export interface ShopSearchParams {
   sort?: ShopSortOption;
   page?: number;
   pageSize?: number;
-  facets?: string[];
 }
 
 export interface ShopPagination {
@@ -56,30 +48,21 @@ export interface ShopSearchResult {
   availableFilters: ShopAvailableFilter[];
 }
 
-// ─── Meilisearch 响应结构 ──────────────────────────────────────────────────────
-
 interface MeilisearchHit {
-  id: string; // sku
+  id: string;
   name: string;
   display_name?: string | null;
   url_key?: string | null;
-  subtitle?: string | null;
-  brand?: string | null;
-  size?: string | null;
-  categories?: string[];
-  promotion_label?: string | null;
-  discovery_category_slugs?: string[];
-  thumbnail?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
-  href?: string | null;
-  price: number | null;
-  special_price?: number | null;
+  price: string | number | null;
+  final_price?: string | number | null;
   currency?: string | null;
-  in_stock?: boolean;
-  is_active?: boolean;
+  stock_status?: string | null;
+  is_in_stock?: boolean;
   type_id?: string | null;
-  created_at?: number;
+  promotion_label?: string | null;
+  content_updated_at?: number;
 }
 
 interface MeilisearchSearchResponse {
@@ -91,82 +74,34 @@ interface MeilisearchSearchResponse {
   facetDistribution?: Record<string, Record<string, number>>;
 }
 
-// ─── 工具函数 ─────────────────────────────────────────────────────────────────
-
-function buildFilter(params: ShopSearchParams): string[] {
-  const filters: string[] = ['status = "1"', 'visibility = "4"'];
-
-  if (params.slug) {
-    filters.push(`discovery_category_slugs = "${params.slug}"`);
-  }
-  if (params.category) {
-    filters.push(`categories = "${params.category}"`);
-  }
-  if (params.categorySlug) {
-    filters.push(`category_slugs = "${params.categorySlug}"`);
-  }
-  if (params.brand) {
-    filters.push(`brand = "${params.brand}"`);
-  }
-  if (params.size) {
-    filters.push(`size = "${params.size}"`);
-  }
-  // 价格过滤在 Meilisearch 索引中经常为空，改为在 enrich 后做客户端过滤
-  // 以保证使用 catalog-sync-service 返回的实时价格
-
-  return filters;
+function buildFilter(p: ShopSearchParams): string[] {
+  const f: string[] = [];
+  if (p.categoryId !== undefined) f.push(`category_ancestor_ids = ${p.categoryId}`);
+  // NOTE: category_ancestor_slugs / category_slugs are not reliably populated
+  // in the Meilisearch index, so we only filter by category_ancestor_ids.
+  if (p.brand !== undefined) f.push(`brand = "${p.brand}"`);
+  if (p.size !== undefined) f.push(`size = "${p.size}"`);
+  if (p.stockStatus !== undefined) f.push(`stock_status = "${p.stockStatus}"`);
+  if (p.priceMin !== undefined) f.push(`final_price >= ${p.priceMin}`);
+  if (p.priceMax !== undefined) f.push(`final_price <= ${p.priceMax}`);
+  return f;
 }
 
-function _buildSort(sort?: ShopSortOption): string[] {
-  switch (sort) {
-    case 'price_asc':
-      return ['price:asc'];
-    case 'price_desc':
-      return ['price:desc'];
-    case 'newest':
-      return ['created_at:desc'];
-    case 'featured':
-    default:
-      return [];
-  }
-}
-
-function mergePriceStock(
-  item: ProductCardItem,
-  doc: PriceStockDocument | null
-): ProductCardItem {
-  if (!doc) {
-    return item;
-  }
-
-  const regularPrice = doc.price;
-  const specialPrice =
-    doc.special_price != null && doc.special_price > 0
-      ? doc.special_price
-      : null;
-  const displayPrice = specialPrice ?? regularPrice;
-  const originalPrice =
-    specialPrice != null && regularPrice > specialPrice ? regularPrice : null;
-
-  return {
-    ...item,
-    price: {
-      value: displayPrice,
-      currency: item.price.currency,
-    },
-    originalPrice,
-    inStock: doc.stock_status === 'in_stock',
-  };
+function buildSort(sort?: ShopSortOption): string[] {
+  const s: string[] = [];
+  if (sort === 'price_asc') s.push('final_price:asc');
+  else if (sort === 'price_desc') s.push('final_price:desc');
+  else if (sort === 'newest') s.push('content_updated_at:desc');
+  return s;
 }
 
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
-  // 防御空字符串导致 Intl.NumberFormat 解析为 0 显示成 $0.00
-  const rawPrice = hit.price !== '' ? hit.price : null;
-  const rawSpecialPrice =
-    hit.special_price !== '' &&
-    hit.special_price != null &&
-    hit.special_price > 0
-      ? hit.special_price
+  const rawPrice = hit.price != null ? Number(hit.price) : null;
+  const rawFinal = hit.final_price != null ? Number(hit.final_price) : null;
+  const displayPrice = rawFinal != null && rawFinal > 0 ? rawFinal : rawPrice;
+  const originalPrice =
+    rawFinal != null && rawPrice != null && rawFinal > 0 && rawFinal < rawPrice
+      ? rawPrice
       : null;
 
   return {
@@ -174,226 +109,82 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
     urlKey: hit.url_key ?? null,
-    image: hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null,
-    price: {
-      value: rawSpecialPrice ?? rawPrice,
-      currency: hit.currency ?? null,
-    },
-    originalPrice: rawPrice,
-    inStock: hit.in_stock ?? true,
+    image: hit.thumbnail_url ?? hit.image_url ?? null,
+    price: { value: displayPrice, currency: hit.currency ?? null },
+    originalPrice,
+    inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
     reviewCount: 0,
     ratingPercentage: 0,
-    createdAt: hit.created_at ?? undefined,
   };
 }
 
-function filterByPriceRange(
-  items: ProductCardItem[],
-  priceMin?: number,
-  priceMax?: number
-): ProductCardItem[] {
-  return items.filter(item => {
-    const price = item.price.value;
-    if (price == null) return false;
-    if (priceMin !== undefined && price < priceMin) return false;
-    if (priceMax !== undefined && price > priceMax) return false;
-    return true;
-  });
-}
-
-function sortShopItems(
-  items: ProductCardItem[],
-  sort?: ShopSortOption
-): ProductCardItem[] {
-  return [...items].sort((a, b) => {
-    // 1. 有库存的排前面
-    if (a.inStock && !b.inStock) return -1;
-    if (!a.inStock && b.inStock) return 1;
-
-    // 2. 同库存状态下按指定排序
-    switch (sort) {
-      case 'price_asc':
-        return (a.price.value ?? Infinity) - (b.price.value ?? Infinity);
-      case 'price_desc':
-        return (b.price.value ?? -Infinity) - (a.price.value ?? -Infinity);
-      case 'newest':
-        return (b.createdAt ?? 0) - (a.createdAt ?? 0);
-      case 'featured':
-      default:
-        return 0;
-    }
-  });
-}
-
-function paginateItems<T>(
-  items: T[],
-  page: number,
-  pageSize: number
-): { items: T[]; pagination: ShopPagination } {
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const start = (safePage - 1) * pageSize;
-  const end = start + pageSize;
-
-  return {
-    items: items.slice(start, end),
-    pagination: {
-      page: safePage,
-      pageSize,
-      total,
-      totalPages,
-    },
-  };
-}
+const FACET_CONFIG = [
+  { key: 'brand', label: 'Brand' },
+  { key: 'stock_status', label: 'Availability' },
+] as const;
 
 function buildAvailableFilters(
-  facetDistribution?: Record<string, Record<string, number>>
+  fd?: Record<string, Record<string, number>>
 ): ShopAvailableFilter[] {
-  if (!facetDistribution) return [];
-
-  const filters: ShopAvailableFilter[] = [];
-
-  if (facetDistribution.brand) {
-    filters.push({
-      key: 'brand',
-      label: 'Brand',
-      options: Object.entries(facetDistribution.brand).map(
-        ([value, count]) => ({
-          value,
-          label: value,
-          count,
-        })
-      ),
-    });
-  }
-
-  if (facetDistribution.size) {
-    filters.push({
-      key: 'size',
-      label: 'Size',
-      options: Object.entries(facetDistribution.size).map(([value, count]) => ({
-        value,
-        label: value,
-        count,
-      })),
-    });
-  }
-
-  if (facetDistribution.categories) {
-    filters.push({
-      key: 'category',
-      label: 'Category',
-      options: Object.entries(facetDistribution.categories).map(
-        ([value, count]) => ({
-          value,
-          label: value,
-          count,
-        })
-      ),
-    });
-  }
-
-  return filters;
+  if (!fd) return [];
+  return FACET_CONFIG.filter(c => fd[c.key]).map(c => ({
+    key: c.key,
+    label: c.label,
+    options: Object.entries(fd[c.key]).map(([value, count]) => ({
+      value,
+      label: value,
+      count,
+    })),
+  }));
 }
 
-// ─── 主函数 ───────────────────────────────────────────────────────────────────
-
-export async function searchShopProducts(
-  params: ShopSearchParams
-): Promise<ShopSearchResult> {
-  const host = env.NEXT_PUBLIC_MEILISEARCH_HOST;
-  const apiKey = env.MEILISEARCH_API_KEY;
-
-  if (!host) {
-    throw new Error('NEXT_PUBLIC_MEILISEARCH_HOST is not configured');
-  }
+export async function searchProducts(params: ShopSearchParams): Promise<ShopSearchResult> {
+  const host = env.MEILISEARCH_HOST;
+  if (!host) throw new Error('MEILISEARCH_HOST is not configured');
 
   const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? 24;
+  const hitsPerPage = params.pageSize ?? 24;
 
-  // 一次性获取全部符合条件的产品（用于在服务端手动排序和分页）
-  const body: Record<string, unknown> = {
+  const body = {
     q: params.q ?? '',
     filter: buildFilter(params),
-    page: 1,
-    hitsPerPage: 1000,
+    sort: buildSort(params.sort),
+    facets: FACET_CONFIG.map(c => c.key),
+    page,
+    hitsPerPage,
   };
 
-  if (params.facets && params.facets.length > 0) {
-    body.facets = params.facets;
-  }
-
   try {
-    const response = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
+    const res = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        ...(env.MEILISEARCH_API_KEY ? { Authorization: `Bearer ${env.MEILISEARCH_API_KEY}` } : {}),
       },
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      throw new Error(
-        `Meilisearch search failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = (await response.json()) as MeilisearchSearchResponse;
-
-    const baseItems = data.hits.map(toProductCardItem);
-    const skus = baseItems.map(item => item.sku);
-
-    // 批量调用 catalog-sync-service 补充实时价格和库存（每次最多 100 个 SKU）
-    const skuBatches: string[][] = [];
-    for (let i = 0; i < skus.length; i += 100) {
-      skuBatches.push(skus.slice(i, i + 100));
-    }
-
-    const pricesStockResults = await Promise.all(
-      skuBatches.map(batch => fetchPricesStock(batch))
-    ).then(results =>
-      results.reduce<Record<string, PriceStockDocument | null>>(
-        (acc, result) => ({ ...acc, ...result }),
-        {}
-      )
-    );
-
-    const mergedItems = baseItems.map(item => {
-      const doc = pricesStockResults[item.sku] ?? null;
-      return mergePriceStock(item, doc);
-    });
-
-    const priceFilteredItems = filterByPriceRange(
-      mergedItems,
-      params.priceMin,
-      params.priceMax
-    );
-
-    const sortedItems = sortShopItems(priceFilteredItems, params.sort);
-    const paginated = paginateItems(sortedItems, page, pageSize);
+    if (!res.ok) throw new Error(`Meilisearch ${res.status}: ${res.statusText}`);
+    const data = (await res.json()) as MeilisearchSearchResponse;
 
     return {
-      items: paginated.items,
-      pagination: paginated.pagination,
+      items: data.hits.map(toProductCardItem),
+      pagination: {
+        page: data.page,
+        pageSize: data.hitsPerPage,
+        total: data.totalHits,
+        totalPages: data.totalPages,
+      },
       availableFilters: buildAvailableFilters(data.facetDistribution),
     };
-  } catch (_error) {
-    // Meilisearch 或 catalog-sync 不可用时降级到 Magento
-    const fallback = await fetchProductListFromMagento({
-      categoryId: params.categoryId,
-      keyword: params.q,
-      page,
-      pageSize,
+  } catch (error) {
+    await notifyError({
+      title: 'Meilisearch Search Failed',
+      message: JSON.stringify(params),
+      error,
     });
-
-    return {
-      items: fallback.items,
-      pagination: fallback.pagination,
-      availableFilters: [],
-    };
+    throw error;
   }
 }

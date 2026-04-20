@@ -8,8 +8,8 @@ const jiti = createJiti(__filename, { alias: { '@/lib/env': join(__dirname, 'app
 
 // 设置环境变量
 process.env.NODE_ENV = 'development';
-process.env.NEXT_PUBLIC_MEILISEARCH_HOST = 'http://localhost:7700';
-process.env.MEILISEARCH_API_KEY = '***';
+process.env.MEILISEARCH_HOST = 'http://localhost:7700';
+process.env.MEILISEARCH_API_KEY='***';
 
 async function main() {
   const { getProductListBFF } = await jiti(

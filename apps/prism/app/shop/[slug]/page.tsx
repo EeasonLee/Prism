@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { ProductCard } from '../components/ProductCard';
 import { FilterPanel } from '../components/FilterPanel';
 import { SortPanel, type ShopSortOption } from '../components/SortPanel';
-import { searchShopProducts } from '../lib/meilisearch';
+import { searchProducts } from '../lib/meilisearch';
 import { getCategoryContextBySlug } from '@/lib/api/bff/category/list';
 
 interface Props {
@@ -51,7 +51,7 @@ export default async function ShopCategoryPage({
 
   const categoryData = await getCategoryContextBySlug(slug).catch(() => null);
 
-  const result = await searchShopProducts({
+  const result = await searchProducts({
     slug,
     categoryId: categoryData?.currentCategory?.id,
     q: sp.q?.trim(),
@@ -63,7 +63,6 @@ export default async function ShopCategoryPage({
     priceMin: sp.price_min ? Number(sp.price_min) : undefined,
     priceMax: sp.price_max ? Number(sp.price_max) : undefined,
     sort: (sp.sort as ShopSortOption) || undefined,
-    facets: ['brand', 'size', 'categories'],
   }).catch(() => null);
 
   if (!result) notFound();

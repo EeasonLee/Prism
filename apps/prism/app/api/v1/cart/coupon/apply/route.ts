@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   return authenticatedCartRequest(
     request,
     async (accessToken, cartId, isGuest) => {
-      if (isGuest && cartId) {
+      if (isGuest) {
         await cartRestService.applyGuestCoupon(accessToken, cartId, couponCode);
         return cartRestService.getGuestCart(accessToken, cartId);
       }

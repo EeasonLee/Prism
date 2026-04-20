@@ -21,6 +21,7 @@ interface CategoryProductGridProps {
   filters: {
     brand?: string;
     size?: string;
+    stockStatus?: string;
     priceMin?: number;
     priceMax?: number;
     sort?: ShopSortOption;
@@ -59,11 +60,11 @@ export function CategoryProductGrid({
 
     const nextPage = page + 1;
     const params = new URLSearchParams();
-    params.set('category', slug);
     params.set('page', String(nextPage));
     params.set('pageSize', String(initialPagination.pageSize));
     if (filters.brand) params.set('brand', filters.brand);
     if (filters.size) params.set('size', filters.size);
+    if (filters.stockStatus) params.set('stock_status', filters.stockStatus);
     if (filters.priceMin !== undefined)
       params.set('price_min', String(filters.priceMin));
     if (filters.priceMax !== undefined)
@@ -71,7 +72,7 @@ export function CategoryProductGrid({
     if (filters.sort) params.set('sort', filters.sort);
 
     try {
-      const res = await fetch(`/api/shop/search?${params.toString()}`);
+      const res = await fetch(`/api/categories/${slug}?${params.toString()}`);
       const json = (await res.json()) as {
         success: boolean;
         data?: {

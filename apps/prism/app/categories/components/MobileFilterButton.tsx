@@ -16,6 +16,7 @@ interface MobileFilterButtonProps {
   availableFilters: AvailableFilter[];
   appliedBrand?: string;
   appliedSize?: string;
+  appliedStockStatus?: string;
   appliedPriceMin?: number;
   appliedPriceMax?: number;
   currentSort?: ShopSortOption;
@@ -25,6 +26,7 @@ export function MobileFilterButton({
   availableFilters,
   appliedBrand,
   appliedSize,
+  appliedStockStatus,
   appliedPriceMin,
   appliedPriceMax,
   currentSort,
@@ -65,6 +67,7 @@ export function MobileFilterButton({
             availableFilters={availableFilters}
             appliedBrand={appliedBrand}
             appliedSize={appliedSize}
+            appliedStockStatus={appliedStockStatus}
             appliedPriceMin={appliedPriceMin}
             appliedPriceMax={appliedPriceMax}
             onChange={() => setOpen(false)}

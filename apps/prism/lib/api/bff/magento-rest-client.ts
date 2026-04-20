@@ -15,7 +15,7 @@ if (
 
 function getMagentoRestBaseUrl(): string {
   const storeCode = encodeURIComponent(env.MAGENTO_STORE_CODE);
-  const magentoBaseUrl = process.env.NEXT_PUBLIC_MAGENTOL;
+  const magentoBaseUrl = process.env.MAGENTO_URL;
   if (magentoBaseUrl) {
     return `${magentoBaseUrl.replace(/\/$/, '')}/rest/${storeCode}/V1`;
   }
@@ -23,7 +23,7 @@ function getMagentoRestBaseUrl(): string {
   const graphqlUrl = process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL;
   if (!graphqlUrl) {
     throw new Error(
-      'NEXT_PUBLIC_MAGENTOL or NEXT_PUBLIC_MAGENTO_GRAPHQL_URL is not configured'
+      'MAGENTO_URL or NEXT_PUBLIC_MAGENTO_GRAPHQL_URL is not configured'
     );
   }
 

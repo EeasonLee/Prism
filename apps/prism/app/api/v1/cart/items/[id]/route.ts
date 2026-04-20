@@ -21,7 +21,7 @@ export async function PATCH(
   return authenticatedCartRequest(
     request,
     async (accessToken, cartId, isGuest) => {
-      if (isGuest && cartId) {
+      if (isGuest) {
         return cartRestService.updateGuestCartItem(
           accessToken,
           cartId,
@@ -55,7 +55,7 @@ export async function DELETE(
   return authenticatedCartRequest(
     request,
     async (accessToken, cartId, isGuest) => {
-      if (isGuest && cartId) {
+      if (isGuest) {
         await cartRestService.removeGuestCartItem(accessToken, cartId, itemId);
       } else {
         await cartRestService.removeCustomerCartItem(accessToken, itemId);

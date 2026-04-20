@@ -1,20 +1,15 @@
 /**
  * Search / Category 商品检索体系类型定义
- *
- * 对应 Strapi Content Types:
- * - discovery-category
- * - discovery-category-mapping
- * - discovery-filter-config
  */
 
-// ――― SEO ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― SEO ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface SearchSeo {
   title?: string;
   description?: string;
 }
 
-// ――― 前台分类 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― 前台分类 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export type SearchSortOption =
   | 'featured'
@@ -25,7 +20,6 @@ export type SearchLayoutType = 'grid' | 'list';
 
 export interface SearchCategory {
   id: number;
-  documentId: string;
   name: string;
   slug: string;
   /** 层级：1 = 一级，2 = 二级，3 = 三级 */
@@ -42,18 +36,7 @@ export interface SearchCategory {
   children?: SearchCategory[];
 }
 
-// ――― 分类映射 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
-
-export interface SearchCategoryMapping {
-  id: number;
-  documentId: string;
-  discovery_category_id: number;
-  /** 对应的 Magento 分类 ID 数组，如 [37, 42, 55] */
-  magento_category_ids: number[];
-  is_active: boolean;
-}
-
-// ――― 筛选配置 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― 筛选配置 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface SearchPriceRange {
   label: string;
@@ -61,21 +44,7 @@ export interface SearchPriceRange {
   max?: number;
 }
 
-export interface SearchFilterConfig {
-  id: number;
-  documentId: string;
-  discovery_category_id: number;
-  /** 启用的筛选项，如 ["brand", "price"] */
-  enabled_filters: string[];
-  /** 可用排序选项，如 ["featured", "price_asc", "price_desc", "newest"] */
-  sort_options: SearchSortOption[];
-  default_sort: SearchSortOption;
-  /** 价格区间预设，如 [{ label: "Under $50", max: 50 }] */
-  price_ranges: SearchPriceRange[];
-  is_enabled: boolean;
-}
-
-// ――― 商品卡片 ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― 商品卡片 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface ProductCardItem {
   sku: string;
@@ -92,7 +61,7 @@ export interface ProductCardItem {
   href: string;
 }
 
-// ――― 查询契约 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― 查询契约 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface ProductSearchQuery {
   /** 前台分类 slug（分类页传入，搜索页不传） */
@@ -109,7 +78,7 @@ export interface ProductSearchQuery {
   pageSize?: number;
 }
 
-// ――― 结果契约 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+// ――― 结果契约 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 export interface SearchAppliedFilter {
   key: string;
@@ -132,8 +101,6 @@ export interface SearchPagination {
 }
 
 export interface ProductSearchResult {
-  /** 分类页时返回，搜索页为 undefined */
-  category?: SearchCategory;
   applied_filters: SearchAppliedFilter[];
   available_filters: SearchAvailableFilter[];
   sort_options: SearchSortOption[];

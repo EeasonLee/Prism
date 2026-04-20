@@ -2,14 +2,14 @@
  * BFF Product List 专用 Meilisearch 客户端
  *
  * 独立实现，不依赖 lib/api/discovery 层。
- * 索引名：products，主键：id（= sku）。
+ * 索引名使用动态配置或覆盖值。
  */
 
-import { env } from '@/lib/env';
+import { env } from '../../../env';
+import { notifyError } from '../../../notify';
 import type { ProductCardItem } from './types';
-import { fetchProductListFromMagento } from './magento-fallback';
 
-const INDEX_UID = 'products';
+const INDEX_UID = env.MEILISEARCH_INDEX_NAME ?? `${env.MEILISEARCH_INDEX_PREFIX}_${env.MAGENTO_STORE_CODE}`;
 
 // ─── Meilisearch 响应结构 ───────────────────────────────────────────────────────────────────
 
@@ -21,10 +21,11 @@ interface MeilisearchHit {
   thumbnail?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
-  price: number | null;
-  special_price?: number | null;
+  price: string | number | null;
+  final_price?: string | number | null;
   currency?: string | null;
-  in_stock?: boolean;
+  stock_status?: string | null;
+  is_in_stock?: boolean;
   is_active?: boolean;
   type_id?: string | null;
   promotion_label?: string | null;
@@ -64,12 +65,15 @@ export interface ProductMeilisearchResult {
 // ─── 工具函数 ──────────────────────────────────────────────────────────────────────────────────────────
 
 function buildFilter(params: ProductMeilisearchParams): string[] {
-  const filters: string[] = ['status = "1"', 'visibility = "4"'];
+  const filters: string[] = [];
 
-  if (params.categorySlug !== undefined) {
+  // 使用 categoryId 过滤，因为索引中 category_slugs 字段当前为空数组
+  // 同时移除 status / visibility 过滤，因为这两个字段不在可过滤属性列表中
+  if (params.categoryId !== undefined) {
+    filters.push(`category_ancestor_ids = ${params.categoryId}`);
+  } else if (params.categorySlug !== undefined) {
+    // 后备：等待 catalog-sync-service 填充 category_slugs 后恢复使用
     filters.push(`category_slugs = "${params.categorySlug}"`);
-  } else if (params.categoryId !== undefined) {
-    filters.push(`category_ids = ${params.categoryId}`);
   } else if (params.categoryName !== undefined) {
     filters.push(`categories = "${params.categoryName}"`);
   }
@@ -89,19 +93,28 @@ function buildSort(sort?: 'name' | 'price'): string[] {
 }
 
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
-  // 防御空字符串导致 Intl.NumberFormat 解析为 0 显示成 $0.00
-  const regularPrice = hit.price !== '' && hit.price != null ? hit.price : null;
-  const specialPrice =
-    hit.special_price !== '' &&
-    hit.special_price != null &&
-    hit.special_price > 0
-      ? hit.special_price
+  // joydeem_product_en 索引已包含实时价格和库存
+  const rawPrice =
+    hit.price != null && hit.price !== '' ? Number(hit.price) : null;
+  const rawFinalPrice =
+    hit.final_price != null && hit.final_price !== ''
+      ? Number(hit.final_price)
       : null;
-  const displayPrice = specialPrice ?? regularPrice;
+
+  const displayPrice =
+    rawFinalPrice != null && rawFinalPrice > 0
+      ? rawFinalPrice
+      : rawPrice;
   const originalPrice =
-    regularPrice != null && specialPrice != null && regularPrice > specialPrice
-      ? regularPrice
+    rawFinalPrice != null &&
+    rawPrice != null &&
+    rawFinalPrice > 0 &&
+    rawFinalPrice < rawPrice
+      ? rawPrice
       : null;
+
+  const inStock =
+    hit.is_in_stock ?? hit.stock_status !== 'out_of_stock';
 
   return {
     sku: hit.id,
@@ -114,7 +127,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
       currency: hit.currency ?? null,
     },
     originalPrice,
-    inStock: hit.in_stock ?? true,
+    inStock,
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
     reviewCount: hit.review_count ?? 0,
@@ -127,11 +140,11 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
 export async function searchProductsForBFF(
   params: ProductMeilisearchParams
 ): Promise<ProductMeilisearchResult> {
-  const host = env.NEXT_PUBLIC_MEILISEARCH_HOST;
+  const host = env.MEILISEARCH_HOST;
   const apiKey = env.MEILISEARCH_API_KEY;
 
   if (!host) {
-    throw new Error('NEXT_PUBLIC_MEILISEARCH_HOST is not configured');
+    throw new Error('MEILISEARCH_HOST is not configured');
   }
 
   const page = params.page ?? 1;
@@ -176,13 +189,12 @@ export async function searchProductsForBFF(
         totalPages: data.totalPages,
       },
     };
-  } catch (_error) {
-    // Meilisearch 不可用时降级到 Magento
-    return fetchProductListFromMagento({
-      categoryId: params.categoryId,
-      keyword: params.categoryName ?? params.categorySlug,
-      page,
-      pageSize: hitsPerPage,
+  } catch (error) {
+    await notifyError({
+      title: 'Meilisearch BFF Search Failed',
+      message: `BFF search failed for categoryId: ${params.categoryId ?? ''}, slug: ${params.categorySlug ?? ''}`,
+      error,
     });
+    throw error;
   }
 }

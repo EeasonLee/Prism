@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchShopProducts } from '../../shop/lib/meilisearch';
+import { searchProducts } from '../../shop/lib/meilisearch';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await searchShopProducts({
+    const result = await searchProducts({
       categorySlug: categoryUrlKey,
       page: 1,
       pageSize,
