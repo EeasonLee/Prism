@@ -11,7 +11,6 @@
  */
 
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
-import { apiClient } from './client';
 import type {
   Page,
   StrapiPageResponse,
@@ -38,6 +37,24 @@ import type {
   DealProductBlocksProps,
   DealProductBlockItem,
 } from './cms-page.types';
+
+/**
+ * 按 slug 获取 Page
+ *
+ * @param slug - 页面 slug（如 'home'）
+ * @returns Page 数据，失败时返回 null
+ *
+ * 使用示例：
+ * ```typescript
+ * const page = await getPageBySlug('home');
+ * if (page) {
+ *   // 渲染页面
+ * } else {
+ *   // 使用 fallback
+ * }
+ * ```
+ */
+import { getStrapiBaseUrl } from './config';
 
 /** Strapi Media / Image 嵌套结构（API 原始形态，字段可选） */
 interface StrapiImageFormatRaw {
@@ -668,24 +685,6 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
   }
 }
 
-/**
- * 按 slug 获取 Page
- *
- * @param slug - 页面 slug（如 'home'）
- * @returns Page 数据，失败时返回 null
- *
- * 使用示例：
- * ```typescript
- * const page = await getPageBySlug('home');
- * if (page) {
- *   // 渲染页面
- * } else {
- *   // 使用 fallback
- * }
- * ```
- */
-import { getStrapiBaseUrl } from './config';
-
 export async function getPageBySlug(slug: string): Promise<Page | null> {
   try {
     // Strapi v5 对于 Dynamic Zone，必须使用 populate[field][on][component.name] 语法
@@ -713,7 +712,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     const response = await fetch(strapiUrl, {
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       next: {
         revalidate: REVALIDATE_SECONDS_CMS_PAGE,
@@ -726,7 +725,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
         console.warn(`Page not found: ${slug}`);
         return null;
       }
-      throw new Error(`Strapi request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Strapi request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const responseData = (await response.json()) as StrapiPageResponse;

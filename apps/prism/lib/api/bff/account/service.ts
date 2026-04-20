@@ -1,4 +1,4 @@
-import { MagentoApiError, isMagentoApiError, MagentoServiceError } from '@/lib/api/magento/client';
+import { isMagentoApiError } from '@/lib/api/magento/client';
 import { getAccessToken, getRefreshToken } from '@/lib/auth/cookies';
 import { extractWrappedMagentoAccessToken } from '@/lib/auth/session-tokens';
 import { validateRefreshToken } from '@/lib/auth/session-tokens';

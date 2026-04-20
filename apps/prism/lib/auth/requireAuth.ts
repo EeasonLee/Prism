@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
+import { isMagentoApiError } from '@/lib/api/magento/client';
 import type { AuthTokens } from '@/lib/api/magento/types';
 import { withRefreshLock } from '@/lib/api/bff/refresh-lock';
 import {

@@ -10,7 +10,7 @@ export default {
     const cmds = [];
     if (prismFiles.length) {
       cmds.push(
-        `pnpm exec eslint --fix --config apps/prism/eslint.config.mjs ${prismFiles.map(toArg).join(' ')}`,
+        `pnpm exec eslint --fix --no-warn-ignored --config apps/prism/eslint.config.mjs ${prismFiles.map(toArg).join(' ')}`,
       );
     }
     if (otherFiles.length) {
