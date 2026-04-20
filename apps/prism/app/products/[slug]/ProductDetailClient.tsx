@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Calendar, ShieldCheck, ShoppingCart, Truck } from 'lucide-react';
 import type {
   MagentoConfigurableOption,
   MagentoMediaGalleryItem,
@@ -11,11 +12,7 @@ import type {
 } from '../../../lib/api/magento/types';
 import { formatPrice } from '@/lib/format-price';
 import { AddToCartButton } from '../../components/AddToCartButton';
-import {
-  CustomizableOptionsSection,
-  calculateCustomOptionPriceDelta,
-  hasRequiredCustomOptionsSelected,
-} from '../../components/CustomizableOptionsSection';
+import { CustomizableOptionsSection } from '../../components/CustomizableOptionsSection';
 
 export interface SelectedVariantProduct {
   sku: string;
@@ -44,6 +41,114 @@ interface ProductDetailClientProps {
   onSelectionChange?: (selection: ProductDetailSelection) => void;
 }
 
+const EMPTY_CUSTOMIZABLE_OPTIONS: MagentoCustomizableOption[] = [];
+const EMPTY_CONFIGURABLE_OPTIONS: MagentoConfigurableOption[] = [];
+const EMPTY_CHILDREN = [] as NonNullable<MagentoProduct['children']>;
+const PURCHASE_BENEFITS = [
+  {
+    label: '1-Year Limited Warranty',
+    href: 'https://www.joydeem.com/warrant',
+    icon: ShieldCheck,
+  },
+  {
+    label: 'Free Shipping',
+    href: 'https://www.joydeem.com/shipping-policy',
+    icon: Truck,
+  },
+  {
+    label: '30-Day Risk-Free Returns',
+    href: 'https://www.joydeem.com/return-policy',
+    icon: Calendar,
+  },
+] as const;
+
+function PurchaseBenefitsBar() {
+  return (
+    <div className="grid grid-cols-3 divide-x divide-border rounded-md bg-surface-muted">
+      {PURCHASE_BENEFITS.map(item => {
+        const Icon = item.icon;
+        return (
+          <a
+            key={item.href}
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-20 flex-col items-center justify-center gap-2 px-2 py-3 text-center transition hover:bg-surface"
+          >
+            <Icon className="h-4 w-4 text-ink" />
+            <span className="text-xs font-medium leading-5 text-ink">
+              {item.label}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function calculateCustomOptionPriceDelta(
+  options: MagentoCustomizableOption[],
+  selections: Record<string, string | string[]>,
+  basePrice: number
+): number {
+  if (options.length === 0) return 0;
+
+  const optionMap = new Map<number, MagentoCustomizableOption>(
+    options.map(option => [option.option_id, option])
+  );
+
+  return Object.entries(selections).reduce((sum, [optionId, rawValue]) => {
+    const option = optionMap.get(Number(optionId));
+    if (
+      !option ||
+      !Array.isArray(option.values) ||
+      option.values.length === 0
+    ) {
+      return sum;
+    }
+
+    const selectedIds = Array.isArray(rawValue) ? rawValue : [rawValue];
+    const optionExtra = selectedIds.reduce((optionSum, selectedId) => {
+      const value = option.values?.find(
+        item => String(item.option_type_id) === String(selectedId)
+      );
+      if (!value) return optionSum;
+
+      const price =
+        value.price_type === 'percent'
+          ? (basePrice * value.price) / 100
+          : value.price;
+      return optionSum + price;
+    }, 0);
+
+    return sum + optionExtra;
+  }, 0);
+}
+
+function hasRequiredCustomOptionsSelected(
+  options: MagentoCustomizableOption[],
+  selections: Record<string, string | string[]>
+): boolean {
+  if (options.length === 0) return true;
+
+  return options
+    .filter(option => option.required)
+    .every(option => {
+      const selected = selections[String(option.option_id)];
+
+      if (option.type === 'checkbox' || option.type === 'multiple') {
+        return Array.isArray(selected) && selected.length > 0;
+      }
+
+      if (Array.isArray(selected)) {
+        return selected.length > 0;
+      }
+
+      return typeof selected === 'string' && selected.trim().length > 0;
+    });
+}
+
+// ─── 数量输入框 ───────────────────────────────────────────────────────────────
 function QtyInput({
   value,
   min = 0,
@@ -113,6 +218,138 @@ function QtyInput({
   );
 }
 
+const PRODUCT_MAIN_ANCHOR_ID = 'product-main';
+
+function scrollToProductMain() {
+  document.getElementById(PRODUCT_MAIN_ANCHOR_ID)?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  });
+}
+
+function useStickyAddToCartVisibility(anchorRef: {
+  current: HTMLElement | null;
+}) {
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) {
+      setShowStickyBar(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const hasScrolledPastAnchor = entry.boundingClientRect.top < 0;
+        setShowStickyBar(!entry.isIntersecting && hasScrolledPastAnchor);
+      },
+      {
+        threshold: 0,
+      }
+    );
+
+    observer.observe(anchor);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [anchorRef]);
+
+  return showStickyBar;
+}
+
+type StickyPrimaryAction =
+  | {
+      type: 'add-to-cart';
+      sku: string;
+      qty: number;
+      productOptionsJson?: string;
+      disabled: boolean;
+      disabledLabel: string;
+    }
+  | {
+      type: 'scroll-to-main';
+      label: string;
+    };
+
+interface StickyAddToCartBarProps {
+  visible: boolean;
+  productName: string;
+  thumbnailUrl?: string | null;
+  priceText: string;
+  onQtyChange?: (nextQty: number) => void;
+  qty: number;
+  primaryAction: StickyPrimaryAction;
+}
+
+function StickyAddToCartBar({
+  visible,
+  productName,
+  thumbnailUrl,
+  priceText,
+  onQtyChange,
+  qty,
+  primaryAction,
+}: StickyAddToCartBarProps) {
+  if (!visible) return null;
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pt-3.5 shadow-[0_-10px_28px_rgba(15,23,42,0.12)] backdrop-blur sm:pt-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto flex w-full max-w-[1440px] items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-3">
+            {thumbnailUrl ? (
+              <Image
+                src={thumbnailUrl}
+                alt={productName}
+                width={44}
+                height={44}
+                className="h-11 w-11 shrink-0 rounded object-contain"
+              />
+            ) : (
+              <div className="h-11 w-11 shrink-0 rounded bg-surface-muted" />
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-ink">
+                {productName}
+              </p>
+              <p className="text-xs font-semibold text-ink-muted">
+                {priceText}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {onQtyChange && <QtyInput value={qty} min={1} onChange={onQtyChange} />}
+
+        <div className="min-w-0 shrink-0 sm:w-[200px]">
+          {primaryAction.type === 'scroll-to-main' ? (
+            <button
+              type="button"
+              onClick={scrollToProductMain}
+              aria-label="Scroll to main product area"
+              className="btn-primary !rounded-xl border-0 flex h-11 w-full min-w-[140px] items-center justify-center gap-2 px-4 text-sm font-semibold"
+            >
+              <ShoppingCart className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {primaryAction.label}
+            </button>
+          ) : (
+            <AddToCartButton
+              sku={primaryAction.sku}
+              qty={primaryAction.qty}
+              productOptionsJson={primaryAction.productOptionsJson}
+              disabled={primaryAction.disabled}
+              disabledLabel={primaryAction.disabledLabel}
+              className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Simple / Virtual ────────────────────────────────────────────────────────
 
 function SimpleOptions({
@@ -123,11 +360,13 @@ function SimpleOptions({
   onSelectionChange?: (selection: ProductDetailSelection) => void;
 }) {
   const [qty, setQty] = useState(1);
+  const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
   const [customSelections, setCustomSelections] = useState<
     Record<string, string | string[]>
   >({});
+  const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
 
-  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const customOptions = product.options ?? EMPTY_CUSTOMIZABLE_OPTIONS;
   const customOptionPriceDelta = useMemo(
     () =>
       calculateCustomOptionPriceDelta(
@@ -163,6 +402,19 @@ function SimpleOptions({
     return JSON.stringify({ custom_options });
   }, [customSelections]);
 
+  const stickyPriceText = useMemo(() => {
+    const basePrice =
+      product.special_price != null && product.special_price < product.price
+        ? product.special_price
+        : product.price;
+    return formatPrice(basePrice + customOptionPriceDelta, product.currency);
+  }, [
+    customOptionPriceDelta,
+    product.currency,
+    product.price,
+    product.special_price,
+  ]);
+
   return (
     <div className="space-y-6">
       {customOptions.length > 0 && (
@@ -173,7 +425,7 @@ function SimpleOptions({
           currency={product.currency}
         />
       )}
-      <div className="flex items-center gap-3">
+      <div ref={purchaseActionsRef} className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
         <div className="flex-1">
           <AddToCartButton
@@ -186,6 +438,27 @@ function SimpleOptions({
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
+      <StickyAddToCartBar
+        visible={showStickyBar}
+        productName={product.name}
+        thumbnailUrl={product.thumbnail_url ?? product.image_url}
+        priceText={stickyPriceText}
+        qty={qty}
+        onQtyChange={setQty}
+        primaryAction={
+          !allCustomRequiredSelected
+            ? { type: 'scroll-to-main', label: 'Select required options' }
+            : {
+                type: 'add-to-cart',
+                sku: product.sku,
+                qty,
+                productOptionsJson,
+                disabled: false,
+                disabledLabel: 'Select required options',
+              }
+        }
+      />
     </div>
   );
 }
@@ -200,19 +473,21 @@ function ConfigurableOptions({
   onSelectionChange?: (selection: ProductDetailSelection) => void;
 }) {
   const searchParams = useSearchParams();
+  const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
 
-  const configurableOptions: MagentoConfigurableOption[] =
+  const configurableOptions =
     product.configurable_options ??
     product.extension_attributes?.configurable_product_options ??
-    [];
+    EMPTY_CONFIGURABLE_OPTIONS;
 
-  const children = product.children ?? [];
+  const children = product.children ?? EMPTY_CHILDREN;
   const variantSku = searchParams?.get('variant') ?? null;
 
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, number>
   >({});
   const [qty, setQty] = useState(1);
+  const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
 
   const findChildSku = useCallback(
     (attrs: Record<string, number>): string | null => {
@@ -366,7 +641,7 @@ function ConfigurableOptions({
     window.history.replaceState(window.history.state, '', nextUrl);
   }, [allSelected, selectedAttributes, variantSku, findChildSku]);
 
-  const customOptions: MagentoCustomizableOption[] = product.options ?? [];
+  const customOptions = product.options ?? EMPTY_CUSTOMIZABLE_OPTIONS;
   const [customSelections, setCustomSelections] = useState<
     Record<string, string | string[]>
   >({});
@@ -408,7 +683,7 @@ function ConfigurableOptions({
   useEffect(() => {
     onSelectionChange?.({
       selectedVariant: selectedChild,
-      allSelected: allSelected && allCustomRequiredSelected,
+      allSelected,
       customOptionPriceDelta,
     });
   }, [
@@ -416,6 +691,21 @@ function ConfigurableOptions({
     allSelected,
     customOptionPriceDelta,
     onSelectionChange,
+    selectedChild,
+  ]);
+
+  const stickyPriceText = useMemo(() => {
+    const basePrice =
+      selectedChild?.special_price != null &&
+      selectedChild.special_price < selectedChild.price
+        ? selectedChild.special_price
+        : selectedChild?.price ?? product.special_price ?? product.price;
+    return formatPrice(basePrice + customOptionPriceDelta, product.currency);
+  }, [
+    customOptionPriceDelta,
+    product.currency,
+    product.price,
+    product.special_price,
     selectedChild,
   ]);
 
@@ -461,7 +751,7 @@ function ConfigurableOptions({
         />
       )}
 
-      <div className="flex items-center gap-3">
+      <div ref={purchaseActionsRef} className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
 
         <div className="flex-1">
@@ -477,6 +767,32 @@ function ConfigurableOptions({
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
+      <StickyAddToCartBar
+        visible={showStickyBar}
+        productName={selectedChild?.name ?? product.name}
+        thumbnailUrl={product.thumbnail_url ?? product.image_url}
+        priceText={stickyPriceText}
+        qty={qty}
+        onQtyChange={setQty}
+        primaryAction={
+          !allSelected
+            ? { type: 'scroll-to-main', label: 'Select Options' }
+            : !allCustomRequiredSelected
+            ? {
+                type: 'scroll-to-main',
+                label: 'Select required options',
+              }
+            : {
+                type: 'add-to-cart',
+                sku: product.sku,
+                qty,
+                productOptionsJson,
+                disabled: false,
+                disabledLabel: 'Select Options',
+              }
+        }
+      />
     </div>
   );
 }
@@ -485,10 +801,12 @@ function ConfigurableOptions({
 
 function GroupedOptions({ product }: { product: MagentoProduct }) {
   const items = product.grouped_items ?? [];
+  const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
 
   const [qtys, setQtys] = useState<Record<number, number>>(() =>
     Object.fromEntries(items.map(item => [item.id, item.default_qty ?? 1]))
   );
+  const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
 
   const hasAny = Object.values(qtys).some(q => q > 0);
 
@@ -497,6 +815,10 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
       Object.entries(qtys).map(([id, q]) => [id, q])
     ),
   });
+  const stickyPriceText = formatPrice(
+    product.special_price ?? product.price,
+    product.currency
+  );
 
   return (
     <div className="space-y-6">
@@ -537,12 +859,34 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
         ))}
       </div>
 
-      <AddToCartButton
-        sku={product.sku}
+      <div ref={purchaseActionsRef}>
+        <AddToCartButton
+          sku={product.sku}
+          qty={1}
+          productOptionsJson={productOptionsJson}
+          disabled={!hasAny}
+          disabledLabel="Select at least one item"
+        />
+      </div>
+      <PurchaseBenefitsBar />
+      <StickyAddToCartBar
+        visible={showStickyBar}
+        productName={product.name}
+        thumbnailUrl={product.thumbnail_url ?? product.image_url}
+        priceText={stickyPriceText}
         qty={1}
-        productOptionsJson={productOptionsJson}
-        disabled={!hasAny}
-        disabledLabel="Select at least one item"
+        primaryAction={
+          !hasAny
+            ? { type: 'scroll-to-main', label: 'Select at least one item' }
+            : {
+                type: 'add-to-cart',
+                sku: product.sku,
+                qty: 1,
+                productOptionsJson,
+                disabled: false,
+                disabledLabel: 'Select at least one item',
+              }
+        }
       />
     </div>
   );
@@ -552,6 +896,7 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
 
 function BundleOptions({ product }: { product: MagentoProduct }) {
   const options = product.bundle_options ?? [];
+  const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
 
   // single-select options: Record<optionId, selectionId>
   const [singleSelections, setSingleSelections] = useState<
@@ -594,6 +939,7 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
   );
 
   const [qty, setQty] = useState(1);
+  const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
 
   // 校验所有 required 选项是否已选
   const allRequiredSelected = options
@@ -631,6 +977,10 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
       bundle_option_qty: bundleOptionQty,
     });
   };
+  const stickyPriceText = formatPrice(
+    product.special_price ?? product.price,
+    product.currency
+  );
 
   return (
     <div className="space-y-6">
@@ -741,7 +1091,7 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
         </div>
       ))}
 
-      <div className="flex items-center gap-3">
+      <div ref={purchaseActionsRef} className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
         <div className="flex-1">
           <AddToCartButton
@@ -754,6 +1104,27 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
+      <StickyAddToCartBar
+        visible={showStickyBar}
+        productName={product.name}
+        thumbnailUrl={product.thumbnail_url ?? product.image_url}
+        priceText={stickyPriceText}
+        qty={qty}
+        onQtyChange={setQty}
+        primaryAction={
+          !allRequiredSelected
+            ? { type: 'scroll-to-main', label: 'Select required options' }
+            : {
+                type: 'add-to-cart',
+                sku: product.sku,
+                qty,
+                productOptionsJson: buildOptionsJson(),
+                disabled: false,
+                disabledLabel: 'Select required options',
+              }
+        }
+      />
     </div>
   );
 }
@@ -764,11 +1135,13 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
   const links = product.downloadable_links ?? [];
   const samples = product.downloadable_samples ?? [];
   const purchaseSeparately = product.links_purchased_separately ?? false;
+  const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
 
   const [selectedLinks, setSelectedLinks] = useState<Set<number>>(
     () => new Set(links.map(l => l.link_id))
   );
   const [qty, setQty] = useState(1);
+  const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
 
   const toggleLink = (id: number) => {
     setSelectedLinks(prev => {
@@ -787,6 +1160,10 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
   const productOptionsJson = purchaseSeparately
     ? JSON.stringify({ links: [...selectedLinks] })
     : undefined;
+  const stickyPriceText = formatPrice(
+    product.special_price ?? product.price,
+    product.currency
+  );
 
   return (
     <div className="space-y-6">
@@ -873,7 +1250,7 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div ref={purchaseActionsRef} className="flex items-center gap-3">
         <QtyInput value={qty} min={1} onChange={setQty} />
         <div className="flex-1">
           <AddToCartButton
@@ -886,6 +1263,27 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
           />
         </div>
       </div>
+      <PurchaseBenefitsBar />
+      <StickyAddToCartBar
+        visible={showStickyBar}
+        productName={product.name}
+        thumbnailUrl={product.thumbnail_url ?? product.image_url}
+        priceText={stickyPriceText}
+        qty={qty}
+        onQtyChange={setQty}
+        primaryAction={
+          !canAddToCart
+            ? { type: 'scroll-to-main', label: 'Select at least one link' }
+            : {
+                type: 'add-to-cart',
+                sku: product.sku,
+                qty,
+                productOptionsJson,
+                disabled: false,
+                disabledLabel: 'Select at least one link',
+              }
+        }
+      />
     </div>
   );
 }

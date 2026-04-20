@@ -117,6 +117,7 @@ interface GQLProduct {
   cp_price?: number | string | null;
   meta_title: string | null;
   meta_description: string | null;
+  specifications?: string | null;
   description: { html: string } | null;
   short_description: { html: string } | null;
   price_range: {
@@ -168,6 +169,7 @@ const PRODUCT_DETAIL_QUERY = `
         cp_price
         meta_title
         meta_description
+        specifications
         description { html }
         short_description { html }
         price_range {
@@ -291,6 +293,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         cp_price
         meta_title
         meta_description
+        specifications
         description { html }
         short_description { html }
         price_range {

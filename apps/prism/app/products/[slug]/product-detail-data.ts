@@ -5,7 +5,8 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '../../../lib/api/strapi/product-content';
-import type { ProductPageCms } from './mock-data';
+import type { ProductPageCms } from './product-page-types';
+import { PDP_FEATURES } from './pdp-features';
 
 /**
  * 商品详情页服务端组装结果。
@@ -27,9 +28,13 @@ export interface ProductDetailPageData {
 export async function fetchRealProductPageCms(
   sku: string
 ): Promise<ProductDetailCms | null> {
+  const blogPostsPromise = PDP_FEATURES.fromBlog
+    ? fetchPdpArticlesBySku(sku).catch(() => [])
+    : Promise.resolve([]);
+
   const [recipes, blog_posts, product_videos] = await Promise.all([
     fetchPdpRecipesBySku(sku).catch(() => []),
-    fetchPdpArticlesBySku(sku).catch(() => []),
+    blogPostsPromise,
     fetchPdpProductVideosBySku(sku).catch(() => []),
   ]);
 
@@ -89,7 +94,7 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-recipes', label: 'Recipes' });
   }
 
-  if ((cms?.blog_posts?.length ?? 0) > 0) {
+  if (PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0) {
     sections.push({ id: 'section-blog', label: 'Blog' });
   }
 

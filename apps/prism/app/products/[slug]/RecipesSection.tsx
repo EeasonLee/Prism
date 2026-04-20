@@ -1,13 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, Users } from 'lucide-react';
-import type { Recipe } from './mock-data';
-
-const DIFFICULTY_COLORS: Record<Recipe['difficulty'], string> = {
-  Easy: 'bg-emerald-100 text-emerald-700',
-  Medium: 'bg-amber-100 text-amber-700',
-  Hard: 'bg-red-100 text-red-700',
-};
+import { Clock } from 'lucide-react';
+import type { Recipe } from './product-page-types';
 
 interface RecipesSectionProps {
   recipes: Recipe[];
@@ -30,12 +24,15 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {recipes.map(recipe => {
+          const safeDescription =
+            recipe.description?.replace(/<[^>]+>/g, ' ').trim() ||
+            'Discover this recipe and make it at home.';
+
           const content = (
             <>
-              {/* 图片 */}
-              <div className="relative aspect-[3/2] overflow-hidden bg-surface">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface">
                 {recipe.image ? (
                   <Image
                     src={recipe.image}
@@ -46,44 +43,23 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
                     className="object-cover transition group-hover:scale-105"
                   />
                 ) : null}
-                {/* 难度 badge */}
-                <span
-                  className={`absolute right-3 top-3 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                    DIFFICULTY_COLORS[recipe.difficulty]
-                  }`}
-                >
-                  {recipe.difficulty}
-                </span>
               </div>
 
-              {/* 内容 */}
-              <div className="p-4">
-                <h3 className="mb-3 line-clamp-2 text-sm font-semibold leading-snug text-ink">
+              <div className="pt-4">
+                <h3 className="mb-2 line-clamp-2 text-lg font-semibold leading-snug text-ink">
                   {recipe.title}
                 </h3>
+                <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-ink-muted">
+                  {safeDescription}
+                </p>
 
-                {/* 元信息行 */}
-                <div className="mb-3 flex items-center gap-4 text-xs text-ink-muted">
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {recipe.time}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" />
-                    {recipe.servings} servings
-                  </span>
-                </div>
-
-                {/* 标签 */}
-                <div className="flex flex-wrap gap-1.5">
-                  {recipe.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-ink-muted ring-1 ring-border"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                  <span aria-hidden="true">•</span>
+                  <span>{recipe.difficulty}</span>
                 </div>
               </div>
             </>
@@ -93,15 +69,12 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
             <Link
               key={recipe.id}
               href={recipe.href}
-              className="group block overflow-hidden rounded-2xl border border-border bg-card transition hover:border-brand/30 hover:shadow-md"
+              className="group block transition hover:opacity-90"
             >
               {content}
             </Link>
           ) : (
-            <article
-              key={recipe.id}
-              className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:border-brand/30 hover:shadow-md"
-            >
+            <article key={recipe.id} className="group">
               {content}
             </article>
           );

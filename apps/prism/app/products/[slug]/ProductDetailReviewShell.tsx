@@ -1,9 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
+import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
+import { ProductVideosSection } from './ProductVideosSection';
+import { RecipesSection } from './RecipesSection';
+import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
 import { env } from '@/lib/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
@@ -14,12 +18,11 @@ import type {
 } from '../../../lib/api/strapi/reviews';
 import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
 import { ProductQA } from './ProductQA';
-import type { MagentoConfigurableOption } from '../../../lib/api/magento/types';
 import type {
   UnifiedProduct,
   UnifiedProductImage,
 } from '../../../lib/api/unified-product';
-import type { ProductPageExtras, Review as MockReview } from './mock-data';
+import type { ProductVideoCard, Recipe } from './product-page-types';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -30,55 +33,11 @@ interface ProductDetailReviewShellProps {
   summary?: ProductReviewSummary;
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
-  mockSummary?: ProductPageExtras['review_summary'];
-  mockReviews?: MockReview[];
   allowSubmit?: boolean;
   initialProductQa: ProductQaListResult;
-}
-
-function buildVariantLabel(
-  product: UnifiedProduct,
-  selection: ProductDetailSelection
-) {
-  if (
-    product.type_id !== 'configurable' ||
-    !selection.allSelected ||
-    !selection.selectedVariant
-  ) {
-    return null;
-  }
-
-  const configurableOptions: MagentoConfigurableOption[] =
-    product.configurable_options ??
-    product.extension_attributes?.configurable_product_options ??
-    [];
-  const attributes = product.children?.find(
-    item => item.sku === selection.selectedVariant?.sku
-  )?.attributes;
-
-  if (!attributes) {
-    return null;
-  }
-
-  const labels = configurableOptions
-    .map(option => {
-      const rawValue =
-        attributes[option.attribute_id] ??
-        (option.attribute_code ? attributes[option.attribute_code] : undefined);
-      if (!rawValue) {
-        return null;
-      }
-
-      const matched = option.values.find(
-        value =>
-          String(value.value_index) === rawValue || value.label === rawValue
-      );
-
-      return matched?.label ?? rawValue;
-    })
-    .filter((value): value is string => Boolean(value));
-
-  return labels.length > 0 ? labels.join(' / ') : null;
+  beforeVideos?: ReactNode;
+  videos?: ProductVideoCard[];
+  recipes?: Recipe[];
 }
 
 export function ProductDetailReviewShell({
@@ -90,10 +49,11 @@ export function ProductDetailReviewShell({
   summary,
   initialReviews,
   initialPagination,
-  mockSummary,
-  mockReviews,
   allowSubmit = true,
   initialProductQa,
+  beforeVideos,
+  videos = [],
+  recipes = [],
 }: ProductDetailReviewShellProps) {
   const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
@@ -121,22 +81,10 @@ export function ProductDetailReviewShell({
   }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {
-    if (product.type_id === 'configurable') {
-      return {
-        productSku: product.sku,
-        purchasedSku: selection.allSelected
-          ? selection.selectedVariant?.sku ?? null
-          : null,
-        purchasedVariantLabel: buildVariantLabel(product, selection),
-        requiresVariantSelection: !selection.allSelected,
-      };
-    }
-
     return {
-      productSku: product.sku,
-      purchasedSku: product.sku,
-      purchasedVariantLabel: null,
-      requiresVariantSelection: false,
+      sku: product.sku,
+      requiresVariantSelection:
+        product.type_id === 'configurable' ? !selection.allSelected : false,
     };
   }, [product, selection]);
 
@@ -153,6 +101,24 @@ export function ProductDetailReviewShell({
         shareTarget={shareTarget}
       />
 
+      {beforeVideos}
+
+      {videos.length > 0 && (
+        <div id="section-videos">
+          <ProductVideosSection videos={videos} />
+        </div>
+      )}
+
+      {product.product_detail_html && (
+        <ProductDetailsSection detailsHtml={product.product_detail_html} />
+      )}
+
+      {recipes.length > 0 && (
+        <div id="section-recipes">
+          <RecipesSection recipes={recipes} />
+        </div>
+      )}
+
       <div id="section-reviews">
         <ProductReviews
           sku={reviewSku}
@@ -160,8 +126,6 @@ export function ProductDetailReviewShell({
           summary={summary}
           initialReviews={initialReviews}
           initialPagination={initialPagination}
-          mockSummary={mockSummary}
-          mockReviews={mockReviews}
           allowSubmit={allowSubmit}
           isReviewFormOpen={isReviewFormOpen}
           onReviewFormOpenChange={setIsReviewFormOpen}
@@ -176,6 +140,8 @@ export function ProductDetailReviewShell({
           allowSubmit={allowSubmit}
         />
       </div>
+
+      <ProductBackToTopButton />
     </>
   );
 }

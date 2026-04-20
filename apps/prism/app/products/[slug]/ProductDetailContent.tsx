@@ -1,6 +1,5 @@
 'use client';
 
-import { Star } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ProductDetailClient,
@@ -26,10 +25,65 @@ interface ProductDetailContentProps {
   shareTarget?: ShareTarget;
 }
 
+interface SpecificationSection {
+  title: string;
+  contentHtml: string;
+}
+
+const SPEC_TITLE_PATTERN = /<h1\b[^>]*>([\s\S]*?)<\/h1>/gi;
+
+function stripTags(value: string): string {
+  return value.replace(/<[^>]+>/g, '');
+}
+
+function decodeCommonEntities(value: string): string {
+  return value
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'");
+}
+
+function normalizeText(value: string): string {
+  return decodeCommonEntities(stripTags(value)).replace(/\s+/g, ' ').trim();
+}
+
+function parseSpecificationSections(
+  specifications: unknown
+): SpecificationSection[] {
+  if (typeof specifications !== 'string') return [];
+  const source = specifications.trim();
+  if (!source) return [];
+
+  const headings = Array.from(source.matchAll(SPEC_TITLE_PATTERN));
+  if (headings.length === 0) return [];
+
+  return headings
+    .map((heading, index) => {
+      const headingMarkup = heading[1] ?? '';
+      const title = normalizeText(headingMarkup);
+      if (!title) return null;
+
+      const start = (heading.index ?? 0) + heading[0].length;
+      const end =
+        index + 1 < headings.length
+          ? headings[index + 1].index ?? source.length
+          : source.length;
+      const contentHtml = source.slice(start, end).trim();
+      const contentText = normalizeText(contentHtml);
+
+      return {
+        title,
+        contentHtml: contentText ? contentHtml : '<p></p>',
+      };
+    })
+    .filter((section): section is SpecificationSection => section != null);
+}
+
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
-const PDP_PLACEHOLDER_VIDEO_URL =
-  'http://localhost:1337/uploads/beysdczkxtpzdff3o9xd_80c1a88765.webm';
 
 function FireworksIcon() {
   return (
@@ -62,7 +116,7 @@ function FireworksIcon() {
 
 function StarRating({
   percentage,
-  count: _count,
+  count,
   onNavigateToReviews,
   onWriteReview,
 }: {
@@ -71,85 +125,48 @@ function StarRating({
   onNavigateToReviews: () => void;
   onWriteReview: () => void;
 }) {
-  const previewRows = [
-    { label: '5', value: 46 },
-    { label: '4', value: 2 },
-    { label: '3', value: 0 },
-    { label: '2', value: 1 },
-    { label: '1', value: 0 },
-  ];
-  const previewMax = Math.max(...previewRows.map(row => row.value), 1);
+  const averageRating = Math.max(0, Math.min(5, percentage / 20));
+  const countText = count.toLocaleString();
 
   return (
-    <div className="relative flex items-center gap-3 leading-none">
-      <div className="group relative inline-flex items-center">
-        <button
-          type="button"
-          onClick={onNavigateToReviews}
-          className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          aria-label="Go to customer reviews"
-        >
-          <div className="relative flex gap-0.5" aria-hidden="true">
+    <div className="flex items-center gap-3 leading-none">
+      <button
+        type="button"
+        onClick={onNavigateToReviews}
+        className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        aria-label="Go to customer reviews"
+      >
+        <div className="relative flex gap-0.5" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, i) => (
+            <svg
+              key={i}
+              className="h-4 w-4 text-ink-muted/25"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d={STAR_PATH} />
+            </svg>
+          ))}
+          <div
+            className="absolute inset-0 flex gap-0.5 overflow-hidden"
+            style={{ width: `${percentage}%` }}
+          >
             {Array.from({ length: 5 }, (_, i) => (
               <svg
                 key={i}
-                className="h-4 w-4 text-ink-muted/25"
+                className="h-4 w-4 shrink-0 text-amber-400"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
                 <path d={STAR_PATH} />
               </svg>
             ))}
-            <div
-              className="absolute inset-0 flex gap-0.5 overflow-hidden"
-              style={{ width: `${percentage}%` }}
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <svg
-                  key={i}
-                  className="h-4 w-4 shrink-0 text-amber-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d={STAR_PATH} />
-                </svg>
-              ))}
-            </div>
           </div>
-
-          <span className="text-sm leading-none text-ink-muted">
-            4.6 (6788)
-          </span>
-        </button>
-
-        <div className="pointer-events-none invisible absolute left-0 top-[calc(100%+10px)] z-20 w-[270px] rounded-md border border-border bg-card p-4 opacity-0 shadow-[0_16px_30px_rgba(15,23,42,0.18)] transition duration-150 group-hover:visible group-hover:opacity-100">
-          <div className="space-y-2.5">
-            {previewRows.map(row => (
-              <div key={row.label} className="flex items-center gap-2">
-                <span className="w-3 text-sm text-ink">{row.label}</span>
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
-                  <div
-                    className="h-full rounded-full bg-amber-400"
-                    style={{ width: `${(row.value / previewMax) * 100}%` }}
-                  />
-                </div>
-                <span className="w-6 text-right text-sm text-ink">
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={onNavigateToReviews}
-            className="pointer-events-auto mt-3 text-sm font-semibold text-ink transition hover:text-brand"
-          >
-            Read 49 Reviews
-          </button>
         </div>
-      </div>
+        <span className="text-sm leading-none text-ink-muted">
+          {averageRating.toFixed(1)} ({countText})
+        </span>
+      </button>
 
       <button
         type="button"
@@ -174,6 +191,17 @@ export function ProductDetailContent({
 }: ProductDetailContentProps) {
   const [showCouponToast, setShowCouponToast] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
+  const specificationSections = useMemo(
+    () => parseSpecificationSections(product.specifications),
+    [product.specifications]
+  );
+  const [expandedSpecificationIndexes, setExpandedSpecificationIndexes] =
+    useState<number[]>([]);
+
+  useEffect(() => {
+    setExpandedSpecificationIndexes([]);
+  }, [specificationSections]);
+
   useEffect(() => {
     setNowMs(Date.now());
   }, []);
@@ -364,14 +392,14 @@ export function ProductDetailContent({
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
-      <div className="lg:sticky lg:top-[89px]">
+    <div
+      id="product-main"
+      className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12"
+    >
+      <div className="lg:sticky lg:top-24 lg:self-start">
         <ProductImageGallery
           images={displayProduct.images}
           productName={displayTitle}
-          featuredVideo={{
-            url: PDP_PLACEHOLDER_VIDEO_URL,
-          }}
         />
       </div>
 
@@ -403,15 +431,12 @@ export function ProductDetailContent({
             </div>
           )}
         </div>
-
         <h1 className="mb-2 text-2xl font-bold leading-tight text-ink sm:text-3xl">
           {displayTitle}
         </h1>
-
         {product.subtitle && (
           <p className="mb-3 text-base text-ink-muted">{product.subtitle}</p>
         )}
-
         <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           {displayProduct.isInStock ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-emerald-600">
@@ -433,11 +458,10 @@ export function ProductDetailContent({
             />
           )}
         </div>
-
         {/* 主价格区：仅展示未使用 cp_code / cp_price 的售价（特价 vs 原价）；券后价只在下方优惠券横幅展示 */}
-        <div className="mb-4 flex items-baseline gap-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           {displayProduct.specialPrice != null && (
-            <span className="text-2xl font-bold text-ink">
+            <span className="text-2xl font-bold leading-none text-ink">
               {formatPrice(displayProduct.specialPrice)}
             </span>
           )}
@@ -445,15 +469,15 @@ export function ProductDetailContent({
             <span
               className={
                 hasDiscount
-                  ? 'text-base text-ink-muted line-through'
-                  : 'text-2xl font-bold text-ink'
+                  ? 'text-base leading-none text-ink-muted line-through'
+                  : 'text-2xl font-bold leading-none text-ink'
               }
             >
               {formatPrice(displayProduct.price)}
             </span>
           )}
           {hasDiscount && (
-            <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
+            <span className="inline-flex items-center rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold leading-none text-brand">
               Save{' '}
               {formatPrice(
                 displayProduct.price - (displayProduct.specialPrice ?? 0)
@@ -461,7 +485,6 @@ export function ProductDetailContent({
             </span>
           )}
         </div>
-
         {showCouponBanner && (
           <div className="mb-4 relative overflow-hidden rounded-2xl bg-destructive px-5 py-4 text-white">
             <div className="pointer-events-none absolute inset-0 opacity-20">
@@ -539,7 +562,6 @@ export function ProductDetailContent({
             )}
           </div>
         )}
-
         {displayPromotionLabel && !showCouponBanner && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
             <span className="text-sm font-medium text-brand">
@@ -550,27 +572,85 @@ export function ProductDetailContent({
             </span>
           </div>
         )}
-
+        <ProductDetailClient
+          product={product}
+          onSelectionChange={onSelectionChange}
+        />
         {product.short_description_html ? (
           <div
-            className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{
               __html: product.short_description_html,
             }}
           />
         ) : product.short_description ? (
           <div
-            className="prose prose-sm mb-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{
               __html: product.short_description,
             }}
           />
         ) : null}
+        {specificationSections.length > 0 && (
+          <section
+            aria-label="Product specifications sections"
+            className="mt-6 border-t border-border"
+          >
+            {specificationSections.map((section, index) => {
+              const isExpanded = expandedSpecificationIndexes.includes(index);
 
-        <ProductDetailClient
-          product={product}
-          onSelectionChange={onSelectionChange}
-        />
+              return (
+                <article
+                  key={`${section.title}-${index}`}
+                  className="border-b border-border"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-4 py-5 text-left"
+                    onClick={() =>
+                      setExpandedSpecificationIndexes(prev =>
+                        prev.includes(index)
+                          ? prev.filter(item => item !== index)
+                          : [...prev, index]
+                      )
+                    }
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="text-2xl font-semibold text-ink">
+                      {section.title}
+                    </span>
+                    <svg
+                      className={`h-6 w-6 shrink-0 text-ink transition-transform ${
+                        isExpanded ? 'rotate-45' : ''
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="pb-5">
+                      <div
+                        className="prose prose-sm max-w-none text-ink-muted [&_a]:text-ink [&_a]:underline hover:[&_a]:text-brand [&_strong]:font-semibold [&_strong]:text-ink"
+                        dangerouslySetInnerHTML={{
+                          __html: section.contentHtml,
+                        }}
+                      />
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
       </div>
     </div>
   );

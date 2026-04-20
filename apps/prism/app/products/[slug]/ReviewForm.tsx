@@ -384,10 +384,6 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          productSku: target.productSku,
-          // 后端要求 purchasedSku 必填；未选体产品时回退为主 SKU
-          purchasedSku: target.purchasedSku ?? target.productSku,
-          purchasedVariantLabel: target.purchasedVariantLabel,
           authorName,
           authorEmail,
           ...(magentoUserId ? { magentoUserId } : {}),
@@ -470,18 +466,8 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
           </p>
           <div className="mt-2 space-y-1">
             <p className="text-sm font-semibold text-ink">
-              Product SKU: {target.productSku}
+              Product SKU: {target.sku}
             </p>
-            <p className="text-sm text-ink-muted">
-              {target.purchasedSku
-                ? `Purchased SKU: ${target.purchasedSku}`
-                : 'Purchased SKU will default to the Product SKU.'}
-            </p>
-            {target.purchasedVariantLabel && (
-              <p className="text-sm text-ink-muted">
-                Variant: {target.purchasedVariantLabel}
-              </p>
-            )}
           </div>
         </div>
 

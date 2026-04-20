@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Play } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@prism/shared';
-import type { ProductVideoCard } from './mock-data';
+import type { ProductVideoCard } from './product-page-types';
 
 interface ProductVideosCarouselProps {
   videos: ProductVideoCard[];
@@ -87,7 +87,7 @@ function HoverVideoCard({ video }: HoverVideoCardProps) {
       href={video.videoUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative block w-[42vw] max-w-[200px] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-black/20 shadow-sm transition hover:border-brand/30 hover:shadow-md sm:w-[38vw] sm:max-w-[220px]"
+      className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-black/20 shadow-sm transition hover:border-brand/30 hover:shadow-md"
       aria-label={`Play video: ${video.title}`}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -153,44 +153,13 @@ export function ProductVideosCarousel({
   videos,
   className,
 }: ProductVideosCarouselProps) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-
-  const scrollByViewport = useCallback((direction: 'left' | 'right') => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const delta = Math.max(280, Math.floor(el.clientWidth * 0.75));
-    el.scrollBy({
-      left: direction === 'left' ? -delta : delta,
-      behavior: 'smooth',
-    });
-  }, []);
-
   if (videos.length === 0) return null;
 
   return (
-    <div className={cn('relative', className)}>
-      <button
-        type="button"
-        onClick={() => scrollByViewport('left')}
-        className="absolute left-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-ink shadow-sm transition hover:bg-surface-muted md:flex"
-        aria-label="Scroll videos left"
-      >
-        <ChevronLeft className="h-5 w-5" aria-hidden />
-      </button>
-      <button
-        type="button"
-        onClick={() => scrollByViewport('right')}
-        className="absolute right-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-ink shadow-sm transition hover:bg-surface-muted md:flex"
-        aria-label="Scroll videos right"
-      >
-        <ChevronRight className="h-5 w-5" aria-hidden />
-      </button>
-
+    <div className={cn(className)}>
       <div
-        ref={scrollerRef}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pl-0 pr-0 [-ms-overflow-style:none] [scrollbar-width:none] md:px-12 [&::-webkit-scrollbar]:hidden"
-        tabIndex={0}
-        aria-label="Product video carousel"
+        className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5"
+        aria-label="Product videos"
       >
         {videos.map(v => (
           <HoverVideoCard key={v.id} video={v} />

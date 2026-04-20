@@ -96,6 +96,8 @@ export interface UnifiedProduct extends MagentoProduct {
 
 const HTML_TAG_PATTERN = /<\/?[a-z][^>]*>/i;
 
+const HTML_ENTITY_PATTERN = /&(lt|gt|amp|quot|#39|nbsp);/i;
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -164,6 +166,57 @@ function renderPlainTextRichContent(value: string): string {
   return blocks.length > 0 ? blocks.join('') : `<p>${escapeHtml(value)}</p>`;
 }
 
+function decodeCommonHtmlEntities(value: string): string {
+  return value
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&amp;', '&');
+}
+
+/**
+ * 某些上游会把 HTML 内容再次 JSON 序列化成字符串，这里做一次温和解码：
+ * - 处理首尾被包裹的双引号
+ * - 处理 \" / \\n 等转义
+ * - 处理常见 HTML 实体（&lt; &gt; ...）
+ */
+function decodeSerializedHtmlMaybe(raw: string): string {
+  const trimmed = raw.trim();
+  let normalized = trimmed;
+
+  if (
+    trimmed.length >= 2 &&
+    trimmed.startsWith('"') &&
+    trimmed.endsWith('"') &&
+    trimmed.includes('\\"')
+  ) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (typeof parsed === 'string') {
+        normalized = parsed;
+      }
+    } catch {
+      // 忽略解析失败，走后续兜底替换。
+    }
+  }
+
+  normalized = normalized
+    .replaceAll('\\/', '/')
+    .replaceAll('\\"', '"')
+    .replaceAll("\\'", "'")
+    .replaceAll('\\n', '\n')
+    .replaceAll('\\r', '\r')
+    .replaceAll('\\t', '\t');
+
+  if (HTML_ENTITY_PATTERN.test(normalized)) {
+    normalized = decodeCommonHtmlEntities(normalized);
+  }
+
+  return normalized.trim();
+}
+
 function normalizeHtmlContent(value: unknown): string | null {
   let raw: string | null = null;
 
@@ -178,7 +231,7 @@ function normalizeHtmlContent(value: unknown): string | null {
     }
   }
 
-  const trimmed = raw?.trim();
+  const trimmed = raw ? decodeSerializedHtmlMaybe(raw) : null;
   if (!trimmed) return null;
 
   return HTML_TAG_PATTERN.test(trimmed)
@@ -315,6 +368,7 @@ export function mapGQLProduct(
     cp_price: normalizeCpPrice(raw.cp_price),
     meta_title: raw.meta_title ?? null,
     meta_description: raw.meta_description ?? null,
+    specifications: raw.specifications ?? null,
     price: regularPrice,
     final_price: finalPrice,
     special_price: finalPrice < regularPrice ? finalPrice : null,

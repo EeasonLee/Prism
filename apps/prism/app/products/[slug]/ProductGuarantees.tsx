@@ -5,7 +5,7 @@ import {
   Headphones,
   type LucideIcon,
 } from 'lucide-react';
-import type { Guarantee } from './mock-data';
+import type { Guarantee } from './product-page-types';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Truck,

@@ -3,7 +3,7 @@ import type { Recipe } from '../../../app/recipes/types';
 import type {
   BlogPost,
   ProductVideoCard,
-} from '../../../app/products/[slug]/mock-data';
+} from '../../../app/products/[slug]/product-page-types';
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '../cache-policy';
 import { apiClient } from '../client';
 import { getStrapiBaseUrl } from '../config';
@@ -39,6 +39,7 @@ interface StrapiListResponse<T> {
 interface PdpRecipeCard {
   id: number;
   title: string;
+  description: string;
   image: string;
   href: string;
   time: string;
@@ -112,6 +113,10 @@ function mapRecipeToPdpCard(recipe: Recipe): PdpRecipeCard | null {
   return {
     id: recipe.id,
     title: recipe.title,
+    description:
+      recipe.summary?.trim() ||
+      recipe.description?.trim() ||
+      'Discover this recipe and make it at home.',
     image: pickImageUrl(recipe.featuredImage),
     href:
       hasCategoryInUrl && recipe.url

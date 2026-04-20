@@ -36,9 +36,7 @@ vi.mock('../app/recipes/components/Pagination', () => ({
 }));
 
 const target = {
-  productSku: 'PARENT',
-  purchasedSku: 'CHILD',
-  purchasedVariantLabel: 'Black / 2 Pack',
+  sku: 'PARENT',
   requiresVariantSelection: false,
 };
 
@@ -63,9 +61,6 @@ const review: ProductReview = {
   id: 1,
   documentId: 'review-doc-1',
   sku: 'PARENT',
-  productSku: 'PARENT',
-  purchasedSku: 'CHILD',
-  purchasedVariantLabel: 'Black / 2 Pack',
   authorName: 'Ava Buyer',
   rating: 4.5,
   title: 'Works well',
@@ -110,7 +105,7 @@ const pagination: ProductReviewPagination = {
 };
 
 describe('ProductReviews', () => {
-  it('renders purchased variant labels, half-star ratings, and helpful actions', () => {
+  it('renders sku, half-star ratings, and helpful actions', () => {
     render(
       <ProductReviews
         sku="PARENT"
@@ -121,7 +116,7 @@ describe('ProductReviews', () => {
       />
     );
 
-    expect(screen.getByText('Black / 2 Pack')).toBeInTheDocument();
+    expect(screen.getByText('PARENT')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /helpful \(3\)/i })
     ).toBeInTheDocument();
@@ -169,15 +164,15 @@ describe('ProductReviews', () => {
       .map(node => node.textContent?.trim() ?? '')
       .filter(Boolean);
 
-    expect(labels).toContain('5 star');
-    expect(labels).toContain('4 star');
-    expect(labels).toContain('3 star');
-    expect(labels).toContain('2 star');
-    expect(labels).toContain('1 star');
-    expect(labels).not.toContain('4.5 star');
-    expect(labels).not.toContain('3.5 star');
-    expect(labels).not.toContain('2.5 star');
-    expect(labels).not.toContain('1.5 star');
+    expect(labels).toContain('5★');
+    expect(labels).toContain('4★');
+    expect(labels).toContain('3★');
+    expect(labels).toContain('2★');
+    expect(labels).toContain('1★');
+    expect(labels).not.toContain('4.5★');
+    expect(labels).not.toContain('3.5★');
+    expect(labels).not.toContain('2.5★');
+    expect(labels).not.toContain('1.5★');
   });
 
   it('shows a visual video thumbnail, opens review media, and navigates to the next image', async () => {
