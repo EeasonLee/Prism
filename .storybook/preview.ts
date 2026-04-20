@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/react';
 
 // 注入全局样式：字体 + Design Token CSS 变量 + Tailwind 基础样式
-import '../apps/prism/app/globals.css';
+import '../apps/jd-frontend/app/globals.css';
 
 const preview: Preview = {
   parameters: {

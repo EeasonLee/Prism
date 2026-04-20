@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = join(__dirname, '..');
-const prismPkgPath = join(workspaceRoot, 'apps', 'prism', 'package.json');
+const appPkgPath = join(workspaceRoot, 'apps', 'jd-frontend', 'package.json');
 const rootPkgPath = join(workspaceRoot, 'package.json');
 
 function readJson(path, fallback = {}) {
@@ -36,10 +36,10 @@ function getLastGitTag() {
   }
 }
 
-const prismPkg = readJson(prismPkgPath);
+const appPkg = readJson(appPkgPath);
 const rootPkg = readJson(rootPkgPath);
 
-const version = prismPkg.version ?? 'unknown';
+const version = appPkg.version ?? 'unknown';
 const lastTag = getLastGitTag();
 const versionStatus =
   lastTag == null
