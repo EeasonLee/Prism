@@ -5,6 +5,7 @@ dist
 tmp
 out-tsc
 .next
+storybook-static/
 
 # TypeScript build info
 *.tsbuildinfo

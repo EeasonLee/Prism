@@ -68,6 +68,13 @@ Prism/
 - **代码规范**: ESLint + Prettier
 - **类型检查**: TypeScript
 
+## 🎨 Design Tokens 工作流
+
+- **定义 token**：在 `libs/tokens/src/tokens.css` 中新增/修改 CSS 变量（含 dark 值）。
+- **映射 Tailwind**：在 `libs/tokens/src/tailwind-preset.js` 增加语义类映射。
+- **Storybook 校验**：访问 `Design Tokens/Overview` 检查亮/暗模式展示与语义覆盖。
+- **Lint 约束**：`apps/prism/eslint.config.mjs` 会拦截新增硬编码 HEX 颜色，要求改用 token 类。
+
 ## 📦 添加新项目
 
 ### 生成新的 Next.js 应用
