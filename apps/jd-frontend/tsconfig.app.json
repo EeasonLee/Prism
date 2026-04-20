@@ -62,6 +62,9 @@
       "path": "../../libs/blog/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/tokens/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/ui/tsconfig.lib.json"
     }
   ]

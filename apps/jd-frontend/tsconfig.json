@@ -12,6 +12,9 @@
       "path": "../../libs/blog"
     },
     {
+      "path": "../../libs/tokens"
+    },
+    {
       "path": "../../libs/ui"
     },
     {
