@@ -11,7 +11,7 @@
  */
 
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
-import { apiClient } from './client';
+import { getStrapiBaseUrl } from './config';
 import type {
   Page,
   StrapiPageResponse,
@@ -684,7 +684,6 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
  * }
  * ```
  */
-import { getStrapiBaseUrl } from './config';
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
   try {

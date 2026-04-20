@@ -6,7 +6,7 @@
  */
 
 import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
+import { isMagentoApiError } from '@/lib/api/magento/client';
 import {
   authenticatedMagentoGraphQL,
   magentoGraphQLNoCache,
