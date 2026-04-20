@@ -1,4 +1,21 @@
 import { magentoGraphQL } from './magento-graphql.client';
+import { serverRequest } from '@/lib/api/adapters/server-adapter';
+
+interface StrapiProductCategoryRow {
+  id?: number;
+  documentId?: string;
+  name?: string;
+  slug?: string;
+  content?: string | null;
+  magento_category_id?: number | null;
+  list_image?: StrapiImageLike | null;
+  background_image?: StrapiImageLike | null;
+  children?: StrapiProductCategoryRow[];
+}
+
+interface StrapiImageLike {
+  url?: string | null;
+}
 
 export interface GetCategoryTreeParams {
   rootId?: number;
@@ -101,6 +118,92 @@ const CATEGORY_DETAIL_QUERY = `
 `;
 
 export class CategoryService {
+  async getStrapiCategoryBasicBySlug(slug: string): Promise<{
+    id: number;
+    name: string;
+    slug: string;
+    content?: string | null;
+    magentoCategoryId?: number | null;
+    children?: Array<{
+      id: number;
+      name: string;
+      slug: string;
+      imageUrl?: string | null;
+    }>;
+  } | null> {
+    const trimmed = slug.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const query = [
+      `filters[slug][$eq]=${encodeURIComponent(trimmed)}`,
+      'fields[0]=name',
+      'fields[1]=slug',
+      'fields[2]=content',
+      'fields[3]=magento_category_id',
+      'populate[list_image]=true',
+      'populate[background_image]=true',
+      'populate[children][fields][0]=name',
+      'populate[children][fields][1]=slug',
+      'populate[children][populate][list_image]=true',
+      'populate[children][populate][background_image]=true',
+      'pagination[pageSize]=1',
+    ].join('&');
+
+    const response = await serverRequest(`api/product-categories?${query}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as {
+      data?: StrapiProductCategoryRow[];
+    };
+    const row = payload.data?.[0];
+
+    if (!row?.id || !row.name || !row.slug) {
+      return null;
+    }
+
+    const pickImageUrl = (
+      listImage?: StrapiImageLike | null,
+      backgroundImage?: StrapiImageLike | null
+    ): string | null => {
+      const listImageUrl = listImage?.url;
+      if (typeof listImageUrl === 'string' && listImageUrl.trim()) {
+        return listImageUrl;
+      }
+      const backgroundImageUrl = backgroundImage?.url;
+      if (typeof backgroundImageUrl === 'string' && backgroundImageUrl.trim()) {
+        return backgroundImageUrl;
+      }
+      return null;
+    };
+
+    const children = Array.isArray(row.children)
+      ? row.children
+          .filter(child => Boolean(child?.id && child?.name && child?.slug))
+          .map(child => ({
+            id: child.id as number,
+            name: child.name as string,
+            slug: child.slug as string,
+            imageUrl: pickImageUrl(child.list_image, child.background_image),
+          }))
+      : [];
+
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      content: row.content ?? null,
+      magentoCategoryId: row.magento_category_id ?? null,
+      children,
+    };
+  }
+
   async getCategoryTree(
     params: GetCategoryTreeParams = {}
   ): Promise<GraphQLCategoryTree> {

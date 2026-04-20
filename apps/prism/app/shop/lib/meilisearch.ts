@@ -2,8 +2,22 @@ import { env } from '../../../lib/env';
 import { notifyError } from '../../../lib/notify';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 
-const INDEX_UID =
-  env.MEILISEARCH_INDEX_NAME ?? `${env.MEILISEARCH_INDEX_PREFIX}_${env.MAGENTO_STORE_CODE}`;
+function getIndexCandidates(): string[] {
+  const explicit = env.MEILISEARCH_INDEX_NAME?.trim();
+  if (explicit) {
+    return [explicit];
+  }
+
+  const prefix = (env.MEILISEARCH_INDEX_PREFIX ?? '').trim();
+  const store = (env.MAGENTO_STORE_CODE ?? '').trim();
+  const primary = `${prefix}_${store}`;
+  const fallback =
+    prefix.endsWith('_product') || !prefix
+      ? primary
+      : `${prefix}_product_${store}`;
+
+  return fallback === primary ? [primary] : [primary, fallback];
+}
 
 export type ShopSortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest';
 
@@ -76,7 +90,8 @@ interface MeilisearchSearchResponse {
 
 function buildFilter(p: ShopSearchParams): string[] {
   const f: string[] = [];
-  if (p.categoryId !== undefined) f.push(`category_ancestor_ids = ${p.categoryId}`);
+  if (p.categoryId !== undefined)
+    f.push(`category_ancestor_ids = ${p.categoryId}`);
   // NOTE: category_ancestor_slugs / category_slugs are not reliably populated
   // in the Meilisearch index, so we only filter by category_ancestor_ids.
   if (p.brand !== undefined) f.push(`brand = "${p.brand}"`);
@@ -89,10 +104,31 @@ function buildFilter(p: ShopSearchParams): string[] {
 
 function buildSort(sort?: ShopSortOption): string[] {
   const s: string[] = [];
-  if (sort === 'price_asc') s.push('final_price:asc');
-  else if (sort === 'price_desc') s.push('final_price:desc');
-  else if (sort === 'newest') s.push('content_updated_at:desc');
+  if (sort === 'price_asc') {
+    s.push('final_price:asc');
+  } else if (sort === 'price_desc') {
+    s.push('final_price:desc');
+  } else if (sort === 'newest') {
+    s.push('content_updated_at:desc');
+  }
   return s;
+}
+
+function moveOutOfStockToEnd(hits: MeilisearchHit[]): MeilisearchHit[] {
+  const inStock: MeilisearchHit[] = [];
+  const outOfStock: MeilisearchHit[] = [];
+
+  for (const hit of hits) {
+    const isOutOfStock =
+      hit.is_in_stock === false || hit.stock_status === 'out_of_stock';
+    if (isOutOfStock) {
+      outOfStock.push(hit);
+    } else {
+      inStock.push(hit);
+    }
+  }
+
+  return [...inStock, ...outOfStock];
 }
 
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
@@ -140,7 +176,9 @@ function buildAvailableFilters(
   }));
 }
 
-export async function searchProducts(params: ShopSearchParams): Promise<ShopSearchResult> {
+export async function searchProducts(
+  params: ShopSearchParams
+): Promise<ShopSearchResult> {
   const host = env.MEILISEARCH_HOST;
   if (!host) throw new Error('MEILISEARCH_HOST is not configured');
 
@@ -157,28 +195,50 @@ export async function searchProducts(params: ShopSearchParams): Promise<ShopSear
   };
 
   try {
-    const res = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
-      method: 'POST',
-      headers: {
+    const indexCandidates = getIndexCandidates();
+    let last404Error: Error | null = null;
+
+    for (const indexUid of indexCandidates) {
+      const headers = {
         'Content-Type': 'application/json',
-        ...(env.MEILISEARCH_API_KEY ? { Authorization: `Bearer ${env.MEILISEARCH_API_KEY}` } : {}),
-      },
-      body: JSON.stringify(body),
-    });
+        ...(env.MEILISEARCH_API_KEY
+          ? { Authorization: `Bearer ${env.MEILISEARCH_API_KEY}` }
+          : {}),
+      };
 
-    if (!res.ok) throw new Error(`Meilisearch ${res.status}: ${res.statusText}`);
-    const data = (await res.json()) as MeilisearchSearchResponse;
+      const res = await fetch(`${host}/indexes/${indexUid}/search`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
 
-    return {
-      items: data.hits.map(toProductCardItem),
-      pagination: {
-        page: data.page,
-        pageSize: data.hitsPerPage,
-        total: data.totalHits,
-        totalPages: data.totalPages,
-      },
-      availableFilters: buildAvailableFilters(data.facetDistribution),
-    };
+      if (res.status === 404) {
+        last404Error = new Error(`Meilisearch index not found: ${indexUid}`);
+        continue;
+      }
+
+      if (!res.ok)
+        throw new Error(`Meilisearch ${res.status}: ${res.statusText}`);
+
+      const data = (await res.json()) as MeilisearchSearchResponse;
+      const shouldUseDefaultOrder =
+        params.sort === undefined || params.sort === 'featured';
+      const orderedHits = shouldUseDefaultOrder
+        ? moveOutOfStockToEnd(data.hits)
+        : data.hits;
+      return {
+        items: orderedHits.map(toProductCardItem),
+        pagination: {
+          page: data.page,
+          pageSize: data.hitsPerPage,
+          total: data.totalHits,
+          totalPages: data.totalPages,
+        },
+        availableFilters: buildAvailableFilters(data.facetDistribution),
+      };
+    }
+
+    throw last404Error ?? new Error('No available Meilisearch index');
   } catch (error) {
     await notifyError({
       title: 'Meilisearch Search Failed',

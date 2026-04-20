@@ -74,6 +74,23 @@ export async function resolveCategoryBySlug(
   slug: string
 ): Promise<CategoryContext | null> {
   try {
+    const strapiCategory = await categoryService.getStrapiCategoryBasicBySlug(
+      slug
+    );
+    if (strapiCategory) {
+      return strapiCategory;
+    }
+  } catch (error) {
+    console.warn(
+      'resolveCategoryBySlug: Strapi lookup failed, fallback to Magento',
+      {
+        slug,
+        error,
+      }
+    );
+  }
+
+  try {
     const result = await getCategoryContextBySlug(slug);
     if (result.currentCategory) {
       return result.currentCategory;

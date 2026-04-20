@@ -13,6 +13,14 @@ export interface CategoryContext {
   id: number;
   name: string;
   slug: string;
+  content?: string | null;
+  magentoCategoryId?: number | null;
+  children?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    imageUrl?: string | null;
+  }>;
 }
 
 export interface CategoryProductQuery {
