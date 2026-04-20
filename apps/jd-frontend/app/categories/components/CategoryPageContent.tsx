@@ -144,8 +144,14 @@ export function CategoryPageContent({
   currentCategory,
   searchParams: sp,
 }: CategoryPageContentProps) {
+  const meiliCategoryId =
+    typeof currentCategory.magentoCategoryId === 'number' &&
+    currentCategory.magentoCategoryId > 0
+      ? currentCategory.magentoCategoryId
+      : currentCategory.id;
+
   const searchPromise = searchProducts({
-    categoryId: currentCategory.id,
+    categoryId: meiliCategoryId,
     categorySlug: currentCategory.slug,
     page: sp.page ? Math.max(1, Number(sp.page)) : 1,
     pageSize: 24,
@@ -183,6 +189,40 @@ export function CategoryPageContent({
       <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">
         {currentCategory.name}
       </h1>
+
+      {currentCategory.content?.trim() ? (
+        <div className="mb-8 rounded-xl bg-bg-subtle p-4 text-sm leading-7 text-ink-muted sm:p-6">
+          {currentCategory.content}
+        </div>
+      ) : null}
+
+      {Array.isArray(currentCategory.children) &&
+      currentCategory.children.length > 0 ? (
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold text-ink">Subcategories</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {currentCategory.children.map(child => (
+              <Link
+                key={child.id}
+                href={`/categories/${child.slug}`}
+                className="group overflow-hidden rounded-xl border border-line bg-white transition hover:border-ink/20 hover:shadow-sm"
+              >
+                <div className="aspect-[4/3] w-full bg-bg-subtle">
+                  {child.imageUrl ? (
+                    <div
+                      className="h-full w-full bg-cover bg-center transition duration-300 group-hover:scale-[1.03]"
+                      style={{ backgroundImage: `url(${child.imageUrl})` }}
+                    />
+                  ) : null}
+                </div>
+                <div className="p-3 text-sm font-medium text-ink">
+                  {child.name}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="flex gap-8 lg:gap-12">
         {/* Desktop sidebar */}
