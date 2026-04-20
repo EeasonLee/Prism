@@ -11,6 +11,7 @@
  */
 
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
+import { getStrapiBaseUrl } from './config';
 import type {
   Page,
   StrapiPageResponse,
@@ -684,6 +685,23 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
       return null;
   }
 }
+
+/**
+ * 按 slug 获取 Page
+ *
+ * @param slug - 页面 slug（如 'home'）
+ * @returns Page 数据，失败时返回 null
+ *
+ * 使用示例：
+ * ```typescript
+ * const page = await getPageBySlug('home');
+ * if (page) {
+ *   // 渲染页面
+ * } else {
+ *   // 使用 fallback
+ * }
+ * ```
+ */
 
 export async function getPageBySlug(slug: string): Promise<Page | null> {
   try {
