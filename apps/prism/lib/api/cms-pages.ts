@@ -55,7 +55,6 @@ import type {
  * }
  * ```
  */
-import { getStrapiBaseUrl } from './config';
 
 /** Strapi Media / Image 嵌套结构（API 原始形态，字段可选） */
 interface StrapiImageFormatRaw {
