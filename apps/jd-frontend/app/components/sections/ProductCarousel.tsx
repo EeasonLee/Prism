@@ -18,12 +18,24 @@ export async function ProductCarousel({
   showViewAll,
   viewAllLink,
 }: ProductCarouselProps) {
+  const skus = productSkus
+    .map(sku => sku.trim())
+    .filter((sku): sku is string => sku.length > 0);
+
+  if (skus.length === 0) {
+    return null;
+  }
+
   const products = await Promise.all(
-    productSkus.map(async sku => {
+    skus.map(async sku => {
       try {
         return await fetchUnifiedProductBySku(sku);
       } catch (error) {
-        console.error(`Failed to fetch product ${sku}:`, error);
+        const message = error instanceof Error ? error.message : String(error);
+        // CMS 里偶发无效 SKU 时，按“跳过该卡片”处理，避免整块渲染失败。
+        if (!message.includes('Product not found')) {
+          console.warn(`Failed to fetch product ${sku}: ${message}`);
+        }
         return null;
       }
     })

@@ -313,8 +313,7 @@ function resolveStrapiUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http')) return url;
 
-  const base = process.env.NEXT_PUBLIC_API_URL || '';
-  return `${base}${url}`;
+  return `http://localhost:1337${url}`;
 }
 
 /**
@@ -715,9 +714,6 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
       'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
-      'populate[sections][on][page.deal-banner][populate][slides][populate]=*',
-      'populate[sections][on][page.deal-category-nav][populate][items][populate]=*',
-      'populate[sections][on][page.deal-product-blocks]=true',
       'populate[seo][populate]=*',
       'populate[featuredImage]=true',
     ].join('&');
