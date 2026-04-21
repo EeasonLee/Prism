@@ -49,6 +49,8 @@ export const CACHE_TAG_PRODUCT_QA = 'product-qa';
 
 export const CACHE_TAG_PRODUCT_ENRICHMENTS = 'product-enrichments';
 
+export const CACHE_TAG_HEADER_MENU = 'header-menu';
+
 /** CMS 单页：按 slug 失效 */
 export function cacheTagCmsPage(slug: string): string {
   return `cms-page:${slug}`;
