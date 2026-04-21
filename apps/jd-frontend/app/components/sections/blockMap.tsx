@@ -24,13 +24,13 @@ import { HeroBanner } from './HeroBanner';
 import { CategoryGrid } from './CategoryGrid';
 import { ProductCarousel } from './ProductCarousel';
 import { ServiceBadges } from './ServiceBadges';
-import { ImageTextBlock } from './ImageTextBlock';
 import { FeaturedProducts } from './FeaturedProducts';
 import { ContentCarousel } from './ContentCarousel';
 import { VideoShowcase } from './VideoShowcase';
 import { DealBanner } from './DealBanner';
 import { DealCategoryNav } from './DealCategoryNav';
 import { DealProductBlocks } from './DealProductBlocks';
+import { HomeFirstHeroSection } from '../HomeFirstHeroSection';
 
 /**
  * Section 组件注册表
@@ -51,7 +51,7 @@ export const blockMap = {
   'page.category-grid': CategoryGrid,
   'page.product-carousel': ProductCarousel,
   'page.service-badges': ServiceBadges,
-  'page.image-text-block': ImageTextBlock,
+  'page.image-text-block': HomeFirstHeroSection,
   'page.featured-products': FeaturedProducts,
   'page.content-carousel': ContentCarousel,
   'page.video-showcase': VideoShowcase,

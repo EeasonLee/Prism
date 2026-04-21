@@ -12,6 +12,7 @@
 
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
 import { getStrapiBaseUrl } from './config';
+import { fetchUnifiedProductBySku } from './unified-product';
 import type {
   Page,
   StrapiPageResponse,
@@ -25,8 +26,8 @@ import type {
   ServiceBadge,
   StrapiImage,
   ImageTextBlockProps,
+  ImageTextBlockConfig,
   FeaturedProductsProps,
-  FeaturedProductItem,
   ContentCarouselProps,
   ContentCard,
   VideoShowcaseProps,
@@ -105,20 +106,6 @@ interface RawServiceBadge {
   icon?: ServiceBadge['icon'];
   title?: string | null;
   description?: string | null;
-}
-
-interface RawFeaturedProduct {
-  id?: number;
-  sku?: string;
-  label?: string;
-  name?: string | null;
-  description?: string;
-  features?: unknown;
-  image?: StrapiImageRaw | null;
-  price?: number;
-  originalPrice?: number;
-  discount?: number;
-  productLink?: string;
 }
 
 /** Strapi 组件行内关联的食谱（populate 后扁平字段） */
@@ -316,6 +303,179 @@ function resolveStrapiUrl(url: string | null | undefined): string | null {
   return `http://localhost:1337${url}`;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function asString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function stripHtmlToText(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const plain = value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain || undefined;
+}
+
+function truncateText(
+  value: string | undefined,
+  maxLength: number
+): string | undefined {
+  if (!value) return undefined;
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trimEnd()}...`;
+}
+
+function normalizeImageTextBlockConfig(value: unknown): ImageTextBlockConfig {
+  const configObj = asRecord(value);
+  if (!configObj) return {};
+
+  const layoutObj = asRecord(configObj.layout);
+  const imagePosition = layoutObj?.imagePosition;
+  const safePosition =
+    imagePosition === 'left' || imagePosition === 'right'
+      ? imagePosition
+      : undefined;
+
+  const mainObj = asRecord(configObj.main);
+  const mainImageObj = asRecord(mainObj?.image);
+  const mainImageUrl = asString(mainImageObj?.url);
+  const mainImage = mainImageUrl
+    ? {
+        url: resolveStrapiUrl(mainImageUrl) || mainImageUrl,
+        alt: asString(mainImageObj?.alt),
+      }
+    : undefined;
+
+  const mainCtaObj = asRecord(mainObj?.cta);
+  const mainPriceObj = asRecord(mainObj?.price);
+
+  const main = mainObj
+    ? {
+        productSku: asString(mainObj.productSku),
+        image: mainImage,
+        title: asString(mainObj.title),
+        description: asString(mainObj.description),
+        badge: asString(mainObj.badge),
+        cta: {
+          text: asString(mainCtaObj?.text),
+          link: asString(mainCtaObj?.link),
+        },
+        price: {
+          current: asNumber(mainPriceObj?.current),
+          original: asNumber(mainPriceObj?.original),
+          currency: asString(mainPriceObj?.currency),
+        },
+        addToCartText: asString(mainObj.addToCartText),
+      }
+    : undefined;
+
+  const sideCardList = Array.isArray(configObj.sideCards)
+    ? configObj.sideCards
+    : [];
+  const sideCards = sideCardList
+    .map(card => {
+      const cardObj = asRecord(card);
+      if (!cardObj) return null;
+
+      const cardImageObj = asRecord(cardObj.image);
+      const cardImageUrl = asString(cardImageObj?.url);
+      const cardImage = cardImageUrl
+        ? {
+            url: resolveStrapiUrl(cardImageUrl) || cardImageUrl,
+            alt: asString(cardImageObj?.alt),
+          }
+        : undefined;
+      const cardCtaObj = asRecord(cardObj.cta);
+
+      return {
+        image: cardImage,
+        eyebrow: asString(cardObj.eyebrow),
+        title: asString(cardObj.title),
+        cta: {
+          text: asString(cardCtaObj?.text),
+          link: asString(cardCtaObj?.link),
+        },
+      };
+    })
+    .filter((card): card is NonNullable<typeof card> => card !== null);
+
+  return {
+    layout: safePosition ? { imagePosition: safePosition } : undefined,
+    main,
+    sideCards,
+  };
+}
+
+async function enrichImageTextBlockConfig(
+  config: ImageTextBlockConfig
+): Promise<ImageTextBlockConfig> {
+  const sku = config.main?.productSku?.trim();
+  if (!sku) return config;
+
+  try {
+    const product = await fetchUnifiedProductBySku(sku);
+    const productLink = `/products/${product.url_key ?? product.sku}`;
+    const resolvedImageUrl =
+      config.main?.image?.url ?? product.unified_thumbnail;
+    const autoDescription = truncateText(
+      product.subtitle ??
+        stripHtmlToText(product.short_description_html) ??
+        stripHtmlToText(product.description_html),
+      140
+    );
+    const autoCurrentPrice = product.special_price ?? product.price;
+    const autoOriginalPrice = product.special_price ? product.price : undefined;
+
+    return {
+      ...config,
+      main: {
+        ...config.main,
+        productSku: sku,
+        image: resolvedImageUrl
+          ? {
+              url: resolvedImageUrl,
+              alt:
+                config.main?.image?.alt ??
+                product.display_name ??
+                product.name ??
+                undefined,
+            }
+          : config.main?.image,
+        title: config.main?.title ?? product.display_name ?? product.name,
+        description: config.main?.description ?? autoDescription,
+        cta: {
+          text: config.main?.cta?.text ?? 'View Product',
+          link: config.main?.cta?.link ?? productLink,
+        },
+        price: {
+          current: config.main?.price?.current ?? autoCurrentPrice,
+          original: config.main?.price?.original ?? autoOriginalPrice,
+          currency: config.main?.price?.currency ?? product.currency ?? 'USD',
+        },
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Failed to enrich image-text-block by sku ${sku}: ${message}`);
+    return config;
+  }
+}
+
 /**
  * 转换 Strapi Image 为标准格式
  */
@@ -374,7 +534,9 @@ function transformImage(
  * - 旧版本保持冻结，仅修 bug
  * - 禁止破坏性修改现有 Section
  */
-function transformSection(rawSection: RawStrapiSection): PageSection | null {
+async function transformSection(
+  rawSection: RawStrapiSection
+): Promise<PageSection | null> {
   const { __component, id, ...rawProps } = rawSection;
 
   switch (__component) {
@@ -483,49 +645,33 @@ function transformSection(rawSection: RawStrapiSection): PageSection | null {
     }
 
     case 'page.image-text-block': {
+      const config = normalizeImageTextBlockConfig(rawProps.config);
+      const enrichedConfig = await enrichImageTextBlockConfig(config);
       return {
         __component,
         id,
         props: {
-          image: transformImage(
-            rawProps.image as StrapiImageRaw | null | undefined
-          ) as StrapiImage,
-          imagePosition: rawProps.imagePosition || 'right',
-          title: rawProps.title || '',
-          description: rawProps.description,
-          ctaText: rawProps.ctaText,
-          ctaLink: rawProps.ctaLink,
-          badge: rawProps.badge,
+          config: enrichedConfig,
         } as ImageTextBlockProps,
       };
     }
 
     case 'page.featured-products': {
-      const productList = Array.isArray(rawProps.products)
+      const products = Array.isArray(rawProps.products)
         ? rawProps.products
+            .map(item => {
+              if (!item || typeof item !== 'object') return '';
+              const sku = (item as { sku?: unknown }).sku;
+              return typeof sku === 'string' ? sku : '';
+            })
+            .map(sku => sku.trim())
+            .filter((sku): sku is string => sku.length > 0)
+        : typeof rawProps.products === 'string'
+        ? rawProps.products
+            .split(/[\n,]+/)
+            .map(sku => sku.trim())
+            .filter((sku): sku is string => sku.length > 0)
         : [];
-      const products: FeaturedProductItem[] = productList.map(
-        (product): FeaturedProductItem => {
-          const p = product as RawFeaturedProduct;
-          const rawFeatures = p.features;
-          const features = Array.isArray(rawFeatures)
-            ? rawFeatures.filter((f): f is string => typeof f === 'string')
-            : [];
-          return {
-            id: p.id ?? 0,
-            sku: p.sku ?? '',
-            label: p.label,
-            name: p.name ?? '',
-            description: p.description,
-            features,
-            image: transformImage(p.image) as StrapiImage,
-            price: p.price,
-            originalPrice: p.originalPrice,
-            discount: p.discount,
-            productLink: p.productLink,
-          };
-        }
-      );
 
       return {
         __component,
@@ -710,7 +856,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.product-carousel]=true',
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
-      'populate[sections][on][page.featured-products][populate][products][populate]=*',
+      'populate[sections][on][page.featured-products]=true',
       'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
       'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
@@ -752,9 +898,10 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     }
 
     // 转换 sections
-    const sections = (pageData.sections || [])
-      .map(transformSection)
-      .filter((s): s is PageSection => s !== null);
+    const sectionsRaw = await Promise.all(
+      (pageData.sections || []).map(transformSection)
+    );
+    const sections = sectionsRaw.filter((s): s is PageSection => s !== null);
 
     return {
       id: pageData.id,

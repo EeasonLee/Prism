@@ -121,34 +121,50 @@ export interface ServiceBadgesProps {
 
 /**
  * Image Text Block Props
- * 图文双栏展示组件
+ * 首页首屏配置（单字段 JSON）
  */
-export interface ImageTextBlockProps {
-  image: StrapiImage;
-  imagePosition: 'left' | 'right';
-  title: string;
-  description?: string;
-  ctaText?: string;
-  ctaLink?: string;
-  badge?: string;
+export interface ImageTextBlockImageConfig {
+  url: string;
+  alt?: string;
 }
 
-/**
- * Featured Product Item
- * 特色商品项
- */
-export interface FeaturedProductItem {
-  id: number;
-  sku: string;
-  label?: string;
-  name: string;
+export interface ImageTextBlockCtaConfig {
+  text?: string;
+  link?: string;
+}
+
+export interface ImageTextBlockMainConfig {
+  productSku?: string;
+  image?: ImageTextBlockImageConfig;
+  title?: string;
   description?: string;
-  features: string[];
-  image: StrapiImage;
-  price?: number;
-  originalPrice?: number;
-  discount?: number;
-  productLink?: string;
+  badge?: string;
+  cta?: ImageTextBlockCtaConfig;
+  price?: {
+    current?: number;
+    original?: number;
+    currency?: string;
+  };
+  addToCartText?: string;
+}
+
+export interface ImageTextBlockSideCardConfig {
+  image?: ImageTextBlockImageConfig;
+  eyebrow?: string;
+  title?: string;
+  cta?: ImageTextBlockCtaConfig;
+}
+
+export interface ImageTextBlockConfig {
+  main?: ImageTextBlockMainConfig;
+  sideCards?: ImageTextBlockSideCardConfig[];
+  layout?: {
+    imagePosition?: 'left' | 'right';
+  };
+}
+
+export interface ImageTextBlockProps {
+  config?: ImageTextBlockConfig;
 }
 
 /**
@@ -158,7 +174,7 @@ export interface FeaturedProductItem {
 export interface FeaturedProductsProps {
   title: string;
   subtitle?: string;
-  products: FeaturedProductItem[];
+  products: string[]; // SKU 列表，组件内部调用 unified-product API
 }
 
 /**

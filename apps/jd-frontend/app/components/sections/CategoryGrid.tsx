@@ -1,11 +1,17 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CategoryGridProps } from '@/lib/api/cms-page.types';
+import type { ProductCardItem } from '@/lib/api/bff/product/types';
+import { DealProductCard } from './DealProductCard';
 
 export function CategoryGrid({ title, categories }: CategoryGridProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState<string>('');
+  const [products, setProducts] = useState<ProductCardItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const scroll = (dir: 'left' | 'right') => {
     tabsRef.current?.scrollBy({
@@ -15,6 +21,61 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
   };
 
   const enabledCategories = categories.filter(cat => cat.enabled);
+  const activeCategory =
+    enabledCategories.find(cat => cat.categoryId === activeCategoryId) ??
+    enabledCategories[0];
+
+  useEffect(() => {
+    if (enabledCategories.length === 0) return;
+    setActiveCategoryId(prev => {
+      if (!prev) return enabledCategories[0].categoryId;
+      const stillExists = enabledCategories.some(
+        cat => cat.categoryId === prev
+      );
+      return stillExists ? prev : enabledCategories[0].categoryId;
+    });
+  }, [enabledCategories]);
+
+  useEffect(() => {
+    if (!activeCategoryId) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set('categoryUrlKey', activeCategoryId);
+        params.set('pageSize', '8');
+        const res = await fetch(`/api/deal-products?${params.toString()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!cancelled && json.success && json.data) {
+          setProducts(json.data.items ?? []);
+        }
+        if (!cancelled && (!json.success || !json.data)) {
+          setProducts([]);
+        }
+      } catch {
+        if (!cancelled) setProducts([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setLoaded(true);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [activeCategoryId]);
 
   return (
     <section className="py-12 lg:py-20">
@@ -52,15 +113,47 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
             className="no-scrollbar flex gap-1 overflow-x-auto px-12 py-1.5"
           >
             {enabledCategories.map(cat => (
-              <a
+              <button
                 key={cat.categoryId}
-                href={`/shop/${cat.categoryId}`}
-                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-ink-muted transition-all hover:bg-ink hover:text-white"
+                type="button"
+                onClick={() => setActiveCategoryId(cat.categoryId)}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                  activeCategoryId === cat.categoryId
+                    ? 'bg-ink text-white'
+                    : 'text-ink-muted hover:bg-ink hover:text-white'
+                }`}
               >
                 {cat.label}
-              </a>
+              </button>
             ))}
           </div>
+        </div>
+
+        <div className="mt-6">
+          {loading && (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-square animate-pulse rounded-xl bg-muted"
+                />
+              ))}
+            </div>
+          )}
+
+          {!loading && products.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {products.map(product => (
+                <DealProductCard key={product.sku} product={product} />
+              ))}
+            </div>
+          )}
+
+          {!loading && loaded && products.length === 0 && activeCategory && (
+            <p className="text-sm text-ink-muted">
+              No products found in {activeCategory.label}.
+            </p>
+          )}
         </div>
       </div>
     </section>
