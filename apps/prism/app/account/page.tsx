@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Home, CreditCard, MapPin } from 'lucide-react';
 import { AccountScaffold } from './components/AccountScaffold';
 import { useAuth } from '@/lib/auth/context';
 import { useAccount } from '@/lib/account/useAccount';
@@ -84,6 +85,57 @@ export default function AccountOverviewPage() {
           <p className="mt-2 text-2xl font-semibold text-ink">
             {addresses.length}
           </p>
+          {addresses.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {addresses.find(a => a.defaultBilling) && (
+                <div className="flex items-start gap-2">
+                  <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                  <p className="text-xs text-ink-muted">
+                    {(() => {
+                      const a = addresses.find(addr => addr.defaultBilling);
+                      if (!a) return null;
+                      return (
+                        <span>
+                          {a.firstname} {a.lastname}
+                          <br />
+                          {a.street}, {a.city}
+                          {a.region ? `, ${a.region}` : ''} {a.postcode}
+                        </span>
+                      );
+                    })()}
+                  </p>
+                </div>
+              )}
+              {addresses.find(a => a.defaultShipping) && (
+                <div className="flex items-start gap-2">
+                  <Home className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
+                  <p className="text-xs text-ink-muted">
+                    {(() => {
+                      const a = addresses.find(addr => addr.defaultShipping);
+                      if (!a) return null;
+                      return (
+                        <span>
+                          {a.firstname} {a.lastname}
+                          <br />
+                          {a.street}, {a.city}
+                          {a.region ? `, ${a.region}` : ''} {a.postcode}
+                        </span>
+                      );
+                    })()}
+                  </p>
+                </div>
+              )}
+              {!addresses.find(a => a.defaultBilling) &&
+                !addresses.find(a => a.defaultShipping) && (
+                  <p className="text-xs text-ink-muted">
+                    No default addresses set
+                  </p>
+                )}
+            </div>
+          )}
+          {addresses.length === 0 && (
+            <p className="mt-3 text-xs text-ink-muted">No addresses saved</p>
+          )}
           <Link
             href="/account/addresses"
             className="mt-3 inline-block text-sm text-brand hover:underline"

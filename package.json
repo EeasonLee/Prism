@@ -6,7 +6,7 @@
     "prepare": "husky",
     "commit": "git-cz",
     "lint-staged": "lint-staged",
-    "dev": "nx dev prism",
+    "dev": "nx run prism:dev --output-style=stream",
     "build": "nx build prism",
     "start": "nx start prism",
     "lint": "nx lint prism",

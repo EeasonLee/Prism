@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   Address,
+  AddressInput,
   Order,
   UpdateUserInput,
   User,
@@ -24,6 +25,11 @@ interface UseAccountResult {
   error: string | null;
   refresh: () => Promise<void>;
   updateProfile: (input: UpdateUserInput) => Promise<void>;
+  addAddress: (input: AddressInput) => Promise<Address>;
+  updateAddress: (id: number, input: AddressInput) => Promise<Address>;
+  deleteAddress: (id: number) => Promise<void>;
+  getCountries: () => Promise<Array<{ id: string; full_name_english: string }>>;
+  getRegions: (countryCode: string) => Promise<Array<{ id: string; code: string; name: string }>>;
   logout: () => Promise<void>;
 }
 
@@ -174,6 +180,101 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
     setAddresses([]);
   }, []);
 
+  const addAddress = useCallback(
+    async (input: AddressInput) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+      setError(null);
+      const res = await fetch('/api/v1/account/addresses', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        throw new Error(await parseErrorMessage(res));
+      }
+      const data = (await res.json()) as { address: Address };
+      setAddresses(prev => [...prev, data.address]);
+      return data.address;
+    },
+    [isAuthenticated]
+  );
+
+  const updateAddress = useCallback(
+    async (id: number, input: AddressInput) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+      setError(null);
+      const res = await fetch(`/api/v1/account/addresses/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        throw new Error(await parseErrorMessage(res));
+      }
+      const data = (await res.json()) as { address: Address };
+      setAddresses(prev =>
+        prev.map(a => (a.id === id ? data.address : a))
+      );
+      return data.address;
+    },
+    [isAuthenticated]
+  );
+
+  const deleteAddress = useCallback(
+    async (id: number) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+      setError(null);
+      const res = await fetch(`/api/v1/account/addresses/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        throw new Error(await parseErrorMessage(res));
+      }
+      setAddresses(prev => prev.filter(a => a.id !== id));
+    },
+    [isAuthenticated]
+  );
+
+  const getCountries = useCallback(async () => {
+    const res = await fetch('/api/v1/account/addresses/countries', {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new Error(await parseErrorMessage(res));
+    }
+    const data = (await res.json()) as {
+      countries: Array<{ id: string; full_name_english: string }>;
+    };
+    return data.countries ?? [];
+  }, []);
+
+  const getRegions = useCallback(async (countryCode: string) => {
+    const res = await fetch(
+      `/api/v1/account/addresses/regions?country=${encodeURIComponent(countryCode)}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      }
+    );
+    if (!res.ok) {
+      throw new Error(await parseErrorMessage(res));
+    }
+    const data = (await res.json()) as {
+      regions: Array<{ id: string; code: string; name: string }>;
+    };
+    return data.regions ?? [];
+  }, []);
+
   return {
     user,
     orders,
@@ -182,6 +283,11 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
     error,
     refresh,
     updateProfile,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    getCountries,
+    getRegions,
     logout,
   };
 }

@@ -58,7 +58,30 @@ export interface Address {
   lastname: string;
   street: string;
   city: string;
+  region: string;
+  regionId?: number;
+  postcode: string;
   country: string;
+  telephone: string;
+  defaultBilling: boolean;
+  defaultShipping: boolean;
+}
+
+export interface AddressInput {
+  firstname: string;
+  lastname: string;
+  street: string[];
+  city: string;
+  region?: {
+    region?: string;
+    region_code?: string;
+    region_id?: number;
+  };
+  postcode: string;
+  country_code: string;
+  telephone: string;
+  default_billing?: boolean;
+  default_shipping?: boolean;
 }
 
 export interface AccountErrorShape {

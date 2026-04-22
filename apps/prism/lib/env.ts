@@ -53,6 +53,8 @@ const clientSchema = z.object({
   NEXT_PUBLIC_MAGENTO_API_URL: z.string().url().optional(),
   // Magento GraphQL 端点（直接访问 Magento GraphQL，不经过 SSO 代理）
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: z.string().url().optional(),
+  // 支持的国家代码列表，逗号分隔，用于地址表单（默认 US）
+  NEXT_PUBLIC_SUPPORTED_COUNTRIES: z.string().optional(),
 });
 
 const mergedSchema = serverSchema.merge(clientSchema);
@@ -71,6 +73,7 @@ const parsedEnv = mergedSchema.parse({
     process.env.REQUIRE_LOGIN_FOR_CHECKOUT,
   NEXT_PUBLIC_MAGENTO_API_URL: process.env.NEXT_PUBLIC_MAGENTO_API_URL,
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL,
+  NEXT_PUBLIC_SUPPORTED_COUNTRIES: process.env.NEXT_PUBLIC_SUPPORTED_COUNTRIES,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   MEILISEARCH_HOST: process.env.MEILISEARCH_HOST,
   MEILISEARCH_INDEX_PREFIX: process.env.MEILISEARCH_INDEX_PREFIX,

@@ -13,7 +13,7 @@ import {
   getCheckoutRedirectLink,
   removeCoupon,
 } from '../../lib/api/magento/cart';
-import type { CartItem, CartTotals } from '../../lib/api/magento/types';
+import type { CartTotals } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
 import { LoginModal } from './LoginModal';
@@ -21,15 +21,16 @@ import { LoginModal } from './LoginModal';
 export function CartDrawer() {
   const router = useRouter();
   const {
+    items,
     isCartOpen,
     closeCart,
     itemCount,
     removeFromCart,
     clearCart,
     updateItemQty,
+    syncCart,
   } = useCart();
   const { hasSession, isGuest } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
   const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
   const [loadingItems, setLoadingItems] = useState(false);
   const [viewCartLoading, setViewCartLoading] = useState(false);
@@ -52,7 +53,6 @@ export function CartDrawer() {
       setServiceError(null);
       try {
         const snapshot = await getCartSnapshot();
-        setItems(snapshot.items ?? []);
         setCartTotals(snapshot.totals);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
@@ -149,7 +149,6 @@ export function CartDrawer() {
     setServiceError(null);
     try {
       await clearCart();
-      setItems([]);
       setCartTotals(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -171,8 +170,8 @@ export function CartDrawer() {
     setServiceError(null);
     try {
       const snapshot = await applyCoupon(code);
-      setItems(snapshot.items ?? []);
       setCartTotals(snapshot.totals);
+      await syncCart();
       setCouponCode('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -193,8 +192,8 @@ export function CartDrawer() {
     setServiceError(null);
     try {
       const snapshot = await removeCoupon();
-      setItems(snapshot.items ?? []);
       setCartTotals(snapshot.totals);
+      await syncCart();
       setCouponCode('');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -206,7 +205,7 @@ export function CartDrawer() {
     } finally {
       setCouponLoading(false);
     }
-  }, []);
+  }, [syncCart]);
 
   const handleUpdateQty = useCallback(
     async (itemId: string, newQty: number) => {
