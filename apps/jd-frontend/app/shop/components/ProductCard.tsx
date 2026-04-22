@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { formatPrice } from '@/lib/format-price';
 import { getCartItems } from '../../../lib/api/magento/cart';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
-import { useCart } from '../../../lib/cart/context';
+import { useAddToCartAction } from '../../../lib/cart/use-add-to-cart-action';
 import { QuickAddModal } from './QuickAddModal';
 
 interface ProductCardProps {
@@ -86,7 +86,12 @@ function StarRating({ percentage }: { percentage: number }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, openCart } = useCart();
+  const {
+    addItemToCart,
+    isAdding,
+    error: addError,
+    clearError,
+  } = useAddToCartAction();
   const priceValue = product.price.value;
   const currencyCode = product.price.currency;
   const originalPrice = product.originalPrice;
@@ -97,8 +102,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const typeStyle = TYPE_STYLE[typeKey] ?? 'bg-surface text-ink-muted';
   const hasRating = product.ratingPercentage > 0;
   const isOutOfStock = product.inStock === false;
-  const [isAdding, setIsAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
   const [cartQty, setCartQty] = useState(0);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [quickViewData, setQuickViewData] = useState<
@@ -136,21 +139,13 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const addSimpleProduct = async () => {
-    setAddError(null);
-    setIsAdding(true);
-    try {
-      await addToCart({ sku: product.sku, qty: 1 });
-      await refreshCardQtyFromCart();
-      openCart();
-    } catch (error) {
-      setAddError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to add item to cart. Please try again.'
-      );
-    } finally {
-      setIsAdding(false);
-    }
+    await addItemToCart(
+      { sku: product.sku, qty: 1 },
+      {
+        openCartOnSuccess: true,
+        onSuccess: refreshCardQtyFromCart,
+      }
+    );
   };
 
   const fetchConfigurableVariants = async () => {
@@ -207,7 +202,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
     if (typeKey === 'configurable') {
       setIsQuickViewOpen(true);
-      setAddError(null);
+      clearError();
       setQuickViewError(null);
       await fetchConfigurableVariants();
       return;
@@ -371,7 +366,6 @@ export function ProductCard({ product }: ProductCardProps) {
           onClose={() => setIsQuickViewOpen(false)}
           onAdded={async () => {
             await refreshCardQtyFromCart();
-            openCart();
           }}
         />
       )}

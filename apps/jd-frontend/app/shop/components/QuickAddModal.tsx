@@ -4,8 +4,8 @@ import Image from 'next/image';
 import { X, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatPrice } from '@/lib/format-price';
-import { useCart } from '../../../lib/cart/context';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
+import { useAddToCartAction } from '../../../lib/cart/use-add-to-cart-action';
 import {
   CustomizableOptionsSection,
   calculateCustomOptionPriceDelta,
@@ -49,7 +49,7 @@ export function QuickAddModal({
   onClose,
   onAdded,
 }: QuickAddModalProps) {
-  const { addToCart } = useCart();
+  const { addItemToCart, isAdding, error: addError } = useAddToCartAction();
   const priceValue = product.price.value;
   const currencyCode = product.price.currency;
   const originalPrice = product.originalPrice;
@@ -63,8 +63,6 @@ export function QuickAddModal({
   const [customSelections, setCustomSelections] = useState<
     Record<string, string | string[]>
   >({});
-  const [isAdding, setIsAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
 
   const isLoading =
     variantData.options.length === 0 && variantData.variants.length === 0;
@@ -157,8 +155,6 @@ export function QuickAddModal({
 
   const handleAdd = async () => {
     if (!canAdd) return;
-    setAddError(null);
-    setIsAdding(true);
 
     const payload: Record<string, unknown> = {
       super_attribute: selectedAttributes,
@@ -174,22 +170,20 @@ export function QuickAddModal({
       }));
     }
 
-    try {
-      await addToCart({
+    const added = await addItemToCart(
+      {
         sku: product.sku,
         qty: 1,
         productOptionsJson: JSON.stringify(payload),
-      });
-      onAdded?.();
+      },
+      {
+        openCartOnSuccess: true,
+        onSuccess: onAdded,
+      }
+    );
+
+    if (added) {
       onClose();
-    } catch (_err) {
-      setAddError(
-        _err instanceof Error
-          ? _err.message
-          : 'Failed to add item to cart. Please try again.'
-      );
-    } finally {
-      setIsAdding(false);
     }
   };
 

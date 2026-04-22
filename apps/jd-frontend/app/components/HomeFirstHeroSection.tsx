@@ -3,16 +3,18 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { HOME_ANIMATIONS_ENABLED } from '@/app/lib/animations';
-import { ArrowRight, ShoppingCart } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
 import { formatPrice } from '@/lib/format-price';
 import type { ImageTextBlockProps } from '@/lib/api/cms-page.types';
+import { AddToCartButton } from './AddToCartButton';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const DEFAULT_MAIN_CARD = {
+  productSku: undefined as string | undefined,
   image: {
     url: '/images/recipe_4.jpg',
     alt: 'Automatic Pasta Maker - Fresh texture, zero effort',
@@ -58,6 +60,7 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
   const imagePosition =
     config?.layout?.imagePosition === 'right' ? 'right' : 'left';
   const main = {
+    productSku: config?.main?.productSku ?? DEFAULT_MAIN_CARD.productSku,
     image: config?.main?.image ?? DEFAULT_MAIN_CARD.image,
     title: config?.main?.title ?? DEFAULT_MAIN_CARD.title,
     description: config?.main?.description ?? DEFAULT_MAIN_CARD.description,
@@ -201,13 +204,14 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
                   ) : null}
                 </div>
 
-                <button
-                  type="button"
-                  className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 active:scale-95"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {main.addToCartText}
-                </button>
+                <AddToCartButton
+                  sku={main.productSku ?? ''}
+                  qty={1}
+                  label={main.addToCartText}
+                  disabled={!main.productSku}
+                  disabledLabel="Unavailable"
+                  className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                />
               </div>
             </div>
           </div>

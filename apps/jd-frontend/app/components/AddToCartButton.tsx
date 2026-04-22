@@ -1,13 +1,15 @@
 'use client';
 
 import { ShoppingCart } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import { useCart } from '../../lib/cart/context';
+import { useCallback, useEffect } from 'react';
+import { useAddToCartAction } from '../../lib/cart/use-add-to-cart-action';
 
 interface AddToCartButtonProps {
   sku: string;
   qty?: number;
   storeId?: number;
+  /** 正常状态下按钮文案 */
+  label?: string;
   /** 由外部（ProductDetailClient）按产品类型构建好的 JSON 字符串 */
   productOptionsJson?: string;
   /** 按钮是否禁用（如 configurable 未选完属性） */
@@ -21,38 +23,29 @@ export function AddToCartButton({
   sku,
   qty = 1,
   storeId = 1,
+  label = 'Add to Cart',
   productOptionsJson,
   disabled: externalDisabled = false,
   disabledLabel = 'Select Options',
   className,
 }: AddToCartButtonProps) {
-  const { addToCart, openCart } = useCart();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { addItemToCart, isAdding, error, success, resetSuccess } =
+    useAddToCartAction();
+
+  useEffect(() => {
+    if (!success) return;
+    const timer = window.setTimeout(() => resetSuccess(), 3000);
+    return () => window.clearTimeout(timer);
+  }, [resetSuccess, success]);
 
   const handleAddToCart = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    setSuccess(false);
+    await addItemToCart(
+      { sku, qty, storeId, productOptionsJson },
+      { openCartOnSuccess: true }
+    );
+  }, [addItemToCart, productOptionsJson, qty, sku, storeId]);
 
-    try {
-      await addToCart({ sku, qty, storeId, productOptionsJson });
-      setSuccess(true);
-      openCart();
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to add item to cart. Please try again.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [sku, qty, storeId, productOptionsJson, addToCart, openCart]);
-
-  const isDisabled = loading || externalDisabled;
+  const isDisabled = isAdding || externalDisabled;
 
   return (
     <div className="space-y-2">
@@ -66,13 +59,13 @@ export function AddToCartButton({
         }
       >
         <ShoppingCart className="h-4 w-4" />
-        {loading
+        {isAdding
           ? 'Adding…'
           : success
           ? 'Added!'
           : externalDisabled
           ? disabledLabel
-          : 'Add to Cart'}
+          : label}
       </button>
 
       {error && (
