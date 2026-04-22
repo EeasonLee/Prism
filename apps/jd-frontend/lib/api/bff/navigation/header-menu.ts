@@ -3,7 +3,11 @@ import {
   CACHE_TAG_HEADER_MENU,
   REVALIDATE_SECONDS_CATEGORY_NAV,
 } from '@/lib/api/cache-policy';
-import type { HeaderMenuNode, HeaderMenuResult } from './types';
+import type {
+  HeaderMenuCategoryRef,
+  HeaderMenuNode,
+  HeaderMenuResult,
+} from './types';
 
 interface HeaderMenuPayloadLike {
   data?: {
@@ -15,6 +19,45 @@ function isHeaderMenuNode(
   value: HeaderMenuNode | null
 ): value is HeaderMenuNode {
   return value !== null;
+}
+
+function normalizeCategoryRef(value: unknown): HeaderMenuCategoryRef | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  const slugRaw = row.slug;
+  const slug = typeof slugRaw === 'string' ? slugRaw.trim() : '';
+  if (!slug) return null;
+
+  const idRaw = row.id;
+  const id =
+    typeof idRaw === 'number' && Number.isFinite(idRaw)
+      ? idRaw
+      : typeof idRaw === 'string' && idRaw.trim()
+      ? Number(idRaw)
+      : null;
+
+  const nameRaw = row.name;
+  const name =
+    typeof nameRaw === 'string' && nameRaw.trim() ? nameRaw.trim() : null;
+
+  const magentoRaw = row.magentoCategoryId;
+  const parsedMagento =
+    typeof magentoRaw === 'number'
+      ? magentoRaw
+      : typeof magentoRaw === 'string' && magentoRaw.trim()
+      ? Number(magentoRaw)
+      : null;
+  const magentoCategoryId =
+    typeof parsedMagento === 'number' && Number.isFinite(parsedMagento)
+      ? parsedMagento
+      : null;
+
+  return {
+    id: typeof id === 'number' && Number.isFinite(id) ? id : null,
+    name,
+    slug,
+    magentoCategoryId,
+  };
 }
 
 function normalizeNode(value: unknown): HeaderMenuNode | null {
@@ -30,6 +73,21 @@ function normalizeNode(value: unknown): HeaderMenuNode | null {
     typeof urlRaw === 'string' && urlRaw.trim() ? urlRaw.trim() : null;
 
   const openInNewTab = row.openInNewTab === true || row.openInNewTab === 'true';
+  const magentoCategoryIdRaw = row.magentoCategoryId;
+  const parsedMagentoCategoryId =
+    typeof magentoCategoryIdRaw === 'number'
+      ? magentoCategoryIdRaw
+      : typeof magentoCategoryIdRaw === 'string' && magentoCategoryIdRaw.trim()
+      ? Number(magentoCategoryIdRaw)
+      : null;
+  const parsedTopLevelMagentoCategoryId =
+    typeof parsedMagentoCategoryId === 'number' &&
+    Number.isFinite(parsedMagentoCategoryId)
+      ? parsedMagentoCategoryId
+      : null;
+  const category = normalizeCategoryRef(row.category);
+  const magentoCategoryId =
+    parsedTopLevelMagentoCategoryId ?? category?.magentoCategoryId ?? null;
 
   const childrenRaw = row.children;
   const children = Array.isArray(childrenRaw)
@@ -40,6 +98,8 @@ function normalizeNode(value: unknown): HeaderMenuNode | null {
     title,
     url,
     openInNewTab,
+    magentoCategoryId,
+    category,
     children,
   };
 }

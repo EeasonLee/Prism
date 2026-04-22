@@ -37,6 +37,7 @@ function hasRenderableMenu(nodes: HeaderMenuNode[]): boolean {
 
 export async function Header() {
   const menu = await getHeaderMenu().catch(() => ({ items: [] }));
+  console.log('---------menu', menu);
   const items = hasRenderableMenu(menu.items)
     ? menu.items
     : FALLBACK_MENU_ITEMS;
