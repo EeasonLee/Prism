@@ -1,16 +1,16 @@
 export default {
   '**/*.{ts,tsx,js,jsx}': (files) => {
     const toArg = (f) => `"${f}"`;
-    const prismFiles = files.filter((f) =>
-      f.replace(/\\/g, '/').includes('/apps/prism/'),
+    const frontendFiles = files.filter((f) =>
+      f.replace(/\\/g, '/').includes('/apps/jd-frontend/'),
     );
     const otherFiles = files.filter(
-      (f) => !f.replace(/\\/g, '/').includes('/apps/prism/'),
+      (f) => !f.replace(/\\/g, '/').includes('/apps/jd-frontend/'),
     );
     const cmds = [];
-    if (prismFiles.length) {
+    if (frontendFiles.length) {
       cmds.push(
-        `pnpm exec eslint --fix --config apps/prism/eslint.config.mjs ${prismFiles.map(toArg).join(' ')}`,
+        `pnpm exec eslint --fix --no-warn-ignored --config apps/jd-frontend/eslint.config.mjs ${frontendFiles.map(toArg).join(' ')}`,
       );
     }
     if (otherFiles.length) {

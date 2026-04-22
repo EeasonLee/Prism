@@ -37,7 +37,7 @@ jobs:
         continue-on-error: false
 
       - name: Check module boundaries
-        run: pnpm nx graph --file=graph.json && pnpm nx lint prism
+        run: pnpm nx graph --file=graph.json && pnpm nx lint jd-frontend
         continue-on-error: false
 
   build:

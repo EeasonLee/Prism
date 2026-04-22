@@ -5,6 +5,7 @@ dist
 tmp
 out-tsc
 .next
+storybook-static/
 
 # TypeScript build info
 *.tsbuildinfo
@@ -57,9 +58,9 @@ test-output
 .env*.local
 .env.development
 .env.production
-apps/prism/.env.development
-apps/prism/.env.local
-apps/prism/.env.production
+apps/jd-frontend/.env.development
+apps/jd-frontend/.env.local
+apps/jd-frontend/.env.production
 
 # Deployment scripts
 ecosystem.config.js

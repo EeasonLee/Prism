@@ -1,7 +1,17 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals",
+      "!{projectRoot}/dist/**/*",
+      "!{projectRoot}/.next/**/*",
+      "!{projectRoot}/test-output/**/*",
+      "!{projectRoot}/coverage/**/*",
+      "!{projectRoot}/storybook-static/**/*",
+      "!{projectRoot}/next-env.d.ts",
+      "!{projectRoot}/**/*.tsbuildinfo"
+    ],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -10,7 +20,16 @@
       "!{projectRoot}/tsconfig.spec.json",
       "!{projectRoot}/src/test-setup.[jt]s"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      "{workspaceRoot}/nx.json",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/tsconfig.json",
+      "{workspaceRoot}/eslint.config.mjs",
+      "{workspaceRoot}/.prettierrc*",
+      "{workspaceRoot}/.npmrc"
+    ]
   },
   "targetDefaults": {
     "build": {
@@ -22,7 +41,7 @@
     },
     "test": {
       "inputs": ["default", "^default"],
-      "dependsOn": ["^test", "^build"]
+      "dependsOn": ["^test"]
     },
     "e2e": {
       "inputs": ["default", "^default"],
