@@ -6,7 +6,7 @@
     "prepare": "husky",
     "commit": "git-cz",
     "lint-staged": "lint-staged",
-    "dev": "nx dev jd-frontend",
+    "dev": "nx run jd-frontend:dev --output-style=stream",
     "build": "nx build jd-frontend",
     "start": "nx start jd-frontend",
     "lint": "nx lint jd-frontend",
