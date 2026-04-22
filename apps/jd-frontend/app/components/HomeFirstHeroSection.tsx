@@ -13,42 +13,6 @@ import { AddToCartButton } from './AddToCartButton';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const DEFAULT_MAIN_CARD = {
-  productSku: undefined as string | undefined,
-  image: {
-    url: '/images/recipe_4.jpg',
-    alt: 'Automatic Pasta Maker - Fresh texture, zero effort',
-  },
-  title: 'Mastering the Noodle Craft',
-  description: 'Automatic Pasta Maker: Fresh texture, zero effort.',
-  badge: undefined,
-  cta: {
-    text: 'View Product Details',
-    link: 'https://www.joydeem.com/kitchen-appliances/',
-  },
-  price: {
-    current: 229.99,
-    original: undefined,
-    currency: 'USD',
-  },
-  addToCartText: 'Add to Cart',
-};
-
-const DEFAULT_SIDE_CARDS = [
-  {
-    image: { url: '/images/recipe_2.jpg', alt: 'Kitchen Blog' },
-    eyebrow: 'Latest Articles',
-    title: 'Kitchen Stories & Tips',
-    cta: { text: 'Read Blog', link: '/blog' },
-  },
-  {
-    image: { url: '/images/recipe_1.jpg', alt: 'Recipes' },
-    eyebrow: 'Seasonal Recipes',
-    title: 'Homemade Delights',
-    cta: { text: 'Browse Recipes', link: '/recipes' },
-  },
-] as const;
-
 function isExternalLink(link?: string): boolean {
   return !!link && /^https?:\/\//.test(link);
 }
@@ -59,42 +23,6 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
   const rightRef = useRef<HTMLDivElement>(null);
   const imagePosition =
     config?.layout?.imagePosition === 'right' ? 'right' : 'left';
-  const main = {
-    productSku: config?.main?.productSku ?? DEFAULT_MAIN_CARD.productSku,
-    image: config?.main?.image ?? DEFAULT_MAIN_CARD.image,
-    title: config?.main?.title ?? DEFAULT_MAIN_CARD.title,
-    description: config?.main?.description ?? DEFAULT_MAIN_CARD.description,
-    badge: config?.main?.badge,
-    cta: {
-      text: config?.main?.cta?.text ?? DEFAULT_MAIN_CARD.cta.text,
-      link: config?.main?.cta?.link ?? DEFAULT_MAIN_CARD.cta.link,
-    },
-    price: {
-      current: config?.main?.price?.current ?? DEFAULT_MAIN_CARD.price.current,
-      original: config?.main?.price?.original,
-      currency:
-        config?.main?.price?.currency ?? DEFAULT_MAIN_CARD.price.currency,
-    },
-    addToCartText:
-      config?.main?.addToCartText ?? DEFAULT_MAIN_CARD.addToCartText,
-  };
-  const sideCards = [0, 1].map(index => ({
-    image: config?.sideCards?.[index]?.image ?? DEFAULT_SIDE_CARDS[index].image,
-    eyebrow:
-      config?.sideCards?.[index]?.eyebrow ?? DEFAULT_SIDE_CARDS[index].eyebrow,
-    title: config?.sideCards?.[index]?.title ?? DEFAULT_SIDE_CARDS[index].title,
-    cta: {
-      text:
-        config?.sideCards?.[index]?.cta?.text ??
-        DEFAULT_SIDE_CARDS[index].cta.text,
-      link:
-        config?.sideCards?.[index]?.cta?.link ??
-        DEFAULT_SIDE_CARDS[index].cta.link,
-    },
-  }));
-  const hasOriginalPrice =
-    typeof main.price.original === 'number' &&
-    main.price.original > main.price.current;
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -140,6 +68,103 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
     return () => ctx.revert();
   }, []);
 
+  const mainImageUrl = config?.main?.image?.url;
+  const mainTitle = config?.main?.title;
+  const mainDescription = config?.main?.description;
+  const mainCtaText = config?.main?.cta?.text;
+  const mainCtaLink = config?.main?.cta?.link;
+  const mainPriceCurrent = config?.main?.price?.current;
+  const mainPriceCurrency = config?.main?.price?.currency;
+  const mainAddToCartText = config?.main?.addToCartText;
+
+  const firstSide = config?.sideCards?.[0];
+  const secondSide = config?.sideCards?.[1];
+  const firstSideImageUrl = firstSide?.image?.url;
+  const firstSideTitle = firstSide?.title;
+  const firstSideCtaText = firstSide?.cta?.text;
+  const firstSideCtaLink = firstSide?.cta?.link;
+  const secondSideImageUrl = secondSide?.image?.url;
+  const secondSideTitle = secondSide?.title;
+  const secondSideCtaText = secondSide?.cta?.text;
+  const secondSideCtaLink = secondSide?.cta?.link;
+
+  const hasRequiredData =
+    !!mainImageUrl &&
+    !!mainTitle &&
+    !!mainDescription &&
+    !!mainCtaText &&
+    !!mainCtaLink &&
+    typeof mainPriceCurrent === 'number' &&
+    !!mainPriceCurrency &&
+    !!mainAddToCartText &&
+    !!firstSideImageUrl &&
+    !!firstSideTitle &&
+    !!firstSideCtaText &&
+    !!firstSideCtaLink &&
+    !!secondSideImageUrl &&
+    !!secondSideTitle &&
+    !!secondSideCtaText &&
+    !!secondSideCtaLink;
+
+  if (!hasRequiredData) {
+    return null;
+  }
+
+  const mainCard = {
+    productSku: config?.main?.productSku,
+    image: {
+      url: mainImageUrl,
+      alt: config?.main?.image?.alt ?? mainTitle,
+    },
+    title: mainTitle,
+    description: mainDescription,
+    badge: config?.main?.badge,
+    cta: {
+      text: mainCtaText,
+      link: mainCtaLink,
+    },
+    price: {
+      current: mainPriceCurrent,
+      original: config?.main?.price?.original,
+      currency: mainPriceCurrency,
+    },
+    addToCartText: mainAddToCartText,
+  };
+
+  const sideCards = [
+    {
+      image: {
+        url: firstSideImageUrl,
+        alt: firstSide?.image?.alt ?? firstSideTitle,
+      },
+      eyebrow: firstSide?.eyebrow,
+      title: firstSideTitle,
+      cta: {
+        text: firstSideCtaText,
+        link: firstSideCtaLink,
+      },
+    },
+    {
+      image: {
+        url: secondSideImageUrl,
+        alt: secondSide?.image?.alt ?? secondSideTitle,
+      },
+      eyebrow: secondSide?.eyebrow,
+      title: secondSideTitle,
+      cta: {
+        text: secondSideCtaText,
+        link: secondSideCtaLink,
+      },
+    },
+  ];
+
+  const originalPrice =
+    typeof mainCard.price.original === 'number'
+      ? mainCard.price.original
+      : null;
+  const hasOriginalPrice =
+    originalPrice !== null && originalPrice > mainCard.price.current;
+
   return (
     <section
       ref={sectionRef}
@@ -154,61 +179,64 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
             }`}
           >
             <Image
-              src={main.image.url}
-              alt={main.image.alt ?? main.title}
+              src={mainCard.image.url}
+              alt={mainCard.image.alt ?? mainCard.title}
               fill
               className="object-cover transition-transform duration-1000 group-hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 66vw"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-            {main.badge ? (
+            {mainCard.badge ? (
               <span className="absolute left-8 top-8 z-10 inline-flex h-9 items-center rounded-full bg-brand px-4 py-0 text-xs font-bold uppercase tracking-wide text-white md:left-10 md:top-10">
-                {main.badge}
+                {mainCard.badge}
               </span>
             ) : null}
 
             <Link
-              href={main.cta.link}
-              target={isExternalLink(main.cta.link) ? '_blank' : undefined}
+              href={mainCard.cta.link}
+              target={isExternalLink(mainCard.cta.link) ? '_blank' : undefined}
               rel={
-                isExternalLink(main.cta.link)
+                isExternalLink(mainCard.cta.link)
                   ? 'noopener noreferrer'
                   : undefined
               }
               className="group/link absolute right-8 top-8 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/25 px-4 text-xs font-normal text-white backdrop-blur-sm transition-colors hover:bg-black/35 hover:text-brand md:right-10 md:top-10"
             >
-              {main.cta.text}
+              {mainCard.cta.text}
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
             </Link>
 
             <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-10">
               <div className="mb-6">
                 <h3 className="mb-2 text-2xl font-light text-white md:text-4xl">
-                  {main.title}
+                  {mainCard.title}
                 </h3>
                 <p className="line-clamp-4 max-w-[80%] font-light leading-relaxed text-white/80 text-sm md:max-w-md md:text-base">
-                  {main.description}
+                  {mainCard.description}
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-baseline gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm">
                   <span className="text-xl font-bold text-white">
-                    {formatPrice(main.price.current, main.price.currency)}
+                    {formatPrice(
+                      mainCard.price.current,
+                      mainCard.price.currency
+                    )}
                   </span>
                   {hasOriginalPrice ? (
                     <span className="text-sm text-white/60 line-through">
-                      {formatPrice(main.price.original, main.price.currency)}
+                      {formatPrice(originalPrice, mainCard.price.currency)}
                     </span>
                   ) : null}
                 </div>
 
                 <AddToCartButton
-                  sku={main.productSku ?? ''}
+                  sku={mainCard.productSku ?? ''}
                   qty={1}
-                  label={main.addToCartText}
-                  disabled={!main.productSku}
+                  label={mainCard.addToCartText}
+                  disabled={!mainCard.productSku}
                   disabledLabel="Unavailable"
                   className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                 />

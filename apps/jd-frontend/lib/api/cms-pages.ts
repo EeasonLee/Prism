@@ -12,7 +12,7 @@
 
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
 import { getStrapiBaseUrl } from './config';
-import { fetchUnifiedProductBySku } from './unified-product';
+import { searchProductsBySkusForBFF } from './bff/product/meilisearch';
 import type {
   Page,
   StrapiPageResponse,
@@ -322,24 +322,6 @@ function asNumber(value: unknown): number | undefined {
     : undefined;
 }
 
-function stripHtmlToText(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  const plain = value
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return plain || undefined;
-}
-
-function truncateText(
-  value: string | undefined,
-  maxLength: number
-): string | undefined {
-  if (!value) return undefined;
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength).trimEnd()}...`;
-}
-
 /** Strapi richtext 在 REST 中多为 HTML 字符串 */
 function normalizePageContent(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -438,18 +420,14 @@ async function enrichImageTextBlockConfig(
   if (!sku) return config;
 
   try {
-    const product = await fetchUnifiedProductBySku(sku);
-    const productLink = `/products/${product.url_key ?? product.sku}`;
-    const resolvedImageUrl =
-      config.main?.image?.url ?? product.unified_thumbnail;
-    const autoDescription = truncateText(
-      product.subtitle ??
-        stripHtmlToText(product.short_description_html) ??
-        stripHtmlToText(product.description_html),
-      140
-    );
-    const autoCurrentPrice = product.special_price ?? product.price;
-    const autoOriginalPrice = product.special_price ? product.price : undefined;
+    const products = await searchProductsBySkusForBFF([sku]);
+    const product = products[0];
+    if (!product) return config;
+
+    const productLink = `/products/${product.urlKey ?? product.sku}`;
+    const resolvedImageUrl = config.main?.image?.url ?? product.image;
+    const autoCurrentPrice = product.price.value ?? undefined;
+    const autoOriginalPrice = product.originalPrice ?? undefined;
 
     return {
       ...config,
@@ -461,13 +439,13 @@ async function enrichImageTextBlockConfig(
               url: resolvedImageUrl,
               alt:
                 config.main?.image?.alt ??
-                product.display_name ??
+                product.displayName ??
                 product.name ??
                 undefined,
             }
           : config.main?.image,
-        title: config.main?.title ?? product.display_name ?? product.name,
-        description: config.main?.description ?? autoDescription,
+        title: config.main?.title ?? product.displayName ?? product.name,
+        description: config.main?.description,
         cta: {
           text: config.main?.cta?.text ?? 'View Product',
           link: config.main?.cta?.link ?? productLink,
@@ -475,7 +453,8 @@ async function enrichImageTextBlockConfig(
         price: {
           current: config.main?.price?.current ?? autoCurrentPrice,
           original: config.main?.price?.original ?? autoOriginalPrice,
-          currency: config.main?.price?.currency ?? product.currency ?? 'USD',
+          currency:
+            config.main?.price?.currency ?? product.price.currency ?? 'USD',
         },
       },
     };
