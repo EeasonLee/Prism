@@ -88,6 +88,11 @@ export function ProductDetailReviewShell({
     };
   }, [product, selection]);
 
+  const hasReviewData =
+    (summary?.total ?? 0) > 0 ||
+    (initialPagination?.total ?? 0) > 0 ||
+    (initialReviews?.length ?? 0) > 0;
+
   return (
     <>
       <ProductDetailContent
@@ -119,18 +124,20 @@ export function ProductDetailReviewShell({
         </div>
       )}
 
-      <div id="section-reviews">
-        <ProductReviews
-          sku={reviewSku}
-          target={reviewTarget}
-          summary={summary}
-          initialReviews={initialReviews}
-          initialPagination={initialPagination}
-          allowSubmit={allowSubmit}
-          isReviewFormOpen={isReviewFormOpen}
-          onReviewFormOpenChange={setIsReviewFormOpen}
-        />
-      </div>
+      {hasReviewData && (
+        <div id="section-reviews">
+          <ProductReviews
+            sku={reviewSku}
+            target={reviewTarget}
+            summary={summary}
+            initialReviews={initialReviews}
+            initialPagination={initialPagination}
+            allowSubmit={allowSubmit}
+            isReviewFormOpen={isReviewFormOpen}
+            onReviewFormOpenChange={setIsReviewFormOpen}
+          />
+        </div>
+      )}
 
       <div id="section-product-qa">
         <ProductQA

@@ -35,13 +35,10 @@ export function buildPdpSectionNav(
   }
 
   const reviewTotal = reviewSummary?.total ?? cms?.review_summary?.total ?? 0;
-  if (cms || reviewSummary) {
+  if (reviewTotal > 0) {
     sections.push({
       id: 'section-reviews',
-      label:
-        reviewTotal > 0
-          ? `Reviews (${reviewTotal.toLocaleString()})`
-          : 'Reviews',
+      label: `Reviews (${reviewTotal.toLocaleString()})`,
     });
   }
 
