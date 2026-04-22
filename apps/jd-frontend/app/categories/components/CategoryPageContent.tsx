@@ -63,7 +63,6 @@ async function CategoryProductList({
   sp: CategoryPageContentProps['searchParams'];
 }) {
   const result = await searchPromise;
-  console.log('---------result', result);
   const products = result?.items ?? [];
   const total = result?.pagination.total ?? products.length;
   const pagination = result?.pagination ?? {
@@ -150,9 +149,6 @@ export function CategoryPageContent({
     currentCategory.magentoCategoryId > 0
       ? currentCategory.magentoCategoryId
       : currentCategory.id;
-
-  console.log('---------currentCategory', currentCategory);
-  console.log('---------meiliCategoryId', meiliCategoryId);
 
   const searchPromise = searchProducts({
     categoryId: meiliCategoryId,
@@ -255,7 +251,6 @@ export function CategoryPageContent({
               </>
             }
           >
-            111
             <CategoryProductList
               searchPromise={searchPromise}
               slug={currentCategory.slug}

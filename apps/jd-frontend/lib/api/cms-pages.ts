@@ -876,7 +876,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
 
     const strapiUrl = `${getStrapiBaseUrl()}/api/pages?filters[slug][$eq]=${encodeURIComponent(
       slug
-    )}&${populateParams}`;
+    )}&locale=en&${populateParams}`;
 
     const response = await fetch(strapiUrl, {
       headers: {

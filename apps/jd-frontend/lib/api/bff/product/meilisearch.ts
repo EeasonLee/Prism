@@ -69,10 +69,14 @@ export interface ProductMeilisearchResult {
 function buildFilter(params: ProductMeilisearchParams): string[] {
   const filters: string[] = [];
 
-  // 使用 categoryId 过滤，因为索引中 category_slugs 字段当前为空数组
-  // 同时移除 status / visibility 过滤，因为这两个字段不在可过滤属性列表中
+  // 兼容不同索引字段：
+  // - category_ids: 直属分类
+  // - category_ancestor_ids: 祖先分类
+  // 任一字段命中即可，避免叶子分类漏数。
   if (params.categoryId !== undefined) {
-    filters.push(`category_ancestor_ids = ${params.categoryId}`);
+    filters.push(
+      `(category_ids = ${params.categoryId} OR category_ancestor_ids = ${params.categoryId})`
+    );
   } else if (params.categorySlug !== undefined) {
     // 后备：等待 catalog-sync-service 填充 category_slugs 后恢复使用
     filters.push(`category_slugs = "${params.categorySlug}"`);
