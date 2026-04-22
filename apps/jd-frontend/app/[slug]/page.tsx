@@ -1,4 +1,5 @@
 import { getPageBySlug } from '@/lib/api/cms-pages';
+import { CmsPageRichContent } from '../components/CmsPageRichContent';
 import { renderSections } from '../components/sections/blockMap';
 import { notFound } from 'next/navigation';
 
@@ -13,22 +14,29 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
 
-  if (!page || !page.seo) {
+  if (!page) {
     return {
       title: 'Page Not Found',
       description: 'The requested page could not be found',
     };
   }
 
+  if (page.seo) {
+    return {
+      title: page.seo.title,
+      description: page.seo.description,
+      keywords: page.seo.keywords,
+      openGraph: {
+        title: page.seo.ogTitle || page.seo.title,
+        description: page.seo.ogDescription || page.seo.description,
+        images: page.seo.ogImage ? [page.seo.ogImage.url] : [],
+      },
+    };
+  }
+
   return {
-    title: page.seo.title,
-    description: page.seo.description,
-    keywords: page.seo.keywords,
-    openGraph: {
-      title: page.seo.ogTitle || page.seo.title,
-      description: page.seo.ogDescription || page.seo.description,
-      images: page.seo.ogImage ? [page.seo.ogImage.url] : [],
-    },
+    title: page.title,
+    description: page.description ?? `${page.title} - Joydeem`,
   };
 }
 
@@ -40,14 +48,29 @@ export default async function DynamicPage({
   const { slug } = await params;
   const page = await getPageBySlug(slug);
 
-  // 如果页面不存在或没有 sections，返回 404
-  if (!page || page.sections.length === 0) {
+  if (!page) {
+    notFound();
+  }
+
+  const hasSections = page.sections.length > 0;
+  const contentHtml = page.content?.trim() ?? '';
+  const hasContent = contentHtml.length > 0;
+
+  if (!hasSections && !hasContent) {
     notFound();
   }
 
   return (
     <div className="grain-overlay">
-      <main className="relative">{renderSections(page.sections)}</main>
+      <main className="relative">
+        {hasSections ? renderSections(page.sections) : null}
+        {hasContent ? (
+          <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+            <h1 className="heading-2 text-ink mb-6">{page.title}</h1>
+            <CmsPageRichContent html={contentHtml} />
+          </div>
+        ) : null}
+      </main>
     </div>
   );
 }

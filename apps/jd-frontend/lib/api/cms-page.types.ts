@@ -333,6 +333,8 @@ export interface Page {
   slug: string;
   title: string;
   description?: string;
+  /** Strapi richtext（HTML 字符串） */
+  content?: string | null;
   featuredImage?: StrapiImage | null;
   seo?: SEO;
   sections: PageSection[];
@@ -349,6 +351,7 @@ export interface StrapiPageResponse {
     slug: string;
     title: string;
     description?: string;
+    content?: string | null;
     featuredImage?: StrapiImage | null;
     seo?: SEO;
     sections: Array<{

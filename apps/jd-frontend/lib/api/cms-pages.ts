@@ -340,6 +340,16 @@ function truncateText(
   return `${value.slice(0, maxLength).trimEnd()}...`;
 }
 
+/** Strapi richtext 在 REST 中多为 HTML 字符串 */
+function normalizePageContent(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') {
+    const t = value.trim();
+    return t.length > 0 ? t : undefined;
+  }
+  return undefined;
+}
+
 function normalizeImageTextBlockConfig(value: unknown): ImageTextBlockConfig {
   const configObj = asRecord(value);
   if (!configObj) return {};
@@ -909,6 +919,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       slug: pageData.slug,
       title: pageData.title,
       description: pageData.description,
+      content: normalizePageContent(pageData.content),
       featuredImage: transformImage(pageData.featuredImage),
       seo: pageData.seo,
       sections,
