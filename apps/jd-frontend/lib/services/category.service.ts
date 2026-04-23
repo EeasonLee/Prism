@@ -6,6 +6,7 @@ interface StrapiProductCategoryRow {
   documentId?: string;
   name?: string;
   slug?: string;
+  description?: string | null;
   content?: string | null;
   magento_category_id?: number | null;
   list_image?: StrapiImageLike | null;
@@ -118,11 +119,97 @@ const CATEGORY_DETAIL_QUERY = `
 `;
 
 export class CategoryService {
+  async getStrapiCategoriesByIds(categoryIds: number[]): Promise<
+    Array<{
+      id: number;
+      name: string;
+      slug?: string;
+      description?: string | null;
+      listImageUrl?: string | null;
+      magentoCategoryId?: number | null;
+    }>
+  > {
+    const normalizedIds = Array.from(
+      new Set(
+        categoryIds.filter(
+          id => Number.isInteger(id) && Number.isFinite(id) && id > 0
+        )
+      )
+    );
+
+    if (normalizedIds.length === 0) {
+      return [];
+    }
+
+    const query = [
+      ...normalizedIds.map(
+        (id, index) =>
+          `filters[id][$in][${index}]=${encodeURIComponent(String(id))}`
+      ),
+      'fields[0]=name',
+      'fields[1]=slug',
+      'fields[2]=description',
+      'fields[3]=magento_category_id',
+      'populate[list_image]=true',
+      `pagination[pageSize]=${normalizedIds.length}`,
+    ].join('&');
+
+    const response = await serverRequest(`api/product-categories?${query}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const payload = (await response.json()) as {
+      data?: StrapiProductCategoryRow[];
+    };
+    const rows = Array.isArray(payload.data) ? payload.data : [];
+    const byId = new Map<number, StrapiProductCategoryRow>();
+
+    for (const row of rows) {
+      if (typeof row?.id === 'number') {
+        byId.set(row.id, row);
+      }
+    }
+
+    return normalizedIds
+      .map(id => {
+        const row = byId.get(id);
+        if (!row?.id || !row.name) {
+          return null;
+        }
+
+        return {
+          id: row.id,
+          name: row.name,
+          slug: row.slug ?? undefined,
+          description: row.description ?? null,
+          listImageUrl: row.list_image?.url ?? null,
+          magentoCategoryId: row.magento_category_id ?? null,
+        };
+      })
+      .filter(
+        (
+          row
+        ): row is {
+          id: number;
+          name: string;
+          slug?: string;
+          description?: string | null;
+          listImageUrl?: string | null;
+          magentoCategoryId?: number | null;
+        } => Boolean(row)
+      );
+  }
+
   async getStrapiCategoryBasicBySlug(slug: string): Promise<{
     id: number;
     name: string;
     slug: string;
     content?: string | null;
+    backgroundImageUrl?: string | null;
     magentoCategoryId?: number | null;
     children?: Array<{
       id: number;
@@ -199,6 +286,7 @@ export class CategoryService {
       name: row.name,
       slug: row.slug,
       content: row.content ?? null,
+      backgroundImageUrl: row.background_image?.url ?? null,
       magentoCategoryId: row.magento_category_id ?? null,
       children,
     };

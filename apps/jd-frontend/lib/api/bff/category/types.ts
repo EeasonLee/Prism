@@ -14,6 +14,7 @@ export interface CategoryContext {
   name: string;
   slug: string;
   content?: string | null;
+  backgroundImageUrl?: string | null;
   magentoCategoryId?: number | null;
   children?: Array<{
     id: number;

@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
 import { Skeleton } from '@prism/ui';
+import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
 import { FilterPanel } from '../../shop/components/FilterPanel';
 import {
   SortPanel,
@@ -144,6 +146,20 @@ export function CategoryPageContent({
   currentCategory,
   searchParams: sp,
 }: CategoryPageContentProps) {
+  const categoryIntroText = currentCategory.content?.trim() ?? '';
+  const categoryIntroLines = categoryIntroText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+  const categoryIntroHeading = categoryIntroLines[0] ?? '';
+  const categoryIntroBody = categoryIntroLines.slice(1).join(' ');
+
+  const categoryBackgroundImageUrl = processImageUrl(
+    currentCategory.backgroundImageUrl
+  );
+  const hasCategoryIntro =
+    Boolean(categoryIntroText) || Boolean(categoryBackgroundImageUrl);
+
   const meiliCategoryId =
     typeof currentCategory.magentoCategoryId === 'number' &&
     currentCategory.magentoCategoryId > 0
@@ -190,9 +206,38 @@ export function CategoryPageContent({
         {currentCategory.name}
       </h1>
 
-      {currentCategory.content?.trim() ? (
-        <div className="mb-8 rounded-xl bg-bg-subtle p-4 text-sm leading-7 text-ink-muted sm:p-6">
-          {currentCategory.content}
+      {hasCategoryIntro ? (
+        <div className="mb-8 grid overflow-hidden rounded-xl border border-line bg-bg-subtle md:grid-cols-[1fr_1.4fr]">
+          <div className="flex items-center bg-bg-subtle p-6 sm:p-8 md:p-10">
+            {categoryIntroText ? (
+              <div className="max-w-[460px] space-y-4">
+                {categoryIntroHeading ? (
+                  <h2 className="text-3xl font-bold leading-tight text-ink md:text-4xl">
+                    {categoryIntroHeading}
+                  </h2>
+                ) : null}
+                {categoryIntroBody ? (
+                  <p className="text-base leading-8 text-ink-muted">
+                    {categoryIntroBody}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          {categoryBackgroundImageUrl ? (
+            <div className="relative min-h-[220px] bg-surface-muted md:min-h-[320px]">
+              <Image
+                src={categoryBackgroundImageUrl}
+                alt={`${currentCategory.name} background`}
+                fill
+                unoptimized={shouldDisableImageOptimization(
+                  categoryBackgroundImageUrl
+                )}
+                className="object-cover md:object-contain"
+                sizes="(max-width: 767px) 100vw, 50vw"
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
 
