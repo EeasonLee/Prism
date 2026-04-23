@@ -7,7 +7,12 @@ import {
   type StrapiImage,
 } from '@prism/shared';
 import Image from 'next/image';
-import { type ComponentProps, type ReactNode, useState } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useState,
+} from 'react';
 
 /**
  * OptimizedImage 组件的 props
@@ -87,6 +92,7 @@ export function OptimizedImage({
   ...imageProps
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
+  const [useOriginalAbsoluteUrl, setUseOriginalAbsoluteUrl] = useState(false);
 
   // 从 Strapi 图片对象或字符串中提取 URL
   let rawUrl: string | null = null;
@@ -98,9 +104,23 @@ export function OptimizedImage({
 
   // 处理 URL（自动处理相对路径和完整路径）
   const imageUrl = processImageUrl(rawUrl);
+  const rawUrlIsAbsolute =
+    typeof rawUrl === 'string' &&
+    (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'));
+  const canRetryWithOriginalAbsoluteUrl =
+    rawUrlIsAbsolute && !!imageUrl && rawUrl !== imageUrl;
+  const resolvedImageUrl =
+    useOriginalAbsoluteUrl && canRetryWithOriginalAbsoluteUrl
+      ? rawUrl
+      : imageUrl;
+
+  useEffect(() => {
+    setHasError(false);
+    setUseOriginalAbsoluteUrl(false);
+  }, [rawUrl, imageUrl]);
 
   // 如果图片不存在，显示占位符
-  if (!imageUrl || hasError) {
+  if (!resolvedImageUrl || hasError) {
     if (hasError && fallback) {
       return fallback as React.ReactElement;
     }
@@ -109,19 +129,24 @@ export function OptimizedImage({
 
   // 判断是否需要禁用优化
   const unoptimized =
-    forceUnoptimized || shouldDisableImageOptimization(imageUrl);
+    forceUnoptimized || shouldDisableImageOptimization(resolvedImageUrl);
 
   // 处理图片加载错误
   const handleError = (_e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    if (!useOriginalAbsoluteUrl && canRetryWithOriginalAbsoluteUrl) {
+      setUseOriginalAbsoluteUrl(true);
+      return;
+    }
+
     setHasError(true);
     if (onImageError) {
-      onImageError(new Error(`Failed to load image: ${imageUrl}`));
+      onImageError(new Error(`Failed to load image: ${resolvedImageUrl}`));
     }
   };
 
   return (
     <Image
-      src={imageUrl}
+      src={resolvedImageUrl}
       alt={alt}
       unoptimized={unoptimized}
       onError={handleError}
