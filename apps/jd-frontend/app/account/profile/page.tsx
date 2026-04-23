@@ -122,7 +122,7 @@ export default function AccountProfilePage() {
       await deleteAccount();
       await refreshSession();
       router.replace('/');
-    } catch (err) {
+    } catch (_err) {
       setDeleteLoading(false);
       // Keep modal open to show error if needed, but currently we just let it go
     }

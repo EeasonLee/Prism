@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useAuth } from '../../lib/auth/context';
 
@@ -160,9 +161,17 @@ export function LoginModal({
             </div>
 
             <div>
-              <label htmlFor="login-password" className={labelClass}>
-                Password
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="login-password" className="text-sm font-medium text-ink">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-brand hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <input
                 id="login-password"
                 type="password"
