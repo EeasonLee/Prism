@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Home, CreditCard } from 'lucide-react';
 import { AccountScaffold } from './components/AccountScaffold';
 import { useAuth } from '@/lib/auth/context';
 import { useAccount } from '@/lib/account/useAccount';
@@ -10,14 +11,34 @@ import { useAccount } from '@/lib/account/useAccount';
 export default function AccountOverviewPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
-  const { user, orders, addresses, isLoading, error, logout } = useAccount();
+  const {
+    user,
+    orders,
+    addresses,
+    isLoading,
+    error,
+    logout,
+    getDefaultAddresses,
+  } = useAccount();
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [defaultAddresses, setDefaultAddresses] = useState<{
+    billing: (typeof addresses)[number] | null;
+    shipping: (typeof addresses)[number] | null;
+  }>({ billing: null, shipping: null });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.replace('/login?next=/account');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      getDefaultAddresses()
+        .then(data => setDefaultAddresses(data))
+        .catch(() => setDefaultAddresses({ billing: null, shipping: null }));
+    }
+  }, [isAuthenticated, authLoading, getDefaultAddresses]);
 
   const handleLogout = useCallback(async () => {
     setLogoutLoading(true);
@@ -84,6 +105,54 @@ export default function AccountOverviewPage() {
           <p className="mt-2 text-2xl font-semibold text-ink">
             {addresses.length}
           </p>
+          {addresses.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {defaultAddresses.billing && (
+                <div className="flex items-start gap-2">
+                  <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                  <p className="text-xs text-ink-muted">
+                    <span>
+                      {defaultAddresses.billing.firstname}{' '}
+                      {defaultAddresses.billing.lastname}
+                      <br />
+                      {defaultAddresses.billing.street},{' '}
+                      {defaultAddresses.billing.city}
+                      {defaultAddresses.billing.region
+                        ? `, ${defaultAddresses.billing.region}`
+                        : ''}{' '}
+                      {defaultAddresses.billing.postcode}
+                    </span>
+                  </p>
+                </div>
+              )}
+              {defaultAddresses.shipping && (
+                <div className="flex items-start gap-2">
+                  <Home className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
+                  <p className="text-xs text-ink-muted">
+                    <span>
+                      {defaultAddresses.shipping.firstname}{' '}
+                      {defaultAddresses.shipping.lastname}
+                      <br />
+                      {defaultAddresses.shipping.street},{' '}
+                      {defaultAddresses.shipping.city}
+                      {defaultAddresses.shipping.region
+                        ? `, ${defaultAddresses.shipping.region}`
+                        : ''}{' '}
+                      {defaultAddresses.shipping.postcode}
+                    </span>
+                  </p>
+                </div>
+              )}
+              {!defaultAddresses.billing && !defaultAddresses.shipping && (
+                <p className="text-xs text-ink-muted">
+                  No default addresses set
+                </p>
+              )}
+            </div>
+          )}
+          {addresses.length === 0 && (
+            <p className="mt-3 text-xs text-ink-muted">No addresses saved</p>
+          )}
           <Link
             href="/account/addresses"
             className="mt-3 inline-block text-sm text-brand hover:underline"

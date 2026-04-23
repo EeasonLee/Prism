@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { magentoAuthProvider } from '@/lib/magento/auth';
 import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
+import { verifyTurnstileToken } from '@/lib/cloudflare-turnstile';
 import {
   clearSessionCookies,
   getAccessToken,
@@ -20,6 +21,7 @@ interface AuthPayload {
   password: string;
   first_name?: string;
   last_name?: string;
+  turnstile_token?: string;
 }
 
 export function createAuthErrorResponse(
@@ -103,6 +105,23 @@ export async function login(request: Request): Promise<NextResponse> {
 export async function register(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as AuthPayload;
   const guestId = getGuestId(request);
+
+  // Verify Cloudflare Turnstile token
+  const turnstileResult = await verifyTurnstileToken(
+    body.turnstile_token ?? ''
+  );
+  if (!turnstileResult.success) {
+    return NextResponse.json(
+      {
+        error: {
+          message: turnstileResult.error ?? 'Captcha verification failed',
+          code: 'TURNSTILE_FAILED',
+        },
+      },
+      { status: 400 }
+    );
+  }
+
   const data = await magentoAuthProvider.register({
     email: body.email,
     password: body.password,

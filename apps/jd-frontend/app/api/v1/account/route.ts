@@ -18,3 +18,10 @@ export async function PUT(request: Request) {
     return { user };
   });
 }
+
+export async function DELETE(request: Request) {
+  return withAccountService(request, async service => {
+    await service.deleteAccount();
+    return { success: true };
+  });
+}

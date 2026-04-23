@@ -21,7 +21,8 @@ interface AuthContextValue {
     email: string,
     password: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    turnstileToken?: string
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<SessionResponse>;
@@ -125,7 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string,
       password: string,
       firstName?: string,
-      lastName?: string
+      lastName?: string,
+      turnstileToken?: string
     ) => {
       const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
@@ -136,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
           first_name: firstName,
           last_name: lastName,
+          turnstile_token: turnstileToken,
         }),
       });
       if (!res.ok) {

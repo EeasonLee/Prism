@@ -16,19 +16,13 @@ import {
   getCartItems,
   updateCartItemQty as updateCartItemQtyApi,
 } from '../api/magento/cart';
-import type { AddCartItemParams } from '../api/magento/types';
+import type { AddCartItemParams, CartItem } from '../api/magento/types';
 import { useAuth } from '../auth/context';
 
-export class GuestCheckoutError extends Error {
-  readonly code = 'GUEST_CHECKOUT_NOT_ALLOWED';
-  constructor(message: string) {
-    super(message);
-    this.name = 'GuestCheckoutError';
-  }
-}
-
 interface CartContextValue {
+  items: CartItem[];
   itemCount: number;
+  getQtyBySku: (sku: string) => number;
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -47,109 +41,106 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { hasSession, isAuthenticated } = useAuth();
-  const [itemCount, setItemCount] = useState(0);
+  const { hasSession, isAuthenticated, refreshSession } = useAuth();
+  const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const prevSessionRef = useRef<boolean>(false);
-  const prevAuthenticatedRef = useRef<boolean>(false);
+  const prevAuthStateRef = useRef<{
+    hasSession: boolean | null;
+    isAuthenticated: boolean | null;
+  }>({
+    hasSession: null,
+    isAuthenticated: null,
+  });
+  const syncRequestIdRef = useRef(0);
+  const initialSyncDoneRef = useRef(false);
+  const guestSessionPromiseRef = useRef<Promise<void> | null>(null);
 
   const syncCart = useCallback(async () => {
+    const requestId = ++syncRequestIdRef.current;
     try {
-      const items = await getCartItems();
-      const total = Array.isArray(items)
-        ? items.reduce((sum, item) => sum + item.qty, 0)
-        : 0;
-      setItemCount(total);
-    } catch {
-      // 购物车不存在或服务异常时，避免角标卡在旧值
-      setItemCount(0);
+      const nextItems = await getCartItems();
+      if (requestId === syncRequestIdRef.current) {
+        setItems(nextItems);
+      }
+    } catch (error) {
+      // 短暂失败时保留旧值，避免角标抖动；仅在身份迁移时统一清零
+      console.warn('[cart] syncCart failed:', error);
     }
   }, []);
 
-  // session 变化时同步购物车
+  // 身份状态迁移：最多触发一次同步，避免重复请求
   useEffect(() => {
-    if (hasSession === prevSessionRef.current) return;
+    const prev = prevAuthStateRef.current;
+    const initialized =
+      prev.hasSession !== null && prev.isAuthenticated !== null;
 
-    // 身份切换时重置购物车数量
-    if (
-      prevSessionRef.current !== false &&
-      hasSession !== prevSessionRef.current
-    ) {
-      setItemCount(0);
+    const sessionBecameAvailable =
+      initialized && !prev.hasSession && hasSession;
+    const justLoggedIn =
+      initialized &&
+      !prev.isAuthenticated &&
+      isAuthenticated &&
+      hasSession &&
+      !sessionBecameAvailable;
+    const justLoggedOut =
+      initialized && prev.isAuthenticated && !isAuthenticated;
+    const sessionLost = initialized && prev.hasSession && !hasSession;
+
+    if (justLoggedOut || sessionLost) {
+      setItems([]);
+      setIsCartOpen(false);
     }
-    prevSessionRef.current = hasSession;
 
-    if (hasSession) {
-      syncCart().catch(() => void 0);
+    if (sessionBecameAvailable || justLoggedIn) {
+      void syncCart();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSession]);
-
-  // 登录/登出后 isAuthenticated 变化时同步购物车
-  useEffect(() => {
-    const wasAuthenticated = prevAuthenticatedRef.current;
-    prevAuthenticatedRef.current = isAuthenticated;
-
-    if (wasAuthenticated && !isAuthenticated && hasSession) {
-      // 登出：游客 session 仍在，重置角标并同步
-      setItemCount(0);
+    if (!initialized && hasSession && !initialSyncDoneRef.current) {
+      initialSyncDoneRef.current = true;
       void syncCart();
     }
 
-    if (!wasAuthenticated && isAuthenticated && hasSession) {
-      // 登录成功：购物车合并后需要立即刷新角标
-      void syncCart();
-    }
+    prevAuthStateRef.current = { hasSession, isAuthenticated };
   }, [hasSession, isAuthenticated, syncCart]);
-
-  // 从外部页面（如 Magento checkout）返回时重新同步角标
-  useEffect(() => {
-    if (!hasSession) {
-      return;
-    }
-
-    const handleFocus = () => {
-      void syncCart();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void syncCart();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [hasSession, syncCart]);
 
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {
       if (!hasSession) {
-        try {
-          const res = await fetch('/api/v1/auth/guest', {
-            method: 'POST',
-            credentials: 'include',
+        if (!guestSessionPromiseRef.current) {
+          guestSessionPromiseRef.current = (async () => {
+            const res = await fetch('/api/v1/auth/guest', {
+              method: 'POST',
+              credentials: 'include',
+            });
+            if (!res.ok) {
+              throw new Error('No active session, please try again.');
+            }
+
+            // guest session 创建成功后，刷新 auth 状态
+            await refreshSession();
+          })().finally(() => {
+            guestSessionPromiseRef.current = null;
           });
-          if (!res.ok) {
-            throw new Error('No active session, please try again.');
-          }
-        } catch {
-          throw new Error('No active session, please try again.');
         }
+
+        await guestSessionPromiseRef.current;
       }
       await addCartItem(params);
       await syncCart();
     },
-    [hasSession, syncCart]
+    [hasSession, refreshSession, syncCart]
   );
 
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.qty, 0),
+    [items]
+  );
+  const getQtyBySku = useCallback(
+    (sku: string) =>
+      items.reduce((sum, item) => (item.sku === sku ? sum + item.qty : sum), 0),
+    [items]
+  );
 
   const removeFromCart = useCallback(
     async (itemId: string) => {
@@ -168,7 +159,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateItemQty = useCallback(
     async (itemId: string, qty: number) => {
-      if (!hasSession || qty < 1) return;
+      if (!hasSession) {
+        throw new Error('No active session.');
+      }
+      if (qty < 1) {
+        throw new Error('Quantity must be at least 1.');
+      }
       await updateCartItemQtyApi(itemId, qty);
       await syncCart();
     },
@@ -177,7 +173,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartContextValue>(
     () => ({
+      items,
       itemCount,
+      getQtyBySku,
       isCartOpen,
       openCart,
       closeCart,
@@ -188,7 +186,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       syncCart,
     }),
     [
+      items,
       itemCount,
+      getQtyBySku,
       isCartOpen,
       openCart,
       closeCart,

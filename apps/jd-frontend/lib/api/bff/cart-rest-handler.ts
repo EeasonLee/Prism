@@ -4,7 +4,13 @@
 
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/requireAuth';
-import { getCartId, getGuestId, CART_ID_COOKIE } from '@/lib/auth/cookies';
+import {
+  getAccessToken,
+  getCartId,
+  getGuestId,
+  getRefreshToken,
+  CART_ID_COOKIE,
+} from '@/lib/auth/cookies';
 import {
   extractLocalAccessTokenPayload,
   validateRefreshToken,
@@ -21,41 +27,30 @@ const BASE_OPTIONS = {
 };
 
 /**
- * 判断当前用户是否是 guest
- */
-function isGuestSession(accessToken: string): boolean {
-  try {
-    const payload = extractLocalAccessTokenPayload(accessToken);
-    return payload.type === 'guest';
-  } catch {
-    return false;
-  }
-}
-
-/**
  * 判定当前请求是否应按 guest 处理：
  * 1) 本地 access_token 可解析时，以 token 类型为准；
- * 2) token 不可用（如过期）时，回退 guest_id cookie，避免误走 customer 分支。
+ * 2) access 失效时回退 refresh_token，再回退 guest_id。
+ *
+ * 注意：access 解析失败时不能返回 false，否则 Cookie 里仍有过期 access 时
+ * requireAuth 已用 refresh 拿到 guest 的 magento 占位符，仍会误走 carts/mine。
  */
 function resolveIsGuestSession(request: Request): boolean {
-  const cookies = request.headers.get('cookie') ?? '';
-  const accessToken = cookies.match(/access_token=([^;]+)/)?.[1];
+  const accessToken = getAccessToken(request);
 
   if (accessToken) {
     try {
-      return isGuestSession(accessToken);
+      return extractLocalAccessTokenPayload(accessToken).type === 'guest';
     } catch {
-      // token 失效时回退 refresh_token 判定
+      // access 过期或损坏：继续 refresh / guest_id
     }
   }
 
-  const refreshToken = cookies.match(/refresh_token=([^;]+)/)?.[1];
+  const refreshToken = getRefreshToken(request);
   if (refreshToken) {
     try {
-      const payload = validateRefreshToken(refreshToken);
-      return payload.type === 'guest';
+      return validateRefreshToken(refreshToken).type === 'guest';
     } catch {
-      // refresh token 也无效时回退 guest_id
+      // refresh 无效：继续 guest_id
     }
   }
 
@@ -85,7 +80,9 @@ export async function authenticatedCartRequest<T>(
   ) => Promise<T>
 ): Promise<NextResponse> {
   const response = await requireAuth(request, async magentoAccessToken => {
-    const isGuest = resolveIsGuestSession(request);
+    const isGuest =
+      resolveIsGuestSession(request) ||
+      magentoAccessToken.trim().startsWith('guest-local:');
 
     let cartId: string | null = null;
 
