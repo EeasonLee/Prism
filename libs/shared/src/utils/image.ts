@@ -27,6 +27,52 @@ function getImageBaseUrl(): string {
   return getEnv('NEXT_PUBLIC_IMAGE_BASE_URL') || getDefaultImageBaseUrl();
 }
 
+function getConfiguredImageBaseUrl(): string | null {
+  const configured = getEnv('NEXT_PUBLIC_IMAGE_BASE_URL')?.trim();
+  return configured ? configured : null;
+}
+
+function extractProductImageBaseUrlFromRawUrl(rawUrl: string): string | null {
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    const normalizedPath = parsed.pathname.replace(/\/{2,}/g, '/');
+    const mediaSegmentIndex = normalizedPath.toLowerCase().indexOf('/media/');
+
+    if (mediaSegmentIndex > 0) {
+      const prefixPath = normalizedPath
+        .slice(0, mediaSegmentIndex)
+        .replace(/\/+$/, '');
+
+      if (prefixPath) {
+        return normalizeProductImageBaseUrl(`${parsed.origin}${prefixPath}`);
+      }
+    }
+
+    return normalizeProductImageBaseUrl(parsed.origin);
+  } catch {
+    return null;
+  }
+}
+
+function resolveProductImageBaseUrl(rawUrl: string): string {
+  const configured = getConfiguredImageBaseUrl();
+  if (configured) {
+    return normalizeProductImageBaseUrl(configured);
+  }
+
+  // 未显式配置时：若原图是完整 URL，优先沿用其 origin，避免在开发环境强制回落到 localhost。
+  const extractedFromRawUrl = extractProductImageBaseUrlFromRawUrl(rawUrl);
+  if (extractedFromRawUrl) {
+    return extractedFromRawUrl;
+  }
+
+  return normalizeProductImageBaseUrl(getImageBaseUrl());
+}
+
 function isPrivateImageHost(url: string): boolean {
   return (
     url.startsWith('http://localhost') ||
@@ -187,7 +233,7 @@ export function processProductImageUrl(
   const subPath = extractProductMediaSubPath(pathname);
   if (!subPath) return null;
 
-  const normalizedBaseUrl = normalizeProductImageBaseUrl(getImageBaseUrl());
+  const normalizedBaseUrl = resolveProductImageBaseUrl(trimmed);
   const normalizedSubPath = subPath.replace(/^\/+/, '');
   const existingSize = extractExistingProductImageSize(pathname);
   const targetSize = normalizeProductImageSize(preferredSize);

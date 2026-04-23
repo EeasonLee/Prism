@@ -23,6 +23,10 @@ import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
 import { AddToCartButton } from '../../components/AddToCartButton';
+import {
+  processProductImageUrl,
+  shouldDisableImageOptimization,
+} from '@prism/shared';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -80,6 +84,9 @@ async function DeferredRelatedProductsSection({
             const displayPrice = item.special_price ?? item.price;
             const hasDiscount =
               item.special_price != null && item.special_price < item.price;
+            const cardImageUrl =
+              processProductImageUrl(item.unified_thumbnail, 350) ??
+              item.unified_thumbnail;
 
             return (
               <div
@@ -88,11 +95,14 @@ async function DeferredRelatedProductsSection({
               >
                 <Link href={`/products/${item.url_key ?? item.sku}`}>
                   <div className="relative aspect-square bg-surface-muted">
-                    {item.unified_thumbnail ? (
+                    {cardImageUrl ? (
                       <Image
-                        src={item.unified_thumbnail}
+                        src={cardImageUrl}
                         alt={item.display_name}
                         fill
+                        unoptimized={shouldDisableImageOptimization(
+                          cardImageUrl
+                        )}
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
