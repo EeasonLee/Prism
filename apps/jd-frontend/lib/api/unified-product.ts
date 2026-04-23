@@ -16,6 +16,7 @@ import type {
   MagentoProduct,
   MagentoProductListResponse,
 } from './magento/types';
+import { processProductImageUrl } from '@prism/shared';
 
 // ─── 统一图片类型 ─────────────────────────────────────────────────────────────
 
@@ -264,11 +265,17 @@ export function normalizeCpPrice(value: unknown): number | null {
 export function mergeProduct(magento: MagentoProduct): UnifiedProduct {
   const magentoImages: UnifiedProductImage[] = (magento.media_gallery ?? [])
     .filter(img => img.url)
-    .map(img => ({ url: img.url, alt: img.label ?? magento.name }));
+    .map(img => ({
+      url: processProductImageUrl(img.url) ?? img.url,
+      alt: img.label ?? magento.name,
+    }));
 
   const unified_images = magentoImages;
   const unified_thumbnail =
-    unified_images[0]?.url ?? magento.thumbnail_url ?? null;
+    unified_images[0]?.url ??
+    processProductImageUrl(magento.thumbnail_url) ??
+    magento.thumbnail_url ??
+    null;
 
   // 促销标签：cp_date 过期后不显示
   const now = Date.now();
@@ -332,6 +339,9 @@ export function mapLinkedProduct(raw: {
   const finalPrice = raw.price_range.minimum_price.final_price.value;
   const regularPrice = raw.price_range.minimum_price.regular_price.value;
 
+  const thumbnailUrl =
+    processProductImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? null;
+
   return {
     id: raw.id,
     sku: raw.sku,
@@ -346,7 +356,7 @@ export function mapLinkedProduct(raw: {
     review_count: 0,
     rating_percentage: 0,
     promotion_label: null,
-    unified_thumbnail: raw.thumbnail?.url ?? null,
+    unified_thumbnail: thumbnailUrl,
   };
 }
 
@@ -355,6 +365,12 @@ export function mapGQLProduct(
 ): MagentoProduct {
   const finalPrice = raw.price_range.minimum_price.final_price.value;
   const regularPrice = raw.price_range.minimum_price.regular_price.value;
+
+  const thumbnailUrl =
+    processProductImageUrl(raw.thumbnail?.url ?? raw.media_gallery[0]?.url) ??
+    raw.thumbnail?.url ??
+    raw.media_gallery[0]?.url ??
+    null;
 
   return {
     id: raw.id,
@@ -375,13 +391,13 @@ export function mapGQLProduct(
     currency: raw.price_range.minimum_price.final_price.currency,
     type_id:
       raw.__typename === 'ConfigurableProduct' ? 'configurable' : 'simple',
-    thumbnail_url: raw.thumbnail?.url ?? raw.media_gallery[0]?.url ?? null,
-    image_url: raw.thumbnail?.url ?? raw.media_gallery[0]?.url ?? null,
+    thumbnail_url: thumbnailUrl,
+    image_url: thumbnailUrl,
     media_gallery: raw.media_gallery
       .filter(m => !m.disabled)
       .sort((a, b) => a.position - b.position)
       .map(m => ({
-        url: m.url,
+        url: processProductImageUrl(m.url) ?? m.url,
         label: m.label,
         position: m.position,
         media_type: 'image',
@@ -436,7 +452,7 @@ export function mapGQLProduct(
           return acc;
         }, {}),
         media_gallery: v.product.media_gallery.map((m, idx) => ({
-          url: m.url,
+          url: processProductImageUrl(m.url) ?? m.url,
           label: null,
           position: idx,
           media_type: 'image',

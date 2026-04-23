@@ -33,7 +33,7 @@ This is now the single source of truth for dynamic image URL handling. The old d
 2. If the value is a relative path, prepend `NEXT_PUBLIC_IMAGE_BASE_URL`
 3. If `NEXT_PUBLIC_IMAGE_BASE_URL` is unset, fall back by environment:
    - development: `http://localhost:1337`
-   - production: `https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages`
+   - production: `https://d2s2mafqv46idp.cloudfront.net/joydeem`
 
 This keeps API payloads environment-agnostic while still producing browser-usable URLs.
 

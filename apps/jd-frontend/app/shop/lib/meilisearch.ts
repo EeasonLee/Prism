@@ -1,6 +1,7 @@
 import { env } from '../../../lib/env';
 import { notifyError } from '../../../lib/notify';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
+import { processImageUrl } from '@prism/shared';
 
 function getIndexCandidates(): string[] {
   const explicit = env.MEILISEARCH_INDEX_NAME?.trim();
@@ -67,6 +68,7 @@ interface MeilisearchHit {
   name: string;
   display_name?: string | null;
   url_key?: string | null;
+  thumbnail?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
   price: string | number | null;
@@ -146,12 +148,18 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
       ? rawPrice
       : null;
 
+  const rawImage = hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null;
+  const image =
+    rawImage && /^https?:\/\//i.test(rawImage)
+      ? rawImage
+      : processImageUrl(rawImage) ?? rawImage;
+
   return {
     sku: hit.id,
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
     urlKey: hit.url_key ?? null,
-    image: hit.thumbnail_url ?? hit.image_url ?? null,
+    image,
     price: { value: displayPrice, currency: hit.currency ?? null },
     originalPrice,
     inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',

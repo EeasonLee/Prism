@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+import { processProductImageUrl } from '@prism/shared';
 import {
   ChevronDown,
   ChevronLeft,
@@ -25,6 +26,7 @@ interface ProductImageGalleryProps {
 interface ProductGalleryMediaItem {
   type: 'video' | 'image';
   url: string;
+  thumbUrl?: string;
   alt: string;
   poster?: string;
 }
@@ -56,7 +58,8 @@ export function ProductImageGallery({
       : []),
     ...images.map(image => ({
       type: 'image' as const,
-      url: image.url,
+      url: processProductImageUrl(image.url, 800) ?? image.url,
+      thumbUrl: processProductImageUrl(image.url, 150) ?? image.url,
       alt: image.alt ?? productName,
     })),
   ];
@@ -204,7 +207,7 @@ export function ProductImageGallery({
               >
                 {item.type === 'image' ? (
                   <Image
-                    src={item.url}
+                    src={item.thumbUrl ?? item.url}
                     alt={item.alt}
                     fill
                     unoptimized

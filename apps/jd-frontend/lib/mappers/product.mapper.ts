@@ -1,3 +1,5 @@
+import { processProductImageUrl } from '@prism/shared';
+
 export interface ProductListItem {
   sku: string;
   name: string;
@@ -36,11 +38,14 @@ interface GraphQLProduct {
 }
 
 export function mapProductListItem(raw: GraphQLProduct): ProductListItem {
+  const imageUrl =
+    processProductImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? '';
+
   return {
     sku: raw.sku,
     name: raw.name,
     price: raw.price_range.minimum_price.final_price.value,
-    image: raw.thumbnail?.url || '',
+    image: imageUrl,
     inStock: raw.stock_status === 'IN_STOCK',
     url_key: raw.url_key ?? null,
     type_id:
@@ -155,8 +160,12 @@ export function mapProductDetail(raw: MagentoProductDetail): ProductDetail {
   const images = raw.media_gallery
     .filter(item => !item.disabled)
     .sort((a, b) => a.position - b.position)
-    .map(item => item.url);
-  const thumbnail = raw.thumbnail?.url ?? images[0] ?? '';
+    .map(item => processProductImageUrl(item.url) ?? item.url);
+  const thumbnail =
+    processProductImageUrl(raw.thumbnail?.url ?? images[0]) ??
+    raw.thumbnail?.url ??
+    images[0] ??
+    '';
 
   return {
     id: raw.id,

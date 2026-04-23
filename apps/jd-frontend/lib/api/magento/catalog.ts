@@ -3,6 +3,7 @@
  */
 
 import { magentoClient } from './client';
+import { processProductImageUrl } from '@prism/shared';
 import type {
   FetchProductsParams,
   MagentoCategoryDetail,
@@ -482,7 +483,7 @@ function normalizeMediaGallery(
   items: RawMediaGalleryItem[] | null | undefined
 ) {
   return (items ?? []).map(item => ({
-    url: item.url ?? '',
+    url: processProductImageUrl(item.url) ?? item.url ?? '',
     label: item.label ?? null,
     position: item.position ?? 0,
     media_type: item.media_type ?? null,
@@ -505,7 +506,8 @@ function normalizeGroupedItems(
     is_in_stock:
       item.is_in_stock ??
       (item.stock_status ? item.stock_status === 'IN_STOCK' : true),
-    thumbnail_url: item.thumbnail_url ?? null,
+    thumbnail_url:
+      processProductImageUrl(item.thumbnail_url) ?? item.thumbnail_url ?? null,
   }));
 }
 
@@ -535,12 +537,14 @@ function normalizeDownloadableSamples(
 
 function normalizeProduct(raw: RawMagentoProduct): MagentoProduct {
   const { price, finalPrice, specialPrice, currency } = getPriceInfo(raw);
-  const thumbnailUrl =
+  const rawThumbnailUrl =
     raw.thumbnail?.url ??
     raw.thumbnail_url ??
     raw.image_url ??
     raw.media_gallery?.[0]?.url ??
     null;
+  const thumbnailUrl =
+    processProductImageUrl(rawThumbnailUrl) ?? rawThumbnailUrl;
   const ratingPercentage =
     raw.rating_summary ??
     raw.rating_percentage ??

@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AddToCartButton } from '@/app/components/AddToCartButton';
 import { formatPrice } from '@/lib/format-price';
+import { processImageUrl } from '@prism/shared';
 
 type BadgeStyle = 'brand' | 'dark' | 'light';
 
@@ -46,6 +48,18 @@ export function CategoryProductCard({
   disabledLabel = 'Unavailable',
   openInNewTab = false,
 }: CategoryProductCardProps) {
+  const rawImage = image?.trim() ?? null;
+  const resolvedImage = rawImage
+    ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
+      ? rawImage
+      : processImageUrl(rawImage) ?? rawImage
+    : null;
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [resolvedImage]);
+
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card">
       <Link
@@ -55,14 +69,15 @@ export function CategoryProductCard({
         className="block outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         <div className="relative aspect-square overflow-hidden bg-surface">
-          {image ? (
+          {resolvedImage && !imageLoadFailed ? (
             <Image
-              src={image}
+              src={resolvedImage}
               alt={name}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               loading="lazy"
+              onError={() => setImageLoadFailed(true)}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">

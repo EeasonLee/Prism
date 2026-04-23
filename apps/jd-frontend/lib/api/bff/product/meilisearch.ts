@@ -8,6 +8,7 @@
 import { env } from '../../../env';
 import { notifyError } from '../../../notify';
 import type { ProductCardItem } from './types';
+import { processImageUrl } from '@prism/shared';
 
 function getIndexCandidates(): string[] {
   const explicit = env.MEILISEARCH_INDEX_NAME?.trim();
@@ -131,12 +132,18 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
 
   const inStock = hit.is_in_stock ?? hit.stock_status !== 'out_of_stock';
 
+  const rawImage = hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null;
+  const image =
+    rawImage && /^https?:\/\//i.test(rawImage)
+      ? rawImage
+      : processImageUrl(rawImage) ?? rawImage;
+
   return {
     sku: hit.id ?? hit.sku ?? '',
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
     urlKey: hit.url_key ?? null,
-    image: hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null,
+    image,
     price: {
       value: displayPrice,
       currency: hit.currency ?? null,

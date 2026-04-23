@@ -35,9 +35,21 @@ const imageRemotePatterns = [
   },
   {
     protocol: 'http',
+    hostname: 'localhost',
+    port: '1337',
+    pathname: '/media/**',
+  },
+  {
+    protocol: 'http',
     hostname: '192.168.50.244',
     port: '1337',
     pathname: '/uploads/**',
+  },
+  {
+    protocol: 'http',
+    hostname: '192.168.50.244',
+    port: '1337',
+    pathname: '/media/**',
   },
   {
     protocol: 'http',
@@ -46,9 +58,15 @@ const imageRemotePatterns = [
     pathname: '/uploads/**',
   },
   {
+    protocol: 'http',
+    hostname: '192.168.50.240',
+    port: '1337',
+    pathname: '/media/**',
+  },
+  {
     protocol: 'https',
     hostname: 'd2s2mafqv46idp.cloudfront.net',
-    pathname: '/joydeem/media/pages/**',
+    pathname: '/joydeem/**',
   },
   configuredImagePattern,
 ].filter(Boolean);
@@ -59,6 +77,12 @@ const extraRemotePatterns = [
     hostname: '192.168.50.4',
     port: '1337',
     pathname: '/uploads/**',
+  },
+  {
+    protocol: 'http',
+    hostname: '192.168.50.4',
+    port: '1337',
+    pathname: '/media/**',
   },
   {
     protocol: 'https',

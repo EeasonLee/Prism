@@ -6,6 +6,7 @@
  */
 
 import { searchProducts } from '../../../app/search/lib/meilisearch';
+import { processProductImageUrl } from '@prism/shared';
 
 export interface RelatedProductItem {
   sku: string;
@@ -38,7 +39,7 @@ export async function fetchRelatedBySlug(
       sku: item.sku,
       name: item.name,
       price: item.price ?? 0,
-      image: item.thumbnail ?? '',
+      image: processProductImageUrl(item.thumbnail) ?? item.thumbnail ?? '',
       inStock: item.in_stock ?? true,
     }));
 }

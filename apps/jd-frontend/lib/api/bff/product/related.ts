@@ -1,6 +1,7 @@
 import { fetchProductDetailBySkuGQL } from '@/lib/services/magento/product.service';
 import { fetchRelatedBySlug } from '@/lib/services/search/meilisearch.service';
 import type { RelatedProductItem } from '@/lib/services/search/meilisearch.service';
+import { processProductImageUrl } from '@prism/shared';
 
 /**
  * PDP related products BFF 入口。
@@ -38,7 +39,10 @@ async function fetchRelatedFromMagento(
       sku: v.product.sku,
       name: v.product.name,
       price: v.product.price_range.minimum_price.final_price.value,
-      image: v.product.media_gallery?.[0]?.url ?? '',
+      image:
+        processProductImageUrl(v.product.media_gallery?.[0]?.url) ??
+        v.product.media_gallery?.[0]?.url ??
+        '',
       inStock: v.product.stock_status === 'IN_STOCK',
     }));
   } catch {

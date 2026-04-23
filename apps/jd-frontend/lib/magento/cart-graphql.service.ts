@@ -34,6 +34,7 @@ import {
   UPDATE_CART_ITEMS,
   REMOVE_ITEM_FROM_CART,
 } from './graphql/cart-operations';
+import { processProductImageUrl } from '@prism/shared';
 
 function mapCartLineTypename(typename: string | undefined): string {
   switch (typename) {
@@ -124,7 +125,9 @@ function transformCartItem(item: CartItemInterface): CartItem {
     currency: rowCurrency,
     product_type: mapCartLineTypename(item.__typename),
     options: options.length > 0 ? options : undefined,
-    thumbnail: item.product.thumbnail?.url,
+    thumbnail:
+      processProductImageUrl(item.product.thumbnail?.url) ??
+      item.product.thumbnail?.url,
   };
 }
 

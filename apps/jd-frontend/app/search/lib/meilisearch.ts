@@ -7,6 +7,7 @@
 
 import { env } from '../../../lib/env';
 import { notifyError } from '../../../lib/notify';
+import { processProductImageUrl } from '@prism/shared';
 import type {
   SearchSortOption,
   ProductCardItem,
@@ -116,7 +117,14 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     sku: hit.id,
     name: hit.display_name ?? hit.name,
     subtitle: hit.subtitle ?? undefined,
-    thumbnail: hit.thumbnail_url ?? hit.thumbnail ?? undefined,
+    thumbnail:
+      processProductImageUrl(
+        hit.thumbnail_url ?? hit.thumbnail ?? hit.image_url
+      ) ??
+      hit.thumbnail_url ??
+      hit.thumbnail ??
+      hit.image_url ??
+      undefined,
     price: hit.special_price ?? hit.price,
     in_stock: hit.in_stock ?? true,
     promotion_label: hit.promotion_label ?? undefined,

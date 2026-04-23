@@ -1,11 +1,11 @@
 'use client';
 
 import type { Route } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatPrice } from '@/lib/format-price';
+import { processImageUrl, processProductImageUrl } from '@prism/shared';
 import { getCartItems } from '../../../lib/api/magento/cart';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
 import { useAddToCartAction } from '../../../lib/cart/use-add-to-cart-action';
@@ -110,7 +110,19 @@ export function ProductCard({ product }: ProductCardProps) {
   const [quickViewLoading, setQuickViewLoading] = useState(false);
   const [quickViewError, setQuickViewError] = useState<string | null>(null);
 
-  const imageUrl = product.image;
+  const rawImage = product.image?.trim() ?? null;
+  const imageUrl = rawImage
+    ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
+      ? rawImage
+      : processProductImageUrl(rawImage) ??
+        processImageUrl(rawImage) ??
+        rawImage
+    : null;
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [imageUrl]);
 
   const refreshCardQtyFromCart = async () => {
     try {
@@ -223,16 +235,16 @@ export function ProductCard({ product }: ProductCardProps) {
       >
         {/* 图片区域 */}
         <div className="relative aspect-square overflow-hidden bg-surface">
-          {imageUrl ? (
-            <Image
+          {imageUrl && !imageLoadFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={imageUrl}
               alt={product.displayName}
-              fill
-              unoptimized
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={`object-cover transition duration-300 group-hover:scale-105 ${
+              loading="lazy"
+              className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${
                 isOutOfStock ? 'grayscale opacity-70' : ''
               }`}
+              onError={() => setImageLoadFailed(true)}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-ink-muted/30">
