@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CategoryGridProps } from '@/lib/api/cms-page.types';
 import type { ProductCardItem } from '@/lib/api/bff/product/types';
-import { DealProductCard } from './DealProductCard';
+import { CategoryProductCard } from './CategoryProductCard';
 
 export function CategoryGrid({ title, categories }: CategoryGridProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -143,9 +143,41 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
 
           {!loading && products.length > 0 && (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {products.map(product => (
-                <DealProductCard key={product.sku} product={product} />
-              ))}
+              {products.map(product => {
+                const priceValue = product.price.value;
+                const originalPrice = product.originalPrice;
+                const hasDiscount =
+                  priceValue != null &&
+                  originalPrice != null &&
+                  originalPrice > priceValue;
+                const isOutOfStock = product.inStock === false;
+                const productType = product.type ?? 'simple';
+                const isDirectAddSupported =
+                  productType === 'simple' || productType === 'virtual';
+
+                return (
+                  <CategoryProductCard
+                    key={product.sku}
+                    href={
+                      product.urlKey
+                        ? `/products/${product.urlKey}`
+                        : `/products/${product.sku}`
+                    }
+                    name={product.displayName}
+                    image={product.image}
+                    price={priceValue}
+                    currency={product.price.currency}
+                    sku={product.sku}
+                    badge={hasDiscount ? 'Sale' : product.promotionLabel}
+                    badgeStyle={hasDiscount ? 'brand' : 'dark'}
+                    tagline={product.promotionLabel}
+                    disabled={isOutOfStock || !isDirectAddSupported}
+                    disabledLabel={
+                      isOutOfStock ? 'Out of Stock' : 'Select Options'
+                    }
+                  />
+                );
+              })}
             </div>
           )}
 

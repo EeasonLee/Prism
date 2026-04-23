@@ -12,6 +12,12 @@ export function ServiceBadges({ badges }: ServiceBadgesProps) {
   return (
     <section className="py-12 lg:py-20">
       <div className="px-6 lg:px-[8vw]">
+        <h2
+          id="peace-of-mind-heading"
+          className="heading-3 mb-8 text-center text-ink"
+        >
+          Peace of Mind
+        </h2>
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-12">
           {badges.map(badge => {
             const Icon = ICON_MAP[badge.icon];

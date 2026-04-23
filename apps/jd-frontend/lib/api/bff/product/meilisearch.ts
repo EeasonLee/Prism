@@ -9,14 +9,26 @@ import { env } from '../../../env';
 import { notifyError } from '../../../notify';
 import type { ProductCardItem } from './types';
 
-const INDEX_UID =
-  env.MEILISEARCH_INDEX_NAME ??
-  `${env.MEILISEARCH_INDEX_PREFIX}_${env.MAGENTO_STORE_CODE}`;
+function getIndexCandidates(): string[] {
+  const explicit = env.MEILISEARCH_INDEX_NAME?.trim();
+  if (explicit) return [explicit];
+
+  const prefix = (env.MEILISEARCH_INDEX_PREFIX ?? '').trim();
+  const store = (env.MAGENTO_STORE_CODE ?? '').trim();
+  const primary = `${prefix}_${store}`;
+  const fallback =
+    prefix.endsWith('_product') || !prefix
+      ? primary
+      : `${prefix}_product_${store}`;
+
+  return fallback === primary ? [primary] : [primary, fallback];
+}
 
 // ─── Meilisearch 响应结构 ───────────────────────────────────────────────────────────────────
 
 interface MeilisearchHit {
   id: string; // sku
+  sku?: string | null;
   name: string;
   display_name?: string | null;
   url_key?: string | null;
@@ -69,10 +81,14 @@ export interface ProductMeilisearchResult {
 function buildFilter(params: ProductMeilisearchParams): string[] {
   const filters: string[] = [];
 
-  // 使用 categoryId 过滤，因为索引中 category_slugs 字段当前为空数组
-  // 同时移除 status / visibility 过滤，因为这两个字段不在可过滤属性列表中
+  // 兼容不同索引字段：
+  // - category_ids: 直属分类
+  // - category_ancestor_ids: 祖先分类
+  // 任一字段命中即可，避免叶子分类漏数。
   if (params.categoryId !== undefined) {
-    filters.push(`category_ancestor_ids = ${params.categoryId}`);
+    filters.push(
+      `(category_ids = ${params.categoryId} OR category_ancestor_ids = ${params.categoryId})`
+    );
   } else if (params.categorySlug !== undefined) {
     // 后备：等待 catalog-sync-service 填充 category_slugs 后恢复使用
     filters.push(`category_slugs = "${params.categorySlug}"`);
@@ -116,7 +132,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
   const inStock = hit.is_in_stock ?? hit.stock_status !== 'out_of_stock';
 
   return {
-    sku: hit.id,
+    sku: hit.id ?? hit.sku ?? '',
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
     urlKey: hit.url_key ?? null,
@@ -141,6 +157,7 @@ export async function searchProductsForBFF(
 ): Promise<ProductMeilisearchResult> {
   const host = env.MEILISEARCH_HOST;
   const apiKey = env.MEILISEARCH_API_KEY;
+  const indexCandidates = getIndexCandidates();
 
   if (!host) {
     throw new Error('MEILISEARCH_HOST is not configured');
@@ -162,32 +179,42 @@ export async function searchProductsForBFF(
   }
 
   try {
-    const response = await fetch(`${host}/indexes/${INDEX_UID}/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      },
-      body: JSON.stringify(body),
-    });
+    let last404Error: Error | null = null;
 
-    if (!response.ok) {
-      throw new Error(
-        `Meilisearch search failed: ${response.status} ${response.statusText}`
-      );
+    for (const indexUid of indexCandidates) {
+      const response = await fetch(`${host}/indexes/${indexUid}/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.status === 404) {
+        last404Error = new Error(`Meilisearch index not found: ${indexUid}`);
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          `Meilisearch search failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = (await response.json()) as MeilisearchSearchResponse;
+      return {
+        items: data.hits.map(toProductCardItem),
+        pagination: {
+          page: data.page,
+          pageSize: data.hitsPerPage,
+          total: data.totalHits,
+          totalPages: data.totalPages,
+        },
+      };
     }
 
-    const data = (await response.json()) as MeilisearchSearchResponse;
-
-    return {
-      items: data.hits.map(toProductCardItem),
-      pagination: {
-        page: data.page,
-        pageSize: data.hitsPerPage,
-        total: data.totalHits,
-        totalPages: data.totalPages,
-      },
-    };
+    throw last404Error ?? new Error('No available Meilisearch index');
   } catch (error) {
     await notifyError({
       title: 'Meilisearch BFF Search Failed',
@@ -198,4 +225,79 @@ export async function searchProductsForBFF(
     });
     throw error;
   }
+}
+
+export async function searchProductsBySkusForBFF(
+  skus: string[]
+): Promise<ProductCardItem[]> {
+  const normalizedSkus = [
+    ...new Set(skus.map(sku => sku.trim()).filter(Boolean)),
+  ];
+  if (normalizedSkus.length === 0) return [];
+
+  const host = env.MEILISEARCH_HOST;
+  const apiKey = env.MEILISEARCH_API_KEY;
+  const indexCandidates = getIndexCandidates();
+
+  if (!host) {
+    throw new Error('MEILISEARCH_HOST is not configured');
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  };
+
+  const items = await Promise.all(
+    normalizedSkus.map(async sku => {
+      const targetSku = sku.trim().toLowerCase();
+      const body = {
+        q: sku,
+        page: 1,
+        hitsPerPage: 8,
+      };
+      let last404Error: Error | null = null;
+
+      try {
+        for (const indexUid of indexCandidates) {
+          const response = await fetch(`${host}/indexes/${indexUid}/search`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+          });
+
+          if (response.status === 404) {
+            last404Error = new Error(
+              `Meilisearch index not found: ${indexUid}`
+            );
+            continue;
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              `Meilisearch search by sku failed: ${response.status} ${response.statusText}`
+            );
+          }
+
+          const data = (await response.json()) as MeilisearchSearchResponse;
+          const exactHit = data.hits.find(hit => {
+            const hitSku = (hit.id ?? hit.sku ?? '').trim().toLowerCase();
+            return hitSku === targetSku;
+          });
+          return exactHit ? toProductCardItem(exactHit) : null;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Failed to fetch sku ${sku} from Meilisearch: ${message}`);
+        return null;
+      }
+
+      if (last404Error) {
+        console.warn(last404Error.message);
+      }
+      return null;
+    })
+  );
+
+  return items.filter((item): item is ProductCardItem => item !== null);
 }

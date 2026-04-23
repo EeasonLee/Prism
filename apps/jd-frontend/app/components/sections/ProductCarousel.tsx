@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ProductCarouselProps } from '@/lib/api/cms-page.types';
-import { fetchUnifiedProductBySku } from '@/lib/api/unified-product';
+import { searchProductsBySkusForBFF } from '@/lib/api/bff/product/meilisearch';
 import { ProductCard } from './ProductCard';
 
 const LAYOUT_CLASSES = {
@@ -18,32 +18,19 @@ export async function ProductCarousel({
   showViewAll,
   viewAllLink,
 }: ProductCarouselProps) {
-  const skus = productSkus
-    .map(sku => sku.trim())
-    .filter((sku): sku is string => sku.length > 0);
+  const skus = [...new Set(productSkus.map(sku => sku.trim()).filter(Boolean))];
 
   if (skus.length === 0) {
     return null;
   }
 
-  const products = await Promise.all(
-    skus.map(async sku => {
-      try {
-        return await fetchUnifiedProductBySku(sku);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        // CMS 里偶发无效 SKU 时，按“跳过该卡片”处理，避免整块渲染失败。
-        if (!message.includes('Product not found')) {
-          console.warn(`Failed to fetch product ${sku}: ${message}`);
-        }
-        return null;
-      }
-    })
-  );
-
-  const validProducts = products.filter(
-    (p): p is NonNullable<typeof p> => p !== null
-  );
+  const validProducts = await searchProductsBySkusForBFF(skus).catch(error => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `Failed to fetch carousel products from Meilisearch: ${message}`
+    );
+    return [];
+  });
 
   if (validProducts.length === 0) {
     return null;

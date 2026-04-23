@@ -72,8 +72,6 @@ export default [
   {
     files: ['**/*.tsx'],
     ignores: [
-      '**/app/components/HomeCategorySection.tsx',
-      '**/app/components/HomeModernLivingSection.tsx',
       '**/app/test-graphql/page.tsx',
     ],
     rules: {

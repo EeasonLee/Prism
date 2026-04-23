@@ -26,7 +26,6 @@ export async function GET(
 
   try {
     // 解析分类
-    // 解析分类
     const category = await resolveCategoryBySlug(slug).catch(() => null);
     if (!category) {
       return NextResponse.json(
@@ -35,9 +34,15 @@ export async function GET(
       );
     }
 
+    const meiliCategoryId =
+      typeof category.magentoCategoryId === 'number' &&
+      category.magentoCategoryId > 0
+        ? category.magentoCategoryId
+        : category.id;
+
     // 搜索产品（仅走 Meilisearch）
     const result = await searchProducts({
-      categoryId: Number(category.id),
+      categoryId: meiliCategoryId,
       categorySlug: slug,
       page,
       pageSize,

@@ -10,6 +10,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isInView, setIsInView] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const isSingleVideo = videos.length === 1;
 
   const currentPlayingIndex = hoveredIndex ?? playingIndex;
 
@@ -66,12 +67,22 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
           </h2>
         </div>
 
-        <div className="-mx-6 overflow-x-auto px-6 scrollbar-hide snap-x snap-mandatory lg:mx-0 lg:overflow-visible lg:px-0">
+        <div
+          className={`-mx-6 px-6 lg:mx-0 lg:px-0 ${
+            isSingleVideo
+              ? 'overflow-visible'
+              : 'overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:overflow-visible'
+          }`}
+        >
           <div className="flex w-full gap-4 lg:justify-between lg:gap-6">
             {videos.map((video, index) => (
               <div
                 key={video.id}
-                className="group relative w-[42vw] min-w-[120px] max-w-[180px] flex-1 flex-shrink-0 snap-start lg:min-w-0 lg:max-w-none"
+                className={`group relative ${
+                  isSingleVideo
+                    ? 'mx-auto w-[70vw] max-w-[320px] flex-none lg:w-full lg:max-w-[420px]'
+                    : 'w-[42vw] min-w-[120px] max-w-[180px] flex-1 flex-shrink-0 snap-start lg:min-w-0 lg:max-w-none'
+                }`}
                 onMouseEnter={() => {
                   setHoveredIndex(index);
                   setPlayingIndex(index);

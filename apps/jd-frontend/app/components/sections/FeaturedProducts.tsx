@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { FeaturedProductsProps } from '@/lib/api/cms-page.types';
-import { fetchUnifiedProductBySku } from '@/lib/api/unified-product';
+import { searchProductsBySkusForBFF } from '@/lib/api/bff/product/meilisearch';
 import { formatPrice } from '@/lib/format-price';
 
 function stripHtml(value: string | null | undefined): string {
@@ -18,31 +18,19 @@ export async function FeaturedProducts({
   subtitle,
   products,
 }: FeaturedProductsProps) {
-  const skus = products
-    .map(sku => sku.trim())
-    .filter((sku): sku is string => sku.length > 0);
+  const skus = [...new Set(products.map(sku => sku.trim()).filter(Boolean))];
 
   if (skus.length === 0) {
     return null;
   }
 
-  const fetchedProducts = await Promise.all(
-    skus.map(async sku => {
-      try {
-        return await fetchUnifiedProductBySku(sku);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes('Product not found')) {
-          console.warn(`Failed to fetch featured product ${sku}: ${message}`);
-        }
-        return null;
-      }
-    })
-  );
-
-  const validProducts = fetchedProducts.filter(
-    (product): product is NonNullable<typeof product> => product !== null
-  );
+  const validProducts = await searchProductsBySkusForBFF(skus).catch(error => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `Failed to fetch featured products from Meilisearch: ${message}`
+    );
+    return [];
+  });
 
   if (validProducts.length === 0) {
     return null;
@@ -65,15 +53,15 @@ export async function FeaturedProducts({
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {validProducts.map(product => {
-            const price = product.special_price ?? product.price;
-            const originalPrice = product.special_price ? product.price : null;
-            const currency = product.currency ?? 'USD';
+            const price = product.price.value;
+            const originalPrice = product.originalPrice;
+            const currency = product.price.currency ?? 'USD';
             const discount =
               price && originalPrice && originalPrice > price
                 ? Math.round(((originalPrice - price) / originalPrice) * 100)
                 : null;
             const imageUrl =
-              product.unified_thumbnail ?? '/images/product_soymilk_card.jpg';
+              product.image ?? '/images/product_soymilk_card.jpg';
 
             return (
               <div
@@ -84,14 +72,14 @@ export async function FeaturedProducts({
                   <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden md:aspect-auto md:min-h-[260px]">
                     <Image
                       src={imageUrl}
-                      alt={product.name}
+                      alt={product.displayName}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, 280px"
                     />
-                    {product.promotion_label && (
+                    {product.promotionLabel && (
                       <div className="absolute left-3 top-3 rounded bg-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                        {product.promotion_label}
+                        {product.promotionLabel}
                       </div>
                     )}
                   </div>
@@ -102,17 +90,11 @@ export async function FeaturedProducts({
                         className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-ink lg:text-xl"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}
                       >
-                        {product.name}
+                        {product.displayName}
                       </h3>
-                      {product.short_description_html && (
-                        <p className="mb-4 line-clamp-4 text-sm leading-relaxed text-ink-muted">
-                          {stripHtml(product.short_description_html)}
-                        </p>
-                      )}
-
-                      {product.subtitle && (
+                      {product.promotionLabel && (
                         <p className="mb-5 text-sm text-ink-muted">
-                          {product.subtitle}
+                          {stripHtml(product.promotionLabel)}
                         </p>
                       )}
                     </div>
@@ -140,14 +122,14 @@ export async function FeaturedProducts({
 
                       <div className="flex flex-wrap gap-2.5">
                         <Link
-                          href={`/products/${product.url_key ?? product.sku}`}
+                          href={`/products/${product.urlKey ?? product.sku}`}
                           className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-sm"
                         >
                           View Product
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                         <Link
-                          href={`/products/${product.url_key ?? product.sku}`}
+                          href={`/products/${product.urlKey ?? product.sku}`}
                           className="flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
                         >
                           Learn More

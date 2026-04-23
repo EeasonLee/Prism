@@ -5,9 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/format-price';
 import type { UnifiedProduct } from '@/lib/api/unified-product';
+import type { ProductCardItem } from '@/lib/api/bff/product/types';
 
 interface ProductCardProps {
-  product: UnifiedProduct;
+  product: UnifiedProduct | ProductCardItem;
   badgeVariant?: 'brand' | 'dark';
 }
 
@@ -20,13 +21,23 @@ export function ProductCard({
   product,
   badgeVariant = 'brand',
 }: ProductCardProps) {
-  const price = product.price_range?.minimum_price?.final_price?.value;
-  const originalPrice =
-    product.price_range?.minimum_price?.regular_price?.value;
-  const currency =
-    product.price_range?.minimum_price?.final_price?.currency ??
-    product.price_range?.minimum_price?.regular_price?.currency;
+  const isBffItem = 'displayName' in product && 'price' in product;
+  const price = isBffItem
+    ? product.price.value
+    : product.price_range?.minimum_price?.final_price?.value;
+  const originalPrice = isBffItem
+    ? product.originalPrice
+    : product.price_range?.minimum_price?.regular_price?.value;
+  const currency = isBffItem
+    ? product.price.currency
+    : product.price_range?.minimum_price?.final_price?.currency ??
+      product.price_range?.minimum_price?.regular_price?.currency;
   const hasDiscount = originalPrice && price && originalPrice > price;
+  const productHref = isBffItem
+    ? `/products/${product.urlKey ?? product.sku}`
+    : `/products/${product.url_key ?? product.sku}`;
+  const imageUrl = isBffItem ? product.image : product.image?.url;
+  const title = isBffItem ? product.displayName : product.name;
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -36,14 +47,14 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/products/${product.url_key ?? product.sku}`}
+      href={productHref}
       className="group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
-        {product.image?.url && (
+        {imageUrl && (
           <Image
-            src={product.image.url}
-            alt={product.name}
+            src={imageUrl}
+            alt={title}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
@@ -71,7 +82,7 @@ export function ProductCard({
 
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-white">
-            {product.name}
+            {title}
           </h3>
           <div className="mt-1.5 flex items-baseline gap-1.5">
             {price && (

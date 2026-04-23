@@ -90,10 +90,16 @@ interface MeilisearchSearchResponse {
 
 function buildFilter(p: ShopSearchParams): string[] {
   const f: string[] = [];
-  if (p.categoryId !== undefined)
-    f.push(`category_ancestor_ids = ${p.categoryId}`);
-  // NOTE: category_ancestor_slugs / category_slugs are not reliably populated
-  // in the Meilisearch index, so we only filter by category_ancestor_ids.
+  if (p.categoryId !== undefined) {
+    // 兼容索引映射差异：
+    // - category_ids: 商品直属分类
+    // - category_ancestor_ids: 祖先分类（用于父类聚合）
+    // 仅使用其中一个字段会导致部分分类页查不到商品。
+    f.push(
+      `(category_ids = ${p.categoryId} OR category_ancestor_ids = ${p.categoryId})`
+    );
+  }
+  // NOTE: category_ancestor_slugs / category_slugs are not reliably populated.
   if (p.brand !== undefined) f.push(`brand = "${p.brand}"`);
   if (p.size !== undefined) f.push(`size = "${p.size}"`);
   if (p.stockStatus !== undefined) f.push(`stock_status = "${p.stockStatus}"`);

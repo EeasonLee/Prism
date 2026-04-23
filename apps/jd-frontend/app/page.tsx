@@ -1,6 +1,5 @@
 import { getPageBySlug } from '@/lib/api/cms-pages';
 import { renderSections } from './components/sections/blockMap';
-import { HomePageClient } from './components/HomePageClient';
 
 // Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.
 export const revalidate = 60; // ISR + On-Demand
@@ -29,16 +28,11 @@ export async function generateMetadata() {
 
 export default async function Page() {
   const page = await getPageBySlug('home');
-
-  // Fallback：CMS 数据不可用时使用现有硬编码首页
-  if (!page || page.sections.length === 0) {
-    console.warn('CMS page not found, using fallback');
-    return <HomePageClient />;
-  }
+  const sections = page?.sections ?? [];
 
   return (
     <div className="grain-overlay">
-      <main className="relative">{renderSections(page.sections)}</main>
+      <main className="relative">{renderSections(sections)}</main>
     </div>
   );
 }
