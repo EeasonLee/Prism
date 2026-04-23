@@ -11,6 +11,11 @@ export interface UpdateUserInput {
   lastname?: string;
 }
 
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface Order {
   id: number;
   number: string;
@@ -59,6 +64,7 @@ export interface Address {
   street: string;
   city: string;
   region: string;
+  regionCode?: string;
   regionId?: number;
   postcode: string;
   country: string;

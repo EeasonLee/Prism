@@ -11,14 +11,26 @@ import { useAccount } from '@/lib/account/useAccount';
 export default function AccountOverviewPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
-  const { user, orders, addresses, isLoading, error, logout } = useAccount();
+  const { user, orders, addresses, isLoading, error, logout, getDefaultAddresses } = useAccount();
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [defaultAddresses, setDefaultAddresses] = useState<{
+    billing: typeof addresses[number] | null;
+    shipping: typeof addresses[number] | null;
+  }>({ billing: null, shipping: null });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.replace('/login?next=/account');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      getDefaultAddresses()
+        .then(data => setDefaultAddresses(data))
+        .catch(() => setDefaultAddresses({ billing: null, shipping: null }));
+    }
+  }, [isAuthenticated, authLoading, getDefaultAddresses]);
 
   const handleLogout = useCallback(async () => {
     setLogoutLoading(true);
@@ -87,50 +99,37 @@ export default function AccountOverviewPage() {
           </p>
           {addresses.length > 0 && (
             <div className="mt-3 space-y-2">
-              {addresses.find(a => a.defaultBilling) && (
+              {defaultAddresses.billing && (
                 <div className="flex items-start gap-2">
                   <CreditCard className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
                   <p className="text-xs text-ink-muted">
-                    {(() => {
-                      const a = addresses.find(addr => addr.defaultBilling);
-                      if (!a) return null;
-                      return (
-                        <span>
-                          {a.firstname} {a.lastname}
-                          <br />
-                          {a.street}, {a.city}
-                          {a.region ? `, ${a.region}` : ''} {a.postcode}
-                        </span>
-                      );
-                    })()}
+                    <span>
+                      {defaultAddresses.billing.firstname} {defaultAddresses.billing.lastname}
+                      <br />
+                      {defaultAddresses.billing.street}, {defaultAddresses.billing.city}
+                      {defaultAddresses.billing.region ? `, ${defaultAddresses.billing.region}` : ''} {defaultAddresses.billing.postcode}
+                    </span>
                   </p>
                 </div>
               )}
-              {addresses.find(a => a.defaultShipping) && (
+              {defaultAddresses.shipping && (
                 <div className="flex items-start gap-2">
                   <Home className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
                   <p className="text-xs text-ink-muted">
-                    {(() => {
-                      const a = addresses.find(addr => addr.defaultShipping);
-                      if (!a) return null;
-                      return (
-                        <span>
-                          {a.firstname} {a.lastname}
-                          <br />
-                          {a.street}, {a.city}
-                          {a.region ? `, ${a.region}` : ''} {a.postcode}
-                        </span>
-                      );
-                    })()}
+                    <span>
+                      {defaultAddresses.shipping.firstname} {defaultAddresses.shipping.lastname}
+                      <br />
+                      {defaultAddresses.shipping.street}, {defaultAddresses.shipping.city}
+                      {defaultAddresses.shipping.region ? `, ${defaultAddresses.shipping.region}` : ''} {defaultAddresses.shipping.postcode}
+                    </span>
                   </p>
                 </div>
               )}
-              {!addresses.find(a => a.defaultBilling) &&
-                !addresses.find(a => a.defaultShipping) && (
-                  <p className="text-xs text-ink-muted">
-                    No default addresses set
-                  </p>
-                )}
+              {!defaultAddresses.billing && !defaultAddresses.shipping && (
+                <p className="text-xs text-ink-muted">
+                  No default addresses set
+                </p>
+              )}
             </div>
           )}
           {addresses.length === 0 && (

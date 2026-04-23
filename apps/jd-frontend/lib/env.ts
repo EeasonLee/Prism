@@ -55,6 +55,9 @@ const clientSchema = z.object({
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: z.string().url().optional(),
   // 支持的国家代码列表，逗号分隔，用于地址表单（默认 US）
   NEXT_PUBLIC_SUPPORTED_COUNTRIES: z.string().optional(),
+  // Cloudflare Turnstile 验证码
+  NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: z.string().optional(),
+  CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().optional(),
 });
 
 const mergedSchema = serverSchema.merge(clientSchema);
@@ -73,6 +76,8 @@ const parsedEnv = mergedSchema.parse({
   NEXT_PUBLIC_MAGENTO_API_URL: process.env.NEXT_PUBLIC_MAGENTO_API_URL,
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL,
   NEXT_PUBLIC_SUPPORTED_COUNTRIES: process.env.NEXT_PUBLIC_SUPPORTED_COUNTRIES,
+  NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY,
+  CLOUDFLARE_TURNSTILE_SECRET_KEY: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   MEILISEARCH_HOST: process.env.MEILISEARCH_HOST,
   MEILISEARCH_INDEX_PREFIX: process.env.MEILISEARCH_INDEX_PREFIX,

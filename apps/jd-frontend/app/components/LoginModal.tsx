@@ -1,7 +1,8 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { useAuth } from '../../lib/auth/context';
 
 type Tab = 'signin' | 'register';
@@ -37,6 +38,8 @@ export function LoginModal({
   const [regLastName, setRegLastName] = useState('');
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   const handleSignIn = useCallback(
     async (e: React.FormEvent) => {
@@ -66,7 +69,8 @@ export function LoginModal({
           regEmail,
           regPassword,
           regFirstName || undefined,
-          regLastName || undefined
+          regLastName || undefined,
+          turnstileToken ?? undefined
         );
         onSuccess?.();
         onClose();
@@ -269,6 +273,17 @@ export function LoginModal({
               </p>
             </div>
 
+            {process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
+              <div ref={turnstileRef} className="flex justify-center">
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
+                  onSuccess={setTurnstileToken}
+                  onError={() => setTurnstileToken(null)}
+                  onExpire={() => setTurnstileToken(null)}
+                />
+              </div>
+            )}
+
             {regError && (
               <p role="alert" className="text-sm text-red-500">
                 {regError}
@@ -277,7 +292,7 @@ export function LoginModal({
 
             <button
               type="submit"
-              disabled={regLoading}
+              disabled={regLoading || (process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY ? !turnstileToken : false)}
               className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
             >
               {regLoading ? 'Creating account…' : 'Create account'}

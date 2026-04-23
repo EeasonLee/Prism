@@ -71,7 +71,7 @@ export default function CartPage() {
       setServiceError(null);
       try {
         await updateItemQty(itemId, newQty);
-        await loadCartItems({ showSpinner: false });
+        setCartTotals(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -83,7 +83,7 @@ export default function CartPage() {
         setMutatingItemId(null);
       }
     },
-    [updateItemQty, loadCartItems]
+    [updateItemQty]
   );
 
   const handleRemoveItem = useCallback(
@@ -92,7 +92,7 @@ export default function CartPage() {
       setServiceError(null);
       try {
         await removeFromCart(itemId);
-        await loadCartItems({ showSpinner: false });
+        setCartTotals(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -104,7 +104,7 @@ export default function CartPage() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart, loadCartItems]
+    [removeFromCart]
   );
 
   const handleClearCart = useCallback(async () => {

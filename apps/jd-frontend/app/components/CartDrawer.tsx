@@ -2,14 +2,13 @@
 
 import { env } from '@/lib/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/format-price';
 import {
   applyCoupon,
   formatCartLineTotal,
   formatCartMoney,
-  getCartSnapshot,
   getCheckoutRedirectLink,
   removeCoupon,
 } from '../../lib/api/magento/cart';
@@ -32,7 +31,6 @@ export function CartDrawer() {
   } = useCart();
   const { hasSession, isGuest } = useAuth();
   const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
-  const [loadingItems, setLoadingItems] = useState(false);
   const [viewCartLoading, setViewCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
@@ -42,38 +40,6 @@ export function CartDrawer() {
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
-
-  const loadCartData = useCallback(
-    async (opts?: { showSpinner?: boolean }) => {
-      if (!isCartOpen || !hasSession) return;
-      const showSpinner = opts?.showSpinner !== false;
-      if (showSpinner) {
-        setLoadingItems(true);
-      }
-      setServiceError(null);
-      try {
-        const snapshot = await getCartSnapshot();
-        setCartTotals(snapshot.totals);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : '';
-        if (msg.includes('unavailable')) {
-          setServiceError(
-            'Shop service is temporarily unavailable, please try again later.'
-          );
-        }
-      } finally {
-        if (showSpinner) {
-          setLoadingItems(false);
-        }
-      }
-    },
-    [isCartOpen, hasSession]
-  );
-
-  // 打开抽屉时加载购物车详情；itemCount 变化时同步（他处加购后）
-  useEffect(() => {
-    void loadCartData();
-  }, [itemCount, loadCartData]);
 
   const handleViewCart = useCallback(async () => {
     if (!hasSession) return;
@@ -129,7 +95,7 @@ export function CartDrawer() {
       setServiceError(null);
       try {
         await removeFromCart(itemId);
-        await loadCartData({ showSpinner: false });
+        setCartTotals(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -141,7 +107,7 @@ export function CartDrawer() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart, loadCartData]
+    [removeFromCart]
   );
 
   const handleClearCart = useCallback(async () => {
@@ -214,7 +180,7 @@ export function CartDrawer() {
       setServiceError(null);
       try {
         await updateItemQty(itemId, newQty);
-        await loadCartData({ showSpinner: false });
+        setCartTotals(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -226,7 +192,7 @@ export function CartDrawer() {
         setMutatingItemId(null);
       }
     },
-    [updateItemQty, loadCartData]
+    [updateItemQty]
   );
 
   const subtotalFromMagento = useMemo(() => {
@@ -278,18 +244,7 @@ export function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {loadingItems && (
-            <div className="space-y-3">
-              {[1, 2].map(n => (
-                <div
-                  key={n}
-                  className="h-16 animate-pulse rounded-lg bg-surface"
-                />
-              ))}
-            </div>
-          )}
-
-          {!loadingItems && !hasItems && (
+          {!hasItems && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingCart className="mb-3 h-10 w-10 text-ink-muted/40" />
               <p className="text-sm font-medium text-ink-muted">
@@ -298,7 +253,7 @@ export function CartDrawer() {
             </div>
           )}
 
-          {!loadingItems && hasItems && (
+          {hasItems && (
             <ul className="space-y-3">
               {items.map(item => (
                 <li

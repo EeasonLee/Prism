@@ -4,10 +4,10 @@ import type { Route } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatPrice } from '@/lib/format-price';
-import { getCartItems } from '../../../lib/api/magento/cart';
 import type { ProductCardItem } from '../../../lib/api/bff/product/types';
+import { useCart } from '../../../lib/cart/context';
 import { useAddToCartAction } from '../../../lib/cart/use-add-to-cart-action';
 import { QuickAddModal } from './QuickAddModal';
 
@@ -86,6 +86,7 @@ function StarRating({ percentage }: { percentage: number }) {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { items, getQtyBySku } = useCart();
   const {
     addItemToCart,
     isAdding,
@@ -102,7 +103,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const typeStyle = TYPE_STYLE[typeKey] ?? 'bg-surface text-ink-muted';
   const hasRating = product.ratingPercentage > 0;
   const isOutOfStock = product.inStock === false;
-  const [cartQty, setCartQty] = useState(0);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [quickViewData, setQuickViewData] = useState<
     Parameters<typeof QuickAddModal>[0]['variantData'] | null
@@ -111,39 +111,25 @@ export function ProductCard({ product }: ProductCardProps) {
   const [quickViewError, setQuickViewError] = useState<string | null>(null);
 
   const imageUrl = product.image;
-
-  const refreshCardQtyFromCart = async () => {
-    try {
-      const items = await getCartItems();
-      if (typeKey === 'configurable' && quickViewData) {
-        const variantSkuSet = new Set([
-          product.sku,
-          ...quickViewData.variants.map(variant => variant.sku),
-        ]);
-        const total = items.reduce((sum, item) => {
-          if (!variantSkuSet.has(item.sku)) return sum;
-          return sum + item.qty;
-        }, 0);
-        setCartQty(total);
-        return;
-      }
-
-      const total = items.reduce((sum, item) => {
-        if (item.sku !== product.sku) return sum;
+  const cartQty = useMemo(() => {
+    if (typeKey === 'configurable' && quickViewData) {
+      const variantSkuSet = new Set([
+        product.sku,
+        ...quickViewData.variants.map(variant => variant.sku),
+      ]);
+      return items.reduce((sum, item) => {
+        if (!variantSkuSet.has(item.sku)) return sum;
         return sum + item.qty;
       }, 0);
-      setCartQty(total);
-    } catch {
-      // 购物车读取失败时保持当前角标，避免影响加购主流程
     }
-  };
+    return getQtyBySku(product.sku);
+  }, [typeKey, quickViewData, product.sku, items, getQtyBySku]);
 
   const addSimpleProduct = async () => {
     await addItemToCart(
       { sku: product.sku, qty: 1 },
       {
         openCartOnSuccess: true,
-        onSuccess: refreshCardQtyFromCart,
       }
     );
   };
@@ -170,7 +156,11 @@ export function ProductCard({ product }: ProductCardProps) {
             title: string;
             required: boolean;
             type: string;
-            values?: Array<{ option_type_id: number; title: string }>;
+            values?: Array<{
+              option_type_id: number;
+              title: string;
+              price: number;
+            }>;
           }>;
           variants: Array<{
             sku: string;
@@ -185,7 +175,6 @@ export function ProductCard({ product }: ProductCardProps) {
         throw new Error(payload.error?.message ?? 'Failed to load variants.');
       }
       setQuickViewData(payload.data);
-      await refreshCardQtyFromCart();
     } catch (error) {
       setQuickViewError(
         error instanceof Error ? error.message : 'Failed to load variants.'
@@ -364,9 +353,6 @@ export function ProductCard({ product }: ProductCardProps) {
           }
           error={quickViewError}
           onClose={() => setIsQuickViewOpen(false)}
-          onAdded={async () => {
-            await refreshCardQtyFromCart();
-          }}
         />
       )}
     </>

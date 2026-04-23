@@ -25,6 +25,7 @@ interface FormData {
   street2: string;
   city: string;
   region: string;
+  region_code: string;
   region_id?: number;
   postcode: string;
   country_code: string;
@@ -41,6 +42,7 @@ function emptyForm(): FormData {
     street2: '',
     city: '',
     region: '',
+    region_code: '',
     postcode: '',
     country_code: 'US',
     telephone: '',
@@ -58,6 +60,7 @@ function addressToForm(address: Address): FormData {
     street2: streetParts[1] ?? '',
     city: address.city,
     region: address.region,
+    region_code: address.regionCode ?? address.region ?? '',
     region_id: address.regionId,
     postcode: address.postcode,
     country_code: address.country,
@@ -74,7 +77,7 @@ function formToInput(form: FormData): AddressInput {
   }
   const region: AddressInput['region'] = {
     region: form.region.trim(),
-    region_code: form.region.trim(),
+    region_code: form.region_code.trim() || form.region.trim(),
   };
   if (form.region_id != null) {
     region.region_id = form.region_id;
@@ -115,6 +118,92 @@ function inputClass(error?: string): string {
   return `${base} ${error ? invalid : normal}`;
 }
 
+// Simple searchable dropdown for region/state selection
+function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  error,
+}: {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const filtered = query.trim()
+    ? options.filter(
+        o =>
+          o.label.toLowerCase().includes(query.toLowerCase()) ||
+          o.value.toLowerCase().includes(query.toLowerCase())
+      )
+    : options;
+
+  const selectedLabel = options.find(o => o.value === value)?.label ?? value;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        type="text"
+        value={open ? query : selectedLabel}
+        onChange={e => {
+          setQuery(e.target.value);
+          if (!open) setOpen(true);
+        }}
+        onFocus={() => {
+          setQuery('');
+          setOpen(true);
+        }}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={inputClass(error)}
+        aria-invalid={!!error}
+      />
+      {open && !disabled && (
+        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-background shadow-lg">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No results</div>
+          ) : (
+            filtered.map(o => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQuery('');
+                }}
+                className={`w-full px-3 py-2 text-left text-sm transition hover:bg-accent ${
+                  o.value === value ? 'bg-accent font-medium' : ''
+                }`}
+              >
+                {o.label}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function selectTriggerClass(error?: string): string {
   const base =
     'flex h-10 w-full items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm text-ink outline-none transition';
@@ -145,6 +234,7 @@ export default function AccountAddressesPage() {
     deleteAddress,
     getCountries,
     getRegions,
+    getDefaultAddresses,
     refresh,
   } = useAccount({
     loadUser: false,
@@ -167,6 +257,14 @@ export default function AccountAddressesPage() {
   >([]);
   const [regionsLoading, setRegionsLoading] = useState(false);
 
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
+  const [defaultAddresses, setDefaultAddresses] = useState<{
+    billing: Address | null;
+    shipping: Address | null;
+  }>({ billing: null, shipping: null });
+  const [defaultAddressesLoading, setDefaultAddressesLoading] = useState(false);
+
   const fieldRefs = {
     firstname: useRef<HTMLInputElement>(null),
     lastname: useRef<HTMLInputElement>(null),
@@ -183,6 +281,16 @@ export default function AccountAddressesPage() {
       router.replace('/login?next=/account/addresses');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      setDefaultAddressesLoading(true);
+      getDefaultAddresses()
+        .then(data => setDefaultAddresses(data))
+        .catch(() => setDefaultAddresses({ billing: null, shipping: null }))
+        .finally(() => setDefaultAddressesLoading(false));
+    }
+  }, [isAuthenticated, authLoading, getDefaultAddresses]);
 
   const loadRegions = useCallback(
     async (countryCode: string) => {
@@ -207,12 +315,16 @@ export default function AccountAddressesPage() {
     setEditingAddress(null);
     setForm(emptyForm());
     setFieldErrors({});
+    setCountries([]);
     setRegions([]);
     setSheetOpen(true);
-    void getCountries().then(data => {
-      const filtered = data.filter(c => SUPPORTED_COUNTRIES.includes(c.id));
-      setCountries(filtered.length > 0 ? filtered : data);
-    });
+    setCountriesLoading(true);
+    void getCountries()
+      .then(data => {
+        const filtered = data.filter(c => SUPPORTED_COUNTRIES.includes(c.id));
+        setCountries(filtered.length > 0 ? filtered : data);
+      })
+      .finally(() => setCountriesLoading(false));
     void loadRegions('US');
   }, [getCountries, loadRegions]);
 
@@ -221,11 +333,16 @@ export default function AccountAddressesPage() {
       setEditingAddress(address);
       setForm(addressToForm(address));
       setFieldErrors({});
+      setCountries([]);
+      setRegions([]);
       setSheetOpen(true);
-      void getCountries().then(data => {
-        const filtered = data.filter(c => SUPPORTED_COUNTRIES.includes(c.id));
-        setCountries(filtered.length > 0 ? filtered : data);
-      });
+      setCountriesLoading(true);
+      void getCountries()
+        .then(data => {
+          const filtered = data.filter(c => SUPPORTED_COUNTRIES.includes(c.id));
+          setCountries(filtered.length > 0 ? filtered : data);
+        })
+        .finally(() => setCountriesLoading(false));
       void loadRegions(address.country);
     },
     [getCountries, loadRegions]
@@ -237,6 +354,7 @@ export default function AccountAddressesPage() {
         ...prev,
         country_code: value,
         region: '',
+        region_code: '',
         region_id: undefined,
       }));
       setFieldErrors(prev => {
@@ -248,12 +366,31 @@ export default function AccountAddressesPage() {
     [loadRegions]
   );
 
+  // Sync region_id when regions load and match current region
+  useEffect(() => {
+    if (!form.region || regions.length === 0) return;
+    const match = regions.find(
+      r =>
+        r.code.toLowerCase() === form.region.toLowerCase() ||
+        r.name.toLowerCase() === form.region.toLowerCase()
+    );
+    if (match && form.region_id !== Number.parseInt(match.id, 10)) {
+      setForm(prev => ({
+        ...prev,
+        region: match.name,
+        region_code: match.code,
+        region_id: Number.parseInt(match.id, 10),
+      }));
+    }
+  }, [regions, form.region, form.region_id]);
+
   const handleRegionChange = useCallback(
     (value: string) => {
       const region = regions.find(r => r.code === value);
       setForm(prev => ({
         ...prev,
         region: region?.name ?? value,
+        region_code: region?.code ?? value,
         region_id: region ? Number.parseInt(region.id, 10) : undefined,
       }));
       setFieldErrors(prev => {
@@ -355,6 +492,87 @@ export default function AccountAddressesPage() {
           {error}
         </p>
       )}
+
+      {/* Default Addresses Section */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        {/* Default Billing */}
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-brand" />
+            <h3 className="text-sm font-semibold text-ink">Default Billing</h3>
+          </div>
+          {defaultAddressesLoading ? (
+            <div className="h-16 animate-pulse rounded-lg bg-background" />
+          ) : defaultAddresses.billing ? (
+            <div>
+              <p className="text-sm font-medium text-ink">
+                {defaultAddresses.billing.firstname} {defaultAddresses.billing.lastname}
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">
+                {defaultAddresses.billing.street}
+              </p>
+              <p className="text-sm text-ink-muted">
+                {defaultAddresses.billing.city}
+                {defaultAddresses.billing.region ? `, ${defaultAddresses.billing.region}` : ''}{' '}
+                {defaultAddresses.billing.postcode}
+              </p>
+              <p className="text-sm text-ink-muted">{defaultAddresses.billing.country}</p>
+              {defaultAddresses.billing.telephone && (
+                <p className="mt-1 text-sm text-ink-muted">
+                  {defaultAddresses.billing.telephone}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm text-ink-muted">No default billing address set.</p>
+              <Button variant="outline" size="sm" onClick={openAdd}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add one
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Default Shipping */}
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Home className="h-4 w-4 text-green-600" />
+            <h3 className="text-sm font-semibold text-ink">Default Shipping</h3>
+          </div>
+          {defaultAddressesLoading ? (
+            <div className="h-16 animate-pulse rounded-lg bg-background" />
+          ) : defaultAddresses.shipping ? (
+            <div>
+              <p className="text-sm font-medium text-ink">
+                {defaultAddresses.shipping.firstname} {defaultAddresses.shipping.lastname}
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">
+                {defaultAddresses.shipping.street}
+              </p>
+              <p className="text-sm text-ink-muted">
+                {defaultAddresses.shipping.city}
+                {defaultAddresses.shipping.region ? `, ${defaultAddresses.shipping.region}` : ''}{' '}
+                {defaultAddresses.shipping.postcode}
+              </p>
+              <p className="text-sm text-ink-muted">{defaultAddresses.shipping.country}</p>
+              {defaultAddresses.shipping.telephone && (
+                <p className="mt-1 text-sm text-ink-muted">
+                  {defaultAddresses.shipping.telephone}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm text-ink-muted">No default shipping address set.</p>
+              <Button variant="outline" size="sm" onClick={openAdd}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add one
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-ink-muted">
@@ -596,28 +814,29 @@ export default function AccountAddressesPage() {
                 State / Region
               </label>
               {regions.length > 0 ? (
-                <Select
+                <SearchableSelect
+                  options={regions.map(r => ({ value: r.code, label: r.name }))}
                   value={
                     regions.find(
-                      r => r.name === form.region || r.code === form.region
+                      r =>
+                        r.name.toLowerCase() === form.region.toLowerCase() ||
+                        r.code.toLowerCase() === form.region.toLowerCase()
                     )?.code ?? ''
                   }
-                  onValueChange={handleRegionChange}
+                  onChange={handleRegionChange}
+                  placeholder="Select or type state"
                   disabled={regionsLoading}
+                  error={fieldErrors.region}
+                />
+              ) : regionsLoading ? (
+                <div
+                  className={
+                    selectTriggerClass(fieldErrors.region) +
+                    ' text-muted-foreground cursor-not-allowed'
+                  }
                 >
-                  <SelectTrigger
-                    className={selectTriggerClass(fieldErrors.region)}
-                  >
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map(r => (
-                      <SelectItem key={r.id} value={r.code}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Loading states...
+                </div>
               ) : (
                 <input
                   ref={fieldRefs.region}
@@ -677,23 +896,32 @@ export default function AccountAddressesPage() {
               <label className="mb-1 block text-sm font-medium text-ink">
                 Country
               </label>
-              <Select
-                value={form.country_code}
-                onValueChange={handleCountryChange}
-              >
-                <SelectTrigger
-                  className={selectTriggerClass(fieldErrors.country_code)}
+              {countriesLoading || countries.length === 0 ? (
+                <div
+                  className={selectTriggerClass(fieldErrors.country_code) +
+                    ' text-muted-foreground cursor-not-allowed'}
                 >
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.full_name_english}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  {countriesLoading ? 'Loading countries...' : 'Select country'}
+                </div>
+              ) : (
+                <Select
+                  value={form.country_code}
+                  onValueChange={handleCountryChange}
+                >
+                  <SelectTrigger
+                    className={selectTriggerClass(fieldErrors.country_code)}
+                  >
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.full_name_english}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {fieldErrors.country_code && (
                 <p className="mt-1 text-xs text-red-500">
                   {fieldErrors.country_code}

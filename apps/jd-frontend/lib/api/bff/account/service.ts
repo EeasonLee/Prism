@@ -7,9 +7,15 @@ import {
   MagentoGraphQLError,
 } from '@/lib/services/magento-graphql.client';
 import { magentoRestFetch } from '../magento-rest-client';
+import {
+  getCountriesList,
+  getCountryRegions,
+  updateCountriesData,
+} from './countries-data';
 import type {
   Address,
   AddressInput,
+  ChangePasswordInput,
   Order,
   OrderAddress,
   OrderDetail,
@@ -196,16 +202,18 @@ interface MagentoUpdateCustomerRequest {
 export interface AccountService {
   getProfile(): Promise<User>;
   updateProfile(input: UpdateUserInput): Promise<void>;
+  changePassword(input: ChangePasswordInput): Promise<void>;
+  deleteAccount(): Promise<void>;
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<OrderDetail>;
   getAddresses(): Promise<Address[]>;
+  getDefaultAddresses(): Promise<{ billing: Address | null; shipping: Address | null }>;
   createAddress(input: AddressInput): Promise<Address>;
   updateAddress(id: number, input: AddressInput): Promise<Address>;
   deleteAddress(id: number): Promise<void>;
   getCountries(): Promise<Array<{ id: string; full_name_english: string }>>;
-  getRegions(
-    countryCode: string
-  ): Promise<Array<{ id: string; code: string; name: string }>>;
+  getRegions(countryCode: string): Promise<Array<{ id: string; code: string; name: string }>>;
+  revalidateCountries(): Promise<void>;
   logout(): Promise<void>;
 }
 
@@ -331,6 +339,7 @@ function toAddress(
   const regionObj = typeof address.region === 'string' ? null : address.region;
   const regionStr = regionObj?.region ?? address.region ?? '';
   const regionId = regionObj?.region_id ?? undefined;
+  const regionCode = regionObj?.region_code ?? undefined;
 
   const addressId = address.id ?? 0;
   const isDefaultBilling =
@@ -347,6 +356,7 @@ function toAddress(
     street,
     city: address.city ?? '',
     region: regionStr,
+    regionCode,
     regionId,
     postcode: address.postcode ?? '',
     country: address.country_id ?? '',
@@ -830,6 +840,60 @@ export class MagentoAccountService implements AccountService {
     );
   }
 
+  async getDefaultAddresses(): Promise<{
+    billing: Address | null;
+    shipping: Address | null;
+  }> {
+    const query = `
+      query GetCustomerDefaultAddresses {
+        customer {
+          default_billing
+          default_shipping
+          addresses {
+            id
+            firstname
+            lastname
+            street
+            city
+            region {
+              region
+              region_code
+              region_id
+            }
+            postcode
+            country_code
+            telephone
+            default_billing
+            default_shipping
+          }
+        }
+      }
+    `;
+
+    interface GetDefaultAddressesResponse {
+      customer: {
+        default_billing?: string | number | null;
+        default_shipping?: string | number | null;
+        addresses?: MagentoAddress[];
+      };
+    }
+
+    const response = await authenticatedMagentoGraphQL<GetDefaultAddressesResponse>(
+      this.accessToken,
+      query
+    );
+
+    const customer = response.customer;
+    const addresses = (customer.addresses ?? []).map(a =>
+      toAddress(a, customer.default_billing, customer.default_shipping)
+    );
+
+    const defaultBilling = addresses.find(a => a.defaultBilling) ?? null;
+    const defaultShipping = addresses.find(a => a.defaultShipping) ?? null;
+
+    return { billing: defaultBilling, shipping: defaultShipping };
+  }
+
   async createAddress(input: AddressInput): Promise<Address> {
     const mutation = `
       mutation CreateCustomerAddress($input: CustomerAddressInput!) {
@@ -1008,30 +1072,58 @@ export class MagentoAccountService implements AccountService {
   async getCountries(): Promise<
     Array<{ id: string; full_name_english: string }>
   > {
+    return getCountriesList();
+  }
+
+  async getRegions(
+    countryCode: string
+  ): Promise<Array<{ id: string; code: string; name: string }>> {
+    return getCountryRegions(countryCode);
+  }
+
+  async revalidateCountries(): Promise<void> {
     interface CountryItem {
       id: string;
       full_name_english: string;
       available_regions?: Array<{ id: string; code: string; name: string }>;
     }
     const data = await this.request<CountryItem[]>('/directory/countries');
-    return data.map(c => ({
-      id: c.id,
-      full_name_english: c.full_name_english,
-    }));
+    const mapped: Record<string, { id: string; name: string; regions: Array<{ id: string; code: string; name: string }> }> = {};
+    for (const c of data) {
+      mapped[c.id] = {
+        id: c.id,
+        name: c.full_name_english,
+        regions: c.available_regions ?? [],
+      };
+    }
+    updateCountriesData(mapped);
   }
 
-  async getRegions(
-    countryCode: string
-  ): Promise<Array<{ id: string; code: string; name: string }>> {
-    interface CountryDetail {
-      available_regions?: Array<{ id: string; code: string; name: string }>;
+  async changePassword(input: ChangePasswordInput): Promise<void> {
+    await this.request<boolean>('/customers/me/password', {
+      method: 'PUT',
+      body: JSON.stringify({
+        currentPassword: input.currentPassword,
+        newPassword: input.newPassword,
+      }),
+    });
+  }
+
+  async deleteAccount(): Promise<void> {
+    const mutation = `
+      mutation {
+        deleteCustomer
+      }
+    `;
+
+    try {
+      await authenticatedMagentoGraphQL<{ deleteCustomer: boolean }>(
+        this.accessToken,
+        mutation
+      );
+    } catch (error) {
+      throw toAccountServiceError(error);
     }
-    const data = await this.request<CountryDetail>(
-      `/directory/countries/${countryCode}`
-    );
-    const regions = data.available_regions ?? [];
-    MagentoAccountService.regionCache.set(countryCode, regions);
-    return regions;
   }
 
   async logout(): Promise<void> {

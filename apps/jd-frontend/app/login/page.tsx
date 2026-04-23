@@ -1,8 +1,9 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { useAuth } from '@/lib/auth/context';
 
 type Tab = 'signin' | 'register';
@@ -50,6 +51,8 @@ function LoginPageContent() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -76,7 +79,8 @@ function LoginPageContent() {
             email,
             password,
             firstName || undefined,
-            lastName || undefined
+            lastName || undefined,
+            turnstileToken ?? undefined
           );
         }
         router.replace(nextPath);
@@ -94,6 +98,7 @@ function LoginPageContent() {
       register,
       firstName,
       lastName,
+      turnstileToken,
       router,
       nextPath,
     ]
@@ -170,7 +175,15 @@ function LoginPageContent() {
           </label>
 
           <label className="block text-sm">
-            <span className="mb-1 block text-ink">Password</span>
+            <span className="mb-1 flex items-center justify-between">
+              <span className="text-ink">Password</span>
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-brand hover:underline"
+              >
+                Forgot Password?
+              </Link>
+            </span>
             <input
               required
               type="password"
@@ -185,6 +198,17 @@ function LoginPageContent() {
             />
           </label>
 
+          {tab === 'register' && process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
+            <div ref={turnstileRef} className="flex justify-center">
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
+                onSuccess={setTurnstileToken}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+              />
+            </div>
+          )}
+
           {error && (
             <p role="alert" className="text-sm text-red-500">
               {error}
@@ -193,7 +217,7 @@ function LoginPageContent() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (tab === 'register' && process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY ? !turnstileToken : false)}
             className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
           >
             {submitting

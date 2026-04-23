@@ -55,10 +55,11 @@ export interface RegisterParams {
   lastName?: string;
   guestSsoUserId?: string;
   storeId?: number;
+  turnstileToken?: string;
 }
 
 export function register(params: RegisterParams): Promise<AuthResponse> {
-  const { email, password, firstName, lastName, guestSsoUserId, storeId } =
+  const { email, password, firstName, lastName, guestSsoUserId, storeId, turnstileToken } =
     params;
   return authFetch<AuthResponse>('/api/v1/auth/register', {
     method: 'POST',
@@ -69,6 +70,7 @@ export function register(params: RegisterParams): Promise<AuthResponse> {
       ...(lastName ? { last_name: lastName } : {}),
       ...(guestSsoUserId ? { guestSsoUserId } : {}),
       ...(storeId != null ? { storeId } : {}),
+      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
     }),
   });
 }
