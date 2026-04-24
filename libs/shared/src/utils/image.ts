@@ -192,8 +192,12 @@ function normalizeProductImageSize(
 
 function normalizeProductImageBaseUrl(baseUrl: string): string {
   const trimmed = baseUrl.replace(/\/+$/, '');
-  const withoutPagesSegment = trimmed.replace(/\/media\/pages(?:\/.*)?$/i, '');
-  const normalized = withoutPagesSegment || trimmed;
+  const withoutMediaPagesSegment = trimmed.replace(
+    /\/media\/pages(?:\/.*)?$/i,
+    ''
+  );
+  const withoutMediaSuffix = withoutMediaPagesSegment.replace(/\/media$/i, '');
+  const normalized = withoutMediaSuffix || withoutMediaPagesSegment || trimmed;
 
   // 统一将 Joydeem 商品图指向 CloudFront，避免回落到源站域名。
   if (/^https?:\/\/(?:www\.)?joydeem\.com(?:\/|$)/i.test(normalized)) {

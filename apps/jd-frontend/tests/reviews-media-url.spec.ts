@@ -21,25 +21,41 @@ vi.mock('../lib/env', () => ({
 }));
 
 describe('review media normalization', async () => {
-  const { normalizeReviewMediaForTest } = await import(
+  const { mergeReviewMediaForTest, normalizeReviewMediaForTest } = await import(
     '../lib/api/strapi/reviews'
   );
 
   beforeEach(() => {
     envState.STRAPI_URL = 'http://localhost:1337';
+    envState.NEXT_PUBLIC_IMAGE_BASE_URL =
+      'https://d2s2mafqv46idp.cloudfront.net/joydeem/media';
   });
 
-  it('expands relative review media URLs to absolute Strapi URLs', () => {
+  it('converts relative review media URLs to cloudfront review paths', () => {
     expect(
       normalizeReviewMediaForTest({
         id: 1,
         url: '/uploads/review-image.jpg',
         posterUrl: '/uploads/review-poster.jpg',
+        width: 360,
         mime: 'image/jpeg',
       })
     ).toMatchObject({
-      url: 'http://localhost:1337/uploads/review-image.jpg',
-      posterUrl: 'http://localhost:1337/uploads/review-poster.jpg',
+      url: 'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/360/amasty/review/uploads/review-image.jpg',
+      posterUrl:
+        'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/360/amasty/review/uploads/review-poster.jpg',
     });
+  });
+
+  it('merges legacy images field into media list', () => {
+    const merged = mergeReviewMediaForTest(
+      [],
+      '/_/3/_31.png,/_/3/_32.png, /_/3/_31.png'
+    );
+
+    expect(merged.map(item => item.url)).toEqual([
+      'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/800/amasty/review/_/3/_31.png',
+      'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/800/amasty/review/_/3/_32.png',
+    ]);
   });
 });

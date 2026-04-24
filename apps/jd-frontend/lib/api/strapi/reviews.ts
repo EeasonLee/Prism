@@ -5,6 +5,7 @@ import {
 } from '../cache-policy';
 import { getStrapiBaseUrl } from '../config';
 import { apiClient } from '../client';
+import { env } from '../../env';
 
 interface StrapiReviewMediaRaw {
   id: number;
@@ -26,6 +27,7 @@ interface StrapiReviewRaw {
   title: string;
   content: string;
   media?: StrapiReviewMediaRaw[];
+  images?: unknown;
   review_tags?: StrapiReviewTagRaw[];
   dimension_ratings?: StrapiReviewDimensionRatingRaw[];
   verified?: boolean | null;
@@ -244,17 +246,109 @@ function toAbsoluteStrapiUrl(url: string | null | undefined) {
   return url;
 }
 
+function normalizeRelativePath(path: string): string {
+  const trimmed = path.trim().replace(/^['"]|['"]$/g, '');
+  if (!trimmed) return '';
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+function getReviewImageBaseUrl(): string | null {
+  const baseUrl = env.NEXT_PUBLIC_IMAGE_BASE_URL?.trim();
+  if (!baseUrl) return null;
+  return baseUrl.replace(/\/+$/, '');
+}
+
+function toReviewImageUrl(
+  path: string | null | undefined,
+  width?: number | null
+): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  const normalizedPath = normalizeRelativePath(path);
+  if (!normalizedPath) return '';
+
+  const baseUrl = getReviewImageBaseUrl();
+  if (!baseUrl) {
+    return toAbsoluteStrapiUrl(normalizedPath);
+  }
+
+  const resolvedSize =
+    typeof width === 'number' && Number.isFinite(width) && width > 0
+      ? Math.round(width)
+      : 800;
+
+  return `${baseUrl}/${resolvedSize}/amasty/review${normalizedPath}`;
+}
+
+function parseLegacyImagesField(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .flatMap(item => item.split(','))
+      .map(item => normalizeRelativePath(item))
+      .filter(Boolean);
+  }
+
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  const cleaned = value.trim().replace(/^\[/, '').replace(/\]$/, '');
+  if (!cleaned) return [];
+
+  return cleaned
+    .split(',')
+    .map(item => normalizeRelativePath(item))
+    .filter(Boolean);
+}
+
 function normalizeReviewMedia(media: StrapiReviewMediaRaw): ProductReviewMedia {
   return {
     id: media.id,
     kind: media.kind === 'video' ? 'video' : 'image',
-    url: toAbsoluteStrapiUrl(media.url),
+    url: toReviewImageUrl(media.url, media.width),
     width: media.width ?? null,
     height: media.height ?? null,
     mime: media.mime ?? null,
     alt: media.alt ?? null,
-    posterUrl: media.posterUrl ? toAbsoluteStrapiUrl(media.posterUrl) : null,
+    posterUrl: media.posterUrl
+      ? toReviewImageUrl(media.posterUrl, media.width)
+      : null,
   };
+}
+
+function mergeReviewMedia(
+  mediaList: StrapiReviewMediaRaw[] | undefined,
+  imagesField: unknown
+): ProductReviewMedia[] {
+  const normalizedMedia = (mediaList ?? []).map(normalizeReviewMedia);
+  const legacyImages = parseLegacyImagesField(imagesField);
+  const seenUrls = new Set(
+    normalizedMedia.map(item => item.url).filter(Boolean)
+  );
+
+  const mappedLegacyMedia = legacyImages
+    .map<ProductReviewMedia | null>((path, index) => {
+      const url = toReviewImageUrl(path, undefined);
+      if (!url || seenUrls.has(url)) return null;
+      seenUrls.add(url);
+      return {
+        id: 1_000_000_000 + index,
+        kind: 'image',
+        url,
+        width: null,
+        height: null,
+        mime: null,
+        alt: null,
+        posterUrl: null,
+      };
+    })
+    .filter((item): item is ProductReviewMedia => item !== null);
+
+  return [...normalizedMedia, ...mappedLegacyMedia];
 }
 
 function normalizeReviewTag(tag: StrapiReviewTagRaw): ProductReviewTag {
@@ -288,6 +382,7 @@ function normalizeDimensionRatings(
 }
 
 export const normalizeReviewMediaForTest = normalizeReviewMedia;
+export const mergeReviewMediaForTest = mergeReviewMedia;
 
 function normalizeReview(review: StrapiReviewRaw): ProductReview {
   return {
@@ -298,7 +393,7 @@ function normalizeReview(review: StrapiReviewRaw): ProductReview {
     rating: Number(review.rating ?? 0),
     title: review.title,
     content: review.content,
-    media: (review.media ?? []).map(normalizeReviewMedia),
+    media: mergeReviewMedia(review.media, review.images),
     reviewTags: (review.review_tags ?? []).map(normalizeReviewTag),
     dimensionRatings: normalizeDimensionRatings(review.dimension_ratings),
     verified: review.verified ?? false,
