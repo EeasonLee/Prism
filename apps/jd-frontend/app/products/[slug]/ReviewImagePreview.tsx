@@ -1,6 +1,6 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
-import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProductReviewMedia } from '../../../lib/api/strapi/reviews';
@@ -29,12 +29,12 @@ function ReviewMediaThumbnail({
 }) {
   if (item.kind === 'image') {
     return (
-      <Image
+      <img
         src={item.url}
         alt={getMediaAlt(item, altFallback)}
-        width={item.width ?? 160}
-        height={item.height ?? 160}
         className={className}
+        loading="lazy"
+        decoding="async"
       />
     );
   }
@@ -42,12 +42,12 @@ function ReviewMediaThumbnail({
   return (
     <div className="relative h-full w-full bg-black">
       {item.posterUrl ? (
-        <Image
+        <img
           src={item.posterUrl}
           alt={getMediaAlt(item, altFallback)}
-          fill
-          sizes="160px"
           className={className}
+          loading="lazy"
+          decoding="async"
         />
       ) : (
         <video
@@ -202,12 +202,12 @@ export function ReviewImagePreview({
 
             <div className="relative aspect-[4/3] w-full bg-surface-muted sm:aspect-[16/10]">
               {activeMedia.kind === 'image' ? (
-                <Image
+                <img
                   src={activeMedia.url}
                   alt={getMediaAlt(activeMedia, altFallback)}
-                  fill
-                  sizes="(max-width: 1280px) 100vw, 1120px"
-                  className="object-contain"
+                  className="h-full w-full object-contain"
+                  loading="eager"
+                  decoding="async"
                 />
               ) : (
                 <video

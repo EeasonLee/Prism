@@ -151,6 +151,8 @@ type IndexSearchOutcome =
   | { kind: 'index_not_found' }
   | { kind: 'failed'; error: Error };
 
+const FACET_FALLBACK_KEYS = ['brand', 'stock_status'] as const;
+
 async function searchIndexWithFacetFallback(
   host: string,
   indexUid: string,
@@ -161,6 +163,16 @@ async function searchIndexWithFacetFallback(
   const attempts: Array<Record<string, unknown>> = [];
   if (facetKeys && facetKeys.length > 0) {
     attempts.push({ ...baseBody, facets: facetKeys });
+
+    const fallbackFacetKeys = FACET_FALLBACK_KEYS.filter(key =>
+      facetKeys.includes(key)
+    );
+    if (
+      fallbackFacetKeys.length > 0 &&
+      fallbackFacetKeys.length < facetKeys.length
+    ) {
+      attempts.push({ ...baseBody, facets: fallbackFacetKeys });
+    }
   }
   attempts.push({ ...baseBody });
 
