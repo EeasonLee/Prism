@@ -45,6 +45,7 @@ interface MeilisearchHit {
   type_id?: string | null;
   promotion_label?: string | null;
   review_count?: number;
+  rating_summary?: number;
   rating_percentage?: number;
 }
 
@@ -153,7 +154,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
     reviewCount: hit.review_count ?? 0,
-    ratingPercentage: hit.rating_percentage ?? 0,
+    ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
   };
 }
 

@@ -136,8 +136,8 @@ export function HeroCarousel({
         </CarouselContent>
         {showNavigation && slides.length > 1 && (
           <>
-            <CarouselPrevious className="left-2 flex min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:left-8 md:h-14 md:w-14" />
-            <CarouselNext className="right-2 flex min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:right-8 md:h-14 md:w-14" />
+            <CarouselPrevious className="left-2 hidden min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:left-8 md:flex md:h-14 md:w-14" />
+            <CarouselNext className="right-2 hidden min-h-[44px] min-w-[44px] items-center justify-center border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 md:right-8 md:flex md:h-14 md:w-14" />
           </>
         )}
       </Carousel>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CategoryGridProps } from '@/lib/api/cms-page.types';
 import type { ProductCardItem } from '@/lib/api/bff/product/types';
+import { formatPrice } from '@/lib/format-price';
 import { CategoryProductCard } from './CategoryProductCard';
 
 export function CategoryGrid({ title, categories }: CategoryGridProps) {
@@ -150,10 +151,6 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
                   priceValue != null &&
                   originalPrice != null &&
                   originalPrice > priceValue;
-                const isOutOfStock = product.inStock === false;
-                const productType = product.type ?? 'simple';
-                const isDirectAddSupported =
-                  productType === 'simple' || productType === 'virtual';
 
                 return (
                   <CategoryProductCard
@@ -167,14 +164,15 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
                     image={product.image}
                     price={priceValue}
                     currency={product.price.currency}
-                    sku={product.sku}
                     badge={hasDiscount ? 'Sale' : product.promotionLabel}
                     badgeStyle={hasDiscount ? 'brand' : 'dark'}
-                    tagline={product.promotionLabel}
-                    disabled={isOutOfStock || !isDirectAddSupported}
-                    disabledLabel={
-                      isOutOfStock ? 'Out of Stock' : 'Select Options'
+                    tagline={
+                      hasDiscount && originalPrice != null
+                        ? formatPrice(originalPrice, product.price.currency)
+                        : null
                     }
+                    ratingSummary={product.ratingPercentage}
+                    reviewCount={product.reviewCount}
                   />
                 );
               })}

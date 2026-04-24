@@ -78,6 +78,9 @@ interface MeilisearchHit {
   is_in_stock?: boolean;
   type_id?: string | null;
   promotion_label?: string | null;
+  review_count?: number;
+  rating_summary?: number;
+  rating_percentage?: number;
   content_updated_at?: number;
 }
 
@@ -165,8 +168,8 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
-    reviewCount: 0,
-    ratingPercentage: 0,
+    reviewCount: hit.review_count ?? 0,
+    ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
   };
 }
 

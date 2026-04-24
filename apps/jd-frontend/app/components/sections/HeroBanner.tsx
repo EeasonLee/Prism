@@ -13,6 +13,8 @@ export function HeroBanner({
 }: HeroBannerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const SWIPE_THRESHOLD = 40;
 
   const nextSlide = useCallback(() => {
     setCurrentSlide(prev => (prev + 1) % slides.length);
@@ -38,6 +40,39 @@ export function HeroBanner({
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
 
+  const pauseAutoPlayTemporarily = () => {
+    setIsAutoPlaying(false);
+    setTimeout(() => setIsAutoPlaying(true), 10000);
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLElement>) => {
+    setTouchStartX(event.touches[0]?.clientX ?? null);
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    if (touchStartX == null) return;
+    const endX = event.changedTouches[0]?.clientX;
+    if (typeof endX !== 'number') {
+      setTouchStartX(null);
+      return;
+    }
+
+    const deltaX = endX - touchStartX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD) {
+      setTouchStartX(null);
+      return;
+    }
+
+    if (deltaX > 0) {
+      prevSlide();
+    } else {
+      nextSlide();
+    }
+
+    pauseAutoPlayTemporarily();
+    setTouchStartX(null);
+  };
+
   useEffect(() => {
     if (!isAutoPlaying) return;
     const interval = setInterval(nextSlide, autoPlayInterval);
@@ -45,7 +80,11 @@ export function HeroBanner({
   }, [isAutoPlaying, nextSlide, autoPlayInterval]);
 
   return (
-    <section className="relative h-[70vh] w-full overflow-hidden lg:h-[80vh]">
+    <section
+      className="relative h-[70vh] w-full overflow-hidden lg:h-[80vh]"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -114,7 +153,7 @@ export function HeroBanner({
           <button
             type="button"
             onClick={() => handleArrowClick('prev')}
-            className="absolute left-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30 lg:left-8"
+            className="absolute left-4 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30 md:flex lg:left-8"
             aria-label="Previous slide"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -122,7 +161,7 @@ export function HeroBanner({
           <button
             type="button"
             onClick={() => handleArrowClick('next')}
-            className="absolute right-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30 lg:right-8"
+            className="absolute right-4 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/30 md:flex lg:right-8"
             aria-label="Next slide"
           >
             <ChevronRight className="h-6 w-6" />
@@ -131,7 +170,7 @@ export function HeroBanner({
       )}
 
       {showDots && (
-        <div className="absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 gap-3">
+        <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 gap-3">
           {slides.map((_, index) => (
             <button
               key={index}

@@ -164,7 +164,7 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
     <>
       <CartDrawer />
       <header className="sticky top-0 z-30 bg-surface-muted">
-        <div className="relative mx-auto flex h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px]">
+        <div className="relative mx-auto hidden h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px] md:flex">
           <Link href="/" className="hidden shrink-0 items-center md:flex">
             <Image
               src="/images/logo.png"

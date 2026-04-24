@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AddToCartButton } from '@/app/components/AddToCartButton';
+import { Star } from 'lucide-react';
 import { formatPrice } from '@/lib/format-price';
 import { processImageUrl } from '@prism/shared';
 
@@ -21,14 +21,13 @@ interface CategoryProductCardProps {
   image: string | null;
   price: number | null;
   currency?: string | null;
-  sku: string;
   badge?: string | null;
   badgeStyle?: BadgeStyle | null;
   tagline?: string | null;
   colors?: string[];
   extraColors?: number;
-  disabled?: boolean;
-  disabledLabel?: string;
+  ratingSummary?: number | null;
+  reviewCount?: number | null;
   openInNewTab?: boolean;
 }
 
@@ -38,14 +37,13 @@ export function CategoryProductCard({
   image,
   price,
   currency,
-  sku,
   badge,
   badgeStyle,
   tagline,
   colors = [],
   extraColors = 0,
-  disabled = false,
-  disabledLabel = 'Unavailable',
+  ratingSummary = 0,
+  reviewCount = 0,
   openInNewTab = false,
 }: CategoryProductCardProps) {
   const rawImage = image?.trim() ?? null;
@@ -60,21 +58,27 @@ export function CategoryProductCard({
     setImageLoadFailed(false);
   }, [resolvedImage]);
 
+  const normalizedRating = Math.max(0, Number(ratingSummary) || 0);
+  const ratingStars = Math.min(5, normalizedRating / 5);
+  const filledStars = Math.floor(ratingStars);
+  const hasRating = ratingStars > 0;
+  const safeReviewCount = Math.max(0, Number(reviewCount) || 0);
+
   return (
-    <article className="group overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card">
+    <article className="group overflow-hidden rounded-xl bg-white transition-all duration-300 hover:-translate-y-0.5">
       <Link
         href={href as never}
         target={openInNewTab ? '_blank' : undefined}
         rel={openInNewTab ? 'noopener noreferrer' : undefined}
         className="block outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
-        <div className="relative aspect-square overflow-hidden bg-surface">
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-[#f4f4f4]">
           {resolvedImage && !imageLoadFailed ? (
             <Image
               src={resolvedImage}
               alt={name}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-contain p-3 transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               loading="lazy"
               onError={() => setImageLoadFailed(true)}
@@ -95,23 +99,50 @@ export function CategoryProductCard({
           )}
         </div>
 
-        <div className="p-3 pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug text-ink transition-colors group-hover:text-brand">
-              {name}
-            </h3>
-            <span className="shrink-0 text-right text-sm font-bold tabular-nums text-ink">
-              {price != null
-                ? formatPrice(price, currency)
-                : 'Price unavailable'}
-            </span>
-          </div>
+        <div className="px-1 pb-1 pt-3">
+          <h3 className="line-clamp-2 min-h-12 text-[20px] font-medium leading-7 text-ink transition-colors group-hover:text-brand">
+            {name}
+          </h3>
 
-          {tagline ? (
-            <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-ink-muted">
-              {tagline}
-            </p>
-          ) : null}
+          {hasRating && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star
+                    key={index}
+                    className={`h-3.5 w-3.5 ${
+                      index < filledStars
+                        ? 'fill-[#f2994a] text-[#f2994a]'
+                        : 'text-[#d7d7d7]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-ink">
+                {ratingStars.toFixed(1)}
+              </span>
+              <span className="text-xs text-ink-muted">
+                ({safeReviewCount})
+              </span>
+            </div>
+          )}
+
+          <div className="mt-2 flex items-center gap-2 text-[26px] font-semibold leading-none text-ink">
+            {price != null ? (
+              <>
+                {tagline && (
+                  <span className="text-base font-normal text-ink-muted line-through">
+                    {tagline}
+                  </span>
+                )}
+                <span>{formatPrice(price, currency)}</span>
+              </>
+            ) : (
+              <span className="text-base font-medium text-ink-muted">
+                Price unavailable
+              </span>
+            )}
+          </div>
 
           {(colors.length > 0 || extraColors > 0) && (
             <div className="mt-2 flex items-center gap-1.5">
@@ -130,16 +161,6 @@ export function CategoryProductCard({
           )}
         </div>
       </Link>
-
-      <div className="px-3 pb-3">
-        <AddToCartButton
-          sku={sku}
-          qty={1}
-          disabled={disabled}
-          disabledLabel={disabledLabel}
-          className="btn-primary flex h-9 w-full min-h-touch items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
     </article>
   );
 }
