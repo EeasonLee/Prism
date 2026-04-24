@@ -52,7 +52,7 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
         } else {
           params.set('strapiCategorySlug', activeCategoryId);
         }
-        params.set('pageSize', '8');
+        params.set('pageSize', '4');
         const res = await fetch(`/api/deal-products?${params.toString()}`, {
           signal: controller.signal,
           cache: 'no-store',
@@ -137,7 +137,7 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
         <div className="mt-6">
           {loading && (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
                   className="aspect-square animate-pulse rounded-xl bg-muted"

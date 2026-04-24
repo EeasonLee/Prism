@@ -13,6 +13,7 @@ interface MeilisearchHit {
   sku?: string | null;
   name: string;
   display_name?: string | null;
+  short_description?: string | null;
   url_key?: string | null;
   thumbnail?: string | null;
   thumbnail_url?: string | null;
@@ -107,6 +108,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     sku: hit.id ?? hit.sku ?? '',
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
+    shortDescription: hit.short_description ?? null,
     urlKey: hit.url_key ?? null,
     image,
     price: { value: displayPrice, currency: hit.currency ?? null },

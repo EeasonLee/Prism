@@ -65,20 +65,20 @@ export function CategoryProductCard({
   const safeReviewCount = Math.max(0, Number(reviewCount) || 0);
 
   return (
-    <article className="group overflow-hidden rounded-xl bg-white transition-all duration-300 hover:-translate-y-0.5">
+    <article className="overflow-hidden rounded-xl bg-white">
       <Link
         href={href as never}
         target={openInNewTab ? '_blank' : undefined}
         rel={openInNewTab ? 'noopener noreferrer' : undefined}
         className="block outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-[#f4f4f4]">
+        <div className="group/image relative aspect-square overflow-hidden rounded-xl bg-white">
           {resolvedImage && !imageLoadFailed ? (
             <Image
               src={resolvedImage}
               alt={name}
               fill
-              className="object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+              className="object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               loading="lazy"
               onError={() => setImageLoadFailed(true)}
@@ -100,7 +100,7 @@ export function CategoryProductCard({
         </div>
 
         <div className="px-1 pb-1 pt-3">
-          <h3 className="line-clamp-2 min-h-12 text-[20px] font-medium leading-7 text-ink transition-colors group-hover:text-brand">
+          <h3 className="line-clamp-2 min-h-12 text-base font-medium leading-6 text-ink">
             {name}
           </h3>
 
@@ -127,7 +127,7 @@ export function CategoryProductCard({
             </div>
           )}
 
-          <div className="mt-2 flex items-center gap-2 text-[26px] font-semibold leading-none text-ink">
+          <div className="mt-2 flex items-center gap-2 text-xl font-medium leading-none text-ink">
             {price != null ? (
               <>
                 {tagline && (

@@ -2,6 +2,7 @@ export interface ProductCardItem {
   sku: string;
   name: string;
   displayName: string;
+  shortDescription?: string | null;
   urlKey: string | null;
   image: string | null;
   price: {

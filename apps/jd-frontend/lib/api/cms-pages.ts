@@ -180,6 +180,21 @@ function estimateArticleReadTime(text: string | null | undefined): string {
   return `${minutes} min read`;
 }
 
+function htmlToPlainText(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const plain = value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain.length > 0 ? plain : undefined;
+}
+
 function formatArticleCardDate(value: string | null | undefined): string {
   if (!value) return '';
   const date = new Date(value);
@@ -445,7 +460,10 @@ async function enrichImageTextBlockConfig(
             }
           : config.main?.image,
         title: config.main?.title ?? product.displayName ?? product.name,
-        description: config.main?.description,
+        description:
+          config.main?.description ??
+          htmlToPlainText(product.shortDescription) ??
+          '',
         cta: {
           text: config.main?.cta?.text ?? 'View Product',
           link: config.main?.cta?.link ?? productLink,

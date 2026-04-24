@@ -70,41 +70,23 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
 
   const mainImageUrl = config?.main?.image?.url;
   const mainTitle = config?.main?.title;
-  const mainDescription = config?.main?.description;
-  const mainCtaText = config?.main?.cta?.text;
-  const mainCtaLink = config?.main?.cta?.link;
+  const mainDescription = config?.main?.description ?? '';
+  const mainCtaText = config?.main?.cta?.text ?? 'View Product';
+  const mainCtaLink = config?.main?.cta?.link ?? '#';
   const mainPriceCurrent = config?.main?.price?.current;
   const mainPriceCurrency = config?.main?.price?.currency;
-  const mainAddToCartText = config?.main?.addToCartText;
+  const mainAddToCartText = config?.main?.addToCartText ?? 'Add to cart';
 
   const firstSide = config?.sideCards?.[0];
   const secondSide = config?.sideCards?.[1];
-  const firstSideImageUrl = firstSide?.image?.url;
-  const firstSideTitle = firstSide?.title;
-  const firstSideCtaText = firstSide?.cta?.text;
-  const firstSideCtaLink = firstSide?.cta?.link;
-  const secondSideImageUrl = secondSide?.image?.url;
-  const secondSideTitle = secondSide?.title;
-  const secondSideCtaText = secondSide?.cta?.text;
-  const secondSideCtaLink = secondSide?.cta?.link;
 
   const hasRequiredData =
     !!mainImageUrl &&
     !!mainTitle &&
-    !!mainDescription &&
     !!mainCtaText &&
     !!mainCtaLink &&
     typeof mainPriceCurrent === 'number' &&
-    !!mainPriceCurrency &&
-    !!mainAddToCartText &&
-    !!firstSideImageUrl &&
-    !!firstSideTitle &&
-    !!firstSideCtaText &&
-    !!firstSideCtaLink &&
-    !!secondSideImageUrl &&
-    !!secondSideTitle &&
-    !!secondSideCtaText &&
-    !!secondSideCtaLink;
+    !!mainPriceCurrency;
 
   if (!hasRequiredData) {
     return null;
@@ -131,32 +113,29 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
     addToCartText: mainAddToCartText,
   };
 
-  const sideCards = [
-    {
-      image: {
-        url: firstSideImageUrl,
-        alt: firstSide?.image?.alt ?? firstSideTitle,
-      },
-      eyebrow: firstSide?.eyebrow,
-      title: firstSideTitle,
-      cta: {
-        text: firstSideCtaText,
-        link: firstSideCtaLink,
-      },
-    },
-    {
-      image: {
-        url: secondSideImageUrl,
-        alt: secondSide?.image?.alt ?? secondSideTitle,
-      },
-      eyebrow: secondSide?.eyebrow,
-      title: secondSideTitle,
-      cta: {
-        text: secondSideCtaText,
-        link: secondSideCtaLink,
-      },
-    },
-  ];
+  const sideCards = [firstSide, secondSide]
+    .map(card => {
+      const imageUrl = card?.image?.url;
+      const title = card?.title;
+      const ctaText = card?.cta?.text;
+      const ctaLink = card?.cta?.link;
+
+      if (!imageUrl || !title || !ctaText || !ctaLink) return null;
+
+      return {
+        image: {
+          url: imageUrl,
+          alt: card?.image?.alt ?? title,
+        },
+        eyebrow: card?.eyebrow,
+        title,
+        cta: {
+          text: ctaText,
+          link: ctaLink,
+        },
+      };
+    })
+    .filter((card): card is NonNullable<typeof card> => card !== null);
 
   const originalPrice =
     typeof mainCard.price.original === 'number'
@@ -171,12 +150,16 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
       className="relative w-full overflow-hidden bg-white py-16 lg:py-24"
     >
       <div className="w-full px-6 lg:px-[8vw]">
-        <div className="flex flex-col items-stretch gap-5 md:gap-6 lg:flex-row">
+        <div
+          className={`flex flex-col items-stretch gap-5 md:gap-6 ${
+            sideCards.length > 0 ? 'lg:flex-row' : ''
+          }`}
+        >
           <div
             ref={leftRef}
-            className={`group relative min-h-[560px] overflow-hidden rounded-3xl lg:aspect-auto lg:min-h-0 lg:flex-[2] ${
-              imagePosition === 'right' ? 'lg:order-2' : 'lg:order-1'
-            }`}
+            className={`group relative min-h-[560px] overflow-hidden rounded-3xl lg:aspect-auto lg:min-h-0 ${
+              sideCards.length > 0 ? 'lg:flex-[2]' : 'lg:w-full'
+            } ${imagePosition === 'right' ? 'lg:order-2' : 'lg:order-1'}`}
           >
             <Image
               src={mainCard.image.url}
@@ -244,76 +227,62 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
             </div>
           </div>
 
-          <div
-            ref={rightRef}
-            className={`flex flex-1 flex-col gap-5 md:gap-6 ${
-              imagePosition === 'right' ? 'lg:order-1' : 'lg:order-2'
-            }`}
-          >
-            <Link
-              href={sideCards[0].cta.link}
-              className="group relative flex min-h-[260px] flex-1 overflow-hidden rounded-3xl lg:min-h-[280px]"
+          {sideCards.length > 0 ? (
+            <div
+              ref={rightRef}
+              className={`flex flex-1 flex-col gap-5 md:gap-6 ${
+                imagePosition === 'right' ? 'lg:order-1' : 'lg:order-2'
+              }`}
             >
-              <Image
-                src={sideCards[0].image.url}
-                alt={sideCards[0].image.alt ?? sideCards[0].title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 1024px) 100vw, 33vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
+              {sideCards.map((card, index) => {
+                const gradientClass =
+                  index === 0
+                    ? 'bg-gradient-to-r from-black/65 via-black/30 to-transparent'
+                    : 'bg-gradient-to-t from-black/70 via-black/25 to-black/10';
+                const arrowClass =
+                  index === 0
+                    ? 'group-hover:bg-brand group-hover:border-brand'
+                    : 'group-hover:bg-white group-hover:text-ink';
 
-              <div className="relative flex h-full flex-col justify-between p-8 md:p-9">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 md:text-xs">
-                  {sideCards[0].eyebrow}
-                </span>
-                <div className="w-full">
-                  <h4 className="mb-5 text-xl font-light leading-snug text-white md:text-2xl">
-                    {sideCards[0].title}
-                  </h4>
-                  <span className="text-sm font-medium text-white/90">
-                    {sideCards[0].cta.text}
-                  </span>
-                </div>
-              </div>
+                return (
+                  <Link
+                    key={`${card.title}-${index}`}
+                    href={card.cta.link}
+                    className="group relative flex min-h-[260px] flex-1 overflow-hidden rounded-3xl lg:min-h-[280px]"
+                  >
+                    <Image
+                      src={card.image.url}
+                      alt={card.image.alt ?? card.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                    />
+                    <div className={`absolute inset-0 ${gradientClass}`} />
 
-              <div className="absolute bottom-8 right-8 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 text-white transition-all group-hover:bg-brand group-hover:border-brand md:bottom-9 md:right-9">
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </Link>
+                    <div className="relative flex h-full flex-col justify-between p-8 md:p-9">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 md:text-xs">
+                        {card.eyebrow}
+                      </span>
+                      <div className="w-full">
+                        <h4 className="mb-5 text-xl font-light leading-snug text-white md:text-2xl">
+                          {card.title}
+                        </h4>
+                        <span className="text-sm font-medium text-white/90">
+                          {card.cta.text}
+                        </span>
+                      </div>
+                    </div>
 
-            <Link
-              href={sideCards[1].cta.link}
-              className="group relative flex min-h-[260px] flex-1 overflow-hidden rounded-3xl lg:min-h-[280px]"
-            >
-              <Image
-                src={sideCards[1].image.url}
-                alt={sideCards[1].image.alt ?? sideCards[1].title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 1024px) 100vw, 33vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
-
-              <div className="relative flex h-full flex-col justify-between p-8 md:p-9">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 md:text-xs">
-                  {sideCards[1].eyebrow}
-                </span>
-                <div className="w-full">
-                  <h4 className="mb-5 text-xl font-light leading-snug text-white md:text-2xl">
-                    {sideCards[1].title}
-                  </h4>
-                  <span className="text-sm font-medium text-white/90">
-                    {sideCards[1].cta.text}
-                  </span>
-                </div>
-              </div>
-
-              <div className="absolute bottom-8 right-8 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 text-white transition-all group-hover:bg-white group-hover:text-ink md:bottom-9 md:right-9">
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </Link>
-          </div>
+                    <div
+                      className={`absolute bottom-8 right-8 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 text-white transition-all md:bottom-9 md:right-9 ${arrowClass}`}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
