@@ -47,7 +47,11 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        params.set('categoryUrlKey', activeCategoryId);
+        if (/^\d+$/.test(activeCategoryId)) {
+          params.set('strapiCategoryId', activeCategoryId);
+        } else {
+          params.set('strapiCategorySlug', activeCategoryId);
+        }
         params.set('pageSize', '8');
         const res = await fetch(`/api/deal-products?${params.toString()}`, {
           signal: controller.signal,

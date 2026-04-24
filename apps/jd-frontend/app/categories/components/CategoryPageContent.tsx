@@ -160,15 +160,14 @@ export function CategoryPageContent({
   const hasCategoryIntro =
     Boolean(categoryIntroText) || Boolean(categoryBackgroundImageUrl);
 
-  const meiliCategoryId =
+  const hasMagentoCategoryId =
     typeof currentCategory.magentoCategoryId === 'number' &&
-    currentCategory.magentoCategoryId > 0
-      ? currentCategory.magentoCategoryId
-      : currentCategory.id;
+    currentCategory.magentoCategoryId > 0;
 
   const searchPromise = searchProducts({
-    categoryId: meiliCategoryId,
-    categorySlug: currentCategory.slug,
+    ...(hasMagentoCategoryId
+      ? { categoryId: currentCategory.magentoCategoryId }
+      : { strapiCategorySlug: currentCategory.slug }),
     page: sp.page ? Math.max(1, Number(sp.page)) : 1,
     pageSize: 24,
     brand: sp.brand,

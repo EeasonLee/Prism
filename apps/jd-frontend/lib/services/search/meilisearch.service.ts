@@ -5,7 +5,7 @@
  * 作为产品详情页 related products 内部 service 的主要数据源。
  */
 
-import { searchProducts } from '../../../app/search/lib/meilisearch';
+import { productQueryFacade } from '@/lib/application/product/product-query-facade';
 import { processProductImageUrl } from '@prism/shared';
 
 export interface RelatedProductItem {
@@ -27,8 +27,9 @@ export async function fetchRelatedBySlug(
   excludeSku: string,
   limit = 8
 ): Promise<RelatedProductItem[]> {
-  const result = await searchProducts({
-    slug,
+  const result = await productQueryFacade.queryProducts({
+    filters: { category: slug },
+    includeFacets: false,
     pageSize: limit + 1, // 多取一条用于排除自身
   });
 
@@ -38,8 +39,8 @@ export async function fetchRelatedBySlug(
     .map(item => ({
       sku: item.sku,
       name: item.name,
-      price: item.price ?? 0,
-      image: processProductImageUrl(item.thumbnail) ?? item.thumbnail ?? '',
-      inStock: item.in_stock ?? true,
+      price: item.price.value ?? 0,
+      image: processProductImageUrl(item.image) ?? item.image ?? '',
+      inStock: item.inStock ?? true,
     }));
 }

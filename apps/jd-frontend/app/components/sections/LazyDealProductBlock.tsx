@@ -47,7 +47,11 @@ export function LazyDealProductBlock({ block }: LazyDealProductBlockProps) {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('categoryUrlKey', block.categoryUrlKey);
+      if (/^\d+$/.test(block.categoryUrlKey)) {
+        params.set('strapiCategoryId', block.categoryUrlKey);
+      } else {
+        params.set('strapiCategorySlug', block.categoryUrlKey);
+      }
       params.set('pageSize', String(getPageSizeByLayout(block.layout)));
       const res = await fetch(`/api/deal-products?${params.toString()}`);
       const json = await res.json();

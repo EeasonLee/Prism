@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import {
-  searchProducts,
-  type ShopSortOption,
-} from '../../../shop/lib/meilisearch';
+import type { ShopSortOption } from '../../../shop/lib/meilisearch';
 import { resolveCategoryBySlug } from '../../../../lib/api/bff/category/list';
+import { productQueryFacade } from '@/lib/application/product/product-query-facade';
 
 export async function GET(
   request: Request,
@@ -34,24 +32,25 @@ export async function GET(
       );
     }
 
-    const meiliCategoryId =
+    const hasMagentoCategoryId =
       typeof category.magentoCategoryId === 'number' &&
-      category.magentoCategoryId > 0
-        ? category.magentoCategoryId
-        : category.id;
+      category.magentoCategoryId > 0;
 
     // 搜索产品（仅走 Meilisearch）
-    const result = await searchProducts({
-      categoryId: meiliCategoryId,
-      categorySlug: slug,
+    const result = await productQueryFacade.queryProducts({
+      ...(hasMagentoCategoryId
+        ? { magentoCategoryId: category.magentoCategoryId }
+        : { strapiCategorySlug: category.slug }),
       page,
       pageSize,
       sort,
-      brand,
-      size,
-      stockStatus,
-      priceMin: priceMin ? Number(priceMin) : undefined,
-      priceMax: priceMax ? Number(priceMax) : undefined,
+      filters: {
+        brand,
+        size,
+        stockStatus,
+        priceMin: priceMin ? Number(priceMin) : undefined,
+        priceMax: priceMax ? Number(priceMax) : undefined,
+      },
     });
 
     return NextResponse.json({ success: true, data: result });

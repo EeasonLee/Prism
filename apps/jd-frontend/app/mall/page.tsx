@@ -31,15 +31,17 @@ async function getMallCategorySections(): Promise<MallCategorySection[]> {
 
   const sectionList = await Promise.all(
     categories.map(async category => {
-      const searchCategoryId =
+      const hasMagentoCategoryId =
         typeof category.magentoCategoryId === 'number' &&
-        category.magentoCategoryId > 0
-          ? category.magentoCategoryId
-          : category.id;
+        category.magentoCategoryId > 0;
 
       try {
         const result = await searchProducts({
-          categoryId: searchCategoryId,
+          ...(hasMagentoCategoryId
+            ? { categoryId: category.magentoCategoryId }
+            : category.slug?.trim()
+            ? { strapiCategorySlug: category.slug.trim() }
+            : { strapiCategoryId: category.id }),
           page: 1,
           pageSize: PRODUCTS_PER_SECTION,
         });

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import {
-  searchProducts,
-  type ShopSortOption,
-} from '../../shop/lib/meilisearch';
+import { productQueryFacade } from '@/lib/application/product/product-query-facade';
+import type { ShopSortOption } from '../../shop/lib/meilisearch';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -22,16 +20,18 @@ export async function GET(request: Request) {
 
   try {
     // 通用搜索：走原有路径（含 Magento REST 降级）
-    const result = await searchProducts({
+    const result = await productQueryFacade.queryProducts({
       q: q?.trim(),
-      category,
-      brand,
-      size,
-      priceMin: priceMin ? Number(priceMin) : undefined,
-      priceMax: priceMax ? Number(priceMax) : undefined,
       sort,
       page,
       pageSize,
+      filters: {
+        category,
+        brand,
+        size,
+        priceMin: priceMin ? Number(priceMin) : undefined,
+        priceMax: priceMax ? Number(priceMax) : undefined,
+      },
     });
 
     return NextResponse.json({ success: true, data: result });

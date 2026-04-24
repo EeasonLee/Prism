@@ -1,23 +1,19 @@
-import { env } from '../../../lib/env';
-import { notifyError } from '../../../lib/notify';
-import type { ProductCardItem } from '../../../lib/api/bff/product/types';
-import { processImageUrl } from '@prism/shared';
+import { productQueryFacade } from '@/lib/application/product/product-query-facade';
+import type { ProductCardItem } from '@/lib/api/bff/product/types';
 
-function getIndexCandidates(): string[] {
-  const explicit = env.MEILISEARCH_INDEX_NAME?.trim();
-  if (explicit) {
-    return [explicit];
+function moveOutOfStockToEnd(items: ProductCardItem[]): ProductCardItem[] {
+  const inStock: ProductCardItem[] = [];
+  const outOfStock: ProductCardItem[] = [];
+
+  for (const item of items) {
+    if (item.inStock) {
+      inStock.push(item);
+    } else {
+      outOfStock.push(item);
+    }
   }
 
-  const prefix = (env.MEILISEARCH_INDEX_PREFIX ?? '').trim();
-  const store = (env.MAGENTO_STORE_CODE ?? '').trim();
-  const primary = `${prefix}_${store}`;
-  const fallback =
-    prefix.endsWith('_product') || !prefix
-      ? primary
-      : `${prefix}_product_${store}`;
-
-  return fallback === primary ? [primary] : [primary, fallback];
+  return [...inStock, ...outOfStock];
 }
 
 export type ShopSortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest';
@@ -30,7 +26,12 @@ export interface ShopSearchParams {
   stockStatus?: string;
   category?: string;
   categorySlug?: string;
+  /** Magento category id (numeric). */
   categoryId?: number;
+  /** Strapi product-category id when CMS stores Strapi PK instead of Magento id. */
+  strapiCategoryId?: number;
+  /** When neither Magento id nor Strapi id applies, pass Strapi category slug for mapping. */
+  strapiCategorySlug?: string;
   priceMin?: number;
   priceMax?: number;
   sort?: ShopSortOption;
@@ -63,116 +64,6 @@ export interface ShopSearchResult {
   availableFilters: ShopAvailableFilter[];
 }
 
-interface MeilisearchHit {
-  id: string;
-  name: string;
-  display_name?: string | null;
-  url_key?: string | null;
-  thumbnail?: string | null;
-  thumbnail_url?: string | null;
-  image_url?: string | null;
-  price: string | number | null;
-  final_price?: string | number | null;
-  currency?: string | null;
-  stock_status?: string | null;
-  is_in_stock?: boolean;
-  type_id?: string | null;
-  promotion_label?: string | null;
-  review_count?: number;
-  rating_summary?: number;
-  rating_percentage?: number;
-  content_updated_at?: number;
-}
-
-interface MeilisearchSearchResponse {
-  hits: MeilisearchHit[];
-  totalHits: number;
-  page: number;
-  totalPages: number;
-  hitsPerPage: number;
-  facetDistribution?: Record<string, Record<string, number>>;
-}
-
-function buildFilter(p: ShopSearchParams): string[] {
-  const f: string[] = [];
-  if (p.categoryId !== undefined) {
-    // 兼容索引映射差异：
-    // - category_ids: 商品直属分类
-    // - category_ancestor_ids: 祖先分类（用于父类聚合）
-    // 仅使用其中一个字段会导致部分分类页查不到商品。
-    f.push(
-      `(category_ids = ${p.categoryId} OR category_ancestor_ids = ${p.categoryId})`
-    );
-  }
-  // NOTE: category_ancestor_slugs / category_slugs are not reliably populated.
-  if (p.brand !== undefined) f.push(`brand = "${p.brand}"`);
-  if (p.size !== undefined) f.push(`size = "${p.size}"`);
-  if (p.stockStatus !== undefined) f.push(`stock_status = "${p.stockStatus}"`);
-  if (p.priceMin !== undefined) f.push(`final_price >= ${p.priceMin}`);
-  if (p.priceMax !== undefined) f.push(`final_price <= ${p.priceMax}`);
-  return f;
-}
-
-function buildSort(sort?: ShopSortOption): string[] {
-  const s: string[] = [];
-  if (sort === 'price_asc') {
-    s.push('final_price:asc');
-  } else if (sort === 'price_desc') {
-    s.push('final_price:desc');
-  } else if (sort === 'newest') {
-    s.push('content_updated_at:desc');
-  }
-  return s;
-}
-
-function moveOutOfStockToEnd(hits: MeilisearchHit[]): MeilisearchHit[] {
-  const inStock: MeilisearchHit[] = [];
-  const outOfStock: MeilisearchHit[] = [];
-
-  for (const hit of hits) {
-    const isOutOfStock =
-      hit.is_in_stock === false || hit.stock_status === 'out_of_stock';
-    if (isOutOfStock) {
-      outOfStock.push(hit);
-    } else {
-      inStock.push(hit);
-    }
-  }
-
-  return [...inStock, ...outOfStock];
-}
-
-function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
-  const rawPrice = hit.price != null ? Number(hit.price) : null;
-  const rawFinal = hit.final_price != null ? Number(hit.final_price) : null;
-  const displayPrice = rawFinal != null && rawFinal > 0 ? rawFinal : rawPrice;
-  const originalPrice =
-    rawFinal != null && rawPrice != null && rawFinal > 0 && rawFinal < rawPrice
-      ? rawPrice
-      : null;
-
-  const rawImage = hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null;
-  const image =
-    rawImage && /^https?:\/\//i.test(rawImage)
-      ? rawImage
-      : processImageUrl(rawImage) ?? rawImage;
-
-  return {
-    sku: hit.id,
-    name: hit.display_name ?? hit.name,
-    displayName: hit.display_name ?? hit.name,
-    urlKey: hit.url_key ?? null,
-    image,
-    price: { value: displayPrice, currency: hit.currency ?? null },
-    originalPrice,
-    inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
-    type: hit.type_id ?? null,
-    promotionLabel: hit.promotion_label ?? null,
-    reviewCount: hit.review_count ?? 0,
-    ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
-  };
-}
-
 const FACET_CONFIG = [
   { key: 'brand', label: 'Brand' },
   { key: 'stock_status', label: 'Availability' },
@@ -196,72 +87,52 @@ function buildAvailableFilters(
 export async function searchProducts(
   params: ShopSearchParams
 ): Promise<ShopSearchResult> {
-  const host = env.MEILISEARCH_HOST;
-  if (!host) throw new Error('MEILISEARCH_HOST is not configured');
+  const hasMagentoCategoryId =
+    typeof params.categoryId === 'number' &&
+    Number.isFinite(params.categoryId) &&
+    params.categoryId > 0;
+  const hasStrapiCategoryId =
+    typeof params.strapiCategoryId === 'number' &&
+    Number.isFinite(params.strapiCategoryId) &&
+    params.strapiCategoryId > 0;
 
-  const page = params.page ?? 1;
-  const hitsPerPage = params.pageSize ?? 24;
+  const result = await productQueryFacade.queryProducts({
+    q: params.q,
+    ...(hasStrapiCategoryId
+      ? { strapiCategoryId: params.strapiCategoryId }
+      : hasMagentoCategoryId
+      ? { magentoCategoryId: params.categoryId }
+      : params.strapiCategorySlug?.trim()
+      ? { strapiCategorySlug: params.strapiCategorySlug.trim() }
+      : {}),
+    page: params.page,
+    pageSize: params.pageSize,
+    sort: params.sort,
+    filters: {
+      brand: params.brand,
+      size: params.size,
+      stockStatus: params.stockStatus,
+      category: params.category,
+      priceMin: params.priceMin,
+      priceMax: params.priceMax,
+    },
+  });
 
-  const body = {
-    q: params.q ?? '',
-    filter: buildFilter(params),
-    sort: buildSort(params.sort),
-    facets: FACET_CONFIG.map(c => c.key),
-    page,
-    hitsPerPage,
+  const orderedItems =
+    params.sort === undefined || params.sort === 'featured'
+      ? moveOutOfStockToEnd(result.items)
+      : result.items;
+
+  return {
+    items: orderedItems,
+    pagination: result.pagination,
+    availableFilters:
+      result.availableFilters.length > 0
+        ? result.availableFilters.map(filter => ({
+            key: filter.key,
+            label: filter.label,
+            options: filter.options,
+          }))
+        : buildAvailableFilters(undefined),
   };
-
-  try {
-    const indexCandidates = getIndexCandidates();
-    let last404Error: Error | null = null;
-
-    for (const indexUid of indexCandidates) {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(env.MEILISEARCH_API_KEY
-          ? { Authorization: `Bearer ${env.MEILISEARCH_API_KEY}` }
-          : {}),
-      };
-
-      const res = await fetch(`${host}/indexes/${indexUid}/search`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (res.status === 404) {
-        last404Error = new Error(`Meilisearch index not found: ${indexUid}`);
-        continue;
-      }
-
-      if (!res.ok)
-        throw new Error(`Meilisearch ${res.status}: ${res.statusText}`);
-
-      const data = (await res.json()) as MeilisearchSearchResponse;
-      const shouldUseDefaultOrder =
-        params.sort === undefined || params.sort === 'featured';
-      const orderedHits = shouldUseDefaultOrder
-        ? moveOutOfStockToEnd(data.hits)
-        : data.hits;
-      return {
-        items: orderedHits.map(toProductCardItem),
-        pagination: {
-          page: data.page,
-          pageSize: data.hitsPerPage,
-          total: data.totalHits,
-          totalPages: data.totalPages,
-        },
-        availableFilters: buildAvailableFilters(data.facetDistribution),
-      };
-    }
-
-    throw last404Error ?? new Error('No available Meilisearch index');
-  } catch (error) {
-    await notifyError({
-      title: 'Meilisearch Search Failed',
-      message: JSON.stringify(params),
-      error,
-    });
-    throw error;
-  }
 }
