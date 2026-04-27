@@ -10,6 +10,7 @@ import { CategoryProductCard } from './CategoryProductCard';
 export function CategoryGrid({ title, categories }: CategoryGridProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
+  const [showScrollArrows, setShowScrollArrows] = useState(false);
   const [products, setProducts] = useState<ProductCardItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -84,6 +85,21 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
     };
   }, [activeCategoryId, activeCategory?.slug]);
 
+  useEffect(() => {
+    const updateScrollability = () => {
+      const tabsEl = tabsRef.current;
+      if (!tabsEl) return;
+      setShowScrollArrows(tabsEl.scrollWidth > tabsEl.clientWidth + 1);
+    };
+
+    updateScrollability();
+    window.addEventListener('resize', updateScrollability);
+
+    return () => {
+      window.removeEventListener('resize', updateScrollability);
+    };
+  }, [categories]);
+
   return (
     <section className="py-12 lg:py-20">
       <div className="px-6 lg:px-[8vw]">
@@ -94,30 +110,40 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
           {title}
         </h2>
 
-        <div className="relative overflow-hidden rounded-full border border-border">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-surface to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-surface to-transparent" />
+        <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-full border border-border">
+          {showScrollArrows && (
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-surface to-transparent" />
+          )}
+          {showScrollArrows && (
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-surface to-transparent" />
+          )}
 
-          <button
-            type="button"
-            onClick={() => scroll('left')}
-            aria-label="Scroll left"
-            className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:border-ink hover:text-ink"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scroll('right')}
-            aria-label="Scroll right"
-            className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:border-ink hover:text-ink"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          {showScrollArrows && (
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              aria-label="Scroll left"
+              className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:border-ink hover:text-ink"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+          {showScrollArrows && (
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              aria-label="Scroll right"
+              className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition hover:border-ink hover:text-ink"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
 
           <div
             ref={tabsRef}
-            className="no-scrollbar flex gap-1 overflow-x-auto px-12 py-1.5"
+            className={`no-scrollbar flex gap-1 overflow-x-auto py-1.5 ${
+              showScrollArrows ? 'px-12' : 'px-1.5'
+            }`}
           >
             {categories.map(cat => (
               <button

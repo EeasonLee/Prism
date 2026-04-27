@@ -1,6 +1,6 @@
-import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { AddToCartButton } from '@/app/components/AddToCartButton';
 import type { FeaturedProductsProps } from '@/lib/api/cms-page.types';
 import { searchProductsBySkusForBFF } from '@/lib/api/bff/product/meilisearch';
 import { formatPrice } from '@/lib/format-price';
@@ -11,6 +11,18 @@ function stripHtml(value: string | null | undefined): string {
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function extractTopSellingPoints(
+  richText: string | null | undefined,
+  maxItems = 3
+): string[] {
+  if (!richText) return [];
+  const liMatches = [...richText.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+  return liMatches
+    .map(match => stripHtml(match[1] ?? ''))
+    .filter(Boolean)
+    .slice(0, maxItems);
 }
 
 export async function FeaturedProducts({
@@ -51,11 +63,20 @@ export async function FeaturedProducts({
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {validProducts.map(product => {
             const price = product.price.value;
             const originalPrice = product.originalPrice;
             const currency = product.price.currency ?? 'USD';
+            const displayName =
+              product.shortName ??
+              product.displayName ??
+              product.name ??
+              product.sku;
+            const longTitle = stripHtml(product.longTitle);
+            const sellingPoints = extractTopSellingPoints(
+              product.shortDescription
+            );
             const discount =
               price && originalPrice && originalPrice > price
                 ? Math.round(((originalPrice - price) / originalPrice) * 100)
@@ -68,11 +89,11 @@ export async function FeaturedProducts({
                 key={product.sku}
                 className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="grid grid-cols-1 md:grid-cols-[200px,1fr] lg:grid-cols-[220px,1fr]">
+                <div className="grid grid-cols-1 md:grid-cols-[180px,minmax(0,1fr)] lg:grid-cols-[220px,minmax(0,1fr)]">
                   <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden md:aspect-auto md:min-h-[260px]">
                     <Image
                       src={imageUrl}
-                      alt={product.displayName}
+                      alt={displayName}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, 280px"
@@ -84,18 +105,32 @@ export async function FeaturedProducts({
                     )}
                   </div>
 
-                  <div className="flex min-h-[260px] flex-1 flex-col justify-between p-5 lg:p-6">
-                    <div>
+                  <div className="flex min-h-[260px] min-w-0 flex-1 flex-col justify-between p-5 lg:p-6">
+                    <div className="min-w-0">
                       <h3
                         className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-ink lg:text-xl"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}
                       >
-                        {product.displayName}
+                        {displayName}
                       </h3>
-                      {product.promotionLabel && (
-                        <p className="mb-5 text-sm text-ink-muted">
-                          {stripHtml(product.promotionLabel)}
+                      {longTitle && (
+                        <p className="mb-3 line-clamp-2 text-sm text-ink-muted">
+                          {longTitle}
                         </p>
+                      )}
+                      {sellingPoints.length > 0 && (
+                        <ul className="mb-5 min-w-0 space-y-1.5 text-xs text-ink-muted lg:text-sm">
+                          {sellingPoints.map(point => (
+                            <li
+                              key={`${product.sku}-${point}`}
+                              className="relative min-w-0 pl-4 before:absolute before:left-0 before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-brand/35"
+                            >
+                              <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                {point}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
 
@@ -121,13 +156,10 @@ export async function FeaturedProducts({
                       )}
 
                       <div className="flex flex-wrap gap-2.5">
-                        <Link
-                          href={`/products/${product.urlKey ?? product.sku}`}
-                          className="btn-primary flex items-center gap-1.5 px-5 py-2.5 text-sm"
-                        >
-                          View Product
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        <AddToCartButton
+                          sku={product.sku}
+                          className="btn-primary flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                        />
                         <Link
                           href={`/products/${product.urlKey ?? product.sku}`}
                           className="flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
