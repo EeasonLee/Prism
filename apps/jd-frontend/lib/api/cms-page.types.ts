@@ -74,9 +74,10 @@ export interface HeroBannerProps {
  * Category Item
  */
 export interface CategoryItem {
-  categoryId: string;
+  id: number;
+  slug: string;
   label: string;
-  enabled: boolean;
+  magentoCategoryId?: number;
 }
 
 /**
@@ -198,8 +199,8 @@ export interface ContentCard {
 export interface ContentCarouselProps {
   title: string;
   subtitle?: string;
-  contentType: 'recipe' | 'blog' | 'mixed';
-  items: ContentCard[];
+  recipe: ContentCard[];
+  article: ContentCard[];
   showViewAll: boolean;
   viewAllLink?: string;
 }

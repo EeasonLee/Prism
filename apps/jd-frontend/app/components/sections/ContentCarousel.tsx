@@ -9,19 +9,20 @@ import type { ContentCarouselProps } from '@/lib/api/cms-page.types';
 export function ContentCarousel({
   title,
   subtitle,
-  contentType,
-  items,
+  recipe,
+  article,
   showViewAll,
   viewAllLink,
 }: ContentCarouselProps) {
+  const hasRecipe = recipe.length > 0;
+  const hasArticle = article.length > 0;
+  const isMixed = hasRecipe && hasArticle;
+
   const [activeTab, setActiveTab] = useState<'recipe' | 'blog'>(
-    contentType === 'mixed' ? 'recipe' : contentType
+    hasRecipe ? 'recipe' : 'blog'
   );
 
-  const filteredItems =
-    contentType === 'mixed'
-      ? items.filter(item => item.type === activeTab)
-      : items;
+  const filteredItems = activeTab === 'recipe' ? recipe : article;
 
   const defaultViewAllLink =
     viewAllLink || (activeTab === 'recipe' ? '/recipes' : '/blog');
@@ -45,7 +46,7 @@ export function ContentCarousel({
               </h2>
             </div>
 
-            {contentType === 'mixed' && (
+            {isMixed && (
               <div className="flex gap-2 rounded-full border border-border bg-card p-1">
                 <button
                   type="button"
@@ -174,7 +175,7 @@ export function ContentCarousel({
             </div>
           )}
 
-          {showViewAll && (
+          {showViewAll && filteredItems.length > 0 && (
             <div className="mt-10 text-center">
               <Link
                 href={defaultViewAllLink}

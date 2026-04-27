@@ -21,21 +21,18 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
     });
   };
 
-  const enabledCategories = categories.filter(cat => cat.enabled);
   const activeCategory =
-    enabledCategories.find(cat => cat.categoryId === activeCategoryId) ??
-    enabledCategories[0];
+    categories.find(cat => String(cat.id) === activeCategoryId) ??
+    categories[0];
 
   useEffect(() => {
-    if (enabledCategories.length === 0) return;
+    if (categories.length === 0) return;
     setActiveCategoryId(prev => {
-      if (!prev) return enabledCategories[0].categoryId;
-      const stillExists = enabledCategories.some(
-        cat => cat.categoryId === prev
-      );
-      return stillExists ? prev : enabledCategories[0].categoryId;
+      if (!prev) return String(categories[0].id);
+      const stillExists = categories.some(cat => String(cat.id) === prev);
+      return stillExists ? prev : String(categories[0].id);
     });
-  }, [enabledCategories]);
+  }, [categories]);
 
   useEffect(() => {
     if (!activeCategoryId) return;
@@ -47,10 +44,15 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        if (/^\d+$/.test(activeCategoryId)) {
-          params.set('strapiCategoryId', activeCategoryId);
+        if (typeof activeCategory?.magentoCategoryId === 'number') {
+          params.set(
+            'magentoCategoryId',
+            String(activeCategory.magentoCategoryId)
+          );
+        } else if (activeCategory?.slug) {
+          params.set('strapiCategorySlug', activeCategory.slug);
         } else {
-          params.set('strapiCategorySlug', activeCategoryId);
+          params.set('strapiCategoryId', activeCategoryId);
         }
         params.set('pageSize', '4');
         const res = await fetch(`/api/deal-products?${params.toString()}`, {
@@ -80,7 +82,7 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
       cancelled = true;
       controller.abort();
     };
-  }, [activeCategoryId]);
+  }, [activeCategoryId, activeCategory?.slug]);
 
   return (
     <section className="py-12 lg:py-20">
@@ -117,13 +119,13 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
             ref={tabsRef}
             className="no-scrollbar flex gap-1 overflow-x-auto px-12 py-1.5"
           >
-            {enabledCategories.map(cat => (
+            {categories.map(cat => (
               <button
-                key={cat.categoryId}
+                key={cat.id}
                 type="button"
-                onClick={() => setActiveCategoryId(cat.categoryId)}
+                onClick={() => setActiveCategoryId(String(cat.id))}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  activeCategoryId === cat.categoryId
+                  activeCategoryId === String(cat.id)
                     ? 'bg-ink text-white'
                     : 'text-ink-muted hover:bg-ink hover:text-white'
                 }`}

@@ -97,9 +97,10 @@ interface RawHeroBannerSlide {
 }
 
 interface RawCategoryItem {
-  categoryId?: string;
-  label?: string;
-  enabled?: boolean;
+  id?: number;
+  slug?: string | null;
+  name?: string | null;
+  magento_category_id?: number | null;
 }
 
 interface RawServiceBadge {
@@ -207,71 +208,65 @@ function formatArticleCardDate(value: string | null | undefined): string {
   }).format(date);
 }
 
-function mapContentCarouselRowToCard(item: unknown): ContentCard | null {
-  if (!item || typeof item !== 'object') return null;
-  const row = item as Record<string, unknown>;
-  const componentId = typeof row.id === 'number' ? row.id : 0;
+function mapRecipeToContentCard(recipeRaw: RawRecipeRef): ContentCard | null {
+  if (!recipeRaw?.slug) return null;
+  const image = transformImage(recipeRaw.featuredImage);
+  if (!image?.url) return null;
 
-  const recipeRaw = unwrapStrapiRelation<RawRecipeRef>(row.recipe);
-  if (recipeRaw?.slug) {
-    const image = transformImage(recipeRaw.featuredImage);
-    if (!image?.url) return null;
+  const categorySlug = recipeRaw.categories?.[0]?.slug ?? 'recipe';
+  const timeStr = formatRecipeTotalMinutes(recipeRaw);
+  const description =
+    recipeRaw.excerpt?.trim() ||
+    (recipeRaw.description
+      ? recipeRaw.description
+          .replace(/<[^>]+>/g, ' ')
+          .trim()
+          .slice(0, 400)
+      : '') ||
+    undefined;
 
-    const categorySlug = recipeRaw.categories?.[0]?.slug ?? 'recipe';
-    const timeStr = formatRecipeTotalMinutes(recipeRaw);
-    const description =
-      recipeRaw.excerpt?.trim() ||
-      (recipeRaw.description
-        ? recipeRaw.description
-            .replace(/<[^>]+>/g, ' ')
-            .trim()
-            .slice(0, 400)
-        : '') ||
-      undefined;
-
-    const metadata: Record<string, unknown> = {};
-    if (timeStr) metadata.time = timeStr;
-    if (recipeRaw.author?.username) {
-      metadata.author = recipeRaw.author.username;
-    }
-
-    return {
-      id: recipeRaw.id ?? componentId,
-      type: 'recipe',
-      title: recipeRaw.title ?? '',
-      description,
-      image: image as StrapiImage,
-      link: `/recipes/${categorySlug}/${recipeRaw.slug}`,
-      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-    };
+  const metadata: Record<string, unknown> = {};
+  if (timeStr) metadata.time = timeStr;
+  if (recipeRaw.author?.username) {
+    metadata.author = recipeRaw.author.username;
   }
 
-  const articleRaw = unwrapStrapiRelation<RawArticleRef>(row.article);
-  if (articleRaw?.slug) {
-    const image = transformImage(articleRaw.featuredImage);
-    if (!image?.url) return null;
+  return {
+    id: recipeRaw.id ?? 0,
+    type: 'recipe',
+    title: recipeRaw.title ?? '',
+    description,
+    image: image as StrapiImage,
+    link: `/recipes/${categorySlug}/${recipeRaw.slug}`,
+    metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+  };
+}
 
-    const categorySlug = articleRaw.categories?.[0]?.slug ?? 'articles';
-    const dateRaw = articleRaw.createdAt ?? articleRaw.updatedAt;
-    const dateLabel = formatArticleCardDate(dateRaw);
+function mapArticleToContentCard(
+  articleRaw: RawArticleRef
+): ContentCard | null {
+  if (!articleRaw?.slug) return null;
+  const image = transformImage(articleRaw.featuredImage);
+  if (!image?.url) return null;
 
-    const metadata: Record<string, unknown> = {
-      readTime: estimateArticleReadTime(articleRaw.excerpt),
-    };
-    if (dateLabel) metadata.date = dateLabel;
+  const categorySlug = articleRaw.categories?.[0]?.slug ?? 'articles';
+  const dateRaw = articleRaw.createdAt ?? articleRaw.updatedAt;
+  const dateLabel = formatArticleCardDate(dateRaw);
 
-    return {
-      id: articleRaw.id ?? componentId,
-      type: 'blog',
-      title: articleRaw.title ?? '',
-      description: articleRaw.excerpt ?? undefined,
-      image: image as StrapiImage,
-      link: `/blog/${categorySlug}/${articleRaw.slug}`,
-      metadata,
-    };
-  }
+  const metadata: Record<string, unknown> = {
+    readTime: estimateArticleReadTime(articleRaw.excerpt),
+  };
+  if (dateLabel) metadata.date = dateLabel;
 
-  return null;
+  return {
+    id: articleRaw.id ?? 0,
+    type: 'blog',
+    title: articleRaw.title ?? '',
+    description: articleRaw.excerpt ?? undefined,
+    image: image as StrapiImage,
+    link: `/blog/${categorySlug}/${articleRaw.slug}`,
+    metadata,
+  };
 }
 
 interface RawVideoItem {
@@ -582,11 +577,15 @@ async function transformSection(
         ? rawProps.categories
         : [];
       const categories: CategoryItem[] = catList.map((cat): CategoryItem => {
-        const c = cat as RawCategoryItem;
+        const c = unwrapStrapiRelation<RawCategoryItem>(cat) ?? {};
         return {
-          categoryId: c.categoryId ?? '',
-          label: c.label ?? '',
-          enabled: c.enabled !== false,
+          id: c.id ?? 0,
+          slug: c.slug ?? '',
+          label: c.name ?? '',
+          magentoCategoryId:
+            typeof c.magento_category_id === 'number'
+              ? c.magento_category_id
+              : undefined,
         };
       });
 
@@ -693,14 +692,32 @@ async function transformSection(
     }
 
     case 'page.content-carousel': {
-      const itemList = Array.isArray(rawProps.items) ? rawProps.items : [];
-      const items: ContentCard[] = itemList
-        .map(mapContentCarouselRowToCard)
+      const recipeRelationList = Array.isArray(rawProps.recipe)
+        ? rawProps.recipe
+        : [];
+      const articleRelationList = Array.isArray(rawProps.article)
+        ? rawProps.article
+        : [];
+
+      const recipe = recipeRelationList
+        .map(item => unwrapStrapiRelation<RawRecipeRef>(item))
+        .filter((item): item is RawRecipeRef => item !== null)
+        .map(mapRecipeToContentCard)
+        .filter((c): c is ContentCard => c !== null);
+      const article = articleRelationList
+        .map(item => unwrapStrapiRelation<RawArticleRef>(item))
+        .filter((item): item is RawArticleRef => item !== null)
+        .map(mapArticleToContentCard)
         .filter((c): c is ContentCard => c !== null);
 
-      if (items.length === 0 && itemList.length > 0) {
+      if (
+        recipe.length === 0 &&
+        recipeRelationList.length > 0 &&
+        article.length === 0 &&
+        articleRelationList.length > 0
+      ) {
         console.warn(
-          'page.content-carousel: items could not be mapped (check recipe/article relations and featured images)'
+          'page.content-carousel: recipe/article relations could not be mapped (check relations and featured images)'
         );
       }
 
@@ -710,8 +727,8 @@ async function transformSection(
         props: {
           title: rawProps.title || '',
           subtitle: rawProps.subtitle,
-          contentType: rawProps.contentType || 'recipe',
-          items,
+          recipe,
+          article,
           showViewAll: rawProps.showViewAll !== false,
           viewAllLink: rawProps.viewAllLink,
         } as ContentCarouselProps,
@@ -860,13 +877,13 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     // Strapi v5 对于 Dynamic Zone，必须使用 populate[field][on][component.name] 语法
     const populateParams = [
       'populate[sections][on][page.hero-banner][populate][slides][populate]=*',
-      'populate[sections][on][page.category-grid][populate]=*',
+      'populate[sections][on][page.category-grid][populate][categories][populate]=*',
       'populate[sections][on][page.product-carousel]=true',
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
       'populate[sections][on][page.featured-products]=true',
-      'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
-      'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][recipe][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
       'populate[seo][populate]=*',
       'populate[featuredImage]=true',
