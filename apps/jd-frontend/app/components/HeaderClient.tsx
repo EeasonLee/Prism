@@ -301,9 +301,16 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
                       <Link
                         href="/account/addresses"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="block border-b border-border px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                        className="block px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
                       >
                         My Addresses
+                      </Link>
+                      <Link
+                        href="/account/wishlist"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block border-b border-border px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface hover:text-brand"
+                      >
+                        My Wishlist
                       </Link>
                       <button
                         type="button"

@@ -137,6 +137,12 @@ interface RawArticleRef {
   author?: { username?: string | null } | null;
 }
 
+interface RawContentCardItem {
+  id?: number;
+  recipe?: unknown;
+  article?: unknown;
+}
+
 /**
  * 兼容 Strapi 响应：扁平 document，或 { data: { id, attributes } }
  */
@@ -692,10 +698,28 @@ async function transformSection(
     }
 
     case 'page.content-carousel': {
-      const recipeRelationList = Array.isArray(rawProps.recipe)
+      const contentCardItems = Array.isArray(rawProps.items)
+        ? rawProps.items
+        : [];
+      const recipeRelationListFromItems: unknown[] = [];
+      const articleRelationListFromItems: unknown[] = [];
+
+      contentCardItems.forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        const card = item as RawContentCardItem;
+        if (card.recipe) recipeRelationListFromItems.push(card.recipe);
+        if (card.article) articleRelationListFromItems.push(card.article);
+      });
+
+      // 兼容旧数据：历史上 content-carousel 可能直接挂了 recipe/article 数组
+      const recipeRelationList = recipeRelationListFromItems.length
+        ? recipeRelationListFromItems
+        : Array.isArray(rawProps.recipe)
         ? rawProps.recipe
         : [];
-      const articleRelationList = Array.isArray(rawProps.article)
+      const articleRelationList = articleRelationListFromItems.length
+        ? articleRelationListFromItems
+        : Array.isArray(rawProps.article)
         ? rawProps.article
         : [];
 
@@ -882,11 +906,11 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
       'populate[sections][on][page.featured-products]=true',
-      'populate[sections][on][page.content-carousel][populate][recipe][populate]=*',
-      'populate[sections][on][page.content-carousel][populate][article][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
       'populate[seo][populate]=*',
-      'populate[featuredImage]=true',
+      'populate[featuredImage]=*',
     ].join('&');
 
     const strapiUrl = `${getStrapiBaseUrl()}/api/pages?filters[slug][$eq]=${encodeURIComponent(

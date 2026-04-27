@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Heart } from 'lucide-react';
+import { useAuth } from '@/lib/auth/context';
+import { useAuthModal } from '@/lib/auth-modal/context';
 import {
   ProductDetailClient,
   type ProductDetailSelection,
@@ -189,8 +192,111 @@ export function ProductDetailContent({
   onWriteReview,
   shareTarget,
 }: ProductDetailContentProps) {
+  const { isAuthenticated } = useAuth();
+  const { openLogin } = useAuthModal();
   const [showCouponToast, setShowCouponToast] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistAdded, setWishlistAdded] = useState(false);
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
+  const [pendingWishlist, setPendingWishlist] = useState(false);
+  const [wishlistItemId, setWishlistItemId] = useState<number | null>(null);
+
+  // Check if current product is already in wishlist
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setWishlistItemId(null);
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/v1/account/wishlist', { method: 'GET', credentials: 'include' })
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: { items?: Array<{ id: number; sku: string }> } | null) => {
+        if (cancelled || !data) return;
+        const found = data.items?.find(item => item.sku === product.sku);
+        setWishlistItemId(found?.id ?? null);
+      })
+      .catch(() => {
+        // silently ignore
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, product.sku]);
+
+  const doToggleWishlist = async () => {
+    if (wishlistLoading) return;
+    setWishlistLoading(true);
+    setWishlistError(null);
+    try {
+      if (wishlistItemId != null) {
+        // Remove
+        const res = await fetch(`/api/v1/account/wishlist/${wishlistItemId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          const data = (await res.json()) as { error?: { message?: string } };
+          throw new Error(
+            data.error?.message ?? 'Failed to remove from wishlist'
+          );
+        }
+        setWishlistItemId(null);
+      } else {
+        // Add
+        const res = await fetch('/api/v1/account/wishlist', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sku: product.sku }),
+        });
+        if (!res.ok) {
+          const data = (await res.json()) as { error?: { message?: string } };
+          throw new Error(data.error?.message ?? 'Failed to add to wishlist');
+        }
+        const result = (await res.json()) as { id?: number } | undefined;
+        if (result?.id != null) {
+          setWishlistItemId(result.id);
+        } else {
+          // fallback: re-fetch to get the new item id
+          const listRes = await fetch('/api/v1/account/wishlist', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          const listData = (await listRes.json()) as {
+            items?: Array<{ id: number; sku: string }>;
+          };
+          const found = listData.items?.find(item => item.sku === product.sku);
+          setWishlistItemId(found?.id ?? null);
+        }
+        setWishlistAdded(true);
+        setTimeout(() => setWishlistAdded(false), 2000);
+      }
+    } catch (err) {
+      setWishlistError(
+        err instanceof Error ? err.message : 'Wishlist action failed'
+      );
+      setTimeout(() => setWishlistError(null), 3000);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      setPendingWishlist(true);
+      openLogin('signin');
+      return;
+    }
+    await doToggleWishlist();
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && pendingWishlist) {
+      setPendingWishlist(false);
+      void doToggleWishlist();
+    }
+  }, [isAuthenticated, pendingWishlist]);
   const specificationSections = useMemo(
     () => parseSpecificationSections(product.specifications),
     [product.specifications]
@@ -425,12 +531,41 @@ export function ProductDetailContent({
               </span>
             )}
           </div>
-          {shareTarget && (
-            <div className="shrink-0">
-              <ShareTrigger target={shareTarget} />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleToggleWishlist()}
+              disabled={wishlistLoading}
+              aria-label={
+                wishlistItemId != null
+                  ? 'Remove from wishlist'
+                  : 'Add to wishlist'
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  wishlistItemId != null || wishlistAdded
+                    ? 'fill-red-500 text-red-500'
+                    : ''
+                }`}
+              />
+              {wishlistItemId != null
+                ? 'Saved'
+                : wishlistAdded
+                ? 'Saved'
+                : 'Wishlist'}
+            </button>
+            {shareTarget && (
+              <div className="shrink-0">
+                <ShareTrigger target={shareTarget} />
+              </div>
+            )}
+          </div>
         </div>
+        {wishlistError && (
+          <p className="mb-2 text-sm text-red-600">{wishlistError}</p>
+        )}
         <h1 className="mb-2 text-2xl font-bold leading-tight text-ink sm:text-3xl">
           {displayTitle}
         </h1>

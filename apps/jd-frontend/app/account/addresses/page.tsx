@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, MapPin, Home, CreditCard } from 'lucide-react';
 import { AccountScaffold } from '../components/AccountScaffold';
+import { AccountSkeleton } from '../components/AccountSkeleton';
 import { useAuth } from '@/lib/auth/context';
 import { useAccount } from '@/lib/account/useAccount';
 import type { Address, AddressInput } from '@/lib/api/bff/account/types';
@@ -467,11 +468,7 @@ export default function AccountAddressesPage() {
   }, [logout, refreshSession, router]);
 
   if (authLoading || isLoading) {
-    return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="h-40 animate-pulse rounded-xl bg-surface" />
-      </main>
-    );
+    return <AccountSkeleton />;
   }
 
   if (!isAuthenticated) {

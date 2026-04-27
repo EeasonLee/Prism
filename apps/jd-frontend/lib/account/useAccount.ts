@@ -8,6 +8,7 @@ import type {
   Order,
   UpdateUserInput,
   User,
+  WishlistItem,
 } from '@/lib/api/bff/account/types';
 import { useAuth } from '@/lib/auth/context';
 
@@ -27,6 +28,7 @@ interface UseAccountResult {
   user: User | null;
   orders: Order[];
   addresses: Address[];
+  wishlist: WishlistItem[];
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -46,6 +48,9 @@ interface UseAccountResult {
   ) => Promise<Array<{ id: string; code: string; name: string }>>;
   revalidateCountries: () => Promise<void>;
   logout: () => Promise<void>;
+  getWishlist: () => Promise<WishlistItem[]>;
+  addToWishlist: (sku: string) => Promise<void>;
+  removeFromWishlist: (id: number) => Promise<void>;
 }
 interface UseAccountOptions {
   loadUser?: boolean;
@@ -105,6 +110,7 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionWarmupDoneRef = useRef(false);
@@ -114,6 +120,7 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
       setUser(null);
       setOrders([]);
       setAddresses([]);
+      setWishlist([]);
       setError(null);
       setIsLoading(false);
       sessionWarmupDoneRef.current = false;
@@ -396,10 +403,58 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
     return data;
   }, []);
 
+  const getWishlist = useCallback(async () => {
+    const res = await fetchWithSessionRecovery('/api/v1/account/wishlist', {
+      method: 'GET',
+      credentials: 'include',
+    });
+    const data = (await res.json()) as { items: WishlistItem[] };
+    setWishlist(data.items ?? []);
+    return data.items ?? [];
+  }, []);
+
+  const addToWishlist = useCallback(
+    async (sku: string) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+      setError(null);
+      const res = await fetchWithSessionRecovery('/api/v1/account/wishlist', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku }),
+      });
+      if (!res.ok) {
+        const parsed = await parseError(res);
+        throw new Error(parsed.message);
+      }
+      // Refresh wishlist after adding
+      await getWishlist();
+    },
+    [isAuthenticated, getWishlist]
+  );
+
+  const removeFromWishlist = useCallback(
+    async (id: number) => {
+      if (!isAuthenticated) {
+        throw new Error('Authentication required');
+      }
+      setError(null);
+      await fetchWithSessionRecovery(`/api/v1/account/wishlist/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      setWishlist(prev => prev.filter(item => item.id !== id));
+    },
+    [isAuthenticated]
+  );
+
   return {
     user,
     orders,
     addresses,
+    wishlist,
     isLoading,
     error,
     refresh,
@@ -414,5 +469,8 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
     getRegions,
     revalidateCountries,
     logout,
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist,
   };
 }
