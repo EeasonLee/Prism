@@ -327,6 +327,9 @@ export type PageSection =
 
 // ============ Page Schema ============
 
+/** CMS Page 富文本区域的容器宽度预设（与 Strapi pages.layoutPreset 枚举一致） */
+export type PageLayoutPreset = 'default' | 'narrow' | 'wide' | 'full';
+
 export interface Page {
   id: number;
   documentId: string;
@@ -338,6 +341,8 @@ export interface Page {
   featuredImage?: StrapiImage | null;
   seo?: SEO;
   sections: PageSection[];
+  /** 富文本与页面标题区域的布局预设 */
+  layoutPreset: PageLayoutPreset;
   publishedAt?: string | null;
   locale?: string;
 }
@@ -354,6 +359,7 @@ export interface StrapiPageResponse {
     content?: string | null;
     featuredImage?: StrapiImage | null;
     seo?: SEO;
+    layoutPreset?: unknown;
     sections: Array<{
       __component: SectionType;
       id: number;

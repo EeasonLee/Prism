@@ -1,3 +1,4 @@
+import { getPageContentLayoutClass } from '@/lib/api/cms-page-layout';
 import { getPageBySlug } from '@/lib/api/cms-pages';
 import { CmsPageRichContent } from '../components/CmsPageRichContent';
 import { renderSections } from '../components/sections/blockMap';
@@ -65,7 +66,7 @@ export default async function DynamicPage({
       <main className="relative">
         {hasSections ? renderSections(page.sections) : null}
         {hasContent ? (
-          <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className={getPageContentLayoutClass(page.layoutPreset)}>
             <h1 className="heading-2 text-ink mb-6">{page.title}</h1>
             <CmsPageRichContent html={contentHtml} />
           </div>
