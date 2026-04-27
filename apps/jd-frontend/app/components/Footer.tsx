@@ -1,61 +1,74 @@
 'use client';
 
-import { useState } from 'react';
-import { Facebook, Instagram, Youtube, type LucideIcon } from 'lucide-react';
+// import { useState } from 'react';
+// import { Facebook, Instagram, Youtube, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import { Button } from '@prism/ui/components/button';
-import { Checkbox } from '@prism/ui/components/checkbox';
+// import { Button } from '@prism/ui/components/button';
+// import { Checkbox } from '@prism/ui/components/checkbox';
+import { useAuth } from '../../lib/auth/context';
+import { useAuthModal } from '../../lib/auth-modal/context';
 import { env } from '../../lib/env';
 
-const SOCIAL_LINKS: { Icon: LucideIcon; href: string; label: string }[] = [
-  {
-    Icon: Facebook,
-    href: 'https://www.facebook.com/joydeem',
-    label: 'Facebook',
-  },
-  {
-    Icon: Instagram,
-    href: 'https://www.instagram.com/joydeem',
-    label: 'Instagram',
-  },
-  { Icon: Youtube, href: 'https://www.youtube.com/joydeem', label: 'YouTube' },
-];
+// const SOCIAL_LINKS: { Icon: LucideIcon; href: string; label: string }[] = [
+//   {
+//     Icon: Facebook,
+//     href: 'https://www.facebook.com/joydeem',
+//     label: 'Facebook',
+//   },
+//   {
+//     Icon: Instagram,
+//     href: 'https://www.instagram.com/joydeem',
+//     label: 'Instagram',
+//   },
+//   { Icon: Youtube, href: 'https://www.youtube.com/joydeem', label: 'YouTube' },
+// ];
 
-const INFO_LINKS = [
-  { href: 'https://www.joydeem.com/customer/account/', label: 'My Account' },
-  { href: 'https://www.joydeem.com/customer/account/login/', label: 'Login' },
-  { href: 'https://www.joydeem.com/checkout/cart/', label: 'My Cart' },
-  { href: 'https://www.joydeem.com/wishlist/', label: 'Wishlist' },
-  { href: 'https://www.joydeem.com/checkout/', label: 'Checkout' },
+interface InfoLinkItem {
+  href: string;
+  label: string;
+  requiresAuth: boolean;
+  loginOnly?: boolean;
+}
+
+const INFO_LINKS: InfoLinkItem[] = [
+  { href: '', label: 'Login', requiresAuth: false, loginOnly: true },
+  { href: '/account', label: 'My Account', requiresAuth: true },
+  { href: '/account/orders', label: 'My Order', requiresAuth: true },
+  { href: '/cart', label: 'My Cart', requiresAuth: true },
+  // { href: '/wishlist', label: 'Wishlist' },
 ];
 
 const SERVICE_LINKS = [
-  { href: 'https://www.joydeem.com/aboutus', label: 'About Us' },
-  { href: 'https://www.joydeem.com/privacy-policy', label: 'Privacy Policy' },
-  { href: 'https://www.joydeem.com/faqs', label: 'FAQs' },
-  { href: 'https://www.joydeem.com/return-policy', label: 'Returns Policy' },
-  { href: 'https://www.joydeem.com/shipping-policy', label: 'Shipping Policy' },
-  { href: 'https://www.joydeem.com/terms-of-use', label: 'Terms of Use' },
+  { href: '/about-us', label: 'About Us' },
+  { href: '/contact-us', label: 'Contact Us' },
+  { href: '/privacy-policy', label: 'Privacy Policy' },
+  { href: '/return-policy', label: 'Returns Policy' },
+  { href: '/shipping-policy', label: 'Shipping Policy' },
+  { href: '/payment-policy', label: 'Payment Policy' },
+  { href: '/terms-of-use', label: 'Terms of Use' },
+  { href: '/faqs', label: 'FAQs' },
 ];
 
 export function Footer() {
-  const [email, setEmail] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const { openLogin } = useAuthModal();
+  // const [email, setEmail] = useState('');
+  // const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!agreeTerms) return;
-    // TODO: 对接订阅接口
-    void Promise.resolve();
-  };
+  // const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   if (!agreeTerms) return;
+  //   // TODO: 对接订阅接口
+  //   void Promise.resolve();
+  // };
 
   return (
     <footer className="bg-neutral-950">
       <PageContainer className="py-14">
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-0">
           {/* Left: Newsletter — 占 1/3 */}
-          <div className="shrink-0 lg:w-1/3 lg:pr-12">
+          {/* <div className="shrink-0 lg:w-1/3 lg:pr-12">
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand">
               Exclusive Offer
             </p>
@@ -91,7 +104,6 @@ export function Footer() {
                 </div>
               </div>
 
-              {/* 隐私同意条款 */}
               <div className="flex items-start gap-2.5">
                 <Checkbox
                   id="footer-terms"
@@ -140,7 +152,6 @@ export function Footer() {
               </p>
             </form>
 
-            {/* 社交媒体 */}
             <div className="mt-8 border-t border-neutral-800 pt-6">
               <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neutral-500">
                 Follow us
@@ -162,8 +173,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* 分隔线 */}
-          <div className="hidden w-px bg-neutral-800 lg:block" />
+          <div className="hidden w-px bg-neutral-800 lg:block" /> */}
 
           {/* Right: 三列链接 — 占 2/3，排列 Information(1) + Services(1) + Company(2) */}
           <div className="flex-1 lg:pl-12">
@@ -174,16 +184,32 @@ export function Footer() {
                   Information
                 </h4>
                 <ul className="space-y-3 text-sm">
-                  {INFO_LINKS.map(({ href, label }) => (
+                  {INFO_LINKS.filter(
+                    link => !(isAuthenticated && link.loginOnly)
+                  ).map(({ href, label, requiresAuth, loginOnly }) => (
                     <li key={label}>
-                      <a
-                        href={href}
-                        className="text-neutral-400 transition hover:text-white"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {label}
-                      </a>
+                      {loginOnly ? (
+                        <button
+                          type="button"
+                          className="text-neutral-400 transition hover:text-white"
+                          onClick={() => openLogin('signin')}
+                        >
+                          {label}
+                        </button>
+                      ) : (
+                        <Link
+                          href={href}
+                          className="text-neutral-400 transition hover:text-white"
+                          onClick={event => {
+                            if (requiresAuth && !isAuthenticated) {
+                              event.preventDefault();
+                              openLogin('signin');
+                            }
+                          }}
+                        >
+                          {label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -197,14 +223,12 @@ export function Footer() {
                 <ul className="space-y-3 text-sm">
                   {SERVICE_LINKS.map(({ href, label }) => (
                     <li key={label}>
-                      <a
+                      <Link
                         href={href}
                         className="text-neutral-400 transition hover:text-white"
-                        target="_blank"
-                        rel="noopener noreferrer"
                       >
                         {label}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -225,6 +249,7 @@ export function Footer() {
                     </a>
                   </p>
                   <p>
+                    Call Us：
                     <a href="tel:888-381-8996" className="hover:text-white">
                       888-381-8996
                     </a>

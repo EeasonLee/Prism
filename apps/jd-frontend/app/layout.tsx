@@ -3,7 +3,7 @@ import { env } from '../lib/env';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { MobileTabbar } from './components/MobileTabbar';
-import { PromoBar } from './components/PromoBar';
+// import { PromoBar } from './components/PromoBar';
 import './globals.css';
 import { AppProviders } from './providers';
 
@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en" data-app={env.NODE_ENV}>
       <body className="mobile-tabbar-safe-padding">
         <AppProviders>
-          <PromoBar />
+          {/* <PromoBar /> */}
           <Header />
           {children}
           <MobileTabbar />
