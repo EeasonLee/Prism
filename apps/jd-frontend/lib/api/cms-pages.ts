@@ -906,8 +906,8 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
       'populate[sections][on][page.featured-products]=true',
-      'populate[sections][on][page.content-carousel][populate][items][populate][recipe][populate]=*',
-      'populate[sections][on][page.content-carousel][populate][items][populate][article][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][recipe][populate]=*',
+      'populate[sections][on][page.content-carousel][populate][article][populate]=*',
       'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
       'populate[seo][populate]=*',
       'populate[featuredImage]=*',
@@ -939,6 +939,8 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     }
 
     const responseData = (await response.json()) as StrapiPageResponse;
+
+    console.log('responseData', responseData);
 
     const pageData = responseData.data[0];
     if (!pageData) {

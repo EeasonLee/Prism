@@ -67,9 +67,9 @@ function buildFilter(
 ): string[] {
   const result: string[] = [];
   if (typeof magentoCategoryId === 'number' && magentoCategoryId > 0) {
-    result.push(
-      `(category_ids = ${magentoCategoryId} OR category_ancestor_ids = ${magentoCategoryId})`
-    );
+    // 线上索引当前仅保证提供 category_ids（值即 Magento category id）。
+    // 若过滤表达式引用不存在/不可过滤字段（如 category_ancestor_ids），Meilisearch 会直接报错。
+    result.push(`category_ids = ${magentoCategoryId}`);
   }
   if (filters.category) result.push(`categories = "${filters.category}"`);
   if (filters.brand) result.push(`brand = "${filters.brand}"`);

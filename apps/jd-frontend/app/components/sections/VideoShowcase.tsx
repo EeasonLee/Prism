@@ -10,6 +10,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isInView, setIsInView] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const playRequestVersionRef = useRef<number[]>([]);
   const isSingleVideo = videos.length === 1;
 
   const currentPlayingIndex = hoveredIndex ?? playingIndex;
@@ -27,10 +28,19 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
       if (!video) return;
       const shouldPlay = isInView && i === currentPlayingIndex;
       if (shouldPlay) {
+        const nextVersion = (playRequestVersionRef.current[i] ?? 0) + 1;
+        playRequestVersionRef.current[i] = nextVersion;
+
         void video.play().catch(error => {
+          // play() 被 pause()/src 变化打断时，浏览器会抛 AbortError —— 这是预期竞态，不应当污染控制台
+          if (playRequestVersionRef.current[i] !== nextVersion) return;
+          if (error instanceof DOMException && error.name === 'AbortError')
+            return;
           console.error('Video playback failed:', error);
         });
       } else {
+        playRequestVersionRef.current[i] =
+          (playRequestVersionRef.current[i] ?? 0) + 1;
         video.pause();
         video.currentTime = 0;
       }
