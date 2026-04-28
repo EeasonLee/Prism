@@ -90,6 +90,17 @@ export interface AddressInput {
   default_shipping?: boolean;
 }
 
+export interface WishlistItem {
+  id: number;
+  sku: string;
+  name: string;
+  urlKey: string | null;
+  thumbnail: string | null;
+  price: number;
+  originalPrice: number | null;
+  currency: string | null;
+}
+
 export interface AccountErrorShape {
   error: {
     code: string;

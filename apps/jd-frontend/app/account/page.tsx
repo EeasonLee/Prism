@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Home, CreditCard } from 'lucide-react';
 import { AccountScaffold } from './components/AccountScaffold';
+import { AccountSkeleton } from './components/AccountSkeleton';
 import { useAuth } from '@/lib/auth/context';
 import { useAccount } from '@/lib/account/useAccount';
 
@@ -15,6 +16,7 @@ export default function AccountOverviewPage() {
     user,
     orders,
     addresses,
+    wishlist,
     isLoading,
     error,
     logout,
@@ -52,11 +54,7 @@ export default function AccountOverviewPage() {
   }, [logout, refreshSession, router]);
 
   if (authLoading || isLoading) {
-    return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="h-40 animate-pulse rounded-xl bg-surface" />
-      </main>
-    );
+    return <AccountSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -83,7 +81,7 @@ export default function AccountOverviewPage() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="text-xs uppercase tracking-wide text-ink-muted">
             Orders
@@ -158,6 +156,20 @@ export default function AccountOverviewPage() {
             className="mt-3 inline-block text-sm text-brand hover:underline"
           >
             Manage addresses
+          </Link>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <p className="text-xs uppercase tracking-wide text-ink-muted">
+            Wishlist
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-ink">
+            {wishlist.length}
+          </p>
+          <Link
+            href="/account/wishlist"
+            className="mt-3 inline-block text-sm text-brand hover:underline"
+          >
+            View wishlist
           </Link>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">

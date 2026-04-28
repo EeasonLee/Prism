@@ -22,6 +22,7 @@ import type {
   OrderItem,
   UpdateUserInput,
   User,
+  WishlistItem,
 } from './types';
 
 interface MagentoCustomer {
@@ -220,6 +221,9 @@ export interface AccountService {
   ): Promise<Array<{ id: string; code: string; name: string }>>;
   revalidateCountries(): Promise<void>;
   logout(): Promise<void>;
+  getWishlist(): Promise<WishlistItem[]>;
+  addToWishlist(sku: string): Promise<void>;
+  removeFromWishlist(itemId: number): Promise<void>;
 }
 
 export class AccountServiceError extends Error {
@@ -738,15 +742,15 @@ export class MagentoAccountService implements AccountService {
         error instanceof AccountServiceError &&
         error.code === 'UPSTREAM_UNAUTHORIZED'
       ) {
-        const query = `
+        const fullQuery = `
           query GetCustomerOrderDetails {
             customer {
               orders {
                 items {
                   id
                   number
-                  order_date
                   status
+                  order_date
                   total {
                     grand_total {
                       value
@@ -791,9 +795,57 @@ export class MagentoAccountService implements AccountService {
                     country_code
                     telephone
                   }
+                  items {
+                    id
+                    product_name
+                    product_sku
+                    product_sale_price {
+                      value
+                    }
+                    quantity_ordered
+                  }
                   shipping_method
                   payment_methods {
                     name
+                  }
+                }
+              }
+            }
+          }
+        `;
+
+        const safeQuery = `
+          query GetCustomerOrderDetailsSafe {
+            customer {
+              orders {
+                items {
+                  id
+                  number
+                  status
+                  order_date
+                  total {
+                    grand_total {
+                      value
+                      currency
+                    }
+                    subtotal {
+                      value
+                    }
+                    shipping_handling {
+                      total_amount {
+                        value
+                      }
+                    }
+                    taxes {
+                      amount {
+                        value
+                      }
+                    }
+                    discounts {
+                      amount {
+                        value
+                      }
+                    }
                   }
                   items {
                     id
@@ -804,13 +856,19 @@ export class MagentoAccountService implements AccountService {
                     }
                     quantity_ordered
                   }
+                  shipping_method
+                  payment_methods {
+                    name
+                  }
                 }
               }
             }
           }
         `;
 
-        try {
+        const executeOrderQuery = async (
+          query: string
+        ): Promise<OrderDetail> => {
           const graphqlResponse =
             await authenticatedMagentoGraphQL<MagentoCustomerOrderDetailGraphQLResponse>(
               this.accessToken,
@@ -830,7 +888,27 @@ export class MagentoAccountService implements AccountService {
             );
           }
           return toOrderDetailFromGraphQL(found);
+        };
+
+        try {
+          return await executeOrderQuery(fullQuery);
         } catch (graphqlError) {
+          const isAddressNullError =
+            graphqlError instanceof MagentoGraphQLError &&
+            graphqlError.errors.some(
+              e =>
+                e.message.includes('non-nullable') &&
+                e.message.includes('OrderAddress')
+            );
+
+          if (isAddressNullError) {
+            try {
+              return await executeOrderQuery(safeQuery);
+            } catch (safeError) {
+              throw toAccountServiceError(safeError);
+            }
+          }
+
           throw toAccountServiceError(graphqlError);
         }
       }
@@ -1135,6 +1213,224 @@ export class MagentoAccountService implements AccountService {
         mutation
       );
     } catch (error) {
+      throw toAccountServiceError(error);
+    }
+  }
+
+  async getWishlist(): Promise<WishlistItem[]> {
+    const query = `
+      query GetCustomerWishlist {
+        customer {
+          wishlist {
+            id
+            items_count
+            items {
+              id
+              product {
+                sku
+                name
+                url_key
+                thumbnail { url }
+                price_range {
+                  minimum_price {
+                    regular_price { value currency }
+                    final_price { value currency }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await authenticatedMagentoGraphQL<{
+        customer: {
+          wishlist: {
+            id: string;
+            items_count: number;
+            items: Array<{
+              id: string;
+              product: {
+                sku: string;
+                name: string;
+                url_key: string | null;
+                thumbnail: { url: string } | null;
+                price_range: {
+                  minimum_price: {
+                    regular_price: {
+                      value: number | null;
+                      currency: string | null;
+                    };
+                    final_price: {
+                      value: number | null;
+                      currency: string | null;
+                    };
+                  };
+                };
+              };
+            }>;
+          } | null;
+        };
+      }>(this.accessToken, query);
+
+      const wishlist = data.customer?.wishlist;
+      if (!wishlist) return [];
+
+      return wishlist.items.map(item => {
+        const product = item.product;
+        const regularPrice =
+          product.price_range?.minimum_price?.regular_price?.value ?? 0;
+        const finalPrice =
+          product.price_range?.minimum_price?.final_price?.value ?? null;
+        return {
+          id: Number.parseInt(item.id, 10) || 0,
+          sku: product.sku,
+          name: product.name,
+          urlKey: product.url_key ?? null,
+          thumbnail: product.thumbnail?.url ?? null,
+          price: finalPrice ?? regularPrice,
+          originalPrice:
+            finalPrice != null && finalPrice < regularPrice
+              ? regularPrice
+              : null,
+          currency:
+            product.price_range?.minimum_price?.final_price?.currency ??
+            product.price_range?.minimum_price?.regular_price?.currency ??
+            null,
+        };
+      });
+    } catch (error) {
+      throw toAccountServiceError(error);
+    }
+  }
+
+  async addToWishlist(sku: string): Promise<void> {
+    // Fetch current wishlists to get the wishlist ID
+    const listQuery = `
+      query GetWishlistId {
+        customer {
+          wishlist {
+            id
+          }
+        }
+      }
+    `;
+
+    let wishlistId: string;
+    try {
+      const listData = await authenticatedMagentoGraphQL<{
+        customer: { wishlist: { id: string } | null };
+      }>(this.accessToken, listQuery);
+      wishlistId = listData.customer?.wishlist?.id ?? '0';
+    } catch {
+      wishlistId = '0';
+    }
+
+    if (!wishlistId) {
+      wishlistId = '0';
+    }
+
+    const mutation = `
+      mutation AddProductsToWishlist($wishlistId: ID!, $wishlistItems: [WishlistItemInput!]!) {
+        addProductsToWishlist(wishlistId: $wishlistId, wishlistItems: $wishlistItems) {
+          wishlist {
+            id
+            items_count
+          }
+          user_errors {
+            code
+            message
+          }
+        }
+      }
+    `;
+
+    try {
+      const result = await authenticatedMagentoGraphQL<{
+        addProductsToWishlist: {
+          wishlist: { id: string; items_count: number } | null;
+          user_errors: Array<{ code: string; message: string }>;
+        };
+      }>(this.accessToken, mutation, {
+        wishlistId,
+        wishlistItems: [{ sku, quantity: 1 }],
+      });
+
+      if (result.addProductsToWishlist?.user_errors?.length > 0) {
+        throw new AccountServiceError(
+          'WISHLIST_ERROR',
+          502,
+          result.addProductsToWishlist.user_errors[0].message
+        );
+      }
+    } catch (error) {
+      if (error instanceof AccountServiceError) throw error;
+      throw toAccountServiceError(error);
+    }
+  }
+
+  async removeFromWishlist(itemId: number): Promise<void> {
+    const listQuery = `
+      query GetWishlistId {
+        customer {
+          wishlist {
+            id
+          }
+        }
+      }
+    `;
+
+    let wishlistId: string;
+    try {
+      const listData = await authenticatedMagentoGraphQL<{
+        customer: { wishlist: { id: string } | null };
+      }>(this.accessToken, listQuery);
+      wishlistId = listData.customer?.wishlist?.id ?? '0';
+    } catch {
+      wishlistId = '0';
+    }
+
+    if (!wishlistId) {
+      wishlistId = '0';
+    }
+
+    const mutation = `
+      mutation RemoveProductsFromWishlist($wishlistId: ID!, $wishlistItemsIds: [ID!]!) {
+        removeProductsFromWishlist(wishlistId: $wishlistId, wishlistItemsIds: $wishlistItemsIds) {
+          wishlist {
+            id
+            items_count
+          }
+          user_errors {
+            code
+            message
+          }
+        }
+      }
+    `;
+
+    try {
+      const result = await authenticatedMagentoGraphQL<{
+        removeProductsFromWishlist: {
+          wishlist: { id: string; items_count: number } | null;
+          user_errors: Array<{ code: string; message: string }>;
+        };
+      }>(this.accessToken, mutation, {
+        wishlistId,
+        wishlistItemsIds: [String(itemId)],
+      });
+
+      if (result.removeProductsFromWishlist?.user_errors?.length > 0) {
+        throw new AccountServiceError(
+          'WISHLIST_ERROR',
+          502,
+          result.removeProductsFromWishlist.user_errors[0].message
+        );
+      }
+    } catch (error) {
+      if (error instanceof AccountServiceError) throw error;
       throw toAccountServiceError(error);
     }
   }
