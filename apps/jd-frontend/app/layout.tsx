@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-app={env.NODE_ENV}>
+    <html lang="en" data-app={env.NODE_ENV} suppressHydrationWarning>
       <body className="mobile-tabbar-safe-padding">
         <AppProviders>
           {/* <PromoBar /> */}

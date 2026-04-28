@@ -940,6 +940,8 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
 
     const responseData = (await response.json()) as StrapiPageResponse;
 
+    console.log('responseData', responseData);
+
     const pageData = responseData.data[0];
     if (!pageData) {
       console.warn(`Page not found: ${slug}`);
