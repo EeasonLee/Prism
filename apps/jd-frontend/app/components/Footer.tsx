@@ -36,7 +36,7 @@ const INFO_LINKS: InfoLinkItem[] = [
   { href: '/account', label: 'My Account', requiresAuth: true },
   { href: '/account/orders', label: 'My Order', requiresAuth: true },
   { href: '/cart', label: 'My Cart', requiresAuth: true },
-  // { href: '/wishlist', label: 'Wishlist' },
+  { href: '/account/wishlist', label: 'Wishlist', requiresAuth: true },
 ];
 
 const SERVICE_LINKS = [
@@ -257,7 +257,7 @@ export function Footer() {
                       Mon–Fri, 10 AM – 6 PM EST
                     </span>
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-500">
+                  {/* <p className="text-xs leading-relaxed text-neutral-500">
                     Company Address:
                   </p>
                   <p className="text-xs leading-relaxed text-neutral-600">
@@ -265,7 +265,7 @@ export function Footer() {
                   </p>
                   <p className="text-xs leading-relaxed text-neutral-600">
                     Canada Address: 23 Hubner Ave Markham ON L6C 0S8 Canada
-                  </p>
+                  </p> */}
                 </div>
               </div>
             </div>
