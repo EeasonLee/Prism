@@ -143,9 +143,7 @@ export function CategoryProductGrid({
             <span>Loading more...</span>
           </div>
         ) : !hasMore && products.length > 0 ? (
-          <span className="text-sm text-ink-muted">
-            You have reached the end
-          </span>
+          <span className="text-sm text-ink-muted"></span>
         ) : null}
       </div>
     </>

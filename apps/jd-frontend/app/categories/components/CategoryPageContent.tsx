@@ -153,6 +153,9 @@ export function CategoryPageContent({
     .filter(Boolean);
   const categoryIntroHeading = categoryIntroLines[0] ?? '';
   const categoryIntroBody = categoryIntroLines.slice(1).join(' ');
+  const normalizedCategoryIntroHeading = categoryIntroHeading
+    .replace(/^#{1,6}\s*/, '')
+    .trim();
 
   const categoryBackgroundImageUrl = processImageUrl(
     currentCategory.backgroundImageUrl
@@ -206,17 +209,17 @@ export function CategoryPageContent({
       </h1>
 
       {hasCategoryIntro ? (
-        <div className="mb-8 grid overflow-hidden rounded-xl border border-line bg-bg-subtle md:grid-cols-[1fr_1.4fr]">
-          <div className="flex items-center bg-bg-subtle p-6 sm:p-8 md:p-10">
+        <div className="mb-10 grid overflow-hidden border-line/80 bg-white  md:grid-cols-[minmax(320px,1fr)_minmax(420px,1.3fr)]">
+          <div className="flex items-center">
             {categoryIntroText ? (
-              <div className="max-w-[460px] space-y-4">
-                {categoryIntroHeading ? (
-                  <h2 className="text-3xl font-bold leading-tight text-ink md:text-4xl">
-                    {categoryIntroHeading}
+              <div className="max-w-[620px] space-y-5">
+                {normalizedCategoryIntroHeading ? (
+                  <h2 className="text-3xl font-bold leading-[1.2] tracking-[-0.01em] text-ink md:text-5xl">
+                    {normalizedCategoryIntroHeading}
                   </h2>
                 ) : null}
                 {categoryIntroBody ? (
-                  <p className="text-base leading-8 text-ink-muted">
+                  <p className="text-base leading-7 text-ink-muted md:text-xl">
                     {categoryIntroBody}
                   </p>
                 ) : null}
@@ -224,7 +227,7 @@ export function CategoryPageContent({
             ) : null}
           </div>
           {categoryBackgroundImageUrl ? (
-            <div className="relative min-h-[220px] bg-surface-muted md:min-h-[320px]">
+            <div className="relative h-[240px]  md:h-[420px]">
               <Image
                 src={categoryBackgroundImageUrl}
                 alt={`${currentCategory.name} background`}
@@ -232,7 +235,7 @@ export function CategoryPageContent({
                 unoptimized={shouldDisableImageOptimization(
                   categoryBackgroundImageUrl
                 )}
-                className="object-cover md:object-contain"
+                className="rounded-2xl"
                 sizes="(max-width: 767px) 100vw, 50vw"
               />
             </div>

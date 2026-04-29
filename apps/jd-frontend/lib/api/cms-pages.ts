@@ -901,7 +901,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     // Strapi v5 对于 Dynamic Zone，必须使用 populate[field][on][component.name] 语法
     const populateParams = [
       'populate[sections][on][page.hero-banner][populate][slides][populate]=*',
-      'populate[sections][on][page.category-grid][populate][categories][populate]=*',
+      'populate[sections][on][page.category-grid][populate][categories][fields][0]=name',
+      'populate[sections][on][page.category-grid][populate][categories][fields][1]=slug',
+      'populate[sections][on][page.category-grid][populate][categories][fields][2]=magento_category_id',
       'populate[sections][on][page.product-carousel]=true',
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',

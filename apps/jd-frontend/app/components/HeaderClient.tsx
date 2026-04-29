@@ -89,10 +89,10 @@ type DropdownNavProps = {
 
 function DropdownNav({ label, items }: DropdownNavProps) {
   const linkClassName =
-    'block px-4 py-3 text-sm font-medium text-ink leading-none transition hover:bg-surface hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+    'block px-4 py-3 text-sm font-medium text-ink leading-none transition-colors duration-150 hover:bg-surface-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
 
   return (
-    <div className="group relative">
+    <div className="group relative flex h-full items-center">
       <button
         type="button"
         className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -112,8 +112,8 @@ function DropdownNav({ label, items }: DropdownNavProps) {
           />
         </svg>
       </button>
-      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-border bg-background opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
-        <ul className="divide-y divide-border p-2">
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 overflow-hidden rounded-md border border-border/60 bg-background opacity-0 shadow-[0_8px_24px_rgba(17,24,39,0.08)] transition duration-150 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:opacity-100">
+        <ul className="divide-y divide-border/70 py-1">
           {items.map(item => (
             <li key={`${item.label}-${item.href}`}>
               {!item.href ? (
@@ -178,7 +178,7 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
 
           <nav
             aria-label="Main navigation"
-            className="hidden h-[55px] flex-1 items-center justify-center gap-9 md:flex"
+            className="hidden h-full flex-1 items-center justify-center gap-9 md:flex"
           >
             {menuItems.map(item => {
               if (item.children.length > 0) {
