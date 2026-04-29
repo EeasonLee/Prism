@@ -85,33 +85,65 @@ function mapChildrenToDropdownItems(
 type DropdownNavProps = {
   label: string;
   items: DropdownItem[];
+  href?: string | null;
+  openInNewTab?: boolean;
+  external?: boolean;
 };
 
-function DropdownNav({ label, items }: DropdownNavProps) {
+function DropdownNav({
+  label,
+  items,
+  href = null,
+  openInNewTab = false,
+  external = false,
+}: DropdownNavProps) {
   const linkClassName =
     'block px-4 py-3 text-sm font-medium text-ink leading-none transition-colors duration-150 hover:bg-surface-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+  const triggerClassName =
+    'flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+
+  const triggerContent = (
+    <>
+      {label}
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </>
+  );
 
   return (
     <div className="group relative flex h-full items-center">
-      <button
-        type="button"
-        className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        aria-expanded="false"
-      >
-        {label}
-        <svg
-          aria-hidden="true"
-          className="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
+      {!href ? (
+        <button
+          type="button"
+          className={triggerClassName}
+          aria-expanded="false"
         >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
+          {triggerContent}
+        </button>
+      ) : external || openInNewTab ? (
+        <a
+          href={href}
+          className={triggerClassName}
+          target={openInNewTab ? '_blank' : undefined}
+          rel={openInNewTab ? 'noopener noreferrer' : undefined}
+        >
+          {triggerContent}
+        </a>
+      ) : (
+        <Link href={href} className={triggerClassName}>
+          {triggerContent}
+        </Link>
+      )}
       <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 overflow-hidden rounded-md border border-border/60 bg-background opacity-0 shadow-[0_8px_24px_rgba(17,24,39,0.08)] transition duration-150 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:opacity-100">
         <ul className="divide-y divide-border/70 py-1">
           {items.map(item => (
@@ -184,11 +216,15 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
               if (item.children.length > 0) {
                 const dropdownItems = mapChildrenToDropdownItems(item.children);
                 if (dropdownItems.length === 0) return null;
+                const topHref = item.url ? normalizeHref(item.url) : null;
                 return (
                   <DropdownNav
                     key={item.title}
                     label={item.title}
                     items={dropdownItems}
+                    href={topHref}
+                    openInNewTab={item.openInNewTab}
+                    external={topHref ? isExternalUrl(topHref) : false}
                   />
                 );
               }
