@@ -75,7 +75,7 @@ export async function authenticatedCartRequest<T>(
   request: Request,
   handler: (
     magentoAccessToken: string,
-    cartId: string | null,
+    cartId: string,
     isGuest: boolean
   ) => Promise<T>
 ): Promise<NextResponse> {
@@ -84,7 +84,7 @@ export async function authenticatedCartRequest<T>(
       resolveIsGuestSession(request) ||
       magentoAccessToken.trim().startsWith('guest-local:');
 
-    let cartId: string | null = null;
+    let cartId = '';
 
     if (isGuest) {
       cartId = await ensureGuestCartId(request, magentoAccessToken);

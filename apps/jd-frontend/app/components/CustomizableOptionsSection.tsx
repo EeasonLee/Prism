@@ -1,6 +1,6 @@
 'use client';
 
-import type { MagentoCustomizableOption } from '../lib/api/magento/types';
+import type { MagentoCustomizableOption } from '@/lib/api/magento/types';
 import {
   Select,
   SelectContent,

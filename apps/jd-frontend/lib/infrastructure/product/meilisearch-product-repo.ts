@@ -38,6 +38,58 @@ interface MeilisearchHit {
   category_ids?: number[];
   category_ancestor_ids?: number[];
   content_updated_at?: number;
+  configurable_options?: Array<{
+    attribute_id?: string | number;
+    attribute_code: string;
+    label: string;
+    values: Array<{ value_index: string | number; label: string }>;
+  }>;
+  configurable_children?: Array<{
+    sku: string;
+    price: number;
+    final_price: number;
+    is_in_stock: boolean;
+    image_url: string | null;
+    option_values: Record<string, string>;
+  }>;
+  custom_options?: Array<{
+    option_id: number;
+    title: string;
+    type: string;
+    required: boolean;
+    sort_order?: number;
+    max_characters?: number | null;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price: number;
+      price_type: string;
+      sku: string;
+      sort_order: number;
+    }>;
+  }>;
+  parent_sku?: string | null;
+  parent_url?: string | null;
+  parent_configurable_options?: Array<{
+    attribute_id?: string | number;
+    attribute_code?: string | null;
+    label?: string | null;
+    values?: Array<{ value_index?: string | number; label?: string | null }>;
+  }>;
+  parent_custom_options?: Array<{
+    option_id?: number;
+    title?: string | null;
+    type?: string | null;
+    required?: boolean;
+    values?: Array<{
+      option_type_id?: number;
+      title?: string | null;
+      price?: number;
+      price_type?: string | null;
+      sku?: string | null;
+      sort_order?: number;
+    }>;
+  }>;
 }
 
 interface MeilisearchSearchResponse {
@@ -109,7 +161,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
       : processImageUrl(rawImage) ?? rawImage;
 
   return {
-    sku: hit.id ?? hit.sku ?? '',
+    sku: hit.sku ?? hit.id ?? '',
     name: hit.display_name ?? hit.name,
     displayName: hit.display_name ?? hit.name,
     shortName: hit.short_name ?? null,
@@ -351,6 +403,223 @@ export async function searchProductsFromMeilisearch(params: {
   }
 }
 
+// ─── Cart enrichment types ───────────────────────────────────────────────────
+
+export interface CartProductEnrichment {
+  sku: string;
+  name: string;
+  image: string | null;
+  configurable_options: Array<{
+    attribute_id: string;
+    attribute_code: string;
+    label: string;
+    values: Array<{ value_index: string; label: string }>;
+  }>;
+  custom_options: Array<{
+    option_id: number;
+    title: string;
+    type: string;
+    required: boolean;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price: number;
+      price_type: string;
+      sku: string;
+      sort_order: number;
+    }>;
+  }>;
+  variants: Array<{
+    sku: string;
+    price: number;
+    final_price: number;
+    is_in_stock: boolean;
+    image_url: string | null;
+    option_values: Record<string, string>;
+  }>;
+  parent_sku: string | null;
+  parent_url: string | null;
+  parent_configurable_options: Array<{
+    attribute_id: string;
+    attribute_code: string;
+    label: string;
+    values: Array<{ value_index: string; label: string }>;
+  }> | null;
+  parent_custom_options: Array<{
+    option_id: number;
+    title: string;
+    type: string;
+    required: boolean;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price: number;
+      price_type: string;
+      sku: string;
+      sort_order: number;
+    }>;
+  }> | null;
+}
+
+function hitToCartEnrichment(hit: MeilisearchHit): CartProductEnrichment {
+  return {
+    sku: hit.sku ?? hit.id ?? '',
+    name: hit.name ?? '',
+    image: hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null,
+    configurable_options: (hit.configurable_options ?? []).map(opt => ({
+      attribute_id: String(opt.attribute_id ?? ''),
+      attribute_code: opt.attribute_code ?? '',
+      label: opt.label ?? '',
+      values: (opt.values ?? []).map(v => ({
+        value_index: String(v.value_index ?? ''),
+        label: v.label ?? '',
+      })),
+    })),
+    custom_options: (hit.custom_options ?? []).map(opt => ({
+      option_id: opt.option_id ?? 0,
+      title: opt.title ?? '',
+      type: opt.type ?? '',
+      required: opt.required ?? false,
+      values: (opt.values ?? []).map(v => ({
+        option_type_id: v.option_type_id ?? 0,
+        title: v.title ?? '',
+        price: v.price ?? 0,
+        price_type: v.price_type ?? 'fixed',
+        sku: v.sku ?? '',
+        sort_order: v.sort_order ?? 0,
+      })),
+    })),
+    variants: (hit.configurable_children ?? []).map(child => ({
+      sku: child.sku,
+      price: child.price ?? 0,
+      final_price: child.final_price ?? child.price ?? 0,
+      is_in_stock: child.is_in_stock ?? false,
+      image_url: child.image_url ?? null,
+      option_values: child.option_values ?? {},
+    })),
+    parent_sku: hit.parent_sku ?? null,
+    parent_url: hit.parent_url ?? null,
+    parent_configurable_options: (hit.parent_configurable_options ?? []).map(
+      opt => ({
+        attribute_id: String(opt.attribute_id ?? ''),
+        attribute_code: opt.attribute_code ?? '',
+        label: opt.label ?? '',
+        values: (opt.values ?? []).map(v => ({
+          value_index: String(v.value_index ?? ''),
+          label: v.label ?? '',
+        })),
+      })
+    ),
+    parent_custom_options: (hit.parent_custom_options ?? []).map(opt => ({
+      option_id: opt.option_id ?? 0,
+      title: opt.title ?? '',
+      type: opt.type ?? '',
+      required: opt.required ?? false,
+      values: (opt.values ?? []).map(v => ({
+        option_type_id: v.option_type_id ?? 0,
+        title: v.title ?? '',
+        price: v.price ?? 0,
+        price_type: v.price_type ?? 'fixed',
+        sku: v.sku ?? '',
+        sort_order: v.sort_order ?? 0,
+      })),
+    })),
+  };
+}
+
+// ─── Cart enrichment: fields to retrieve from Meilisearch ──────────────────────
+
+const CART_ENRICH_FIELDS = [
+  'sku',
+  'name',
+  'thumbnail_url',
+  'image_url',
+  'thumbnail',
+  'configurable_options',
+  'custom_options',
+  'parent_sku',
+  'parent_url',
+  'parent_configurable_options',
+  'parent_custom_options',
+  'configurable_children',
+];
+
+export async function searchCartProductBySkuFromMeilisearch(
+  sku: string
+): Promise<CartProductEnrichment | null> {
+  const host = env.MEILISEARCH_HOST;
+  if (!host) throw new Error('MEILISEARCH_HOST is not configured');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(env.MEILISEARCH_API_KEY
+      ? { Authorization: `Bearer ${env.MEILISEARCH_API_KEY}` }
+      : {}),
+  };
+
+  const baseBody: Record<string, unknown> = {
+    q: `"${sku}"`,
+    page: 1,
+    hitsPerPage: 1,
+    attributesToRetrieve: CART_ENRICH_FIELDS,
+  };
+
+  const targetSku = sku.trim().toLowerCase();
+
+  try {
+    for (const indexUid of getIndexCandidates()) {
+      const outcome = await searchIndexWithFacetFallback(
+        host,
+        indexUid,
+        headers,
+        baseBody,
+        undefined
+      );
+      if (outcome.kind !== 'ok') continue;
+
+      const hits = (outcome.data.hits as MeilisearchHit[] | undefined) ?? [];
+      const exactMatch = hits.find(
+        h => (h.sku ?? '').trim().toLowerCase() === targetSku
+      );
+      if (!exactMatch) continue;
+
+      return hitToCartEnrichment(exactMatch);
+    }
+    return null;
+  } catch (error) {
+    await notifyError({
+      title: 'Cart Product Enrichment Failed',
+      message: JSON.stringify({ sku }),
+      error,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Batch cart enrichment — parallel Meilisearch queries per SKU.
+ * Eliminates N browser→server round-trips for multi-item carts.
+ */
+export async function searchCartProductsBySkusFromMeilisearch(
+  skus: string[]
+): Promise<Record<string, CartProductEnrichment | null>> {
+  if (skus.length === 0) return {};
+
+  const uniqueSkus = [...new Set(skus.map(s => s.trim()).filter(Boolean))];
+  const results = await Promise.all(
+    uniqueSkus.map(async sku => {
+      const enrichment = await searchCartProductBySkuFromMeilisearch(sku);
+      return { sku, enrichment };
+    })
+  );
+
+  const map: Record<string, CartProductEnrichment | null> = {};
+  for (const { sku, enrichment } of results) {
+    map[sku] = enrichment;
+  }
+  return map;
+}
+
 export async function searchProductBySkuFromMeilisearch(
   sku: string
 ): Promise<ProductCardItem | null> {
@@ -376,3 +645,10 @@ export async function searchProductsBySkusFromMeilisearch(
   );
   return found.filter((item): item is ProductCardItem => item !== null);
 }
+
+// ─── Meilisearch hit type extensions ───────────────────────────────────────────
+//
+// NOTE: configurable_options and configurable_children are available on
+// Meilisearch hits from the joydeem_product_en index (added by catalog-sync).
+// They are not mapped to ProductCardItem — use direct Meilisearch queries
+// or the /api/products?includeOptions=true endpoint to access them.

@@ -2,7 +2,8 @@
 
 import { env } from '@/lib/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/format-price';
 import {
@@ -16,6 +17,137 @@ import type { CartTotals } from '../../lib/api/magento/types';
 import { useAuth } from '../../lib/auth/context';
 import { useCart } from '../../lib/cart/context';
 import { LoginModal } from './LoginModal';
+
+interface CartEnrichmentData {
+  sku: string;
+  name: string;
+  image: string | null;
+  configurable_options: Array<{
+    attribute_id: string;
+    attribute_code: string;
+    label: string;
+    values: Array<{ value_index: string; label: string }>;
+  }>;
+  custom_options: Array<{
+    option_id: number;
+    title: string;
+    type: string;
+    required: boolean;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price: number;
+      price_type: string;
+      sku: string;
+      sort_order: number;
+    }>;
+  }>;
+  parent_sku: string | null;
+  parent_url: string | null;
+  parent_configurable_options: Array<{
+    attribute_id: string;
+    attribute_code: string;
+    label: string;
+    values: Array<{ value_index: string; label: string }>;
+  }> | null;
+  parent_custom_options: Array<{
+    option_id: number;
+    title: string;
+    type: string;
+    required: boolean;
+    values?: Array<{
+      option_type_id: number;
+      title: string;
+      price: number;
+      price_type: string;
+      sku: string;
+      sort_order: number;
+    }>;
+  }> | null;
+  variants: Array<{
+    sku: string;
+    price: number;
+    final_price: number;
+    is_in_stock: boolean;
+    image_url: string | null;
+    option_values: Record<string, string>;
+  }>;
+}
+
+function normalizeCartSku(sku: string): string {
+  const commaIdx = sku.indexOf(',');
+  return commaIdx > 0 ? sku.slice(0, commaIdx).trim() : sku.trim();
+}
+
+function buildOptionLabelMap(
+  enrichment: CartEnrichmentData | undefined
+): Record<string, string> | null {
+  const source = enrichment?.configurable_options?.length
+    ? enrichment.configurable_options
+    : enrichment?.parent_configurable_options?.length
+    ? enrichment.parent_configurable_options
+    : [];
+  if (source.length === 0) return null;
+  const map: Record<string, string> = {};
+  for (const opt of source) {
+    for (const v of opt.values) {
+      map[v.value_index] = v.label;
+    }
+  }
+  return map;
+}
+
+function buildCustomOptionLabelMap(
+  enrichment: CartEnrichmentData | undefined
+): Record<string, { title: string; values: Record<string, string> }> | null {
+  const source = enrichment?.custom_options?.length
+    ? enrichment.custom_options
+    : enrichment?.parent_custom_options?.length
+    ? enrichment.parent_custom_options
+    : [];
+  if (source.length === 0) return null;
+  const map: Record<string, { title: string; values: Record<string, string> }> =
+    {};
+  for (const opt of source) {
+    const valueMap: Record<string, string> = {};
+    for (const v of opt.values ?? []) {
+      valueMap[String(v.option_type_id)] = v.title;
+    }
+    map[String(opt.option_id)] = { title: opt.title, values: valueMap };
+  }
+  return map;
+}
+
+function findVariantImage(
+  enrichment: CartEnrichmentData | undefined,
+  cartOptions: Array<{ label: string; value: string }> | undefined
+): string | null {
+  if (!enrichment || enrichment.variants.length === 0) return null;
+
+  // Build a map of selected attribute values from cart options
+  const selectedValues: Record<string, string> = {};
+  for (const opt of cartOptions ?? []) {
+    // configurable_item_options come as numeric option_id -> option_value
+    selectedValues[opt.label] = opt.value;
+  }
+
+  // Find matching variant by comparing option_values
+  for (const variant of enrichment.variants) {
+    const variantValues = variant.option_values ?? {};
+    let match = true;
+    for (const [key, val] of Object.entries(selectedValues)) {
+      if (variantValues[key] !== val) {
+        match = false;
+        break;
+      }
+    }
+    if (match && variant.image_url) {
+      return variant.image_url;
+    }
+  }
+
+  return null;
+}
 
 export function CartDrawer() {
   const router = useRouter();
@@ -40,6 +172,77 @@ export function CartDrawer() {
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [enrichment, setEnrichment] = useState<
+    Record<string, CartEnrichmentData | null>
+  >({});
+  // Persist enrichment across cart open/close — re-fetch only when items change
+  const cacheRef = useRef<Record<string, CartEnrichmentData | null>>({});
+
+  // Fetch product info (image + configurable options + custom options + variants) when cart items change
+  useEffect(() => {
+    if (items.length === 0) {
+      setEnrichment({});
+      return;
+    }
+
+    // Collect unique normalized SKUs
+    const rawToNormalized = new Map<string, string>();
+    for (const item of items) {
+      if (!item.sku) continue;
+      rawToNormalized.set(item.sku, normalizeCartSku(item.sku));
+    }
+    const normalizedSet = new Set(rawToNormalized.values());
+
+    // Check cache: which normalized SKUs are missing?
+    const uncached = [...normalizedSet].filter(
+      sku => !(sku in cacheRef.current)
+    );
+
+    // Build from cache immediately for instant render
+    const cachedMap: Record<string, CartEnrichmentData | null> = {};
+    for (const [raw, normalized] of rawToNormalized) {
+      cachedMap[raw] = cacheRef.current[normalized] ?? null;
+    }
+    setEnrichment(cachedMap);
+
+    if (uncached.length === 0) return;
+
+    let cancelled = false;
+
+    const fetchAll = async () => {
+      try {
+        const res = await fetch(
+          `/api/products?skus=${uncached
+            .map(s => encodeURIComponent(s))
+            .join(',')}`
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          success: boolean;
+          data?: Record<string, CartEnrichmentData | null>;
+        };
+        if (!json.success || !json.data) return;
+
+        // Update cache
+        Object.assign(cacheRef.current, json.data);
+
+        if (cancelled) return;
+        // Merge fresh data for all items
+        const merged: Record<string, CartEnrichmentData | null> = {};
+        for (const [raw, normalized] of rawToNormalized) {
+          merged[raw] = cacheRef.current[normalized] ?? null;
+        }
+        setEnrichment(merged);
+      } catch {
+        // Serve from cache on error — already set above
+      }
+    };
+
+    void fetchAll();
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   const handleViewCart = useCallback(async () => {
     if (!hasSession) return;
@@ -47,8 +250,6 @@ export function CartDrawer() {
     try {
       closeCart();
       router.push('/cart');
-      // const { redirect_url } = await getCartRedirectLink();
-      // window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } finally {
       setViewCartLoading(false);
     }
@@ -57,7 +258,6 @@ export function CartDrawer() {
   const handleCheckout = useCallback(async () => {
     if (!hasSession) return;
 
-    // 游客直接弹出登录引导
     if (isGuest && env.REQUIRE_LOGIN_FOR_CHECKOUT) {
       setShowLoginModal(true);
       return;
@@ -255,74 +455,166 @@ export function CartDrawer() {
 
           {hasItems && (
             <ul className="space-y-3">
-              {items.map(item => (
-                <li
-                  key={item.item_id}
-                  className="flex items-start gap-3 rounded-lg border border-border p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">
-                      {item.name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      SKU: {item.sku}
-                    </p>
-                    {item.options && item.options.length > 0 && (
-                      <ul className="mt-1.5 space-y-0.5 text-[11px] text-ink-muted">
-                        {item.options.map((opt, idx) => (
-                          <li key={`${item.item_id}-opt-${idx}`}>
-                            <span className="text-ink-faint">{opt.label}:</span>{' '}
-                            {opt.value}
-                          </li>
-                        ))}
-                      </ul>
+              {items.map(item => {
+                const enrich = enrichment[item.sku];
+                const optionLabelMap = buildOptionLabelMap(enrich ?? undefined);
+                const customOptionLabelMap = buildCustomOptionLabelMap(
+                  enrich ?? undefined
+                );
+
+                // Variant image: try to match cart options against variant option_values
+                const variantImage = findVariantImage(
+                  enrich ?? undefined,
+                  item.options
+                );
+                const imageUrl =
+                  variantImage ?? enrich?.image ?? item.thumbnail ?? null;
+
+                // For configurable products, show variant label + base name
+                const displayName = item.name;
+
+                return (
+                  <li
+                    key={item.item_id}
+                    className="flex items-start gap-3 rounded-lg border border-border p-3"
+                  >
+                    {/* Product image */}
+                    {imageUrl ? (
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface">
+                        <Image
+                          src={imageUrl}
+                          alt={displayName}
+                          width={64}
+                          height={64}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-surface">
+                        <ShoppingCart className="h-5 w-5 text-ink-muted/30" />
+                      </div>
                     )}
-                    <div className="mt-2 flex items-center gap-1">
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">
+                        {displayName}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        SKU: {item.sku}
+                      </p>
+                      {item.options && item.options.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5 text-[11px] text-ink-muted">
+                          {item.options.map((opt, idx) => {
+                            // Check if this is a configurable option
+                            // (numeric label = option_id, or "Configurable {id}" from REST)
+                            const isConfigurable =
+                              /^\d+$/.test(opt.label) ||
+                              opt.label.startsWith('Configurable ');
+                            // Check if this is a custom option
+                            const isCustom = opt.label.startsWith('Custom ');
+
+                            let resolvedLabel = opt.label;
+                            let resolvedValue = opt.value;
+
+                            if (isConfigurable && optionLabelMap) {
+                              resolvedValue =
+                                optionLabelMap[opt.value] ?? opt.value;
+                              // Extract attribute ID from label
+                              const attrId = opt.label
+                                .replace('Configurable ', '')
+                                .trim();
+                              const allConfigurableOpts = [
+                                ...(enrich?.configurable_options ?? []),
+                                ...(enrich?.parent_configurable_options ?? []),
+                              ];
+                              const configOpt = allConfigurableOpts.find(
+                                co =>
+                                  co.attribute_id === attrId ||
+                                  co.attribute_code === attrId
+                              );
+                              if (configOpt) {
+                                resolvedLabel = configOpt.label;
+                              }
+                            }
+
+                            if (isCustom && customOptionLabelMap) {
+                              const customOptId = opt.label.replace(
+                                'Custom ',
+                                ''
+                              );
+                              const customOpt =
+                                customOptionLabelMap[customOptId];
+                              if (customOpt) {
+                                resolvedLabel = customOpt.title;
+                                // custom option values can be comma-separated option_type_ids
+                                const valueIds = opt.value
+                                  .split(',')
+                                  .map(v => v.trim());
+                                const resolvedValues = valueIds
+                                  .map(vid => customOpt.values[vid] ?? vid)
+                                  .filter(Boolean);
+                                resolvedValue = resolvedValues.join(', ');
+                              }
+                            }
+
+                            return (
+                              <li key={`${item.item_id}-opt-${idx}`}>
+                                <span className="text-ink-faint">
+                                  {resolvedLabel}:
+                                </span>{' '}
+                                {resolvedValue}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      <div className="mt-2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() =>
+                            handleUpdateQty(item.item_id, item.qty - 1)
+                          }
+                          disabled={
+                            mutatingItemId === item.item_id || item.qty <= 1
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="min-w-6 text-center text-sm text-ink">
+                          {item.qty}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() =>
+                            handleUpdateQty(item.item_id, item.qty + 1)
+                          }
+                          disabled={mutatingItemId === item.item_id}
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <p className="text-sm font-semibold text-ink">
+                        {formatCartLineTotal(item)}
+                      </p>
                       <button
                         type="button"
-                        aria-label="Decrease quantity"
-                        onClick={() =>
-                          handleUpdateQty(item.item_id, item.qty - 1)
-                        }
-                        disabled={
-                          mutatingItemId === item.item_id || item.qty <= 1
-                        }
-                        className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="min-w-6 text-center text-sm text-ink">
-                        {item.qty}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label="Increase quantity"
-                        onClick={() =>
-                          handleUpdateQty(item.item_id, item.qty + 1)
-                        }
+                        aria-label={`Remove ${item.name} from cart`}
+                        onClick={() => handleRemoveItem(item.item_id)}
                         disabled={mutatingItemId === item.item_id}
-                        className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <p className="text-sm font-semibold text-ink">
-                      {formatCartLineTotal(item)}
-                    </p>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${item.name} from cart`}
-                      onClick={() => handleRemoveItem(item.item_id)}
-                      disabled={mutatingItemId === item.item_id}
-                      className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
 

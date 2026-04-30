@@ -7,10 +7,6 @@
 
 import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
 import { isMagentoApiError } from '@/lib/api/magento/client';
-import {
-  authenticatedMagentoGraphQL,
-  magentoGraphQLNoCache,
-} from '@/lib/services/magento-graphql.client';
 import type {
   CartItem,
   CartItemsResponse,
@@ -208,262 +204,41 @@ function extractCartOptions(
   return normalized;
 }
 
-function buildLineMatchKey(
-  item: Pick<CartItem, 'sku' | 'name' | 'qty' | 'price'>
-): string {
-  return `${item.sku}__${item.name}__${item.qty}__${item.price}`;
-}
-
-function mergeGraphqlOptions(
-  restItems: CartItem[],
-  graphqlItems: CartItem[]
-): CartItem[] {
-  const optionBuckets = new Map<string, Array<CartItem['options']>>();
-
-  for (const gqlItem of graphqlItems) {
-    const key = buildLineMatchKey(gqlItem);
-    const bucket = optionBuckets.get(key) ?? [];
-    bucket.push(gqlItem.options);
-    optionBuckets.set(key, bucket);
-  }
-
-  return restItems.map(restItem => {
-    const key = buildLineMatchKey(restItem);
-    const bucket = optionBuckets.get(key);
-    if (!bucket || bucket.length === 0) {
-      return restItem;
-    }
-    const nextOptions = bucket.shift();
-    return {
-      ...restItem,
-      options:
-        Array.isArray(nextOptions) && nextOptions.length > 0
-          ? nextOptions
-          : undefined,
-    };
-  });
-}
-
-interface GraphqlCartOptionItem {
-  quantity: number;
-  product: {
-    sku: string;
-    name: string;
-  };
-  prices: {
-    price: {
-      value: number;
-    };
-  };
-  configurable_options?: Array<{
-    option_label: string;
-    value_label: string;
-  }>;
-  customizable_options?: Array<{
-    label: string;
-    values: Array<{
-      label: string;
-      value: string;
-    }>;
-  }>;
-}
-
-interface CustomerCartOptionsResponse {
-  customerCart: {
-    items: GraphqlCartOptionItem[];
-  };
-}
-
-interface GuestCartOptionsResponse {
-  cart: {
-    items: GraphqlCartOptionItem[];
-  } | null;
-}
-
-const CUSTOMER_CART_OPTIONS_QUERY = `
-  query CustomerCartOptions {
-    customerCart {
-      items {
-        __typename
-        quantity
-        product {
-          sku
-          name
-        }
-        prices {
-          price {
-            value
-          }
-        }
-        ... on ConfigurableCartItem {
-          configurable_options {
-            option_label
-            value_label
-          }
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on SimpleCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on VirtualCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on BundleCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on DownloadableCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-const GUEST_CART_OPTIONS_QUERY = `
-  query GuestCartOptions($cartId: String!) {
-    cart(cart_id: $cartId) {
-      items {
-        __typename
-        quantity
-        product {
-          sku
-          name
-        }
-        prices {
-          price {
-            value
-          }
-        }
-        ... on ConfigurableCartItem {
-          configurable_options {
-            option_label
-            value_label
-          }
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on SimpleCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on VirtualCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on BundleCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-        ... on DownloadableCartItem {
-          customizable_options {
-            label
-            values {
-              label
-              value
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-function transformGraphqlOptionItem(item: GraphqlCartOptionItem): CartItem {
+/**
+ * 从 REST cart items 响应中提取可配置选项和自定义选项的详细信息
+ * 用于增强购物车项的选项显示
+ */
+function extractCartItemOptions(
+  item: MagentoCartItem
+): Array<{ label: string; value: string }> {
   const options: Array<{ label: string; value: string }> = [];
-  for (const option of item.configurable_options ?? []) {
-    options.push({
-      label: option.option_label,
-      value: option.value_label,
-    });
-  }
-  for (const option of item.customizable_options ?? []) {
-    const value = option.values.map(v => v.value || v.label).join(', ');
-    options.push({
-      label: option.label,
-      value,
-    });
+  const extensionAttributes = item.product_option?.extension_attributes;
+
+  if (!extensionAttributes) {
+    return options;
   }
 
-  return {
-    item_id: '',
-    sku: item.product.sku,
-    name: item.product.name,
-    qty: item.quantity,
-    price: item.prices.price.value,
-    product_type: '',
-    options,
-  };
-}
+  // 可配置产品选项 (super_attribute)
+  if (extensionAttributes.configurable_item_options) {
+    for (const option of extensionAttributes.configurable_item_options) {
+      options.push({
+        label: String(option.option_id),
+        value: String(option.option_value),
+      });
+    }
+  }
 
-async function loadCustomerGraphqlOptionItems(
-  accessToken: string
-): Promise<CartItem[]> {
-  const response =
-    await authenticatedMagentoGraphQL<CustomerCartOptionsResponse>(
-      accessToken,
-      CUSTOMER_CART_OPTIONS_QUERY
-    );
-  return (response.customerCart.items ?? []).map(transformGraphqlOptionItem);
-}
+  // 自定义选项
+  if (extensionAttributes.custom_options) {
+    for (const option of extensionAttributes.custom_options) {
+      options.push({
+        label: String(option.option_id),
+        value: option.option_value,
+      });
+    }
+  }
 
-async function loadGuestGraphqlOptionItems(
-  cartId: string
-): Promise<CartItem[]> {
-  const response = await magentoGraphQLNoCache<GuestCartOptionsResponse>(
-    GUEST_CART_OPTIONS_QUERY,
-    { cartId }
-  );
-  return (response.cart?.items ?? []).map(transformGraphqlOptionItem);
+  return options;
 }
 
 /**
@@ -567,23 +342,13 @@ export async function getGuestCart(
 
   const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
 
-  const restSnapshot: CartItemsResponse = {
+  return {
     cart_id: cartId,
     items_count: items.length,
     total_quantity: totalQty,
     items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
-
-  try {
-    const gqlItems = await loadGuestGraphqlOptionItems(cartId);
-    return {
-      ...restSnapshot,
-      items: mergeGraphqlOptions(restSnapshot.items, gqlItems),
-    };
-  } catch {
-    return restSnapshot;
-  }
 }
 
 /**
@@ -630,23 +395,13 @@ export async function getCustomerCart(
       ? customerCartIdFromItems
       : await ensureCustomerCartQuoteId(accessToken);
 
-  const restSnapshot: CartItemsResponse = {
+  return {
     cart_id: customerCartId,
     items_count: items.length,
     total_quantity: totalQty,
     items: items.map(item => transformCartItem(item, cartCurrency)),
     totals,
   };
-
-  try {
-    const gqlItems = await loadCustomerGraphqlOptionItems(accessToken);
-    return {
-      ...restSnapshot,
-      items: mergeGraphqlOptions(restSnapshot.items, gqlItems),
-    };
-  } catch {
-    return restSnapshot;
-  }
 }
 
 /**
@@ -1077,6 +832,7 @@ function transformCartItem(
   fallbackCurrency?: string | null
 ): CartItem {
   const options = extractCartOptions(item);
+  const enhancedOptions = extractCartItemOptions(item);
   return {
     item_id: String(item.item_id),
     sku: item.sku,
@@ -1087,5 +843,7 @@ function transformCartItem(
     quote_id: item.quote_id,
     currency: fallbackCurrency ?? 'USD',
     options: options.length > 0 ? options : undefined,
+    enhanced_options: enhancedOptions.length > 0 ? enhancedOptions : undefined,
+    thumbnail: null,
   };
 }
