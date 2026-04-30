@@ -54,9 +54,7 @@ export default async function DynamicPage({
     notFound();
   }
 
-  // TODO: 后续接入 Strapi page.template 字段后替换这段 slug 映射
-  const resolvedTemplate = slug === 'category' ? 'category' : 'default';
-  if (resolvedTemplate === 'category') {
+  if (page.template === 'category') {
     return <CategoryTemplate sections={page.sections} />;
   }
 

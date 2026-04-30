@@ -13,7 +13,10 @@
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
 import { getStrapiBaseUrl } from './config';
 import { searchProductsBySkusForBFF } from './bff/product/meilisearch';
-import { normalizePageLayoutPreset } from './cms-page-layout';
+import {
+  normalizePageLayoutPreset,
+  normalizePageTemplate,
+} from './cms-page-layout';
 import type {
   Page,
   StrapiPageResponse,
@@ -942,8 +945,6 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
 
     const responseData = (await response.json()) as StrapiPageResponse;
 
-    console.log('responseData', responseData);
-
     const pageData = responseData.data[0];
     if (!pageData) {
       console.warn(`Page not found: ${slug}`);
@@ -967,6 +968,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       seo: pageData.seo,
       sections,
       layoutPreset: normalizePageLayoutPreset(pageData.layoutPreset),
+      template: normalizePageTemplate(pageData.template),
       publishedAt: pageData.publishedAt,
       locale: pageData.locale,
     };
