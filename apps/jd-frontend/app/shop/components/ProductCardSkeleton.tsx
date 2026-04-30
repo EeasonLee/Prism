@@ -9,11 +9,15 @@ export function ProductCardSkeleton() {
       </div>
 
       {/* Info placeholder */}
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
         <Skeleton className="mb-2 h-4 w-full" />
         <Skeleton className="mb-2 h-4 w-3/4" />
         <div className="mb-2 h-4" />
-        <Skeleton className="mt-auto h-5 w-20" />
+        <Skeleton className="mt-auto h-5 w-24" />
+      </div>
+
+      <div className="px-4 pb-4">
+        <Skeleton className="h-11 w-full rounded-full" />
       </div>
     </div>
   );

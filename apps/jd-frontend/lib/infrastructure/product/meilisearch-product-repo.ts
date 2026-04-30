@@ -27,6 +27,8 @@ interface MeilisearchHit {
   is_in_stock?: boolean;
   type_id?: string | null;
   promotion_label?: string | null;
+  cp_label?: string | null;
+  cp_label_color?: string | null;
   review_count?: number;
   rating_summary?: number;
   rating_percentage?: number;
@@ -120,6 +122,8 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
+    cpLabel: hit.cp_label?.trim() ? hit.cp_label.trim() : null,
+    cpLabelColor: hit.cp_label_color?.trim() ? hit.cp_label_color.trim() : null,
     reviewCount: hit.review_count ?? 0,
     ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
   };
