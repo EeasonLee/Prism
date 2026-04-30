@@ -1,33 +1,127 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
+import type { PageSection } from '@/lib/api/cms-page.types';
 import { categoryService } from '@/lib/services/category.service';
-import { ProductCard } from '../shop/components/ProductCard';
-import { searchProducts } from '../shop/lib/meilisearch';
+import { ProductCard } from '@/app/shop/components/ProductCard';
+import { searchProducts } from '@/app/shop/lib/meilisearch';
 
-const MALL_BANNER_IMAGE_URL =
-  'https://d2s2mafqv46idp.cloudfront.net/joydeem/media/pages/1_b5c7a96e0a.png';
-const FIXED_CATEGORY_IDS = [15, 4, 87, 23, 88] as const;
 const PRODUCTS_PER_SECTION = 8;
-
-export const metadata = {
-  title: 'Mall - Joydeem',
-  description: 'Browse categories and products in the Joydeem mall.',
-};
 
 interface MallCategorySection {
   id: number;
   name: string;
   slug?: string;
+  magentoCategoryId?: number | null;
   description?: string | null;
   listImageUrl?: string | null;
   products: Awaited<ReturnType<typeof searchProducts>>['items'];
 }
 
-async function getMallCategorySections(): Promise<MallCategorySection[]> {
-  const categories = await categoryService.getStrapiCategoriesByIds([
-    ...FIXED_CATEGORY_IDS,
-  ]);
+interface MallCategorySeed {
+  id: number;
+  label: string;
+  slug: string;
+  magentoCategoryId?: number;
+  listImageUrl?: string | null;
+}
+
+interface MallPageData {
+  bannerImageUrl: string | null;
+  sections: MallCategorySection[];
+}
+
+function pickMallConfigFromSections(sections: PageSection[]): {
+  bannerImageUrl: string | null;
+  categorySeeds: MallCategorySeed[];
+} {
+  const heroSection = sections.find(
+    section => section.__component === 'page.hero-banner'
+  );
+  const bannerImageUrl =
+    heroSection &&
+    'slides' in heroSection.props &&
+    Array.isArray(heroSection.props.slides)
+      ? heroSection.props.slides[0]?.image?.url ?? null
+      : null;
+
+  const categorySection = sections.find(
+    section => section.__component === 'page.category-grid'
+  );
+  const categorySeeds =
+    categorySection &&
+    'categories' in categorySection.props &&
+    Array.isArray(categorySection.props.categories)
+      ? categorySection.props.categories
+          .filter(
+            category =>
+              Number.isFinite(category.id) &&
+              category.id > 0 &&
+              typeof category.label === 'string' &&
+              category.label.trim().length > 0
+          )
+          .map(category => ({
+            id: category.id,
+            label: category.label.trim(),
+            slug: category.slug?.trim() ?? '',
+            magentoCategoryId: category.magentoCategoryId,
+          }))
+      : [];
+
+  return {
+    bannerImageUrl,
+    categorySeeds,
+  };
+}
+
+async function getMallPageData(sections: PageSection[]): Promise<MallPageData> {
+  const { bannerImageUrl, categorySeeds: rawCategorySeeds } =
+    pickMallConfigFromSections(sections);
+  const expandedSeedGroups = await Promise.all(
+    rawCategorySeeds.map(async seed => {
+      const seedSlug = seed.slug.trim();
+      if (!seedSlug) {
+        return [seed];
+      }
+
+      const categoryWithChildren =
+        await categoryService.getStrapiCategoryBasicBySlug(seedSlug);
+      const children = categoryWithChildren?.children ?? [];
+      if (children.length === 0) {
+        return [seed];
+      }
+
+      return children.map(child => ({
+        id: child.id,
+        label: child.name,
+        slug: child.slug,
+        listImageUrl: child.imageUrl ?? null,
+      }));
+    })
+  );
+  const categorySeeds = expandedSeedGroups.flat();
+  const deduplicatedSeeds = Array.from(
+    new Map(categorySeeds.map(seed => [seed.id, seed])).values()
+  );
+  const categoryIds = deduplicatedSeeds.map(category => category.id);
+  const categoryRows = await categoryService.getStrapiCategoriesByIds(
+    categoryIds
+  );
+  const categoryById = new Map(
+    categoryRows.map(category => [category.id, category])
+  );
+  const categories = deduplicatedSeeds.map(seed => {
+    const detail = categoryById.get(seed.id);
+    return {
+      id: seed.id,
+      name: detail?.name ?? seed.label,
+      slug: detail?.slug?.trim() || seed.slug || undefined,
+      magentoCategoryId:
+        detail?.magentoCategoryId ?? seed.magentoCategoryId ?? null,
+      description: detail?.description ?? null,
+      listImageUrl: detail?.listImageUrl ?? seed.listImageUrl ?? null,
+    };
+  });
 
   const sectionList = await Promise.all(
     categories.map(async category => {
@@ -59,7 +153,10 @@ async function getMallCategorySections(): Promise<MallCategorySection[]> {
     })
   );
 
-  return sectionList;
+  return {
+    bannerImageUrl,
+    sections: sectionList,
+  };
 }
 
 function CategoryFilterItem({ section }: { section: MallCategorySection }) {
@@ -99,22 +196,34 @@ function CategoryFilterItem({ section }: { section: MallCategorySection }) {
   );
 }
 
-export default async function MallPage() {
-  const sections = await getMallCategorySections();
+export async function CategoryTemplate({
+  sections,
+}: {
+  sections: PageSection[];
+}) {
+  const { bannerImageUrl, sections: mallSections } = await getMallPageData(
+    sections
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 sm:px-6 lg:px-[50px]">
       <section className="overflow-hidden rounded-xl border border-line">
         <div className="relative aspect-[3/1] min-h-[180px] w-full bg-bg-subtle">
-          <Image
-            src={MALL_BANNER_IMAGE_URL}
-            alt="Mall banner"
-            fill
-            unoptimized={shouldDisableImageOptimization(MALL_BANNER_IMAGE_URL)}
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
+          {bannerImageUrl ? (
+            <Image
+              src={bannerImageUrl}
+              alt="Mall banner"
+              fill
+              unoptimized={shouldDisableImageOptimization(bannerImageUrl)}
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-ink-muted">
+              Banner unavailable
+            </div>
+          )}
         </div>
       </section>
 
@@ -123,14 +232,14 @@ export default async function MallPage() {
           Shop by Category
         </h2>
         <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-6">
-          {sections.map(section => (
+          {mallSections.map(section => (
             <CategoryFilterItem key={section.id} section={section} />
           ))}
         </div>
       </section>
 
       <div className="mt-10 space-y-12">
-        {sections.map(section => (
+        {mallSections.map(section => (
           <section
             key={`section-${section.id}`}
             id={`mall-category-${section.id}`}
@@ -159,7 +268,7 @@ export default async function MallPage() {
             </div>
 
             {section.products.length > 0 ? (
-              <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-4 md:grid-cols-5">
                 {section.products.map(product => (
                   <li key={`${section.id}-${product.sku}`}>
                     <ProductCard product={product} />

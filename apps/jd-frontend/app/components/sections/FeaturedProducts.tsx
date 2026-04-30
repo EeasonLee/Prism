@@ -9,6 +9,12 @@ function stripHtml(value: string | null | undefined): string {
   if (!value) return '';
   return value
     .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -89,13 +95,14 @@ export async function FeaturedProducts({
                 key={product.sku}
                 className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="grid grid-cols-1 md:grid-cols-[180px,minmax(0,1fr)] lg:grid-cols-[220px,minmax(0,1fr)]">
-                  <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden md:aspect-auto md:min-h-[260px]">
+                <div className="grid grid-cols-1 items-start md:grid-cols-[1fr,2fr] md:items-stretch">
+                  <div className="relative w-full shrink-0 overflow-hidden aspect-square">
                     <Image
                       src={imageUrl}
                       alt={displayName}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      // Ensure the full image is visible within the square thumbnail
+                      className="object-contain transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, 280px"
                     />
                     {product.promotionLabel && (
@@ -105,8 +112,8 @@ export async function FeaturedProducts({
                     )}
                   </div>
 
-                  <div className="flex min-h-[260px] min-w-0 flex-1 flex-col justify-between p-5 lg:p-6">
-                    <div className="min-w-0">
+                  <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-between p-5 lg:p-6">
+                    <div className="min-w-0 flex-1 overflow-hidden">
                       <h3
                         className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-ink lg:text-xl"
                         style={{ fontFamily: 'Montserrat, sans-serif' }}
@@ -119,7 +126,7 @@ export async function FeaturedProducts({
                         </p>
                       )}
                       {sellingPoints.length > 0 && (
-                        <ul className="mb-5 min-w-0 space-y-1.5 text-xs text-ink-muted lg:text-sm">
+                        <ul className="mb-5 min-w-0 space-y-1.5 overflow-hidden text-xs text-ink-muted lg:text-sm">
                           {sellingPoints.map(point => (
                             <li
                               key={`${product.sku}-${point}`}

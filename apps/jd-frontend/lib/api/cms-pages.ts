@@ -13,7 +13,10 @@
 import { REVALIDATE_SECONDS_CMS_PAGE, cacheTagCmsPage } from './cache-policy';
 import { getStrapiBaseUrl } from './config';
 import { searchProductsBySkusForBFF } from './bff/product/meilisearch';
-import { normalizePageLayoutPreset } from './cms-page-layout';
+import {
+  normalizePageLayoutPreset,
+  normalizePageTemplate,
+} from './cms-page-layout';
 import type {
   Page,
   StrapiPageResponse,
@@ -901,7 +904,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     // Strapi v5 对于 Dynamic Zone，必须使用 populate[field][on][component.name] 语法
     const populateParams = [
       'populate[sections][on][page.hero-banner][populate][slides][populate]=*',
-      'populate[sections][on][page.category-grid][populate][categories][populate]=*',
+      'populate[sections][on][page.category-grid][populate][categories][fields][0]=name',
+      'populate[sections][on][page.category-grid][populate][categories][fields][1]=slug',
+      'populate[sections][on][page.category-grid][populate][categories][fields][2]=magento_category_id',
       'populate[sections][on][page.product-carousel]=true',
       'populate[sections][on][page.service-badges][populate]=*',
       'populate[sections][on][page.image-text-block][populate]=*',
@@ -940,8 +945,6 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
 
     const responseData = (await response.json()) as StrapiPageResponse;
 
-    console.log('responseData', responseData);
-
     const pageData = responseData.data[0];
     if (!pageData) {
       console.warn(`Page not found: ${slug}`);
@@ -965,6 +968,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       seo: pageData.seo,
       sections,
       layoutPreset: normalizePageLayoutPreset(pageData.layoutPreset),
+      template: normalizePageTemplate(pageData.template),
       publishedAt: pageData.publishedAt,
       locale: pageData.locale,
     };

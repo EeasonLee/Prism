@@ -2,15 +2,21 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { HeaderMenuNode } from '@/lib/api/bff/navigation/types';
+import { isRouteActive } from '@/lib/navigation/is-route-active';
 import { useAuth } from '../../lib/auth/context';
 import { useAuthModal } from '../../lib/auth-modal/context';
 import { useCart } from '../../lib/cart/context';
 import { CartDrawer } from './CartDrawer';
 import { GlobalSearch } from './GlobalSearch';
 import { MobileNavBar } from './MobileNavBar';
+
+/** 主导航项下划线：绝对定位在文字下方，不占布局高度，避免与旁侧箭头纵向错位 */
+const NAV_UNDERLINE_CLASS =
+  'relative inline-flex items-center after:pointer-events-none after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-[3px] after:rounded-full after:origin-left after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-100 group-hover:after:scale-x-100 focus-visible:after:scale-x-100';
 
 interface HeaderClientProps {
   menuItems: HeaderMenuNode[];
@@ -85,56 +91,112 @@ function mapChildrenToDropdownItems(
 type DropdownNavProps = {
   label: string;
   items: DropdownItem[];
+  href?: string | null;
+  openInNewTab?: boolean;
+  external?: boolean;
 };
 
-function DropdownNav({ label, items }: DropdownNavProps) {
-  const linkClassName =
-    'block px-4 py-3 text-sm font-medium text-ink leading-none transition hover:bg-surface hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+function DropdownNav({
+  label,
+  items,
+  href = null,
+  openInNewTab = false,
+  external = false,
+}: DropdownNavProps) {
+  const pathname = usePathname();
+
+  const triggerClassName =
+    'flex h-full items-center px-2 text-base font-medium leading-none text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+
+  const linkBaseClass =
+    'block rounded-md px-3 py-2.5 text-sm font-normal leading-snug text-black transition-colors duration-200 hover:bg-surface-muted/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+
+  const triggerPageActive =
+    href != null && !external && !openInNewTab && isRouteActive(pathname, href);
+
+  const triggerContent = (
+    <span className="inline-flex items-center gap-2">
+      <span className={NAV_UNDERLINE_CLASS}>{label}</span>
+      <svg
+        aria-hidden="true"
+        className="h-4 w-4 shrink-0 opacity-70"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </span>
+  );
 
   return (
-    <div className="group relative">
-      <button
-        type="button"
-        className="flex h-full items-center gap-2 px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        aria-expanded="false"
-      >
-        {label}
-        <svg
-          aria-hidden="true"
-          className="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
+    <div className="group relative flex h-full items-center">
+      {!href ? (
+        <button
+          type="button"
+          className={triggerClassName}
+          aria-expanded="false"
         >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
-      <div className="pointer-events-none invisible absolute left-0 top-full z-20 w-60 translate-y-2 overflow-hidden rounded-xl border border-border bg-background opacity-0 shadow-xl transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:translate-y-0 focus-within:opacity-100">
-        <ul className="divide-y divide-border p-2">
-          {items.map(item => (
-            <li key={`${item.label}-${item.href}`}>
-              {!item.href ? (
-                <span className={linkClassName}>{item.label}</span>
-              ) : item.external || item.openInNewTab ? (
-                <a
-                  href={item.href}
-                  className={linkClassName}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <Link href={item.href} className={linkClassName}>
-                  {item.label}
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
+          {triggerContent}
+        </button>
+      ) : external || openInNewTab ? (
+        <a
+          href={href}
+          className={triggerClassName}
+          target={openInNewTab ? '_blank' : undefined}
+          rel={openInNewTab ? 'noopener noreferrer' : undefined}
+        >
+          {triggerContent}
+        </a>
+      ) : (
+        <Link
+          href={href}
+          className={triggerClassName}
+          aria-current={triggerPageActive ? 'page' : undefined}
+        >
+          {triggerContent}
+        </Link>
+      )}
+      {/* 使用 pt 而非 mt：间隙仍在下拉祖先盒内，鼠标经过不会触发 mouseleave 关掉菜单 */}
+      <div className="pointer-events-none invisible absolute left-0 top-full z-20 pt-1.5 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 focus-within:pointer-events-auto focus-within:visible focus-within:opacity-100">
+        <div className="w-[min(17rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/30 bg-background/95 p-1.5 shadow-[0_16px_48px_-12px_rgba(17,24,39,0.18)] backdrop-blur-sm">
+          <ul className="flex flex-col gap-0.5 py-0.5">
+            {items.map(item => {
+              const itemActive = item.href
+                ? isRouteActive(pathname, item.href)
+                : false;
+              return (
+                <li key={`${item.label}-${item.href}`}>
+                  {!item.href ? (
+                    <span className={linkBaseClass}>{item.label}</span>
+                  ) : item.external || item.openInNewTab ? (
+                    <a
+                      href={item.href}
+                      className={linkBaseClass}
+                      target={item.openInNewTab ? '_blank' : undefined}
+                      rel={
+                        item.openInNewTab ? 'noopener noreferrer' : undefined
+                      }
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={linkBaseClass}
+                      aria-current={itemActive ? 'page' : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -153,12 +215,22 @@ function UserAvatar({ name, email }: { name: string; email: string }) {
 }
 
 export function HeaderClient({ menuItems }: HeaderClientProps) {
+  const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { openLogin } = useAuthModal();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mainNavRef = useRef<HTMLElement>(null);
   const { itemCount, openCart, isCartOpen } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
+
+  // 纯 CSS 下拉用 focus-within 保持展开；Next 软链后焦点常留在 Link 上，需清掉才收起
+  useEffect(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && mainNavRef.current?.contains(active)) {
+      active.blur();
+    }
+  }, [pathname]);
 
   return (
     <>
@@ -177,18 +249,23 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
           </Link>
 
           <nav
+            ref={mainNavRef}
             aria-label="Main navigation"
-            className="hidden h-[55px] flex-1 items-center justify-center gap-9 md:flex"
+            className="hidden h-full flex-1 items-center justify-center gap-9 md:flex"
           >
             {menuItems.map(item => {
               if (item.children.length > 0) {
                 const dropdownItems = mapChildrenToDropdownItems(item.children);
                 if (dropdownItems.length === 0) return null;
+                const topHref = item.url ? normalizeHref(item.url) : null;
                 return (
                   <DropdownNav
                     key={item.title}
                     label={item.title}
                     items={dropdownItems}
+                    href={topHref}
+                    openInNewTab={item.openInNewTab}
+                    external={topHref ? isExternalUrl(topHref) : false}
                   />
                 );
               }
@@ -197,7 +274,7 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
                 return (
                   <span
                     key={item.title}
-                    className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none"
+                    className="inline-flex h-full items-center px-2 py-1 text-base font-medium leading-none text-black"
                   >
                     {item.title}
                   </span>
@@ -211,22 +288,25 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
                   <a
                     key={item.title}
                     href={href}
-                    className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    className="inline-flex h-full items-center px-2 text-base font-medium leading-none text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     target={item.openInNewTab ? '_blank' : undefined}
                     rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
                   >
-                    {item.title}
+                    <span className={NAV_UNDERLINE_CLASS}>{item.title}</span>
                   </a>
                 );
               }
+
+              const topActive = isRouteActive(pathname, href);
 
               return (
                 <Link
                   key={item.title}
                   href={href}
-                  className="inline-flex h-full items-center px-2 py-1 text-base font-medium text-ink leading-none transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="inline-flex h-full items-center px-2 text-base font-medium leading-none text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  aria-current={topActive ? 'page' : undefined}
                 >
-                  {item.title}
+                  <span className={NAV_UNDERLINE_CLASS}>{item.title}</span>
                 </Link>
               );
             })}

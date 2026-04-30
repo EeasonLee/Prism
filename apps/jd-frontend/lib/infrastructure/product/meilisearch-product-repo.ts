@@ -27,6 +27,8 @@ interface MeilisearchHit {
   is_in_stock?: boolean;
   type_id?: string | null;
   promotion_label?: string | null;
+  cp_label?: string | null;
+  cp_label_color?: string | null;
   review_count?: number;
   rating_summary?: number;
   rating_percentage?: number;
@@ -120,6 +122,8 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
     type: hit.type_id ?? null,
     promotionLabel: hit.promotion_label ?? null,
+    cpLabel: hit.cp_label?.trim() ? hit.cp_label.trim() : null,
+    cpLabelColor: hit.cp_label_color?.trim() ? hit.cp_label_color.trim() : null,
     reviewCount: hit.review_count ?? 0,
     ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
   };
@@ -156,6 +160,56 @@ type IndexSearchOutcome =
   | { kind: 'failed'; error: Error };
 
 const FACET_FALLBACK_KEYS = ['brand', 'stock_status'] as const;
+
+function hasFacetData(
+  facetDistribution?: Record<string, Record<string, number>>
+): boolean {
+  return Boolean(
+    facetDistribution && Object.keys(facetDistribution).length > 0
+  );
+}
+
+function mergeFacetDistributions(
+  base: Record<string, Record<string, number>>,
+  extra?: Record<string, Record<string, number>>
+): Record<string, Record<string, number>> {
+  if (!extra) return base;
+  for (const [facetKey, values] of Object.entries(extra)) {
+    if (!base[facetKey]) {
+      base[facetKey] = { ...values };
+      continue;
+    }
+    for (const [value, count] of Object.entries(values)) {
+      const current = base[facetKey][value] ?? 0;
+      base[facetKey][value] = Math.max(current, count);
+    }
+  }
+  return base;
+}
+
+async function recoverFacetDistributionBySingleKeys(
+  host: string,
+  indexUid: string,
+  headers: Record<string, string>,
+  baseBody: Record<string, unknown>,
+  facetKeys: string[]
+): Promise<Record<string, Record<string, number>> | undefined> {
+  const recovered: Record<string, Record<string, number>> = {};
+
+  for (const facetKey of facetKeys) {
+    const outcome = await searchIndexWithFacetFallback(
+      host,
+      indexUid,
+      headers,
+      baseBody,
+      [facetKey]
+    );
+    if (outcome.kind !== 'ok') continue;
+    mergeFacetDistributions(recovered, outcome.data.facetDistribution);
+  }
+
+  return Object.keys(recovered).length > 0 ? recovered : undefined;
+}
 
 async function searchIndexWithFacetFallback(
   host: string,
@@ -251,6 +305,23 @@ export async function searchProductsFromMeilisearch(params: {
       );
       if (outcome.kind === 'ok') {
         const data = outcome.data;
+        let facetDistribution = data.facetDistribution;
+
+        // 某些索引配置下，批量 facets 请求会失败并回退到无 facets 查询，导致筛选项全空。
+        // 这里做单字段补偿探测，尽量恢复可用筛选。
+        if (!hasFacetData(facetDistribution) && facetKeys?.length) {
+          const recovered = await recoverFacetDistributionBySingleKeys(
+            host,
+            indexUid,
+            headers,
+            baseBody,
+            facetKeys
+          );
+          if (recovered) {
+            facetDistribution = recovered;
+          }
+        }
+
         return {
           items: data.hits.map(toProductCardItem),
           pagination: {
@@ -259,7 +330,7 @@ export async function searchProductsFromMeilisearch(params: {
             total: data.totalHits,
             totalPages: data.totalPages,
           },
-          availableFilters: mapAvailableFilters(data.facetDistribution),
+          availableFilters: mapAvailableFilters(facetDistribution),
           resolvedMagentoCategoryId: params.magentoCategoryId,
         };
       }

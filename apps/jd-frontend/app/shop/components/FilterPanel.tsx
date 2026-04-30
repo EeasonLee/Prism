@@ -88,8 +88,6 @@ export function FilterPanel({
     [updateParams]
   );
 
-  const hasFilters = availableFilters.length > 0;
-
   const hasApplied =
     appliedBrand !== undefined ||
     appliedSize !== undefined ||
@@ -97,8 +95,6 @@ export function FilterPanel({
     appliedStockStatus !== undefined ||
     appliedPriceMin !== undefined ||
     appliedPriceMax !== undefined;
-
-  if (!hasFilters && !hasApplied) return null;
 
   const brandFilter = availableFilters.find(f => f.key === 'brand');
   const sizeFilter = availableFilters.find(f => f.key === 'size');
@@ -109,6 +105,7 @@ export function FilterPanel({
 
   return (
     <div className="space-y-6">
+      <h2 className="text-base font-semibold text-ink">Filters</h2>
       {brandFilter && brandFilter.options.length > 0 && (
         <div>
           <h3 className="mb-3 text-sm font-semibold text-ink">Brand</h3>

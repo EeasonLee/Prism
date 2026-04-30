@@ -1,5 +1,6 @@
 import { getPageContentLayoutClass } from '@/lib/api/cms-page-layout';
 import { getPageBySlug } from '@/lib/api/cms-pages';
+import { CategoryTemplate } from '../components/templates/CategoryTemplate';
 import { CmsPageRichContent } from '../components/CmsPageRichContent';
 import { renderSections } from '../components/sections/blockMap';
 import { notFound } from 'next/navigation';
@@ -51,6 +52,10 @@ export default async function DynamicPage({
 
   if (!page) {
     notFound();
+  }
+
+  if (page.template === 'category') {
+    return <CategoryTemplate sections={page.sections} />;
   }
 
   const hasSections = page.sections.length > 0;

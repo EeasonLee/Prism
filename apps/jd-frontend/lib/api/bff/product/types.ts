@@ -15,6 +15,10 @@ export interface ProductCardItem {
   inStock: boolean;
   type: string | null;
   promotionLabel: string | null;
+  /** Magento 促销文案（Meilisearch cp_label），与 cpLabelColor 搭配展示 */
+  cpLabel: string | null;
+  /** 标签背景色：通常为 #RRGGBB（Meilisearch cp_label_color） */
+  cpLabelColor: string | null;
   reviewCount: number;
   ratingPercentage: number;
   createdAt?: number;
