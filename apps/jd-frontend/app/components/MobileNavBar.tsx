@@ -2,10 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { ChevronDown, Menu, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { HeaderMenuNode } from '@/lib/api/bff/navigation/types';
+import { isRouteActive } from '@/lib/navigation/is-route-active';
 import { GlobalSearch } from './GlobalSearch';
 
 function MobileIconButton({
@@ -47,6 +49,7 @@ function normalizeHref(url: string): string {
 }
 
 export function MobileNavBar({ menuItems }: MobileNavBarProps) {
+  const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<
@@ -177,10 +180,18 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
               const shouldOpenInNewTab =
                 topHref != null ? item.openInNewTab : false;
 
+              const topPageActive =
+                Boolean(navigableTopHref) &&
+                !navigableTopExternal &&
+                !shouldOpenInNewTab &&
+                isRouteActive(pathname, navigableTopHref);
+
+              const topLinkClass = 'block truncate font-semibold text-black';
+
               return (
                 <li key={item.title} className="border-b border-border/70 py-1">
                   <div className="flex items-center justify-between gap-2 py-2">
-                    <div className="min-w-0 flex-1 truncate text-base font-semibold text-ink">
+                    <div className="min-w-0 flex-1 truncate text-base">
                       {navigableTopHref ? (
                         navigableTopExternal || shouldOpenInNewTab ? (
                           <a
@@ -192,7 +203,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                                 : undefined
                             }
                             onClick={() => setIsMenuOpen(false)}
-                            className="block truncate"
+                            className={topLinkClass}
                           >
                             {item.title}
                           </a>
@@ -200,13 +211,16 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                           <Link
                             href={navigableTopHref}
                             onClick={() => setIsMenuOpen(false)}
-                            className="block truncate"
+                            className={topLinkClass}
+                            aria-current={topPageActive ? 'page' : undefined}
                           >
                             {item.title}
                           </Link>
                         )
                       ) : (
-                        item.title
+                        <span className="font-semibold text-black">
+                          {item.title}
+                        </span>
                       )}
                     </div>
 
@@ -240,7 +254,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                         return (
                           <li key={`${item.title}-${child.title}`}>
                             {!childHref ? (
-                              <span className="block rounded-md px-2 py-2 text-sm text-ink-muted">
+                              <span className="block rounded-md px-2 py-2 text-sm text-black">
                                 {child.title}
                               </span>
                             ) : childExternal || child.openInNewTab ? (
@@ -254,7 +268,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                                     ? 'noopener noreferrer'
                                     : undefined
                                 }
-                                className="block rounded-md px-2 py-2 text-sm text-ink-muted transition hover:bg-background hover:text-ink"
+                                className="block rounded-md px-2 py-2 text-sm text-black transition hover:bg-background"
                                 onClick={() => setIsMenuOpen(false)}
                               >
                                 {child.title}
@@ -262,7 +276,12 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                             ) : (
                               <Link
                                 href={childHref}
-                                className="block rounded-md px-2 py-2 text-sm text-ink-muted transition hover:bg-background hover:text-ink"
+                                className="block rounded-md px-2 py-2 text-sm text-black transition hover:bg-background"
+                                aria-current={
+                                  isRouteActive(pathname, childHref)
+                                    ? 'page'
+                                    : undefined
+                                }
                                 onClick={() => setIsMenuOpen(false)}
                               >
                                 {child.title}
