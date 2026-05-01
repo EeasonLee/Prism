@@ -353,6 +353,8 @@ export interface CartItem {
   quote_id?: string;
   /** 可配置选项、自定义选项等 */
   options?: CartLineOption[];
+  /** 增强的可配置选项和自定义选项详情（从 REST API 提取） */
+  enhanced_options?: CartLineOption[];
   /** 行小计（单价×数量，以商店计税规则为准） */
   row_total?: number;
   row_total_including_tax?: number;

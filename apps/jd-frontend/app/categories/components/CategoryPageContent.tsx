@@ -166,7 +166,11 @@ export function CategoryPageContent({
   const hasMagentoCategoryId =
     typeof currentCategory.magentoCategoryId === 'number' &&
     currentCategory.magentoCategoryId > 0;
-
+  console.log('hasMagentoCategoryId', hasMagentoCategoryId);
+  console.log(
+    'currentCategory.magentoCategoryId',
+    currentCategory.magentoCategoryId
+  );
   const searchPromise = searchProducts({
     ...(hasMagentoCategoryId
       ? { categoryId: currentCategory.magentoCategoryId }
