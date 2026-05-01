@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { magentoAuthProvider } from '@/lib/magento/auth';
-import { MagentoApiError, isMagentoApiError } from '@/lib/api/magento/client';
+import { MagentoApiError, isApiError } from '@/core/api/errors';
 import { verifyTurnstileToken } from '@/lib/cloudflare-turnstile';
 import {
   clearSessionCookies,
@@ -61,7 +61,7 @@ export async function login(request: Request): Promise<NextResponse> {
       guestId: guestId ?? undefined,
     });
   } catch (error) {
-    if (isMagentoApiError(error) && error.status === 401) {
+    if (isApiError(error) && error.status === 401) {
       throw new MagentoApiError(
         'Invalid email or password',
         'INVALID_CREDENTIALS',

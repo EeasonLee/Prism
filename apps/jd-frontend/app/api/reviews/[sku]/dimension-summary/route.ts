@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { handleApiError } from '@/core/api/route-helpers';
 import { fetchReviewDimensionSummaryBySku } from '../../../../../lib/api/strapi/reviews';
 
 export async function GET(
@@ -12,11 +13,7 @@ export async function GET(
     );
     return NextResponse.json({ items });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'Failed to fetch review dimension summary';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

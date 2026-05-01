@@ -64,6 +64,38 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       // TypeScript rules - 检测未使用的变量和导入
+      // 封禁已删除的旧 HTTP 客户端路径
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/lib/api/client', '*/lib/api/client'],
+              message: 'Use strapiClient from @/core/api/clients/strapi instead.',
+            },
+            {
+              group: ['@/lib/api/magento/client', '*/lib/api/magento/client'],
+              message: 'Use magentoClient from @/core/api/clients/magento and error types from @/core/api/errors instead.',
+            },
+            {
+              group: ['@/lib/api/bff/magento-rest-client', '*/lib/api/bff/magento-rest-client'],
+              message: 'Use magentoClient from @/core/api/clients/magento instead.',
+            },
+            {
+              group: ['@/lib/api/bff/magento-server', '*/lib/api/bff/magento-server'],
+              message: 'Use magentoServerClient from @/core/api/clients/magento-server instead.',
+            },
+            {
+              group: ['@/lib/services/magento-graphql.client', '*/lib/services/magento-graphql.client'],
+              message: 'Use magentoGraphQLClient from @/core/api/clients/magento-graphql instead.',
+            },
+            {
+              group: ['@/lib/api/magento/auth-api', '*/lib/api/magento/auth-api'],
+              message: 'Use bffClient from @/core/api/clients/bff instead.',
+            },
+          ],
+        },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'error',
         {

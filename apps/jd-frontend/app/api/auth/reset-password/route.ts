@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
+import { magentoClient } from '@/core/api/clients/magento';
 
 export async function POST(request: Request) {
   try {
@@ -37,13 +37,8 @@ export async function POST(request: Request) {
       );
     }
 
-    await magentoRestFetch<boolean>('customers/resetPassword', {
-      method: 'POST',
-      body: JSON.stringify({
-        email,
-        resetToken,
-        newPassword,
-      }),
+    await magentoClient.post<boolean>('customers/resetPassword', {
+      body: { email, resetToken, newPassword },
     });
 
     return NextResponse.json({ success: true });

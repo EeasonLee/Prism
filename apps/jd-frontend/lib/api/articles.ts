@@ -4,7 +4,7 @@
  * 将 blog 库的查询函数与应用层的 apiClient 绑定
  */
 
-import { apiClient } from './client';
+import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 import { setApiClient } from '@prism/blog';
 
 // 初始化 blog 库的 apiClient

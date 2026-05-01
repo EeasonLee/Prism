@@ -1,12 +1,9 @@
-import { isMagentoApiError } from '@/lib/api/magento/client';
+import { isApiError, MagentoGraphQLError } from '@/core/api/errors';
 import { getAccessToken, getRefreshToken } from '@/lib/auth/cookies';
 import { extractWrappedMagentoAccessToken } from '@/lib/auth/session-tokens';
 import { validateRefreshToken } from '@/lib/auth/session-tokens';
-import {
-  authenticatedMagentoGraphQL,
-  MagentoGraphQLError,
-} from '@/lib/services/magento-graphql.client';
-import { magentoRestFetch } from '../magento-rest-client';
+import { magentoGraphQLClient } from '@/core/api/clients/magento-graphql';
+import { magentoClient } from '@/core/api/clients/magento';
 import {
   getCountriesList,
   getCountryRegions,
@@ -446,7 +443,7 @@ function toAccountServiceError(error: unknown): AccountServiceError {
     return error;
   }
 
-  if (isMagentoApiError(error)) {
+  if (isApiError(error)) {
     return new AccountServiceError(
       'MAGENTO_API_ERROR',
       error.status || 502,
@@ -627,19 +624,33 @@ export class MagentoAccountService implements AccountService {
     } = {}
   ): Promise<T> {
     try {
-      return await magentoRestFetch<T>(path, {
-        method: options.method,
-        body: options.body,
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-        },
-      });
+      const method = (options.method || 'GET').toUpperCase();
+      const reqOpts = {
+        headers: { Authorization: `Bearer ${this.accessToken}` },
+        ...(options.body ? { body: options.body } : {}),
+      } as Parameters<typeof magentoClient.get>[1];
+
+      let result: T;
+      switch (method) {
+        case 'GET':
+          result = await magentoClient.get<T>(path, reqOpts);
+          break;
+        case 'PUT':
+          result = await magentoClient.put<T>(path, reqOpts);
+          break;
+        case 'POST':
+          result = await magentoClient.post<T>(path, reqOpts);
+          break;
+        default:
+          result = await magentoClient.post<T>(path, reqOpts);
+      }
+      return result;
     } catch (error) {
       if (error instanceof AccountServiceError) {
         throw error;
       }
 
-      if (isMagentoApiError(error)) {
+      if (isApiError(error)) {
         if (error.status === 401) {
           throw new AccountServiceError(
             'UPSTREAM_UNAUTHORIZED',
@@ -658,9 +669,19 @@ export class MagentoAccountService implements AccountService {
       throw new AccountServiceError(
         'INTERNAL_ERROR',
         500,
-        'Internal server error'
+        error instanceof Error ? error.message : 'Internal server error'
       );
     }
+  }
+
+  private async graphql<T>(
+    query: string,
+    variables?: Record<string, unknown>
+  ): Promise<T> {
+    return magentoGraphQLClient.post<T>('', {
+      body: { query, variables },
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
   }
 
   private getMeRaw(): Promise<MagentoCustomer> {
@@ -722,9 +743,12 @@ export class MagentoAccountService implements AccountService {
         `;
 
         const graphqlResponse =
-          await authenticatedMagentoGraphQL<MagentoCustomerOrdersGraphQLResponse>(
-            this.accessToken,
-            query
+          await magentoGraphQLClient.post<MagentoCustomerOrdersGraphQLResponse>(
+            '',
+            {
+              body: { query },
+              headers: { Authorization: `Bearer ${this.accessToken}` },
+            }
           );
         const items = graphqlResponse.customer.orders?.items ?? [];
         return items.map(toOrderFromGraphQL);
@@ -870,8 +894,7 @@ export class MagentoAccountService implements AccountService {
           query: string
         ): Promise<OrderDetail> => {
           const graphqlResponse =
-            await authenticatedMagentoGraphQL<MagentoCustomerOrderDetailGraphQLResponse>(
-              this.accessToken,
+            await this.graphql<MagentoCustomerOrderDetailGraphQLResponse>(
               query
             );
           const items = graphqlResponse.customer.orders?.items ?? [];
@@ -961,11 +984,7 @@ export class MagentoAccountService implements AccountService {
       };
     }
 
-    const response =
-      await authenticatedMagentoGraphQL<GetDefaultAddressesResponse>(
-        this.accessToken,
-        query
-      );
+    const response = await this.graphql<GetDefaultAddressesResponse>(query);
 
     const customer = response.customer;
     const addresses = (customer.addresses ?? []).map(a =>
@@ -1037,8 +1056,7 @@ export class MagentoAccountService implements AccountService {
     }
 
     try {
-      const response = await authenticatedMagentoGraphQL<CreateAddressResponse>(
-        this.accessToken,
+      const response = await this.graphql<CreateAddressResponse>(
         mutation,
         variables
       );
@@ -1114,8 +1132,7 @@ export class MagentoAccountService implements AccountService {
     }
 
     try {
-      const response = await authenticatedMagentoGraphQL<UpdateAddressResponse>(
-        this.accessToken,
+      const response = await this.graphql<UpdateAddressResponse>(
         mutation,
         variables
       );
@@ -1143,11 +1160,7 @@ export class MagentoAccountService implements AccountService {
     }
 
     try {
-      await authenticatedMagentoGraphQL<DeleteAddressResponse>(
-        this.accessToken,
-        mutation,
-        { id }
-      );
+      await this.graphql<DeleteAddressResponse>(mutation, { id });
     } catch (error) {
       throw toAccountServiceError(error);
     }
@@ -1208,10 +1221,7 @@ export class MagentoAccountService implements AccountService {
     `;
 
     try {
-      await authenticatedMagentoGraphQL<{ deleteCustomer: boolean }>(
-        this.accessToken,
-        mutation
-      );
+      await this.graphql<{ deleteCustomer: boolean }>(mutation);
     } catch (error) {
       throw toAccountServiceError(error);
     }
@@ -1245,7 +1255,7 @@ export class MagentoAccountService implements AccountService {
     `;
 
     try {
-      const data = await authenticatedMagentoGraphQL<{
+      const data = await this.graphql<{
         customer: {
           wishlist: {
             id: string;
@@ -1273,7 +1283,7 @@ export class MagentoAccountService implements AccountService {
             }>;
           } | null;
         };
-      }>(this.accessToken, query);
+      }>(query);
 
       const wishlist = data.customer?.wishlist;
       if (!wishlist) return [];
@@ -1320,9 +1330,9 @@ export class MagentoAccountService implements AccountService {
 
     let wishlistId: string;
     try {
-      const listData = await authenticatedMagentoGraphQL<{
+      const listData = await this.graphql<{
         customer: { wishlist: { id: string } | null };
-      }>(this.accessToken, listQuery);
+      }>(listQuery);
       wishlistId = listData.customer?.wishlist?.id ?? '0';
     } catch {
       wishlistId = '0';
@@ -1348,12 +1358,12 @@ export class MagentoAccountService implements AccountService {
     `;
 
     try {
-      const result = await authenticatedMagentoGraphQL<{
+      const result = await this.graphql<{
         addProductsToWishlist: {
           wishlist: { id: string; items_count: number } | null;
           user_errors: Array<{ code: string; message: string }>;
         };
-      }>(this.accessToken, mutation, {
+      }>(mutation, {
         wishlistId,
         wishlistItems: [{ sku, quantity: 1 }],
       });
@@ -1384,9 +1394,9 @@ export class MagentoAccountService implements AccountService {
 
     let wishlistId: string;
     try {
-      const listData = await authenticatedMagentoGraphQL<{
+      const listData = await this.graphql<{
         customer: { wishlist: { id: string } | null };
-      }>(this.accessToken, listQuery);
+      }>(listQuery);
       wishlistId = listData.customer?.wishlist?.id ?? '0';
     } catch {
       wishlistId = '0';
@@ -1412,12 +1422,12 @@ export class MagentoAccountService implements AccountService {
     `;
 
     try {
-      const result = await authenticatedMagentoGraphQL<{
+      const result = await this.graphql<{
         removeProductsFromWishlist: {
           wishlist: { id: string; items_count: number } | null;
           user_errors: Array<{ code: string; message: string }>;
         };
-      }>(this.accessToken, mutation, {
+      }>(mutation, {
         wishlistId,
         wishlistItemsIds: [String(itemId)],
       });

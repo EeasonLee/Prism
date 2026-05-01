@@ -7,10 +7,10 @@ import type {
   SearchRecipesResponse,
 } from '../../app/recipes/types';
 
-import { ApiError, NetworkError } from '@prism/shared';
+import { ApiError, NetworkError } from '@/core/api/errors';
 
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from './cache-policy';
-import { apiClient } from './client';
+import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 import { isServerSide } from './config';
 
 /**

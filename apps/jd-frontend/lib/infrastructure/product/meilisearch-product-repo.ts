@@ -1,6 +1,8 @@
 import { processImageUrl } from '@prism/shared';
 import { env } from '@/lib/env';
 import { notifyError } from '@/lib/notify';
+import { meilisearchClient } from '@/core/api/clients/meilisearch';
+import { isApiError } from '@/core/api/errors';
 import type {
   UnifiedProductFilters,
   UnifiedProductQueryResult,
@@ -287,26 +289,22 @@ async function searchIndexWithFacetFallback(
   attempts.push({ ...baseBody });
 
   let lastError: Error | null = null;
+
   for (const body of attempts) {
-    const response = await fetch(`${host}/indexes/${indexUid}/search`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (response.ok) {
-      return {
-        kind: 'ok',
-        data: (await response.json()) as MeilisearchSearchResponse,
-      };
+    try {
+      const data = await meilisearchClient.post<MeilisearchSearchResponse>(
+        `/indexes/${indexUid}/search`,
+        { body }
+      );
+      return { kind: 'ok', data };
+    } catch (error) {
+      if (isApiError(error) && error.status === 404) {
+        return { kind: 'index_not_found' };
+      }
+      lastError = error instanceof Error ? error : new Error(String(error));
     }
-    if (response.status === 404) {
-      return { kind: 'index_not_found' };
-    }
-    const detail = await response.text();
-    lastError = new Error(
-      `Meilisearch ${response.status}: ${detail.slice(0, 240)}`
-    );
   }
+
   return {
     kind: 'failed',
     error: lastError ?? new Error('Meilisearch search failed'),

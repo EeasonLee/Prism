@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiError } from '@prism/shared';
-import { apiClient } from '../../../../lib/api/client';
+import { handleApiError } from '@/core/api/route-helpers';
+import { strapiClient } from '@/core/api/clients/strapi';
 
 interface HelpfulRequestBody {
   documentId?: unknown;
@@ -37,15 +37,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await apiClient.post<HelpfulResponseRaw>(
+    const response = await strapiClient.post<HelpfulResponseRaw>(
       `api/product-reviews/${encodeURIComponent(documentId)}/helpful`,
       {
-        dedupeKey,
-      },
-      {
+        body: {
+          dedupeKey,
+        },
         cache: 'no-store',
-        skipLogging: true,
-      } as Parameters<typeof apiClient.post>[2]
+      }
     );
 
     return NextResponse.json({
@@ -53,32 +52,7 @@ export async function POST(request: NextRequest) {
       viewerHasMarkedHelpful: response.data?.viewerHasMarkedHelpful ?? false,
     });
   } catch (error) {
-    if (error instanceof ApiError) {
-      const data =
-        typeof error.data === 'object' && error.data !== null
-          ? (error.data as Record<string, unknown>)
-          : undefined;
-      const message =
-        typeof data?.error === 'string'
-          ? data.error
-          : typeof data?.message === 'string'
-          ? data.message
-          : error.message;
-      return NextResponse.json(
-        { error: message, detail: data },
-        { status: error.status }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update helpful state',
-      },
-      { status: 502 }
-    );
+    return handleApiError(error);
   }
 }
 

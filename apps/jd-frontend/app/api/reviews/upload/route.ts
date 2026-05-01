@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/core/api/route-helpers';
 import { env } from '../../../../lib/env';
 import {
   getStrapiBaseUrl,
@@ -109,15 +110,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ items: items.map(normalizeUploadItem) });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload review media',
-      },
-      { status: 502 }
-    );
+    return handleApiError(error);
   }
 }
 

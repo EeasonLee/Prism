@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import { isMagentoApiError } from '@/lib/api/magento/client';
+import { magentoClient } from '@/core/api/clients/magento';
+import { isApiError } from '@/core/api/errors';
 import { env } from '@/lib/env';
 
 const isDev = env.NODE_ENV === 'development';
@@ -30,12 +30,8 @@ export async function POST(request: Request) {
     }
 
     // Note: Do NOT include websiteId - Magento will auto-detect it
-    const result = await magentoRestFetch<boolean>('customers/password', {
-      method: 'PUT',
-      body: JSON.stringify({
-        email,
-        template: 'email_reset',
-      }),
+    const result = await magentoClient.put<boolean>('customers/password', {
+      body: { email, template: 'email_reset' },
     });
 
     if (isDev) {
@@ -46,13 +42,13 @@ export async function POST(request: Request) {
   } catch (error) {
     if (isDev) {
       console.error('[forgot-password] Magento request failed:', {
-        isMagentoApiError: isMagentoApiError(error),
+        isApiError: isApiError(error),
         status: (error as { status?: number })?.status,
         message: error instanceof Error ? error.message : String(error),
       });
     }
 
-    if (isMagentoApiError(error) && error.status === 404) {
+    if (isApiError(error) && error.status === 404) {
       return NextResponse.json(
         {
           error: {

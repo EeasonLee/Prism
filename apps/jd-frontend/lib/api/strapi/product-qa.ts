@@ -2,7 +2,7 @@ import {
   CACHE_TAG_PRODUCT_QA,
   REVALIDATE_SECONDS_REVIEW_UGC,
 } from '../cache-policy';
-import { apiClient } from '../client';
+import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 
 /** Strapi 聚合/列表接口返回的单条（snake_case，含 item_type） */
 interface StrapiQuestionRaw {

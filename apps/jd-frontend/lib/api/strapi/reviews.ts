@@ -4,7 +4,7 @@ import {
   REVALIDATE_SECONDS_REVIEW_UGC,
 } from '../cache-policy';
 import { getStrapiBaseUrl } from '../config';
-import { apiClient } from '../client';
+import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 import { env } from '../../env';
 
 interface StrapiReviewMediaRaw {

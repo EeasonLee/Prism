@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
+import { magentoClient } from '@/core/api/clients/magento';
 import type {
   AuthProviderGuestSessionResult,
   AuthProviderLoginResult,
@@ -36,18 +36,17 @@ export interface MagentoAuthProvider {
 
 export const magentoAuthProvider: MagentoAuthProvider = {
   async login(input) {
-    const magentoAccessToken = await magentoRestFetch<string>(
+    const magentoAccessToken = await magentoClient.post<string>(
       'integration/customer/token',
       {
-        method: 'POST',
-        body: JSON.stringify({
+        body: {
           username: input.email,
           password: input.password,
-        }),
+        },
       }
     );
 
-    const customer = await magentoRestFetch<MagentoCustomerMeResponse>(
+    const customer = await magentoClient.get<MagentoCustomerMeResponse>(
       'customers/me',
       {
         headers: {
@@ -69,22 +68,21 @@ export const magentoAuthProvider: MagentoAuthProvider = {
     };
   },
   async register(input) {
-    await magentoRestFetch<MagentoCustomerMeResponse>('customers', {
-      method: 'POST',
-      body: JSON.stringify({
+    await magentoClient.post<MagentoCustomerMeResponse>('customers', {
+      body: {
         customer: {
           email: input.email,
           firstname: input.firstName ?? 'Customer',
           lastname: input.lastName ?? 'User',
         },
         password: input.password,
-      }),
+      },
     });
 
     return this.login(input);
   },
   async getCustomerProfile(magentoAccessToken) {
-    const customer = await magentoRestFetch<MagentoCustomerMeResponse>(
+    const customer = await magentoClient.get<MagentoCustomerMeResponse>(
       'customers/me',
       {
         headers: {
@@ -115,10 +113,9 @@ export const magentoAuthProvider: MagentoAuthProvider = {
     );
   },
   async logout(magentoAccessToken) {
-    await magentoRestFetch<boolean>(
+    await magentoClient.post<boolean>(
       'integration/customer/revoke-customer-token',
       {
-        method: 'POST',
         headers: {
           Authorization: `Bearer ${magentoAccessToken}`,
         },

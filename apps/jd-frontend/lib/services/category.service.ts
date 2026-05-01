@@ -1,4 +1,4 @@
-import { magentoGraphQL } from './magento-graphql.client';
+import { magentoGraphQL } from '@/core/api/clients/magento-graphql';
 import { serverRequest } from '@/lib/api/adapters/server-adapter';
 
 interface StrapiProductCategoryRow {

@@ -17,6 +17,7 @@ import type {
   MagentoProductListResponse,
 } from './magento/types';
 import { processProductImageUrl } from '@prism/shared';
+import { normalizeCpPrice } from './unified-product-utils';
 
 // ─── 统一图片类型 ─────────────────────────────────────────────────────────────
 
@@ -241,19 +242,8 @@ function normalizeHtmlContent(value: unknown): string | null {
 }
 
 /** GraphQL / Magento 可能把 cp_price 打成 string，统一为抵扣金额（美元） */
-export function normalizeCpPrice(value: unknown): number | null {
-  if (value == null) return null;
-  if (typeof value === 'number') {
-    return Number.isFinite(value) && value >= 0 ? value : null;
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    const n = Number.parseFloat(trimmed);
-    return Number.isFinite(n) && n >= 0 ? n : null;
-  }
-  return null;
-}
+// Re-export for backward compatibility
+export { normalizeCpPrice } from './unified-product-utils';
 
 // ─── 融合函数 ─────────────────────────────────────────────────────────────────
 

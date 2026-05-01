@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiError } from '@prism/shared';
+import { handleApiError } from '@/core/api/route-helpers';
 import {
   fetchReviewsBySku,
   submitReview,
@@ -91,9 +91,7 @@ export async function GET(
     );
     return NextResponse.json(reviews);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to fetch reviews';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 
@@ -184,29 +182,7 @@ export async function POST(
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ApiError) {
-      const data =
-        typeof error.data === 'object' && error.data !== null
-          ? (error.data as Record<string, unknown>)
-          : undefined;
-      const message =
-        typeof data?.error === 'string'
-          ? data.error
-          : typeof data?.message === 'string'
-          ? data.message
-          : error.message;
-      return NextResponse.json(
-        {
-          error: message,
-          detail: data,
-        },
-        { status: error.status }
-      );
-    }
-
-    const message =
-      error instanceof Error ? error.message : 'Failed to submit review';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

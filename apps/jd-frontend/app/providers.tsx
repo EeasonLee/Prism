@@ -9,7 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { SignupPromoController } from './components/SignupPromoController';
-import { apiClient } from '../lib/api/client';
+import { strapiClient } from '@/core/api/clients/strapi';
 import { AuthProvider } from '../lib/auth/context';
 import { AuthModalProvider } from '../lib/auth-modal/context';
 import { CartProvider } from '../lib/cart/context';
@@ -30,7 +30,7 @@ function AppConfigProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     // 在客户端初始化 Blog API Client
-    setApiClient(apiClient);
+    setApiClient(strapiClient);
 
     logger.info('AppProviders mounted', {
       logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL ?? 'info',

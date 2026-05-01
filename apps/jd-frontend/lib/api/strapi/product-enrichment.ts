@@ -16,7 +16,7 @@ import {
   CACHE_TAG_PRODUCT_ENRICHMENTS,
   REVALIDATE_SECONDS_CMS_ASSOCIATION,
 } from '../cache-policy';
-import { apiClient } from '../client';
+import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 import { getStrapiBaseUrl } from '../config';
 import { fetchPdpArticlesBySku, fetchPdpRecipesBySku } from './product-content';
 

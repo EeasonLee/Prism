@@ -10,6 +10,9 @@ import type {
   CartRedirectResponse,
 } from './types';
 
+import { bffClient } from '@/core/api/clients/bff';
+import { ApiError } from '@/core/api/errors';
+
 export function formatCartMoney(m: CartMoney | null | undefined): string {
   if (!m) return '—';
   try {
@@ -58,26 +61,53 @@ async function cartFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(path, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...options.headers,
-    },
-  });
+  const method = (options.method ?? 'GET').toUpperCase();
 
-  const json = await res.json();
+  // Use new pipeline for standard methods
+  if (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    try {
+      const headers: Record<string, string> = {};
+      if (options.headers) {
+        for (const [k, v] of new Headers(options.headers).entries()) {
+          headers[k] = v;
+        }
+      }
 
-  if (!res.ok) {
-    throw new CartRequestError(
-      res.status,
-      json?.error?.message ?? json?.message ?? `Cart error: ${res.status}`
-    );
+      const opts = {
+        credentials: 'include' as RequestCredentials,
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
+        ...(options.body ? { body: JSON.parse(options.body as string) } : {}),
+      };
+
+      const result = await (() => {
+        switch (method) {
+          case 'GET':
+            return bffClient.get<T>(path, opts);
+          case 'POST':
+            return bffClient.post<T>(path, opts);
+          case 'PUT':
+            return bffClient.put<T>(path, opts);
+          case 'PATCH':
+            return bffClient.patch<T>(path, opts);
+          case 'DELETE':
+            return bffClient.delete<T>(path, opts);
+          default:
+            throw new Error(`Unknown method: ${method}`);
+        }
+      })();
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw new CartRequestError(error.status, error.message);
+      }
+      throw new CartRequestError(
+        0,
+        error instanceof Error ? error.message : 'Network error'
+      );
+    }
   }
 
-  return json as T;
+  throw new Error(`Unsupported method: ${method}`);
 }
 
 async function recoverCartSession(): Promise<boolean> {

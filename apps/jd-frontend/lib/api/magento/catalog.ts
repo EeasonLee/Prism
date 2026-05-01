@@ -2,7 +2,7 @@
  * Magento 商品目录查询（无需认证）
  */
 
-import { magentoClient } from './client';
+import { ssoClient as magentoClient } from '@/core/api/clients/sso';
 import { processProductImageUrl } from '@prism/shared';
 import type {
   FetchProductsParams,

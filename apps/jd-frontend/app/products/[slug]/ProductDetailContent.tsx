@@ -10,10 +10,10 @@ import {
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ShareTrigger } from '../../components/share';
-import {
-  normalizeCpPrice,
-  type UnifiedProduct,
-  type UnifiedProductImage,
+import { normalizeCpPrice } from '../../../lib/api/unified-product-utils';
+import type {
+  UnifiedProduct,
+  UnifiedProductImage,
 } from '../../../lib/api/unified-product';
 import type { ShareTarget } from '../../components/share';
 

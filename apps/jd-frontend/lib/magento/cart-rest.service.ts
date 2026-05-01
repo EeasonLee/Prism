@@ -5,8 +5,8 @@
  * 自动处理 guest vs customer 差异
  */
 
-import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import { isMagentoApiError } from '@/lib/api/magento/client';
+import { magentoClient } from '@/core/api/clients/magento';
+import { isApiError } from '@/core/api/errors';
 import type {
   CartItem,
   CartItemsResponse,
@@ -17,7 +17,7 @@ import type {
 } from '@/lib/api/magento/types';
 
 function isCustomerCartMissingError(error: unknown): boolean {
-  if (!isMagentoApiError(error)) {
+  if (!isApiError(error)) {
     return false;
   }
 
@@ -128,7 +128,7 @@ async function normalizeSuperAttributes(
   }
 
   try {
-    const product = await magentoRestFetch<MagentoProduct>(
+    const product = await magentoClient.get<MagentoProduct>(
       `products/${encodeURIComponent(sku)}`,
       {
         headers: {
@@ -245,8 +245,7 @@ function extractCartItemOptions(
  * 创建 guest cart，返回 cart ID (masked quote ID)
  */
 export async function createGuestCart(accessToken: string): Promise<string> {
-  const cartId = await magentoRestFetch<string>('guest-carts', {
-    method: 'POST',
+  const cartId = await magentoClient.post<string>('guest-carts', {
     headers: withGuestAuthHeader(accessToken),
   });
   return cartId;
@@ -258,8 +257,7 @@ export async function createGuestCart(accessToken: string): Promise<string> {
 export async function ensureCustomerCartQuoteId(
   accessToken: string
 ): Promise<string> {
-  const quoteId = await magentoRestFetch<number | string>('carts/mine', {
-    method: 'POST',
+  const quoteId = await magentoClient.post<number | string>('carts/mine', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -317,7 +315,7 @@ export async function getGuestCart(
   cartId: string
 ): Promise<CartItemsResponse> {
   // 获取 cart items
-  const items = await magentoRestFetch<MagentoCartItem[]>(
+  const items = await magentoClient.get<MagentoCartItem[]>(
     `guest-carts/${cartId}/items`,
     { headers: withGuestAuthHeader(accessToken) }
   );
@@ -326,7 +324,7 @@ export async function getGuestCart(
   let totals: CartTotals | null = null;
   let cartCurrency: string | null = null;
   try {
-    const magentoTotals = await magentoRestFetch<MagentoTotals>(
+    const magentoTotals = await magentoClient.get<MagentoTotals>(
       `guest-carts/${cartId}/totals`,
       { headers: withGuestAuthHeader(accessToken) }
     );
@@ -359,7 +357,7 @@ export async function getCustomerCart(
 ): Promise<CartItemsResponse> {
   let items: MagentoCartItem[];
   try {
-    items = await magentoRestFetch<MagentoCartItem[]>('carts/mine/items', {
+    items = await magentoClient.get<MagentoCartItem[]>('carts/mine/items', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   } catch (error) {
@@ -374,7 +372,7 @@ export async function getCustomerCart(
   let totals: CartTotals | null = null;
   let cartCurrency: string | null = null;
   try {
-    const magentoTotals = await magentoRestFetch<MagentoTotals>(
+    const magentoTotals = await magentoClient.get<MagentoTotals>(
       'carts/mine/totals',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
@@ -467,14 +465,13 @@ export async function addGuestCartItem(
     }
   }
 
-  const item = await magentoRestFetch<MagentoCartItem>(
+  const item = await magentoClient.post<MagentoCartItem>(
     `guest-carts/${cartId}/items`,
     {
-      method: 'POST',
       headers: withGuestAuthHeader(accessToken, {
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({ cartItem }),
+      body: { cartItem },
     }
   );
 
@@ -544,13 +541,12 @@ export async function addCustomerCartItem(
 
   let item: MagentoCartItem;
   try {
-    item = await magentoRestFetch<MagentoCartItem>('carts/mine/items', {
-      method: 'POST',
+    item = await magentoClient.post<MagentoCartItem>('carts/mine/items', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cartItem }),
+      body: { cartItem },
     });
   } catch (error) {
     if (!isCustomerCartMissingError(error)) {
@@ -558,13 +554,12 @@ export async function addCustomerCartItem(
     }
 
     await ensureCustomerCartQuoteId(accessToken);
-    item = await magentoRestFetch<MagentoCartItem>('carts/mine/items', {
-      method: 'POST',
+    item = await magentoClient.post<MagentoCartItem>('carts/mine/items', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cartItem }),
+      body: { cartItem },
     });
   }
 
@@ -580,20 +575,19 @@ export async function updateGuestCartItem(
   itemId: number,
   qty: number
 ): Promise<CartItem> {
-  const item = await magentoRestFetch<MagentoCartItem>(
+  const item = await magentoClient.put<MagentoCartItem>(
     `guest-carts/${cartId}/items/${itemId}`,
     {
-      method: 'PUT',
       headers: withGuestAuthHeader(accessToken, {
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({
+      body: {
         cartItem: {
           item_id: itemId,
           qty,
           quote_id: cartId,
         },
-      }),
+      },
     }
   );
 
@@ -608,20 +602,19 @@ export async function updateCustomerCartItem(
   itemId: number,
   qty: number
 ): Promise<CartItem> {
-  const item = await magentoRestFetch<MagentoCartItem>(
+  const item = await magentoClient.put<MagentoCartItem>(
     `carts/mine/items/${itemId}`,
     {
-      method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: {
         cartItem: {
           item_id: itemId,
           qty,
         },
-      }),
+      },
     }
   );
 
@@ -636,8 +629,7 @@ export async function removeGuestCartItem(
   cartId: string,
   itemId: number
 ): Promise<void> {
-  await magentoRestFetch<boolean>(`guest-carts/${cartId}/items/${itemId}`, {
-    method: 'DELETE',
+  await magentoClient.delete<boolean>(`guest-carts/${cartId}/items/${itemId}`, {
     headers: withGuestAuthHeader(accessToken),
   });
 }
@@ -649,8 +641,7 @@ export async function removeCustomerCartItem(
   accessToken: string,
   itemId: number
 ): Promise<void> {
-  await magentoRestFetch<boolean>(`carts/mine/items/${itemId}`, {
-    method: 'DELETE',
+  await magentoClient.delete<boolean>(`carts/mine/items/${itemId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -664,7 +655,7 @@ export async function clearGuestCart(
   accessToken: string,
   cartId: string
 ): Promise<void> {
-  const items = await magentoRestFetch<MagentoCartItem[]>(
+  const items = await magentoClient.get<MagentoCartItem[]>(
     `guest-carts/${cartId}/items`,
     { headers: withGuestAuthHeader(accessToken) }
   );
@@ -680,7 +671,7 @@ export async function clearGuestCart(
 export async function clearCustomerCart(accessToken: string): Promise<void> {
   let items: MagentoCartItem[];
   try {
-    items = await magentoRestFetch<MagentoCartItem[]>('carts/mine/items', {
+    items = await magentoClient.get<MagentoCartItem[]>('carts/mine/items', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -727,7 +718,7 @@ export async function resolveGuestQuoteId(
 ): Promise<string> {
   // 1) 优先走 guest-carts/{maskedId}，通常可直接拿到 quote id
   try {
-    const cart = await magentoRestFetch<MagentoCart>(
+    const cart = await magentoClient.get<MagentoCart>(
       `guest-carts/${maskedCartId}`,
       { headers: withGuestAuthHeader(accessToken) }
     );
@@ -744,7 +735,7 @@ export async function resolveGuestQuoteId(
 
   // 2) 从 items[].quote_id 兜底提取（有商品时最稳定）
   try {
-    const items = await magentoRestFetch<MagentoCartItem[]>(
+    const items = await magentoClient.get<MagentoCartItem[]>(
       `guest-carts/${maskedCartId}/items`,
       { headers: withGuestAuthHeader(accessToken) }
     );
@@ -770,10 +761,9 @@ export async function applyGuestCoupon(
   cartId: string,
   couponCode: string
 ): Promise<boolean> {
-  const result = await magentoRestFetch<boolean>(
+  const result = await magentoClient.put<boolean>(
     `guest-carts/${cartId}/coupons/${encodeURIComponent(couponCode)}`,
     {
-      method: 'PUT',
       headers: withGuestAuthHeader(accessToken),
     }
   );
@@ -787,10 +777,9 @@ export async function applyCustomerCoupon(
   accessToken: string,
   couponCode: string
 ): Promise<boolean> {
-  const result = await magentoRestFetch<boolean>(
+  const result = await magentoClient.put<boolean>(
     `carts/mine/coupons/${encodeURIComponent(couponCode)}`,
     {
-      method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -806,8 +795,7 @@ export async function removeGuestCoupon(
   accessToken: string,
   cartId: string
 ): Promise<void> {
-  await magentoRestFetch<boolean>(`guest-carts/${cartId}/coupons`, {
-    method: 'DELETE',
+  await magentoClient.delete<boolean>(`guest-carts/${cartId}/coupons`, {
     headers: withGuestAuthHeader(accessToken),
   });
 }
@@ -816,8 +804,7 @@ export async function removeGuestCoupon(
  * 移除 customer cart coupon
  */
 export async function removeCustomerCoupon(accessToken: string): Promise<void> {
-  await magentoRestFetch<boolean>('carts/mine/coupons', {
-    method: 'DELETE',
+  await magentoClient.delete<boolean>('carts/mine/coupons', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

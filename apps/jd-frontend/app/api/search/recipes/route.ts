@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/core/api/route-helpers';
 import { fetchRecipeKeywordSearchStrapi } from '@/lib/api/recipes';
 import { parseRecipeKeywordSearchParams } from '@/lib/api/recipes-search-params';
 
@@ -25,8 +26,6 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to search recipes';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }

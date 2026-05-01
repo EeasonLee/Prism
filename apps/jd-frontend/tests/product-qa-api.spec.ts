@@ -5,22 +5,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the API client before importing the module under test
-vi.mock('../lib/api/client', () => ({
-  apiClient: {
+vi.mock('@/core/api/clients/strapi', () => ({
+  strapiClient: {
     get: vi.fn(),
     post: vi.fn(),
   },
 }));
 
-import { apiClient } from '../lib/api/client';
+import { strapiClient } from '@/core/api/clients/strapi';
 import {
   fetchProductQaByProduct,
   submitProductQuestion,
 } from '../lib/api/strapi/product-qa';
 import type { SubmitProductQuestionInput } from '../lib/api/strapi/product-qa';
 
-const mockGet = vi.mocked(apiClient.get);
-const mockPost = vi.mocked(apiClient.post);
+const mockGet = vi.mocked(strapiClient.get);
+const mockPost = vi.mocked(strapiClient.post);
 
 beforeEach(() => {
   vi.clearAllMocks();

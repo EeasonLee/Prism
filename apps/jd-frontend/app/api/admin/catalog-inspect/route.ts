@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/core/api/route-helpers';
 import { fetchProducts } from '../../../../lib/api/magento/catalog';
 import type { MagentoProduct } from '../../../../lib/api/magento/types';
 
@@ -197,13 +198,7 @@ export async function GET(request: NextRequest) {
       analysis,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch products',
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      { status: 502 }
-    );
+    return handleApiError(error);
   }
 }
 
