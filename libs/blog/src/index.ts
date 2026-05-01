@@ -20,5 +20,3 @@ export * from './components/ArticleSidebar';
 export * from './components/Breadcrumb';
 export * from './components/ProductCategories';
 export * from './components/ThemeCategories';
-
-// export * from './hooks';

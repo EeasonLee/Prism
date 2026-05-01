@@ -120,27 +120,6 @@ export async function fetchArticleTags(params?: {
 }
 
 /**
- * 根据 slug 获取分类详情（包含子分类）
- */
-export async function fetchCategoryBySlug(
-  slug: string,
-  params?: {
-    includeChildrenArticles?: boolean;
-  }
-): Promise<CategoryBySlugResponse> {
-  const queryString = buildQuery({
-    includeChildrenArticles: params?.includeChildrenArticles,
-  });
-  const endpoint = `api/categories/slug/${slug}${
-    queryString ? `?${queryString}` : ''
-  }`;
-  const options = isServerSide()
-    ? ({ next: { revalidate: 3600 } } as const)
-    : undefined;
-  return getApiClient().get<CategoryBySlugResponse>(endpoint, options);
-}
-
-/**
  * 根据 type 获取分类
  */
 export async function fetchCategoryByType(

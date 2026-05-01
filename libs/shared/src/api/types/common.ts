@@ -27,15 +27,3 @@ export interface PaginatedResponse<T, M = Record<string, unknown>> {
     };
   } & M;
 }
-
-/**
- * API 错误响应类型
- */
-export interface ApiErrorResponse {
-  error: {
-    message: string;
-    code?: string;
-    status?: number;
-    data?: unknown;
-  };
-}
