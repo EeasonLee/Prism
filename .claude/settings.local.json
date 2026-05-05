@@ -73,7 +73,10 @@
       "Bash(cp \"/d/WORK/prism/apps/prism/app/products/[sku]/ProductDetailReviewShell.tsx\" \"/d/WORK/prism/.claude/worktrees/share-module/apps/prism/app/products/[sku]/ProductDetailReviewShell.tsx\")",
       "Bash(lsof -ti:3090)",
       "Bash(xargs kill:*)",
-      "Bash(find /c/Users/Eason/Documents/MyWorkspace/joydeem-nextjs/apps/jd-frontend/app -name provider* -o -name Provider*)"
+      "Bash(find /c/Users/Eason/Documents/MyWorkspace/joydeem-nextjs/apps/jd-frontend/app -name provider* -o -name Provider*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm vitest:*)"
     ]
   },
   "hooks": {
