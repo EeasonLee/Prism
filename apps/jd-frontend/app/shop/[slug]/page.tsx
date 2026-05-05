@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { ProductCard } from '../components/ProductCard';
-import { FilterPanel } from '../components/FilterPanel';
-import { SortPanel, type ShopSortOption } from '../components/SortPanel';
-import { searchProducts } from '../lib/meilisearch';
-import { getCategoryContextBySlug } from '@/lib/api/bff/category/list';
+import { ProductCard } from '@/features/product/ProductCard';
+import { FilterPanel } from '@/features/search/FilterPanel';
+import { SortPanel, type ShopSortOption } from '@/features/search/SortPanel';
+import { searchProducts } from '@/features/search/shop-search';
+import { getCategoryContextBySlug } from '@/features/category/list.bff';
 
 interface Props {
   params: Promise<{ slug: string }>;

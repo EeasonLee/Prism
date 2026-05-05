@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { searchProducts } from '../../search/lib/meilisearch';
-import { searchArticles } from '../../../lib/api/articles';
-import { fetchRecipeKeywordSearchStrapi } from '../../../lib/api/recipes';
-import type { MeilisearchSearchResult } from '../../search/lib/meilisearch';
+import { searchProducts } from '@/features/search/search-meilisearch';
+import { searchArticles } from '@/features/product/blog-bridge.api';
+import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe/recipes.api';
+import type { MeilisearchSearchResult } from '@/features/search/search-meilisearch';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

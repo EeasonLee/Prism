@@ -1,10 +1,10 @@
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
-import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
+import type { UnifiedProduct } from '@/features/product/unified.api';
+import type { ProductReviewSummary } from '@/features/product/reviews.api';
 import {
   fetchPdpArticlesBySku,
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
-} from '../../../lib/api/strapi/product-content';
+} from '@/features/product/content.api';
 import type { ProductPageCms } from './product-page-types';
 import { PDP_FEATURES } from './pdp-features';
 

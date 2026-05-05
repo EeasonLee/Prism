@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { env } from '../lib/env';
-import { Footer } from './components/Footer';
-import { Header } from './components/Header';
-import { MobileTabbar } from './components/MobileTabbar';
-// import { PromoBar } from './components/PromoBar';
+import { env } from '@/core/config/env';
+import { Footer } from '@/shared/ui/Footer';
+import { Header } from '@/shared/ui/Header';
+import { MobileTabbar } from '@/shared/ui/MobileTabbar';
+// import { PromoBar } from '@/shared/ui/PromoBar';
 import './globals.css';
 import { AppProviders } from './providers';
 import { DevtoolsPanel } from '@/core/api/devtools/panel';

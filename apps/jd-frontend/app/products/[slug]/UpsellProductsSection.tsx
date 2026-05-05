@@ -2,9 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { AddToCartButton } from '../../components/AddToCartButton';
-import { formatPrice } from '@/lib/format-price';
-import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
+import { AddToCartButton } from '@/features/product/AddToCartButton';
+import { formatPrice } from '@/shared/utils/format-price';
+import type { UnifiedLinkedProduct } from '@/features/product/unified.api';
 
 interface UpsellProductsSectionProps {
   initialProducts: UnifiedLinkedProduct[];

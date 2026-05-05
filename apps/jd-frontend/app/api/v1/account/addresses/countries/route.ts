@@ -1,4 +1,4 @@
-import { withAccountService } from '@/lib/api/bff/account/http';
+import { withAccountService } from '@/features/account/http.api';
 
 export const dynamic = 'force-dynamic';
 

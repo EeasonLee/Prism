@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/api/route-helpers';
-import { fetchProductQaBySku } from '@/lib/api/strapi/product-qa';
+import { fetchProductQaBySku } from '@/features/product/qa.api';
 
 export async function GET(
   request: NextRequest,

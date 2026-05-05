@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { mergeProduct } from '../lib/api/unified-product';
+import { mergeProduct } from '@/features/product/unified.api';
 import type { MagentoProduct } from '../lib/api/magento/types';
 
 const {
@@ -24,25 +24,25 @@ const {
   fetchPdpProductVideosBySkuMock: vi.fn(),
 }));
 
-vi.mock('../lib/services/magento/product.service', () => ({
+vi.mock('@/features/product/product-graphql.service', () => ({
   fetchProductDetailBySkuGQL: fetchProductDetailBySkuGQLMock,
   fetchProductDetailByUrlKeyGQL: fetchProductDetailByUrlKeyGQLMock,
 }));
 
-vi.mock('../lib/api/bff/product/related', () => ({
+vi.mock('@/features/product/related.bff', () => ({
   getRelatedProductsBFF: getRelatedProductsBFFMock,
 }));
 
-vi.mock('../lib/api/strapi/reviews', () => ({
+vi.mock('@/features/product/reviews.api', () => ({
   fetchReviewsBySku: fetchReviewsBySkuMock,
   fetchReviewSummaryBySku: fetchReviewSummaryBySkuMock,
 }));
 
-vi.mock('../lib/api/strapi/product-qa', () => ({
+vi.mock('@/features/product/qa.api', () => ({
   fetchProductQaBySku: fetchProductQaBySkuMock,
 }));
 
-vi.mock('../lib/api/strapi/product-content', () => ({
+vi.mock('@/features/product/content.api', () => ({
   fetchPdpRecipesBySku: fetchPdpRecipesBySkuMock,
   fetchPdpArticlesBySku: fetchPdpArticlesBySkuMock,
   fetchPdpProductVideosBySku: fetchPdpProductVideosBySkuMock,
@@ -278,7 +278,7 @@ describe('product detail aggregate', () => {
     fetchPdpProductVideosBySkuMock.mockResolvedValueOnce([]);
 
     const { getProductDetailAggregate, resolveProductDetailAggregate } =
-      await import('../lib/api/bff/product/detail');
+      await import('@/features/product/detail.bff');
 
     const aggregate = await getProductDetailAggregate('buydeem-k568');
 
@@ -495,7 +495,7 @@ describe('fetchUnifiedProductBySku mapping', () => {
     fetchProductDetailBySkuGQLMock.mockResolvedValueOnce(rawProduct);
 
     const { fetchUnifiedProductBySku } = await import(
-      '../lib/api/unified-product'
+      '@/features/product/unified.api'
     );
     const product = await fetchUnifiedProductBySku('CUSTOM-MUG');
 
@@ -579,7 +579,7 @@ describe('fetchUnifiedProductBySku mapping', () => {
     });
 
     const { fetchUnifiedProductBySku } = await import(
-      '../lib/api/unified-product'
+      '@/features/product/unified.api'
     );
     const product = await fetchUnifiedProductBySku('BUYDEEM-G563');
 

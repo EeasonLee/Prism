@@ -6,7 +6,7 @@ import { ProductQA } from '../app/products/[slug]/ProductQA';
 import type {
   ProductQaListResult,
   ProductQuestion,
-} from '../lib/api/strapi/product-qa';
+} from '@/features/product/qa.api';
 
 const mocks = vi.hoisted(() => ({
   auth: {
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   openLogin: vi.fn(),
 }));
 
-vi.mock('../lib/auth/context', () => ({
+vi.mock('@/features/auth/auth.context', () => ({
   useAuth: () => ({
     user: mocks.auth.user,
     accessToken: mocks.auth.accessToken,
@@ -29,7 +29,7 @@ vi.mock('../lib/auth/context', () => ({
   }),
 }));
 
-vi.mock('../lib/auth-modal/context', () => ({
+vi.mock('@/features/auth/auth-modal.context', () => ({
   useAuthModal: () => ({
     openLogin: mocks.openLogin,
     closeLogin: vi.fn(),

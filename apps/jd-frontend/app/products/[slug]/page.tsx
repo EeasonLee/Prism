@@ -2,15 +2,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { formatPrice } from '@/lib/format-price';
-import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
+import { formatPrice } from '@/shared/utils/format-price';
+import type { UnifiedLinkedProduct } from '@/features/product/unified.api';
 import { PageContainer } from '@prism/ui';
-import { getProductDetailAggregate } from '../../../lib/api/bff/product/detail';
+import { getProductDetailAggregate } from '@/features/product/detail.bff';
 import type {
   ProductReviewListResult,
   ProductReviewSummary,
-} from '../../../lib/api/strapi/reviews';
-import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
+} from '@/features/product/reviews.api';
+import type { ProductQaListResult } from '@/features/product/qa.api';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
@@ -18,11 +18,11 @@ import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
-import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
+import type { ProductSpecificationGroup } from '@/features/product/enrichment.api';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
-import { AddToCartButton } from '../../components/AddToCartButton';
+import { AddToCartButton } from '@/features/product/AddToCartButton';
 import {
   processProductImageUrl,
   shouldDisableImageOptimization,

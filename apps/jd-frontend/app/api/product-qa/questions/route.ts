@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/api/route-helpers';
-import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
-import { getAccessToken } from '@/lib/api/bff/cookies';
+import { submitProductQuestion } from '@/features/product/qa.api';
+import { getAccessToken } from '@/features/auth/cookies';
 import {
   guestAuthorLabelFromEmail,
   isReasonableEmail,
-} from '@/lib/validation/email';
+} from '@/shared/utils/email-validation';
 
 interface SubmitQuestionRequestBody {
   productId?: unknown;

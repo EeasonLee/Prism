@@ -1,4 +1,7 @@
-import { createAuthErrorResponse, register } from '@/lib/auth/service';
+import {
+  createAuthErrorResponse,
+  register,
+} from '@/features/auth/auth.service';
 
 export async function POST(request: Request) {
   try {

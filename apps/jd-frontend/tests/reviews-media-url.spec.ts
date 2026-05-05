@@ -16,13 +16,13 @@ const envState = vi.hoisted(() => ({
   STRAPI_INTERNAL_URL: undefined as string | undefined,
 }));
 
-vi.mock('../lib/env', () => ({
+vi.mock('@/core/config/env', () => ({
   env: envState,
 }));
 
 describe('review media normalization', async () => {
   const { mergeReviewMediaForTest, normalizeReviewMediaForTest } = await import(
-    '../lib/api/strapi/reviews'
+    '@/features/product/reviews.api'
   );
 
   beforeEach(() => {

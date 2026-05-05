@@ -1,6 +1,6 @@
-import { authenticatedCartRequest } from '@/lib/api/bff/cart-rest-handler';
+import { authenticatedCartRequest } from '@/features/cart/cart-rest-handler.bff';
 import type { AddCartItemParams } from '@/lib/api/magento/types';
-import * as cartRestService from '@/lib/magento/cart-rest.service';
+import * as cartRestService from '@/features/cart/cart-rest.service';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as AddCartItemParams;

@@ -1,4 +1,4 @@
-import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
+import type { ProductSpecificationGroup } from '@/features/product/enrichment.api';
 
 interface ProductSpecificationsProps {
   groups: ProductSpecificationGroup[];

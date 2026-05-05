@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { CACHE_TAG_HEADER_MENU } from '@/lib/api/cache-policy';
+import { CACHE_TAG_HEADER_MENU } from '@/core/config/cache-policy';
 
 export async function POST(request: Request) {
   const envSecret = process.env.REVALIDATE_SECRET;

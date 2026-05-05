@@ -1,5 +1,5 @@
-import { authenticatedCartRequest } from '@/lib/api/bff/cart-rest-handler';
-import * as cartRestService from '@/lib/magento/cart-rest.service';
+import { authenticatedCartRequest } from '@/features/cart/cart-rest-handler.bff';
+import * as cartRestService from '@/features/cart/cart-rest.service';
 
 export async function DELETE(request: Request) {
   return authenticatedCartRequest(

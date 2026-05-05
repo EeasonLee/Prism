@@ -8,12 +8,12 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { SignupPromoController } from './components/SignupPromoController';
+import { SignupPromoController } from '@/shared/ui/SignupPromoController';
 import { strapiClient } from '@/core/api/clients/strapi';
-import { AuthProvider } from '../lib/auth/context';
-import { AuthModalProvider } from '../lib/auth-modal/context';
-import { CartProvider } from '../lib/cart/context';
-import { logger } from '../lib/observability/logger';
+import { AuthProvider } from '@/features/auth/auth.context';
+import { AuthModalProvider } from '@/features/auth/auth-modal.context';
+import { CartProvider } from '@/features/cart/cart.context';
+import { logger } from '@/core/observability/logger';
 
 type AppConfig = {
   appName: string;

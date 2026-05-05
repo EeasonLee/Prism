@@ -3,11 +3,11 @@ import {
   searchArticles,
   type ArticleDetail,
   type CategoryDetail,
-} from '@/lib/api/articles';
-import { absoluteUrl } from '@/lib/seo';
+} from '@/features/product/blog-bridge.api';
+import { absoluteUrl } from '@/shared/utils/seo';
 import type { MetadataRoute } from 'next';
-import { searchRecipes } from '../lib/api/recipes';
-import type { Recipe } from './recipes/types';
+import { searchRecipes } from '@/features/recipe/recipes.api';
+import type { Recipe } from '@/features/recipe/types';
 
 const SITEMAP_PAGE_SIZE = 100;
 const SAFE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

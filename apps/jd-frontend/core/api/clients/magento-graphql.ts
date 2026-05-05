@@ -4,8 +4,8 @@
 import { createHttpClient } from '../pipeline/create-client';
 import type { ErrorMapper } from '../errors';
 import { MagentoGraphQLError, MagentoApiError } from '../errors';
-import { env } from '@/lib/env';
-import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '@/lib/api/cache-policy';
+import { env } from '@/core/config/env';
+import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '@/core/config/cache-policy';
 
 const graphqlErrorMapper: ErrorMapper = (_status, body) => {
   if (body && typeof body === 'object') {

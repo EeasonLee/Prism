@@ -6,15 +6,15 @@ import type {
   ProductReviewDimensionRating,
   ProductReviewMedia,
   ProductReviewTag,
-} from '../../../lib/api/strapi/reviews';
-import { useAuth } from '../../../lib/auth/context';
-import { useAuthModal } from '../../../lib/auth-modal/context';
+} from '@/features/product/reviews.api';
+import { useAuth } from '@/features/auth/auth.context';
+import { useAuthModal } from '@/features/auth/auth-modal.context';
 import type { ReviewTarget } from './ProductReviews';
 import { ReviewImagePreview } from './ReviewImagePreview';
 import {
   guestAuthorLabelFromEmail,
   isReasonableEmail,
-} from '../../../lib/validation/email';
+} from '@/shared/utils/email-validation';
 
 interface ReviewFormProps {
   sku: string;

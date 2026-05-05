@@ -27,7 +27,7 @@ vi.mock('next/image', () => ({
 
 const openLogin = vi.fn();
 
-vi.mock('../lib/auth/context', () => ({
+vi.mock('@/features/auth/auth.context', () => ({
   useAuth: () => ({
     user: {
       id: 'user-1',
@@ -41,7 +41,7 @@ vi.mock('../lib/auth/context', () => ({
   }),
 }));
 
-vi.mock('../lib/auth-modal/context', () => ({
+vi.mock('@/features/auth/auth-modal.context', () => ({
   useAuthModal: () => ({
     openLogin,
   }),

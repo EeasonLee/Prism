@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server';
 import { ApiError } from '@/core/api/errors';
 
 // Mock the product-qa API client before importing routes
-vi.mock('../lib/api/strapi/product-qa', () => ({
+vi.mock('@/features/product/qa.api', () => ({
   fetchProductQaBySku: vi.fn(),
   submitProductQuestion: vi.fn(),
 }));
@@ -15,7 +15,7 @@ vi.mock('../lib/api/strapi/product-qa', () => ({
 import {
   fetchProductQaBySku,
   submitProductQuestion,
-} from '../lib/api/strapi/product-qa';
+} from '@/features/product/qa.api';
 import { GET as getQaBySku } from '../app/api/product-qa/by-sku/[sku]/route';
 import { POST as postQuestion } from '../app/api/product-qa/questions/route';
 

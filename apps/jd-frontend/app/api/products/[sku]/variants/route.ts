@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getProductVariantsBFF } from '@/lib/api/bff/product/variants';
+import { getProductVariantsBFF } from '@/features/product/variants.bff';
 
 // Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_PRODUCT_DETAIL in cache-policy.ts
 export const revalidate = 300;

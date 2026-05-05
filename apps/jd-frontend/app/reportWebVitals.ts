@@ -1,5 +1,5 @@
 import type { NextWebVitalsMetric } from 'next/web-vitals';
-import { recordMetric } from '../lib/observability/metrics';
+import { recordMetric } from '@/core/observability/metrics';
 
 export function reportWebVitals(metric: NextWebVitalsMetric) {
   recordMetric({

@@ -1,4 +1,7 @@
-import { createAuthErrorResponse, refreshSession } from '@/lib/auth/service';
+import {
+  createAuthErrorResponse,
+  refreshSession,
+} from '@/features/auth/auth.service';
 
 export async function POST(request: Request) {
   try {

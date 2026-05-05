@@ -1,7 +1,7 @@
 import {
   createAuthErrorResponse,
   createGuestSession,
-} from '@/lib/auth/service';
+} from '@/features/auth/auth.service';
 
 export async function POST() {
   try {

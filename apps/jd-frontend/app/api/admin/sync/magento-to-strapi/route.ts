@@ -20,11 +20,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   fetchProducts,
   fetchCategoryTree,
-} from '../../../../../lib/api/magento/catalog';
+} from '@/features/product/catalog.api';
 import type {
   MagentoProduct,
   MagentoCategoryTree,
-} from '../../../../../lib/api/magento/types';
+} from '@/lib/api/magento/types';
 import { strapiClient } from '@/core/api/clients/strapi';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;

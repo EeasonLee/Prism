@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useAuth } from '@/lib/auth/context';
+import { useAuth } from '@/features/auth/auth.context';
 
 type Tab = 'signin' | 'register';
 

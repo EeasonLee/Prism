@@ -1,4 +1,4 @@
-import { ErrorPage } from '../../../components/ErrorPage';
+import { ErrorPage } from '@/shared/ui/ErrorPage';
 
 export default function NotFound() {
   return (

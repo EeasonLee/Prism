@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { magentoClient } from '@/core/api/clients/magento';
 import { isApiError } from '@/core/api/errors';
-import { env } from '@/lib/env';
+import { env } from '@/core/config/env';
 
 const isDev = env.NODE_ENV === 'development';
 

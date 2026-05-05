@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatPrice } from '@/lib/format-price';
+import { formatPrice } from '@/shared/utils/format-price';
 import type { RecommendedProduct } from './product-page-types';
 
 interface RecommendedProductsProps {

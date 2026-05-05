@@ -5,12 +5,12 @@
  * 客户端：使用 NEXT_PUBLIC_API_URL 或代理路径
  */
 import { createHttpClient } from '../pipeline/create-client';
-import { env } from '@/lib/env';
+import { env } from '@/core/config/env';
 import {
   getApiBaseUrl,
   getStrapiServerBaseUrl,
   isServerSide,
-} from '@/lib/api/config';
+} from '@/core/config/api-config';
 
 const strapiBaseUrl = isServerSide()
   ? getStrapiServerBaseUrl()

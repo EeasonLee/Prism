@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getHeaderMenu } from '@/lib/api/bff/navigation/header-menu';
+import { getHeaderMenu } from '@/features/navigation/header-menu.bff';
 
 // Numeric literal required by Next.js; sync with REVALIDATE_SECONDS_CATEGORY_NAV in cache-policy.ts
 export const revalidate = 3600;

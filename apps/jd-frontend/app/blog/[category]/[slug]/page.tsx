@@ -1,9 +1,9 @@
-import { fetchArticleBySlug } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { fetchArticleBySlug } from '@/features/product/blog-bridge.api'; // 使用应用层的导出，确保 API Client 已初始化
 import {
   buildArticleMetadata,
   buildArticleSchema,
   buildBreadcrumbSchema,
-} from '@/lib/seo';
+} from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { ArticleDetail } from '@prism/blog/components/ArticleDetail';

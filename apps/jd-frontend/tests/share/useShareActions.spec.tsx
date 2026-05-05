@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useShareActions } from '../../app/components/share/useShareActions';
+import { useShareActions } from '@/shared/ui/share';
 
 describe('useShareActions', () => {
   beforeEach(() => {

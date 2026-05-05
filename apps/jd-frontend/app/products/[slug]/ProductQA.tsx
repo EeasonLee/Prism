@@ -2,16 +2,16 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { LoaderCircle, Plus, X } from 'lucide-react';
-import { useAuth } from '../../../lib/auth/context';
-import { useAuthModal } from '../../../lib/auth-modal/context';
+import { useAuth } from '@/features/auth/auth.context';
+import { useAuthModal } from '@/features/auth/auth-modal.context';
 import type {
   ProductQaListResult,
   ProductQuestion,
-} from '../../../lib/api/strapi/product-qa';
+} from '@/features/product/qa.api';
 import {
   guestAuthorLabelFromEmail,
   isReasonableEmail,
-} from '../../../lib/validation/email';
+} from '@/shared/utils/email-validation';
 
 function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
   if (!user) return '';

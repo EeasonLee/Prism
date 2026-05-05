@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/api/route-helpers';
-import { env } from '../../../../lib/env';
+import { env } from '@/core/config/env';
 import {
   getStrapiBaseUrl,
   getStrapiServerBaseUrl,
-} from '../../../../lib/api/config';
+} from '@/core/config/api-config';
 
 interface StrapiUploadItem {
   id: number;

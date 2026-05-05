@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { verifyCheckoutRedirectToken } from '@/lib/auth/checkout-redirect-token';
-import { getCartId as getCartIdCookie } from '@/lib/auth/cookies';
-import * as cartRestService from '@/lib/magento/cart-rest.service';
+import { verifyCheckoutRedirectToken } from '@/features/auth/checkout-redirect-token';
+import { getCartId as getCartIdCookie } from '@/features/auth/cookies';
+import * as cartRestService from '@/features/cart/cart-rest.service';
 import {
   generateMagentoRedirectToken,
   buildMagentoRedirectUrl,
-} from '@/lib/magento/magento-redirect-token';
+} from '@/features/auth/magento-redirect-token';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

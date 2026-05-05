@@ -2,7 +2,7 @@
  * Magento REST API 客户端（直接调用 Magento REST，不经过 SSO）
  */
 import { createHttpClient } from '../pipeline/create-client';
-import { env } from '@/lib/env';
+import { env } from '@/core/config/env';
 
 function getMagentoRestBaseUrl(): string {
   const storeCode = encodeURIComponent(env.MAGENTO_STORE_CODE);

@@ -9,19 +9,19 @@ import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '@/lib/env';
+import { env } from '@/core/config/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
   ProductReview,
   ProductReviewPagination,
   ProductReviewSummary,
-} from '../../../lib/api/strapi/reviews';
-import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
+} from '@/features/product/reviews.api';
+import type { ProductQaListResult } from '@/features/product/qa.api';
 import { ProductQA } from './ProductQA';
 import type {
   UnifiedProduct,
   UnifiedProductImage,
-} from '../../../lib/api/unified-product';
+} from '@/features/product/unified.api';
 import type { ProductVideoCard, Recipe } from './product-page-types';
 
 interface ProductDetailReviewShellProps {

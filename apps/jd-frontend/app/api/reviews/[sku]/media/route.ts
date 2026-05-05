@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/api/route-helpers';
-import { fetchReviewMediaBySku } from '../../../../../lib/api/strapi/reviews';
+import { fetchReviewMediaBySku } from '@/features/product/reviews.api';
 
 export async function GET(
   request: NextRequest,

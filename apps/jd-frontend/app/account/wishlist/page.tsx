@@ -8,10 +8,10 @@ import { Heart, Trash2, Loader2 } from 'lucide-react';
 import { processProductImageUrl } from '@prism/shared';
 import { AccountScaffold } from '../components/AccountScaffold';
 import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/lib/auth/context';
-import { useAccount } from '@/lib/account/useAccount';
-import type { WishlistItem } from '@/lib/api/bff/account/types';
-import { formatPrice } from '@/lib/format-price';
+import { useAuth } from '@/features/auth/auth.context';
+import { useAccount } from '@/features/account/use-account';
+import type { WishlistItem } from '@/features/account/types';
+import { formatPrice } from '@/shared/utils/format-price';
 
 export default function WishlistPage() {
   const router = useRouter();

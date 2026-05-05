@@ -1,5 +1,5 @@
-import { getPageBySlug } from '@/lib/api/cms-pages';
-import { renderSections } from './components/sections/blockMap';
+import { getPageBySlug } from '@/features/cms-page/cms-pages.api';
+import { renderSections } from '@/features/cms-page/blockMap';
 
 // Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.
 export const revalidate = 60; // ISR + On-Demand

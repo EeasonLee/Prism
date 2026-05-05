@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '../config';
+import { getApiBaseUrl } from '@/core/config/api-config';
 
 /**
  * 客户端请求选项

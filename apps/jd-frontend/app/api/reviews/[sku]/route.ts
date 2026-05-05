@@ -3,11 +3,11 @@ import { handleApiError } from '@/core/api/route-helpers';
 import {
   fetchReviewsBySku,
   submitReview,
-} from '../../../../lib/api/strapi/reviews';
+} from '@/features/product/reviews.api';
 import {
   guestAuthorLabelFromEmail,
   isReasonableEmail,
-} from '../../../../lib/validation/email';
+} from '@/shared/utils/email-validation';
 
 interface SubmitReviewRequestBody {
   authorName?: unknown;

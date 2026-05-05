@@ -5,7 +5,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/api/recipes', () => ({
+vi.mock('@/features/recipe/recipes.api', () => ({
   fetchRecipeFacetedSearchStrapi: vi.fn(),
   fetchRecipeKeywordSearchStrapi: vi.fn(),
 }));
@@ -13,7 +13,7 @@ vi.mock('@/lib/api/recipes', () => ({
 import {
   fetchRecipeFacetedSearchStrapi,
   fetchRecipeKeywordSearchStrapi,
-} from '@/lib/api/recipes';
+} from '@/features/recipe/recipes.api';
 import { GET as getFacetedSearch } from '../app/api/recipes/search/route';
 import { GET as getKeywordSearch } from '../app/api/search/recipes/route';
 

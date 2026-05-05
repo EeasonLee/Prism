@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import type { ShopSortOption } from '../../../shop/lib/meilisearch';
-import { resolveCategoryBySlug } from '../../../../lib/api/bff/category/list';
-import { productQueryFacade } from '@/lib/application/product/product-query-facade';
+import type { ShopSortOption } from '@/features/search/shop-search';
+import { resolveCategoryBySlug } from '@/features/category/list.bff';
+import { productQueryFacade } from '@/features/product/query-facade';
 
 export async function GET(
   request: Request,

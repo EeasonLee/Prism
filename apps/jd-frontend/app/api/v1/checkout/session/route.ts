@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { authenticatedCartRequest } from '@/lib/api/bff/cart-rest-handler';
-import { issueCheckoutRedirectToken } from '@/lib/auth/checkout-redirect-token';
-import { extractLocalAccessTokenPayload } from '@/lib/auth/session-tokens';
+import { authenticatedCartRequest } from '@/features/cart/cart-rest-handler.bff';
+import { issueCheckoutRedirectToken } from '@/features/auth/checkout-redirect-token';
+import { extractLocalAccessTokenPayload } from '@/features/auth/session-tokens';
 
 export async function POST(request: Request) {
   return authenticatedCartRequest(

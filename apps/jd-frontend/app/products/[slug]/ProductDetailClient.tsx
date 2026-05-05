@@ -10,9 +10,9 @@ import type {
   MagentoProduct,
   MagentoCustomizableOption,
 } from '../../../lib/api/magento/types';
-import { formatPrice } from '@/lib/format-price';
-import { AddToCartButton } from '../../components/AddToCartButton';
-import { CustomizableOptionsSection } from '../../components/CustomizableOptionsSection';
+import { formatPrice } from '@/shared/utils/format-price';
+import { AddToCartButton } from '@/features/product/AddToCartButton';
+import { CustomizableOptionsSection } from '@/features/product/CustomizableOptionsSection';
 
 export interface SelectedVariantProduct {
   sku: string;

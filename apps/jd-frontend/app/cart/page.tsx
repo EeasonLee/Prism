@@ -3,18 +3,18 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { env } from '@/lib/env';
-import { formatPrice } from '@/lib/format-price';
+import { env } from '@/core/config/env';
+import { formatPrice } from '@/shared/utils/format-price';
 import {
   formatCartLineTotal,
   formatCartMoney,
   getCartSnapshot,
   getCheckoutRedirectLink,
-} from '../../lib/api/magento/cart';
-import type { CartTotals } from '../../lib/api/magento/types';
-import { useAuth } from '../../lib/auth/context';
-import { useCart } from '../../lib/cart/context';
-import { LoginModal } from '../components/LoginModal';
+} from '@/lib/api/magento/cart';
+import type { CartTotals } from '@/lib/api/magento/types';
+import { useAuth } from '@/features/auth/auth.context';
+import { useCart } from '@/features/cart/cart.context';
+import { LoginModal } from '@/features/auth/LoginModal';
 
 export default function CartPage() {
   const { hasSession, isGuest } = useAuth();

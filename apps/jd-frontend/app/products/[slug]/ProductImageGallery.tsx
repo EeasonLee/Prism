@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Play,
 } from 'lucide-react';
-import type { UnifiedProductImage } from '../../../lib/api/unified-product';
+import type { UnifiedProductImage } from '@/features/product/unified.api';
 
 interface ProductGalleryVideo {
   url: string;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { accountErrorResponse } from '@/lib/api/bff/account/http';
-import { createAccountService } from '@/lib/api/bff/account/service';
-import { clearSessionCookies } from '@/lib/auth/cookies';
+import { accountErrorResponse } from '@/features/account/http.api';
+import { createAccountService } from '@/features/account/account.service';
+import { clearSessionCookies } from '@/features/auth/cookies';
 
 export const dynamic = 'force-dynamic';
 

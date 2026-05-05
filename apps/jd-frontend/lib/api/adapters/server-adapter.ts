@@ -1,5 +1,8 @@
-import { env } from '../../env';
-import { getApiBaseUrl, getStrapiServerBaseUrl } from '../config';
+import { env } from '@/core/config/env';
+import {
+  getApiBaseUrl,
+  getStrapiServerBaseUrl,
+} from '@/core/config/api-config';
 
 /**
  * Strapi 自定义路由均以 ``api/`` 为前缀。服务端若配置了 ``STRAPI_URL`` /

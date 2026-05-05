@@ -1,7 +1,7 @@
-import type { HeroSlide } from '@/app/components/HeroCarousel';
-import { HeroCarousel } from '@/app/components/HeroCarousel';
-import { fetchCategoryByType } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
-import { buildStaticMetadata } from '@/lib/seo';
+import type { HeroSlide } from '@/shared/ui/HeroCarousel';
+import { HeroCarousel } from '@/shared/ui/HeroCarousel';
+import { fetchCategoryByType } from '@/features/product/blog-bridge.api'; // 使用应用层的导出，确保 API Client 已初始化
+import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
 import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
@@ -9,8 +9,8 @@ import { ProductCategories } from '@prism/blog/components/ProductCategories';
 import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
 import { processImageUrl } from '@prism/shared';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import type { CarouselItemResponse } from '../../lib/api/carousel';
-import { getCarouselItems } from '../../lib/api/carousel';
+import type { CarouselItemResponse } from '@/features/cms-page/carousel.api';
+import { getCarouselItems } from '@/features/cms-page/carousel.api';
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
