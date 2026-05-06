@@ -32,7 +32,10 @@ export async function GET(request: Request) {
     const products =
       productsResult.status === 'fulfilled'
         ? {
-            items: productsResult.value.items,
+            items: productsResult.value.items.map(item => ({
+              ...item,
+              href: `/products/${item.urlKey ?? item.sku}`,
+            })),
             total: productsResult.value.pagination.total,
           }
         : { items: [], total: 0 };
