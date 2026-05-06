@@ -20,8 +20,6 @@
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@prism/prism/*": ["apps/jd-frontend/*"],
-      "@prism/recipe/*": ["libs/recipe/*"],
       "@prism/shared": ["libs/shared/src/index.ts"],
       "@prism/shared/*": ["libs/shared/*"],
       "@prism/tokens": ["libs/tokens/src/index.ts"],
