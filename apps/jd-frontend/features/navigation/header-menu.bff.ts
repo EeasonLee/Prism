@@ -1,4 +1,4 @@
-import { serverRequest } from '@/lib/api/adapters/server-adapter';
+import { serverRequest } from '@/core/api/clients/strapi-server';
 import {
   CACHE_TAG_HEADER_MENU,
   REVALIDATE_SECONDS_CATEGORY_NAV,
