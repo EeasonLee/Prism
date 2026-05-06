@@ -1,5 +1,8 @@
-export { AuthProvider, useAuth } from './auth.context';
-export { AuthModalProvider, useAuthModal } from './auth-modal.context';
+export { AuthProvider, useAuth } from './components/auth.context';
+export {
+  AuthModalProvider,
+  useAuthModal,
+} from './components/auth-modal.context';
 export {
   login,
   register,
@@ -10,10 +13,15 @@ export {
   resetPassword,
   createAuthErrorResponse,
   clearSessionOnError,
-} from './auth.service';
-export { LoginModal } from './LoginModal';
-export { requireAuth } from './require-auth';
-export { getSession } from './get-session';
+} from './api/auth.service';
+export { LoginModal } from './components/LoginModal';
+export { requireAuth } from './services/require-auth';
+export { getSession, getSessionResponse } from './services/get-session';
+export { getAccessToken, getRefreshToken } from './services/cookies';
+export {
+  extractWrappedMagentoAccessToken,
+  validateRefreshToken,
+} from './services/session-tokens';
 export type {
   AuthTokens,
   AuthUser,

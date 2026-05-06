@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AccountScaffold } from '../../components/AccountScaffold';
 import { AccountSkeleton } from '../../components/AccountSkeleton';
 import { formatPrice } from '@prism/shared';
-import { useAuth } from '@/features/auth/auth.context';
+import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 import type { OrderDetail } from '@/features/account/types';
 

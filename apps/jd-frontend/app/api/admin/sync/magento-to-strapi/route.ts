@@ -17,11 +17,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  fetchProducts,
-  fetchCategoryTree,
-} from '@/features/product/catalog.api';
-import type { MagentoProduct } from '@/features/product/bff-types';
+import { fetchProducts, fetchCategoryTree } from '@/features/product';
+import type { MagentoProduct } from '@/features/product';
 import type { MagentoCategoryTree } from '@/features/category/types';
 import { strapiClient } from '@/infrastructure/api/clients/strapi';
 

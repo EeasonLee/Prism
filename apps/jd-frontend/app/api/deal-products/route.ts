@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { productQueryFacade } from '@/features/product/query-facade';
+import { productQueryFacade } from '@/features/product';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

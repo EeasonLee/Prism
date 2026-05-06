@@ -12,9 +12,9 @@ import {
   getCheckoutRedirectLink,
 } from '@/features/cart';
 import type { CartTotals } from '@/features/cart/types';
-import { useAuth } from '@/features/auth/auth.context';
+import { useAuth } from '@/features/auth';
 import { useCart } from '@/features/cart';
-import { LoginModal } from '@/features/auth/LoginModal';
+import { LoginModal } from '@/features/auth';
 
 export default function CartPage() {
   const { hasSession, isGuest } = useAuth();

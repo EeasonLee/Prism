@@ -10,7 +10,7 @@ import type {
   User,
   WishlistItem,
 } from './types';
-import { useAuth } from '@/features/auth/auth.context';
+import { useAuth } from '@/features/auth';
 
 interface ErrorPayload {
   error?: {

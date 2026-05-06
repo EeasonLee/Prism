@@ -1,12 +1,20 @@
-export { RecipeCard } from './RecipeCard';
-export { RecipeDetail } from './RecipeDetail';
-export { RecipeGrid } from './RecipeGrid';
-export { RecipeHeader } from './RecipeHeader';
-export { RecipesClient } from './RecipesClient';
-export { FiltersPanel } from './FiltersPanel';
-export { Pagination } from './Pagination';
-export { useRecipesData } from './useRecipesData';
-export { recipesApi } from './recipes.api';
+export { RecipeCard } from './components/RecipeCard';
+export { RecipeDetail } from './components/RecipeDetail';
+export { RecipeGrid } from './components/RecipeGrid';
+export { RecipeHeader } from './components/RecipeHeader';
+export { RecipesClient } from './components/RecipesClient';
+export { FiltersPanel } from './components/FiltersPanel';
+export { Pagination } from './components/Pagination';
+export { useRecipesData } from './hooks/useRecipesData';
+export {
+  recipesApi,
+  fetchRecipeFacetedSearchStrapi,
+  fetchRecipeKeywordSearchStrapi,
+} from './api/recipes.api';
+export {
+  parseRecipeSearchParams,
+  parseRecipeKeywordSearchParams,
+} from './services/recipes-search-params';
 export type {
   Recipe,
   RecipeFilters,

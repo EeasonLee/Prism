@@ -1,8 +1,13 @@
-export { fetchProductSearchResult } from './search-service';
-export { searchProducts } from './search-meilisearch';
-export { GlobalSearch } from './GlobalSearch';
-export { FilterPanel } from './FilterPanel';
-export { SortPanel } from './SortPanel';
+export { fetchProductSearchResult } from './api/search-service';
+export {
+  searchProducts as searchProductsFromMeilisearch,
+  type MeilisearchSearchResult,
+} from './api/search-meilisearch';
+export type { RelatedProductItem } from './api/meilisearch.service';
+export { searchProducts, type ShopSortOption } from './api/shop-search';
+export { GlobalSearch } from './components/GlobalSearch';
+export { FilterPanel } from './components/FilterPanel';
+export { SortPanel } from './components/SortPanel';
 export type {
   SearchSeo,
   SearchSortOption,

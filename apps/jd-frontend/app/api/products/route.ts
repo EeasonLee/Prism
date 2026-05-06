@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   searchCartProductBySkuFromMeilisearch,
   searchCartProductsBySkusFromMeilisearch,
-} from '@/features/product/meilisearch.repo';
+} from '@/features/product';
 
 function normalizeCartSku(sku: string): string {
   const commaIdx = sku.indexOf(',');

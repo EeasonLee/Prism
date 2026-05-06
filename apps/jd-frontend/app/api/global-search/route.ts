@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { searchProducts } from '@/features/search/search-meilisearch';
+import { searchProducts } from '@/features/search';
 import { searchArticles } from '@/features/blog/api';
-import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe/recipes.api';
-import type { MeilisearchSearchResult } from '@/features/search/search-meilisearch';
+import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe';
+import type { MeilisearchSearchResult } from '@/features/search';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

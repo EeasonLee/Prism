@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { ProductCard } from '@/features/product/ProductCard';
-import { FilterPanel } from '@/features/search/FilterPanel';
-import { SortPanel, type ShopSortOption } from '@/features/search/SortPanel';
-import { searchProducts } from '@/features/search/shop-search';
-import { getCategoryContextBySlug } from '@/features/category/list.bff';
+import { ProductCard } from '@/features/product';
+import { FilterPanel } from '@/features/search';
+import { SortPanel, type ShopSortOption } from '@/features/search';
+import { searchProducts } from '@/features/search';
+import { getCategoryContextBySlug } from '@/features/category';
 
 interface Props {
   params: Promise<{ slug: string }>;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
 import { submitProductQuestion } from '@/features/product';
-import { getAccessToken } from '@/features/auth/cookies';
+import { getAccessToken } from '@/features/auth/services/cookies';
 import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitQuestionRequestBody {

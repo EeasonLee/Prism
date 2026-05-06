@@ -1,5 +1,5 @@
-export { CartDrawer } from './CartDrawer';
-export { CartProvider, useCart } from './cart.context';
+export { CartDrawer } from './components/CartDrawer';
+export { CartProvider, useCart } from './components/cart.context';
 export {
   formatCartMoney,
   formatCartLineTotal,
@@ -13,8 +13,9 @@ export {
   getCheckoutRedirectLink,
   applyCoupon,
   removeCoupon,
-} from './cart-bff.service';
-export { useAddToCartAction } from './use-add-to-cart-action';
+} from './api/cart-bff.service';
+export { useAddToCartAction } from './hooks/use-add-to-cart-action';
+export { authenticatedCartRequest } from './api/cart-rest-handler.bff';
 export type {
   CartMoney,
   CartTotals,

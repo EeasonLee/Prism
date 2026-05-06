@@ -1,4 +1,4 @@
-import { getSessionResponse } from '@/features/auth/get-session';
+import { getSessionResponse } from '@/features/auth';
 
 export const dynamic = 'force-dynamic';
 

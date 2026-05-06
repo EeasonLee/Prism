@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { resetPassword } from '@/features/auth/auth.service';
+import { resetPassword } from '@/features/auth';
 
 export async function POST(request: Request) {
   try {

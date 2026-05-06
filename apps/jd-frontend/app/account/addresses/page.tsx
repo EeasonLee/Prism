@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, MapPin, Home, CreditCard } from 'lucide-react';
 import { AccountScaffold } from '../components/AccountScaffold';
 import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/features/auth/auth.context';
+import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 import type { Address, AddressInput } from '@/features/account/types';
 import { Button } from '@prism/ui/components/button';

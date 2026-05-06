@@ -1,5 +1,5 @@
-import { authenticatedCartRequest } from '@/features/cart/cart-rest-handler.bff';
-import * as cartRestService from '@/features/cart/cart-rest.service';
+import { authenticatedCartRequest } from '@/features/cart';
+import * as cartRestService from '@/features/cart';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { couponCode?: string };

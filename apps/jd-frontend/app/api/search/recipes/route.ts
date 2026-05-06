@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe/recipes.api';
-import { parseRecipeKeywordSearchParams } from '@/features/recipe/recipes-search-params';
+import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe';
+import { parseRecipeKeywordSearchParams } from '@/features/recipe';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

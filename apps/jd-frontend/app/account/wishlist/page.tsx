@@ -8,7 +8,7 @@ import { Heart, Trash2, Loader2 } from 'lucide-react';
 import { processProductImageUrl } from '@prism/shared';
 import { AccountScaffold } from '../components/AccountScaffold';
 import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/features/auth/auth.context';
+import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 import type { WishlistItem } from '@/features/account/types';
 import { formatPrice } from '@prism/shared';

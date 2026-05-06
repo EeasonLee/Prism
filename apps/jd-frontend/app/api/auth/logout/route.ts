@@ -1,4 +1,4 @@
-import { clearSessionOnError, logout } from '@/features/auth/auth.service';
+import { clearSessionOnError, logout } from '@/features/auth';
 
 export async function POST(request: Request) {
   try {

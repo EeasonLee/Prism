@@ -1,7 +1,10 @@
 import { isApiError, MagentoGraphQLError } from '@/infrastructure/api/errors';
-import { getAccessToken, getRefreshToken } from '@/features/auth/cookies';
-import { extractWrappedMagentoAccessToken } from '@/features/auth/session-tokens';
-import { validateRefreshToken } from '@/features/auth/session-tokens';
+import {
+  getAccessToken,
+  getRefreshToken,
+  extractWrappedMagentoAccessToken,
+  validateRefreshToken,
+} from '@/features/auth';
 import { magentoGraphQLClient } from '@/infrastructure/api/clients/magento-graphql';
 import { magentoClient } from '@/infrastructure/api/clients/magento';
 import {

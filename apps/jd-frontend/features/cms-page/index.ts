@@ -1,15 +1,25 @@
-export { getPageBySlug } from './cms-pages.api';
-export { blockMap, type BlockRendererProps } from './blockMap';
-export { CategoryGrid } from './CategoryGrid';
-export { HeroBanner } from './HeroBanner';
-export { ProductCarousel } from './ProductCarousel';
-export { ImageTextBlock } from './ImageTextBlock';
-export { VideoShowcase } from './VideoShowcase';
-export { FeaturedProducts } from './FeaturedProducts';
-export { ServiceBadges } from './ServiceBadges';
-export { DealBanner } from './DealBanner';
-export { DealProductBlocks } from './DealProductBlocks';
-export { ContentCarousel } from './ContentCarousel';
+export { getPageBySlug } from './api/cms-pages.api';
+export { getPageContentLayoutClass } from './api/cms-page-layout.api';
+export {
+  getCarouselItems,
+  type CarouselItemResponse,
+} from './api/carousel.api';
+export {
+  blockMap,
+  renderSections,
+  type BlockRendererProps,
+} from './components/blockMap';
+export { CategoryGrid } from './components/CategoryGrid';
+export { CmsPageRichContent } from './components/CmsPageRichContent';
+export { HeroBanner } from './components/HeroBanner';
+export { ProductCarousel } from './components/ProductCarousel';
+export { ImageTextBlock } from './components/ImageTextBlock';
+export { VideoShowcase } from './components/VideoShowcase';
+export { FeaturedProducts } from './components/FeaturedProducts';
+export { ServiceBadges } from './components/ServiceBadges';
+export { DealBanner } from './components/DealBanner';
+export { DealProductBlocks } from './components/DealProductBlocks';
+export { ContentCarousel } from './components/ContentCarousel';
 export type {
   Page,
   Section,

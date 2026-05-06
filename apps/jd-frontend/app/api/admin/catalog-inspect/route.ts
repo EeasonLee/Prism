@@ -11,8 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import { fetchProducts } from '@/features/product/catalog.api';
-import type { MagentoProduct } from '@/features/product/bff-types';
+import { fetchProducts } from '@/features/product';
+import type { MagentoProduct } from '@/features/product';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;
 
