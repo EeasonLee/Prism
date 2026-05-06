@@ -6,7 +6,7 @@ import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
 import { searchProducts, type ShopSearchResult } from '@/features/search';
-import type { CategoryContext } from '../types';
+import type { CategoryContext } from '@/features/category';
 import { MobileFilterButton } from './MobileFilterButton';
 import { CategoryProductGrid } from './CategoryProductGrid';
 import { CategoryProductGridSkeleton } from './CategoryProductGridSkeleton';

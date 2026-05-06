@@ -5,10 +5,7 @@ export {
   resolveMagentoCategoryIdFromStrapiCategorySlug,
 } from './services/category-mapping';
 export { mapCategory, mapBreadcrumbs } from './services/category.mapper';
-export { CategoryPageContent } from './components/CategoryPageContent';
-export { CategoryProductGrid } from './components/CategoryProductGrid';
 export { CategorySidebar } from './components/CategorySidebar';
-export { MobileFilterButton } from './components/MobileFilterButton';
 export type {
   CategoryData,
   CategoryFilters,

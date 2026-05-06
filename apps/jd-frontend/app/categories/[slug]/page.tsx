@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { resolveCategoryBySlug } from '@/features/category';
-import { CategoryPageContent } from '@/features/category';
+import { CategoryPageContent } from './CategoryPageContent';
 
 interface Props {
   params: Promise<{ slug: string }>;
