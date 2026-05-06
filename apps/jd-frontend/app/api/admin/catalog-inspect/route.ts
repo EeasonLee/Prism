@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/api/route-helpers';
 import { fetchProducts } from '@/features/product/catalog.api';
-import type { MagentoProduct } from '@/lib/api/magento/types';
+import type { MagentoProduct } from '@/features/product/bff-types';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;
 

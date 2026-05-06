@@ -13,8 +13,8 @@ import type {
   AddCartItemParams,
   CartTotals,
   CartMoney,
-  MagentoProduct,
-} from '@/lib/api/magento/types';
+} from '@/features/cart/types';
+import type { MagentoProduct } from '@/features/product/bff-types';
 
 function isCustomerCartMissingError(error: unknown): boolean {
   if (!isApiError(error)) {

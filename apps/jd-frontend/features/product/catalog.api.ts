@@ -15,7 +15,7 @@ import type {
   MagentoProduct,
   MagentoProductListResponse,
   CustomizableOptionType,
-} from '@/lib/api/magento/types';
+} from '@/features/product/bff-types';
 
 function buildQuery(params: Record<string, unknown>): string {
   const qs = new URLSearchParams();

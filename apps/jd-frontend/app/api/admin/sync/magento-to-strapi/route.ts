@@ -24,7 +24,7 @@ import {
 import type {
   MagentoProduct,
   MagentoCategoryTree,
-} from '@/lib/api/magento/types';
+} from '@/features/product/bff-types';
 import { strapiClient } from '@/core/api/clients/strapi';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;

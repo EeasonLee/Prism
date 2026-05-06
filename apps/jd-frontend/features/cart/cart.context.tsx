@@ -16,7 +16,7 @@ import {
   getCartItems,
   updateCartItemQty as updateCartItemQtyApi,
 } from '@/lib/api/magento/cart';
-import type { AddCartItemParams, CartItem } from '@/lib/api/magento/types';
+import type { AddCartItemParams, CartItem } from '@/features/cart/types';
 import { useAuth } from '@/features/auth/auth.context';
 
 interface CartContextValue {

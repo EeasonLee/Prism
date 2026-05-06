@@ -15,7 +15,7 @@ import type {
   MagentoCustomizableOption,
   MagentoProduct,
   MagentoProductListResponse,
-} from '@/lib/api/magento/types';
+} from '@/features/product/bff-types';
 import { processProductImageUrl } from '@prism/shared';
 import { normalizeCpPrice } from '@/features/product/unified-utils';
 

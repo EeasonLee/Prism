@@ -11,7 +11,7 @@ import {
   getCartSnapshot,
   getCheckoutRedirectLink,
 } from '@/lib/api/magento/cart';
-import type { CartTotals } from '@/lib/api/magento/types';
+import type { CartTotals } from '@/features/cart/types';
 import { useAuth } from '@/features/auth/auth.context';
 import { useCart } from '@/features/cart/cart.context';
 import { LoginModal } from '@/features/auth/LoginModal';

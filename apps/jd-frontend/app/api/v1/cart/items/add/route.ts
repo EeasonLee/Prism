@@ -1,5 +1,5 @@
 import { authenticatedCartRequest } from '@/features/cart/cart-rest-handler.bff';
-import type { AddCartItemParams } from '@/lib/api/magento/types';
+import type { AddCartItemParams } from '@/features/cart/types';
 import * as cartRestService from '@/features/cart/cart-rest.service';
 
 export async function POST(request: Request) {

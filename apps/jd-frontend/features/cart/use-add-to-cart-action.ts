@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import type { AddCartItemParams } from '@/lib/api/magento/types';
+import type { AddCartItemParams } from '@/features/cart/types';
 import { useCart } from './cart.context';
 
 interface AddToCartActionOptions {

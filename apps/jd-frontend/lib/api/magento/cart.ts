@@ -8,7 +8,7 @@ import type {
   CartItemsResponse,
   CartMoney,
   CartRedirectResponse,
-} from './types';
+} from '@/features/cart/types';
 
 import { bffClient } from '@/core/api/clients/bff';
 import { ApiError } from '@/core/api/errors';
