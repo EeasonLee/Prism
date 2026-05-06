@@ -1,5 +1,5 @@
 /**
- * Magento 购物车操作（通过 BFF /api/cart/* 路由，Cookie 自动传递）
+ * BFF Cart Service — calls /api/v1/cart/* endpoints (Cookie-based auth, auto-refresh)
  */
 
 import type {
@@ -25,7 +25,7 @@ export function formatCartMoney(m: CartMoney | null | undefined): string {
   }
 }
 
-/** 行金额：优先 Magento row_total，否则单价×数量 */
+/** Line total: prefer Magento row_total, else price × qty */
 export function formatCartLineTotal(item: CartItem): string {
   const currency = item.currency ?? 'USD';
   const value =
@@ -63,7 +63,6 @@ async function cartFetch<T>(
 ): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
 
-  // Use new pipeline for standard methods
   if (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     try {
       const headers: Record<string, string> = {};
@@ -119,13 +118,12 @@ async function recoverCartSession(): Promise<boolean> {
     });
     if (sessionRes.ok) {
       const sessionData = (await sessionRes.json()) as SessionProbeResponse;
-      // 已登录用户：session 端会尝试 refresh 并回写 cookie，直接认为恢复成功
       if (sessionData.hasSession && sessionData.isAuthenticated) {
         return true;
       }
     }
   } catch {
-    // 会话探测失败时，继续尝试 guest 补会话
+    // Fall through to guest
   }
 
   try {
@@ -149,7 +147,6 @@ async function withCartAuthRecovery<T>(
   strategy: CartAuthStrategy = {}
 ): Promise<T> {
   if (strategy.preflightRefresh) {
-    // 预刷新：下单前先让服务端尝试 refresh，减少临界点 401 概率
     await recoverCartSession();
   }
 

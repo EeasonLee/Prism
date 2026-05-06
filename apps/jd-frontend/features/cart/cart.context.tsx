@@ -15,7 +15,7 @@ import {
   deleteCartItem as deleteCartItemApi,
   getCartItems,
   updateCartItemQty as updateCartItemQtyApi,
-} from '@/lib/api/magento/cart';
+} from '@/features/cart/cart-bff.service';
 import type { AddCartItemParams, CartItem } from '@/features/cart/types';
 import { useAuth } from '@/features/auth/auth.context';
 

@@ -12,7 +12,7 @@ import {
   formatCartMoney,
   getCheckoutRedirectLink,
   removeCoupon,
-} from '@/lib/api/magento/cart';
+} from '@/features/cart/cart-bff.service';
 import type { CartTotals } from '@/features/cart/types';
 import { useAuth } from '@/features/auth/auth.context';
 import { useCart } from '@/features/cart/cart.context';
