@@ -2,7 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/shared/utils/format-price';
 import { fetchProductSearchResult } from '@/features/search/search-service';
-import type { SearchSortOption, ProductSearchQuery } from './types';
+import type {
+  SearchSortOption,
+  ProductSearchQuery,
+} from '@/features/search/types';
 
 interface Props {
   searchParams: Promise<{

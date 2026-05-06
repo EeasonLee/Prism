@@ -2,8 +2,9 @@ import type { ArticleListItem } from '@prism/blog';
 import type { Recipe } from '@/features/recipe/types';
 import type {
   BlogPost,
+  PdpRecipeCard,
   ProductVideoCard,
-} from '@/app/products/[slug]/product-page-types';
+} from '@/features/product/bff-types';
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/core/config/cache-policy';
 import { strapiClient as apiClient } from '@/core/api/clients/strapi';
 import { getStrapiBaseUrl } from '@/core/config/api-config';
@@ -34,18 +35,6 @@ interface StrapiImageLike {
 
 interface StrapiListResponse<T> {
   data: T[];
-}
-
-interface PdpRecipeCard {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  href: string;
-  time: string;
-  servings: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  tags: string[];
 }
 
 function resolveStrapiUrl(url: string | null | undefined): string | null {

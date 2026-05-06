@@ -25,7 +25,7 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '@/features/product/content.api';
-import type { ProductPageCms } from '@/app/products/[slug]/product-page-types';
+import type { ProductPageCms } from '@/features/product/bff-types';
 
 export interface ProductPriceInfo {
   regular: number;

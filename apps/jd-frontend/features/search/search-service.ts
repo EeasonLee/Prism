@@ -13,7 +13,7 @@ import type {
   SearchAvailableFilter,
   ProductSearchQuery,
   ProductSearchResult,
-} from '../../app/search/types';
+} from './types';
 
 // ――― Meilisearch 工具函数 ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 

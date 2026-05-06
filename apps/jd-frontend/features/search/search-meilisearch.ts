@@ -3,7 +3,7 @@ import type {
   SearchSortOption,
   ProductCardItem,
   SearchPagination,
-} from '../../app/search/types';
+} from './types';
 
 export interface MeilisearchSearchParams {
   q?: string;
