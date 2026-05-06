@@ -7,7 +7,7 @@ import {
   getRefreshToken,
 } from './cookies';
 import { renewSessionTokensFromRefreshToken } from './session-tokens';
-import { setSession } from './set-session';
+import { setSessionCookies as setSession } from './cookies';
 import type { SessionResponse, SessionState } from './types';
 
 export function readSessionState(request: Request): SessionState {

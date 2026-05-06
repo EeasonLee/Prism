@@ -46,7 +46,7 @@ export interface SearchPriceRange {
 
 // ――― 商品卡片 ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
-export interface ProductCardItem {
+export interface SearchProductCardItem {
   sku: string;
   name: string;
   subtitle?: string;
@@ -104,7 +104,7 @@ export interface ProductSearchResult {
   applied_filters: SearchAppliedFilter[];
   available_filters: SearchAvailableFilter[];
   sort_options: SearchSortOption[];
-  items: ProductCardItem[];
+  items: SearchProductCardItem[];
   pagination: SearchPagination;
   total: number;
 }

@@ -30,16 +30,18 @@ export type {
   MagentoCustomizableOptionValue,
   MagentoLinkedProduct,
   MagentoProductListResponse,
+  FetchProductsParams,
+} from './bff-types';
+
+export type {
   MagentoCategoryBreadcrumb,
   MagentoCategoryCmsBlock,
   MagentoCategoryDetail,
   MagentoCategoryTree,
-  FetchProductsParams,
-} from './bff-types';
+} from '@/features/category/types';
 
 // ――― Unified product API ――――――――――――――――――――――――――――――――――――――――――――――
 export { fetchUnifiedProduct } from './unified.api';
-export { buildProductDetailView } from './unified-utils';
 
 // ――― BFF layer ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { fetchProductPageData } from './detail.bff';
@@ -56,11 +58,16 @@ export {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from './content.api';
-export { fetchReviews, submitReview } from './reviews.api';
-export { fetchProductQA, submitProductQuestion } from './qa.api';
+export { fetchReviewsBySku, submitReview } from './reviews.api';
+export { fetchProductQaBySku, submitProductQuestion } from './qa.api';
 
 // ――― Mappers ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――
-export { mapMagentoProductToCard } from './product.mapper';
+export {
+  mapProductListItem,
+  mapProductList,
+  mapProductDetail,
+  mapProductVariants,
+} from './product.mapper';
 
 // ――― Components ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { ProductCard } from './ProductCard';

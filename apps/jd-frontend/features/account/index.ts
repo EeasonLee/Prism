@@ -1,3 +1,15 @@
 export { AccountService } from './account.service';
 export { useAccount } from './use-account';
-export type { AccountState, AccountProfile, AccountAddress } from './types';
+export type {
+  User,
+  UpdateUserInput,
+  ChangePasswordInput,
+  Order,
+  OrderItem,
+  OrderAddress,
+  OrderDetail,
+  Address,
+  AddressInput,
+  WishlistItem,
+  AccountErrorShape,
+} from './types';

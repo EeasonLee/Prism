@@ -1,7 +1,7 @@
 import { productQueryFacade } from '@/features/product/query-facade';
 import type {
   SearchSortOption,
-  ProductCardItem,
+  SearchProductCardItem,
   SearchPagination,
 } from './types';
 
@@ -22,7 +22,7 @@ export interface MeilisearchSearchParams {
 }
 
 export interface MeilisearchSearchResult {
-  items: ProductCardItem[];
+  items: SearchProductCardItem[];
   pagination: SearchPagination;
   facetDistribution?: Record<string, Record<string, number>>;
 }
@@ -30,7 +30,7 @@ function toSearchCardItem(
   item: Awaited<
     ReturnType<typeof productQueryFacade.queryProducts>
   >['items'][number]
-): ProductCardItem {
+): SearchProductCardItem {
   return {
     sku: item.sku,
     name: item.displayName || item.name,

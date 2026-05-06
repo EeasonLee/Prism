@@ -1,4 +1,12 @@
-export { fetchHeaderMenu } from './header-menu.bff';
+export { getHeaderMenu } from './header-menu.bff';
 export { isRouteActive } from './is-route-active';
-export { navItems } from './nav-config';
-export type { HeaderMenuItem } from './types';
+export {
+  MOBILE_TABBAR_ITEMS,
+  shouldHideMobileTabbar,
+  getNavBadgeValue,
+} from './nav-config';
+export type {
+  HeaderMenuNode,
+  HeaderMenuResult,
+  HeaderMenuCategoryRef,
+} from './types';

@@ -4,7 +4,7 @@ export type {
   SearchLayoutType,
   SearchCategory,
   SearchPriceRange,
-  ProductCardItem,
+  SearchProductCardItem,
   ProductSearchQuery,
   SearchAppliedFilter,
   SearchAvailableFilter,

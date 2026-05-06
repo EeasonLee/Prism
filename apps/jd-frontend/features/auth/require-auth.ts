@@ -12,7 +12,7 @@ import {
   getAccessToken,
   getRefreshToken,
 } from './cookies';
-import { setSession } from './set-session';
+import { setSessionCookies as setSession } from './cookies';
 
 async function refreshViaMagento(
   refreshToken: string

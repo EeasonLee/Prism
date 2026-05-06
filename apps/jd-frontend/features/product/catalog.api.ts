@@ -6,8 +6,6 @@ import { ssoClient as magentoClient } from '@/core/api/clients/sso';
 import { processProductImageUrl } from '@prism/shared';
 import type {
   FetchProductsParams,
-  MagentoCategoryDetail,
-  MagentoCategoryTree,
   MagentoConfigurableOption,
   MagentoDownloadableLink,
   MagentoDownloadableSample,
@@ -16,6 +14,10 @@ import type {
   MagentoProductListResponse,
   CustomizableOptionType,
 } from '@/features/product/bff-types';
+import type {
+  MagentoCategoryDetail,
+  MagentoCategoryTree,
+} from '@/features/category/types';
 
 function buildQuery(params: Record<string, unknown>): string {
   const qs = new URLSearchParams();

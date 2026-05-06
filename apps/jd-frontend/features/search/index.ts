@@ -1,5 +1,5 @@
 export { fetchProductSearchResult } from './search-service';
-export { fetchSearchResult } from './search-meilisearch';
+export { searchProducts } from './search-meilisearch';
 export { GlobalSearch } from './GlobalSearch';
 export { FilterPanel } from './FilterPanel';
 export { SortPanel } from './SortPanel';
@@ -9,7 +9,7 @@ export type {
   SearchLayoutType,
   SearchCategory,
   SearchPriceRange,
-  ProductCardItem,
+  SearchProductCardItem,
   ProductSearchQuery,
   SearchAppliedFilter,
   SearchAvailableFilter,

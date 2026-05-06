@@ -416,47 +416,5 @@ export interface FetchProductsParams {
   order?: 'asc' | 'desc';
 }
 
-export interface MagentoCategoryBreadcrumb {
-  category_id: number;
-  category_name: string;
-  category_level: number;
-}
-
-export interface MagentoCategoryCmsBlock {
-  identifier: string;
-  title: string;
-  content: string;
-}
-
-export interface MagentoCategoryDetail {
-  id: number;
-  uid?: string | null;
-  parent_id?: number | null;
-  name: string;
-  is_active: boolean;
-  position?: number | null;
-  level: number;
-  product_count: number;
-  url_path?: string | null;
-  url_key?: string | null;
-  description?: string | null;
-  image_url?: string | null;
-  path?: string | null;
-  breadcrumbs?: MagentoCategoryBreadcrumb[] | null;
-  children_ids?: number[] | null;
-  cms_block?: MagentoCategoryCmsBlock | null;
-}
-
-export interface MagentoCategoryTree {
-  id: number;
-  uid?: string | null;
-  parent_id?: number | null;
-  name: string;
-  is_active: boolean;
-  position?: number | null;
-  level: number;
-  product_count: number;
-  url_path?: string | null;
-  url_key?: string | null;
-  children: MagentoCategoryTree[];
-}
+// MagentoCategoryBreadcrumb, MagentoCategoryCmsBlock, MagentoCategoryDetail, MagentoCategoryTree
+// moved to @/features/category/types.ts

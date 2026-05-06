@@ -9,4 +9,8 @@ export type {
   CategoryData,
   CategoryFilters,
   CategoryListParams,
+  MagentoCategoryBreadcrumb,
+  MagentoCategoryCmsBlock,
+  MagentoCategoryDetail,
+  MagentoCategoryTree,
 } from './types';
