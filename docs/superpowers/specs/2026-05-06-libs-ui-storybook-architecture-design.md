@@ -60,7 +60,7 @@ Components/
 ```
 stories/
 ├── tokens-data.ts             ← 唯一 Token 展示数据源
-│   ├── colorGroups             ← 颜色分组（SYSTEM/BRAND/INK/SURFACE/STATUS）
+│   ├── colorGroups             ← 颜色分组（SYSTEM/BRAND/INK/SURFACE/STATUS，包含原有全部 5 组）
 │   ├── typographyRows          ← 排版层级
 │   ├── spacingScaleRows        ← 间距尺度
 │   ├── elevationRows           ← 海拔/阴影层级
@@ -91,21 +91,21 @@ stories/
 
 ### 3.3 删除清单
 
-| 文件                                           | 原因                                                 |
-| ---------------------------------------------- | ---------------------------------------------------- |
-| `foundation/foundation-data.ts`                | 数据迁至 `tokens-data.ts` + `guide-data.ts`          |
-| `foundation/foundation-primitives.tsx`         | UI 原语迁至 `shared-primitives.tsx`                  |
-| `foundation/foundation-utils.ts`               | 颜色工具函数迁至 `shared-primitives.tsx`             |
-| `foundation/00-ThemeAtmosphere.stories.tsx`    | 合并至 `guide/01-Principles.stories.tsx`             |
-| `foundation/01-ColorPaletteRoles.stories.tsx`  | 合并至 `TokensOverview.stories.tsx`                  |
-| `foundation/02-TypographyRules.stories.tsx`    | 合并至 `TokensOverview.stories.tsx`                  |
-| `foundation/03-ComponentStylings.stories.tsx`  | 迁至 `guide/03-ComponentStylings.stories.tsx`        |
-| `foundation/04-LayoutPrinciples.stories.tsx`   | 拆分至 `TokensOverview`（间距） + `guide/02`（布局） |
-| `foundation/05-DepthElevation.stories.tsx`     | 合并至 `TokensOverview.stories.tsx`                  |
-| `foundation/06-DosDonts.stories.tsx`           | 迁至 `guide/04-DosDonts.stories.tsx`                 |
-| `foundation/07-ResponsiveBehavior.stories.tsx` | 合并至 `guide/02-LayoutResponsive.stories.tsx`       |
-| `foundation/08-AgentPromptGuide.stories.tsx`   | 迁至 `guide/05-AgentPrompts.stories.tsx`             |
-| `TokensOverview.stories.tsx` 内联数据/组件     | 数据迁至数据文件，组件用 shared-primitives           |
+| 文件                                           | 原因                                                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `foundation/foundation-data.ts`                | 数据迁至 `tokens-data.ts` + `guide-data.ts`                                            |
+| `foundation/foundation-primitives.tsx`         | UI 原语迁至 `shared-primitives.tsx`                                                    |
+| `foundation/foundation-utils.ts`               | 删除（`hslToHex` 不再需要，紧凑版不展示 HEX）                                          |
+| `foundation/00-ThemeAtmosphere.stories.tsx`    | 合并至 `guide/01-Principles.stories.tsx`                                               |
+| `foundation/01-ColorPaletteRoles.stories.tsx`  | 合并至 `TokensOverview.stories.tsx`                                                    |
+| `foundation/02-TypographyRules.stories.tsx`    | 合并至 `TokensOverview.stories.tsx`                                                    |
+| `foundation/03-ComponentStylings.stories.tsx`  | 迁至 `guide/03-ComponentStylings.stories.tsx`                                          |
+| `foundation/04-LayoutPrinciples.stories.tsx`   | 拆至三处：`TokensOverview`（间距尺度）、`guide/01`（留白哲学）、`guide/02`（栅格演示） |
+| `foundation/05-DepthElevation.stories.tsx`     | 合并至 `TokensOverview.stories.tsx`                                                    |
+| `foundation/06-DosDonts.stories.tsx`           | 迁至 `guide/04-DosDonts.stories.tsx`                                                   |
+| `foundation/07-ResponsiveBehavior.stories.tsx` | 合并至 `guide/02-LayoutResponsive.stories.tsx`                                         |
+| `foundation/08-AgentPromptGuide.stories.tsx`   | 迁至 `guide/05-AgentPrompts.stories.tsx`                                               |
+| `TokensOverview.stories.tsx` 内联数据/组件     | 数据迁至数据文件，组件用 shared-primitives                                             |
 
 ## 4. Token Data Contract
 
@@ -123,6 +123,8 @@ interface ColorTokenItem {
 ```
 
 不在卡片上展示 `semanticName`、`role`、`darkHsl`、`hex`——保持紧凑。
+
+颜色色块始终通过 CSS 自定义属性 `hsl(var(--token))` 渲染，保证浅色/深色模式下色块自动跟随主题切换。`lightHsl` 字段仅用于卡片上的浅色 HSL 数值展示。
 
 ### 4.2 排版 Token 结构
 
@@ -162,7 +164,7 @@ Design Tokens/Overview          ← 原 'Design Tokens/Overview'
 Design Guide/设计原则            ← 原 '基础规范/00 视觉主题与氛围'
 Design Guide/布局与响应式        ← 原 '基础规范/04 布局原则' + '基础规范/07 响应式行为'
 Design Guide/组件样式            ← 原 '基础规范/03 组件样式规范'
-Design Guide/Do Don't           ← 原 '基础规范/06 建议与禁忌'
+Design Guide/Do / Don't       ← 原 '基础规范/06 建议与禁忌'
 Design Guide/Agent 指令模板      ← 原 '基础规范/08 Agent 提示词指南'
 ```
 
@@ -203,8 +205,8 @@ Design Guide/Agent 指令模板      ← 原 '基础规范/08 Agent 提示词指
 2. **创建 `guide-data.ts`** — 从 `foundation-data.ts` 提取非 Token 数据
 3. **创建 `shared-primitives.tsx`** — 合并两套 UI 原语为 `Page`/`Section`/`Card`/`ColorSwatch`
 4. **重写 `TokensOverview.stories.tsx`** — 引用新数据文件和共享原语，覆盖颜色+排版+间距+海拔+圆角+触控
-5. **创建 `guide/01-Principles.stories.tsx`** — 合并原 00 + 04 留白哲学
-6. **创建 `guide/02-LayoutResponsive.stories.tsx`** — 合并原 04 栅格 + 07 响应式
+5. **创建 `guide/01-Principles.stories.tsx`** — 合并原 00 全部 + 04 的留白哲学（`layoutPrinciples`）
+6. **创建 `guide/02-LayoutResponsive.stories.tsx`** — 合并原 04 的栅格演示 + 原 07 全部
 7. **迁移 `guide/03-ComponentStylings.stories.tsx`** — 从 foundation/03 迁出
 8. **迁移 `guide/04-DosDonts.stories.tsx`** — 从 foundation/06 迁出
 9. **迁移 `guide/05-AgentPrompts.stories.tsx`** — 从 foundation/08 迁出
