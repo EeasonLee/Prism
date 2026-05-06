@@ -10,7 +10,7 @@ import {
 import {
   resolveMagentoCategoryIdFromStrapiCategoryId,
   resolveMagentoCategoryIdFromStrapiCategorySlug,
-} from '@/features/product/category.repo';
+} from '@/shared/mapping/category-mapping';
 import type { ProductCardItem } from '@/features/product/bff-types';
 
 function normalizePageSize(size: number | undefined, fallback: number): number {

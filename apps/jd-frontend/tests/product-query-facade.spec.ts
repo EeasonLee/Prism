@@ -19,7 +19,7 @@ vi.mock('@/features/product/meilisearch.repo', () => ({
   searchProductsBySkusFromMeilisearch: vi.fn(),
 }));
 
-vi.mock('@/features/product/category.repo', () => ({
+vi.mock('@/shared/mapping/category-mapping', () => ({
   resolveMagentoCategoryIdFromStrapiCategoryId:
     resolveMagentoCategoryIdFromStrapiCategoryIdMock,
   resolveMagentoCategoryIdFromStrapiCategorySlug:
