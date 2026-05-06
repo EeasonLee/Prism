@@ -17,7 +17,7 @@ const BADGE_CLASSES = {
   dark: 'bg-ink text-white',
 };
 
-export function ProductCard({
+export function ProductCardCompact({
   product,
   badgeVariant = 'brand',
 }: ProductCardProps) {

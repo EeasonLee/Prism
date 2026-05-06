@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ProductCarouselProps } from './types';
 import { searchProductsBySkusForBFF } from '@/features/product/meilisearch.bff';
-import { ProductCard } from '@/features/product/ProductCardSection';
+import { ProductCardCompact } from '@/features/product/ProductCardSection';
 
 const LAYOUT_CLASSES = {
   'grid-2': 'grid-cols-2',
@@ -66,7 +66,7 @@ export async function ProductCarousel({
 
         <div className={`grid gap-3 lg:gap-4 ${LAYOUT_CLASSES[layout]}`}>
           {validProducts.map(product => (
-            <ProductCard key={product.sku} product={product} />
+            <ProductCardCompact key={product.sku} product={product} />
           ))}
         </div>
       </div>
