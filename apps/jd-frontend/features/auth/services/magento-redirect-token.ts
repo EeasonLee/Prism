@@ -4,7 +4,7 @@
  * 生成 Magento 期望的 redirect JWT token，用于 sso/cart/redirect 和 sso/checkout/redirect
  */
 
-import { createHmac } from 'node:crypto';
+import { createHmac } from 'crypto';
 import { env } from '@/infrastructure/config/env';
 
 const TOKEN_LIFETIME = 600; // 10 minutes
