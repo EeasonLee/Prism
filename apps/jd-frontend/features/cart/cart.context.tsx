@@ -107,7 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!hasSession) {
         if (!guestSessionPromiseRef.current) {
           guestSessionPromiseRef.current = (async () => {
-            const res = await fetch('/api/v1/auth/guest', {
+            const res = await fetch('/api/auth/guest', {
               method: 'POST',
               credentials: 'include',
             });

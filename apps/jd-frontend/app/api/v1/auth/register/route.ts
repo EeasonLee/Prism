@@ -1,12 +1,8 @@
-import {
-  createAuthErrorResponse,
-  register,
-} from '@/features/auth/auth.service';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export async function POST(request: Request) {
-  try {
-    return await register(request);
-  } catch (error) {
-    return createAuthErrorResponse(error, 'Registration failed');
-  }
+export function POST(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = url.pathname.replace('/api/v1/auth/', '/api/auth/');
+  return NextResponse.redirect(url, 307);
 }

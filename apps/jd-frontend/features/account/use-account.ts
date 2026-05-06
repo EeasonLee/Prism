@@ -87,7 +87,7 @@ async function fetchWithSessionRecovery(
   }
 
   // 仅在 Magento 上游 token 不接受时，尝试刷新一次本地 session 后重试
-  const sessionRes = await fetch('/api/v1/auth/session', {
+  const sessionRes = await fetch('/api/auth/session', {
     method: 'GET',
     credentials: 'include',
   });

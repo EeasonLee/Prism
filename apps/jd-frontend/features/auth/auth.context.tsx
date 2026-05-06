@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = useCallback(async (): Promise<SessionResponse> => {
     try {
-      const res = await fetch('/api/v1/auth/session', {
+      const res = await fetch('/api/auth/session', {
         credentials: 'include',
         cache: 'no-store',
       });
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const session = await refreshSession();
       if (!session.hasSession) {
         try {
-          await fetch('/api/v1/auth/guest', {
+          await fetch('/api/auth/guest', {
             method: 'POST',
             credentials: 'include',
           });
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await fetch('/api/v1/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastName?: string,
       turnstileToken?: string
     ) => {
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    await fetch('/api/v1/auth/logout', {
+    await fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include',
     }).catch(() => {

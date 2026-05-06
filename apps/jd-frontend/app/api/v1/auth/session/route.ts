@@ -1,11 +1,8 @@
-import { getSessionResponse } from '@/features/auth/get-session';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
-export async function GET(request: Request) {
-  const response = await getSessionResponse(request);
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  response.headers.set('Pragma', 'no-cache');
-  response.headers.set('Expires', '0');
-  return response;
+export function GET(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = url.pathname.replace('/api/v1/auth/', '/api/auth/');
+  return NextResponse.redirect(url, 301);
 }

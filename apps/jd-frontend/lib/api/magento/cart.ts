@@ -112,7 +112,7 @@ async function cartFetch<T>(
 
 async function recoverCartSession(): Promise<boolean> {
   try {
-    const sessionRes = await fetch('/api/v1/auth/session', {
+    const sessionRes = await fetch('/api/auth/session', {
       method: 'GET',
       credentials: 'include',
       headers: { Accept: 'application/json' },
@@ -129,7 +129,7 @@ async function recoverCartSession(): Promise<boolean> {
   }
 
   try {
-    const guestRes = await fetch('/api/v1/auth/guest', {
+    const guestRes = await fetch('/api/auth/guest', {
       method: 'POST',
       credentials: 'include',
       headers: { Accept: 'application/json' },
