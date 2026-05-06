@@ -6,6 +6,7 @@
  * Promise and receive the same new tokens.
  */
 
+// eslint-disable-next-line no-restricted-imports -- type-only import for token refresh contract; AuthTokens must be co-located with auth feature
 import type { AuthTokens } from '@/features/auth/types';
 
 let refreshPromise: Promise<AuthTokens | null> | null = null;

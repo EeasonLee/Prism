@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@/core/api/route-helpers';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
 import {
   fetchReviewsBySku,
   submitReview,

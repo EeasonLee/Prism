@@ -1,8 +1,8 @@
 import { processImageUrl } from '@prism/shared';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import { notifyError } from '@/shared/utils/notify';
-import { meilisearchClient } from '@/core/api/clients/meilisearch';
-import { isApiError } from '@/core/api/errors';
+import { meilisearchClient } from '@/infrastructure/api/clients/meilisearch';
+import { isApiError } from '@/infrastructure/api/errors';
 import type {
   UnifiedProductFilters,
   UnifiedProductQueryResult,

@@ -8,7 +8,7 @@
 import { createHttpClient } from '../pipeline/create-client';
 import type { HttpClient, ReqOptions } from '../pipeline/types';
 import { MagentoApiError, MagentoServiceError } from '../errors';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 
 function getSsoBaseUrl(): string {
   if (typeof window !== 'undefined' && env.NEXT_PUBLIC_USE_API_PROXY) {

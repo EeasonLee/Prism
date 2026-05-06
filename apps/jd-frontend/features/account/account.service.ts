@@ -1,9 +1,9 @@
-import { isApiError, MagentoGraphQLError } from '@/core/api/errors';
+import { isApiError, MagentoGraphQLError } from '@/infrastructure/api/errors';
 import { getAccessToken, getRefreshToken } from '@/features/auth/cookies';
 import { extractWrappedMagentoAccessToken } from '@/features/auth/session-tokens';
 import { validateRefreshToken } from '@/features/auth/session-tokens';
-import { magentoGraphQLClient } from '@/core/api/clients/magento-graphql';
-import { magentoClient } from '@/core/api/clients/magento';
+import { magentoGraphQLClient } from '@/infrastructure/api/clients/magento-graphql';
+import { magentoClient } from '@/infrastructure/api/clients/magento';
 import {
   getCountriesList,
   getCountryRegions,

@@ -5,9 +5,9 @@ import type {
   PdpRecipeCard,
   ProductVideoCard,
 } from '@/features/product/bff-types';
-import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/core/config/cache-policy';
-import { strapiClient as apiClient } from '@/core/api/clients/strapi';
-import { getStrapiBaseUrl } from '@/core/config/api-config';
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/infrastructure/config/cache-policy';
+import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
+import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
 
 interface ArticleImageLike {
   url?: string | null;

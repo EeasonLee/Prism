@@ -3,7 +3,7 @@
  */
 
 import { isServerSide } from '@prism/shared';
-import { strapiClient } from '@/core/api/clients/strapi';
+import { strapiClient } from '@/infrastructure/api/clients/strapi';
 import type {
   ArticleBySlugResponse,
   ArticleSearchResponse,

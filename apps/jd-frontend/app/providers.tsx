@@ -11,7 +11,7 @@ import { SignupPromoController } from '@/shared/ui/SignupPromoController';
 import { AuthProvider } from '@/features/auth/auth.context';
 import { AuthModalProvider } from '@/features/auth/auth-modal.context';
 import { CartProvider } from '@/features/cart/cart.context';
-import { logger } from '@/core/observability/logger';
+import { logger } from '@/infrastructure/observability/logger';
 
 type AppConfig = {
   appName: string;

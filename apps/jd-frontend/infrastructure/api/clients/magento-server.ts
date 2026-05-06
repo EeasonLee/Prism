@@ -4,7 +4,7 @@
 import 'server-only';
 
 import { createHttpClient } from '../pipeline/create-client';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 
 export const magentoServerClient = createHttpClient({
   baseURL: env.MAGENTO_URL ?? '',

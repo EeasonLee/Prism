@@ -1,6 +1,6 @@
 'use client';
 
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';

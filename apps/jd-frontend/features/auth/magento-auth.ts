@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { magentoClient } from '@/core/api/clients/magento';
+import { magentoClient } from '@/infrastructure/api/clients/magento';
 import type {
   AuthProviderGuestSessionResult,
   AuthProviderLoginResult,

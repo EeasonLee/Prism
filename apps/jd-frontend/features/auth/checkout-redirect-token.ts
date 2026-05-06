@@ -1,4 +1,4 @@
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import type { CheckoutRedirectTokenPayload } from './types';
 import { signHmacToken, verifyHmacToken } from './token';
 

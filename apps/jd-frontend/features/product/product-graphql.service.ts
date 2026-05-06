@@ -5,7 +5,7 @@
  * 不经过 13000 代理（与分类服务保持一致）。
  */
 
-import { magentoGraphQL } from '@/core/api/clients/magento-graphql';
+import { magentoGraphQL } from '@/infrastructure/api/clients/magento-graphql';
 
 // ─── GraphQL 类型 ──────────────────────────────────────────────────────────────
 

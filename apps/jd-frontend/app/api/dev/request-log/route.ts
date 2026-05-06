@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const { tracer } = await import('@/core/api/tracer');
+  const { tracer } = await import('@/infrastructure/api/tracer');
   if (!tracer) {
     return NextResponse.json(
       { error: 'Tracer not available in production' },
@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function DELETE() {
-  const { tracer } = await import('@/core/api/tracer');
+  const { tracer } = await import('@/infrastructure/api/tracer');
   if (tracer) {
     tracer.clear();
   }

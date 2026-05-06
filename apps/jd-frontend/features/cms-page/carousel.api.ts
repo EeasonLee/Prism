@@ -1,5 +1,5 @@
-import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '@/core/config/cache-policy';
-import { strapiClient as apiClient } from '@/core/api/clients/strapi';
+import { REVALIDATE_SECONDS_CATALOG_SNAPSHOT } from '@/infrastructure/config/cache-policy';
+import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
 
 export interface CarouselSlide {
   id: number;

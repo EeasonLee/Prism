@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import type {
   LocalRefreshTokenPayload,
   LocalSessionTokenPayload,

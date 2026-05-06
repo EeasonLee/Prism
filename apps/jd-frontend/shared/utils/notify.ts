@@ -1,4 +1,4 @@
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import { sendDiscordAlert } from '@/shared/utils/alert';
 
 export async function notifyError(options: {

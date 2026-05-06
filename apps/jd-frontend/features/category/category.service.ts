@@ -1,5 +1,5 @@
-import { magentoGraphQL } from '@/core/api/clients/magento-graphql';
-import { serverRequest } from '@/core/api/clients/strapi-server';
+import { magentoGraphQL } from '@/infrastructure/api/clients/magento-graphql';
+import { serverRequest } from '@/infrastructure/api/clients/strapi-server';
 
 interface StrapiProductCategoryRow {
   id?: number;

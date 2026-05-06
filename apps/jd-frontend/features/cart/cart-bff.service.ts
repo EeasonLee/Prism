@@ -10,8 +10,8 @@ import type {
   CartRedirectResponse,
 } from '@/features/cart/types';
 
-import { bffClient } from '@/core/api/clients/bff';
-import { ApiError } from '@/core/api/errors';
+import { bffClient } from '@/infrastructure/api/clients/bff';
+import { ApiError } from '@/infrastructure/api/errors';
 
 export function formatCartMoney(m: CartMoney | null | undefined): string {
   if (!m) return '—';

@@ -1,6 +1,6 @@
 import type { ArticleDetail } from '@/features/blog/api';
 import type { Metadata } from 'next';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import type { Recipe } from '@/features/recipe/types';
 import { processImageUrl } from '@prism/shared';
 

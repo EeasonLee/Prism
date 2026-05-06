@@ -5,7 +5,7 @@
  */
 
 import { createHmac } from 'node:crypto';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 
 const TOKEN_LIFETIME = 600; // 10 minutes
 

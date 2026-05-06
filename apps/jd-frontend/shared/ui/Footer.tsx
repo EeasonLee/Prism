@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { useAuth } from '@/features/auth/auth.context';
 import { useAuthModal } from '@/features/auth/auth-modal.context';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 
 interface InfoLinkItem {
   href: string;

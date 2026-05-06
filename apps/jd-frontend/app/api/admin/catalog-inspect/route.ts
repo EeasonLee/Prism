@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@/core/api/route-helpers';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
 import { fetchProducts } from '@/features/product/catalog.api';
 import type { MagentoProduct } from '@/features/product/bff-types';
 

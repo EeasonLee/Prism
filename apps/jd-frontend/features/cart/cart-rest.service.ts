@@ -5,8 +5,8 @@
  * 自动处理 guest vs customer 差异
  */
 
-import { magentoClient } from '@/core/api/clients/magento';
-import { isApiError } from '@/core/api/errors';
+import { magentoClient } from '@/infrastructure/api/clients/magento';
+import { isApiError } from '@/infrastructure/api/errors';
 import type {
   CartItem,
   CartItemsResponse,

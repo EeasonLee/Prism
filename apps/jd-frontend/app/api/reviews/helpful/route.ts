@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@/core/api/route-helpers';
-import { strapiClient } from '@/core/api/clients/strapi';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { strapiClient } from '@/infrastructure/api/clients/strapi';
 
 interface HelpfulRequestBody {
   documentId?: unknown;

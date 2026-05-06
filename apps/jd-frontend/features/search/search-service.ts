@@ -5,7 +5,7 @@
  * 搜索页（无 slug）必须依赖 Meilisearch，无法降级。
  */
 
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import { notifyError } from '@/shared/utils/notify';
 import { formatPrice } from '@/shared/utils/format-price';
 import { searchProducts } from './search-meilisearch';

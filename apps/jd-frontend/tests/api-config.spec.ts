@@ -16,13 +16,13 @@ const envState = vi.hoisted(() => ({
   STRAPI_INTERNAL_URL: undefined as string | undefined,
 }));
 
-vi.mock('@/core/config/env', () => ({
+vi.mock('@/infrastructure/config/env', () => ({
   env: envState,
 }));
 
 describe('api config', async () => {
   const { getApiBaseUrl, getStrapiBaseUrl, getStrapiServerBaseUrl } =
-    await import('@/core/config/api-config');
+    await import('@/infrastructure/config/api-config');
   beforeEach(() => {
     envState.NEXT_PUBLIC_API_URL = 'http://public-api.example.com';
     envState.STRAPI_URL = undefined;

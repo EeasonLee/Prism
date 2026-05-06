@@ -4,7 +4,7 @@
 /* eslint-disable import/first -- vi.mock must run before imports under test */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { ApiError } from '@/core/api/errors';
+import { ApiError } from '@/infrastructure/api/errors';
 
 // Mock the product-qa API client before importing routes
 vi.mock('@/features/product/qa.api', () => ({

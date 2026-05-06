@@ -7,11 +7,11 @@ import type {
   SearchRecipesResponse,
 } from './types';
 
-import { ApiError, NetworkError } from '@/core/api/errors';
+import { ApiError, NetworkError } from '@/infrastructure/api/errors';
 
-import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/core/config/cache-policy';
-import { strapiClient as apiClient } from '@/core/api/clients/strapi';
-import { isServerSide } from '@/core/config/api-config';
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/infrastructure/config/cache-policy';
+import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
+import { isServerSide } from '@/infrastructure/config/api-config';
 
 /**
  * 构建查询字符串

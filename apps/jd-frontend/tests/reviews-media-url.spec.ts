@@ -16,7 +16,7 @@ const envState = vi.hoisted(() => ({
   STRAPI_INTERNAL_URL: undefined as string | undefined,
 }));
 
-vi.mock('@/core/config/env', () => ({
+vi.mock('@/infrastructure/config/env', () => ({
   env: envState,
 }));
 

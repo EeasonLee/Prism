@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import { Footer } from '@/shared/ui/Footer';
 import { Header } from '@/shared/ui/Header';
 import { MobileTabbar } from '@/shared/ui/MobileTabbar';
 // import { PromoBar } from '@/shared/ui/PromoBar';
 import './globals.css';
 import { AppProviders } from './providers';
-import { DevtoolsPanel } from '@/core/api/devtools/panel';
+import { DevtoolsPanel } from '@/infrastructure/api/devtools/panel';
 
 export const metadata: Metadata = {
   title: 'Joydeem Kitchen Appliances - Dough Makers, Rice Cookers & More',

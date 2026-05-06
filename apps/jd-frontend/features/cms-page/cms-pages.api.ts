@@ -13,8 +13,8 @@
 import {
   REVALIDATE_SECONDS_CMS_PAGE,
   cacheTagCmsPage,
-} from '@/core/config/cache-policy';
-import { getStrapiBaseUrl } from '@/core/config/api-config';
+} from '@/infrastructure/config/cache-policy';
+import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
 import { searchProductsBySkusForBFF } from '@/features/product/meilisearch.bff';
 import {
   normalizePageLayoutPreset,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { magentoAuthProvider } from './magento-auth';
-import { MagentoApiError, isApiError } from '@/core/api/errors';
+import { MagentoApiError, isApiError } from '@/infrastructure/api/errors';
 import { verifyTurnstileToken } from '@/shared/utils/cloudflare-turnstile';
 import {
   clearSessionCookies,

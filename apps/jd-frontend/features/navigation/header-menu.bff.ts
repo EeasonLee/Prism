@@ -1,8 +1,8 @@
-import { serverRequest } from '@/core/api/clients/strapi-server';
+import { serverRequest } from '@/infrastructure/api/clients/strapi-server';
 import {
   CACHE_TAG_HEADER_MENU,
   REVALIDATE_SECONDS_CATEGORY_NAV,
-} from '@/core/config/cache-policy';
+} from '@/infrastructure/config/cache-policy';
 import type {
   HeaderMenuCategoryRef,
   HeaderMenuNode,

@@ -2,10 +2,10 @@ import {
   CACHE_TAG_PRODUCT_REVIEWS,
   CACHE_TAG_PRODUCT_REVIEW_SUMMARIES,
   REVALIDATE_SECONDS_REVIEW_UGC,
-} from '@/core/config/cache-policy';
-import { getStrapiBaseUrl } from '@/core/config/api-config';
-import { strapiClient as apiClient } from '@/core/api/clients/strapi';
-import { env } from '@/core/config/env';
+} from '@/infrastructure/config/cache-policy';
+import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
+import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
+import { env } from '@/infrastructure/config/env';
 
 interface StrapiReviewMediaRaw {
   id: number;

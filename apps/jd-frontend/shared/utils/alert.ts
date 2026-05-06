@@ -3,7 +3,7 @@
  * 支持通过 Discord Webhook 发送实时告警
  */
 
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 
 let lastAlertTime = 0;
 const ALERT_COOLDOWN_MS = 60_000; // 同类异常 1 分钟内只告警一次

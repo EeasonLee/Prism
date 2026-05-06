@@ -4,7 +4,7 @@
  * Mock fetch 验证 URL 拼接、header 合并、超时 abort、错误映射
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createHttpClient } from '@/core/api/pipeline/create-client';
+import { createHttpClient } from '@/infrastructure/api/pipeline/create-client';
 import {
   ApiError,
   AuthenticationError,
@@ -12,7 +12,7 @@ import {
   ServerError,
   TimeoutError,
   NetworkError,
-} from '@/core/api/errors';
+} from '@/infrastructure/api/errors';
 
 // ── Helpers ──────────────────────────────────────────
 

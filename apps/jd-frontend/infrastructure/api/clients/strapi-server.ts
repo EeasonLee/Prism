@@ -1,8 +1,8 @@
-import { env } from '@/core/config/env';
+import { env } from '@/infrastructure/config/env';
 import {
   getApiBaseUrl,
   getStrapiServerBaseUrl,
-} from '@/core/config/api-config';
+} from '@/infrastructure/config/api-config';
 
 /**
  * Strapi custom routes are prefixed with ``api/``. When ``STRAPI_URL`` /
