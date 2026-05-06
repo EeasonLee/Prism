@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isApiError } from '@/core/api/errors';
 import type { AuthTokens } from '@/features/auth/types';
-import { withRefreshLock } from '@/lib/api/bff/refresh-lock';
+import { withRefreshLock } from '@/core/api/refresh-lock';
 import {
   extractWrappedMagentoAccessToken,
   extractLocalAccessTokenPayload,

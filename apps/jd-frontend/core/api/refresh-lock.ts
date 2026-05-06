@@ -1,11 +1,12 @@
 /**
- * Token 刷新并发锁（服务端专用）
+ * Token refresh concurrency lock (server-side only)
  *
- * 防止多个并发 401 请求同时触发 refresh，确保同一进程内只有一次 refresh 在飞行中。
- * 其他请求复用同一个 Promise，获取相同的新 token。
+ * Prevents multiple concurrent 401 responses from triggering refresh simultaneously.
+ * Ensures only one refresh is in-flight per process; other requests reuse the same
+ * Promise and receive the same new tokens.
  */
 
-import type { AuthTokens } from '../magento/types';
+import type { AuthTokens } from '@/features/auth/types';
 
 let refreshPromise: Promise<AuthTokens | null> | null = null;
 
