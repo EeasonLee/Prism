@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { mergeProduct } from '@/features/product/unified.api';
+import { mergeProduct } from '@/features/product';
 import type { MagentoProduct } from '../lib/api/magento/types';
 
 const {

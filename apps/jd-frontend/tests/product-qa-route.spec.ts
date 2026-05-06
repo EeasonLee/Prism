@@ -12,10 +12,7 @@ vi.mock('@/features/product/qa.api', () => ({
   submitProductQuestion: vi.fn(),
 }));
 
-import {
-  fetchProductQaBySku,
-  submitProductQuestion,
-} from '@/features/product/qa.api';
+import { fetchProductQaBySku, submitProductQuestion } from '@/features/product';
 import { GET as getQaBySku } from '../app/api/product-qa/by-sku/[sku]/route';
 import { POST as postQuestion } from '../app/api/product-qa/questions/route';
 

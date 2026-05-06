@@ -24,12 +24,12 @@ function buildAvailableFiltersFromFacets(
 
   const filters: SearchAvailableFilter[] = [];
 
-  if (facetDistribution.brand) {
+  if (facetDistribution.manufacturer) {
     filters.push({
       key: 'brand',
       label: 'Brand',
       type: 'checkbox',
-      options: Object.entries(facetDistribution.brand).map(
+      options: Object.entries(facetDistribution.manufacturer).map(
         ([value, count]) => ({
           value,
           label: value,
@@ -39,25 +39,12 @@ function buildAvailableFiltersFromFacets(
     });
   }
 
-  if (facetDistribution.size) {
-    filters.push({
-      key: 'size',
-      label: 'Size',
-      type: 'checkbox',
-      options: Object.entries(facetDistribution.size).map(([value, count]) => ({
-        value,
-        label: value,
-        count,
-      })),
-    });
-  }
-
-  if (facetDistribution.categories) {
+  if (facetDistribution.category_slugs) {
     filters.push({
       key: 'category',
       label: 'Category',
       type: 'checkbox',
-      options: Object.entries(facetDistribution.categories).map(
+      options: Object.entries(facetDistribution.category_slugs).map(
         ([value, count]) => ({
           value,
           label: value,
@@ -86,7 +73,7 @@ async function fetchFromMeilisearch(
     sort: query.sort,
     page: query.page,
     pageSize: query.pageSize,
-    facets: ['brand', 'size', 'categories'],
+    facets: ['manufacturer', 'category_slugs'],
   });
 
   return {

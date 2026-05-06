@@ -127,9 +127,8 @@ function buildFilter(
     // 若过滤表达式引用不存在/不可过滤字段（如 category_ancestor_ids），Meilisearch 会直接报错。
     result.push(`category_ids = ${magentoCategoryId}`);
   }
-  if (filters.category) result.push(`categories = "${filters.category}"`);
-  if (filters.brand) result.push(`brand = "${filters.brand}"`);
-  if (filters.size) result.push(`size = "${filters.size}"`);
+  if (filters.category) result.push(`category_slugs = "${filters.category}"`);
+  if (filters.brand) result.push(`manufacturer = "${filters.brand}"`);
   if (filters.stockStatus)
     result.push(`stock_status = "${filters.stockStatus}"`);
   if (filters.priceMin !== undefined)
@@ -188,9 +187,8 @@ function mapAvailableFilters(
 ) {
   if (!facetDistribution) return [];
   const config = [
-    { key: 'brand', label: 'Brand' },
-    { key: 'size', label: 'Size' },
-    { key: 'categories', label: 'Category' },
+    { key: 'manufacturer', label: 'Brand' },
+    { key: 'category_slugs', label: 'Category' },
     { key: 'stock_status', label: 'Availability' },
   ] as const;
   return config
@@ -213,7 +211,7 @@ type IndexSearchOutcome =
   | { kind: 'index_not_found' }
   | { kind: 'failed'; error: Error };
 
-const FACET_FALLBACK_KEYS = ['brand', 'stock_status'] as const;
+const FACET_FALLBACK_KEYS = ['manufacturer', 'stock_status'] as const;
 
 function hasFacetData(
   facetDistribution?: Record<string, Record<string, number>>

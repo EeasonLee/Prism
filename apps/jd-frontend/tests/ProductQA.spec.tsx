@@ -3,10 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { AuthUser } from '../lib/api/magento/types';
 import { ProductQA } from '../app/products/[slug]/ProductQA';
-import type {
-  ProductQaListResult,
-  ProductQuestion,
-} from '@/features/product/qa.api';
+import type { ProductQaListResult, ProductQuestion } from '@/features/product';
 
 const mocks = vi.hoisted(() => ({
   auth: {

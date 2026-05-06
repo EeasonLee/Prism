@@ -29,29 +29,36 @@ interface MagentoResponse<T> {
   error?: { code?: string; message?: string };
 }
 
-const rawClient = createHttpClient({
-  baseURL: getSsoBaseUrl(),
-  timeout: 15000,
-  errorOverrides: (_status, body) => {
-    if (body && typeof body === 'object') {
-      const b = body as Record<string, unknown>;
-      if (b.success === false && b.error && typeof b.error === 'object') {
-        const err = b.error as Record<string, unknown>;
-        if (_status === 502) {
-          return new MagentoServiceError(
-            String(err.message ?? 'Shop service temporarily unavailable')
-          );
+let _rawClient: ReturnType<typeof createHttpClient> | undefined;
+
+function getRawClient() {
+  if (!_rawClient) {
+    _rawClient = createHttpClient({
+      baseURL: getSsoBaseUrl(),
+      timeout: 15000,
+      errorOverrides: (_status, body) => {
+        if (body && typeof body === 'object') {
+          const b = body as Record<string, unknown>;
+          if (b.success === false && b.error && typeof b.error === 'object') {
+            const err = b.error as Record<string, unknown>;
+            if (_status === 502) {
+              return new MagentoServiceError(
+                String(err.message ?? 'Shop service temporarily unavailable')
+              );
+            }
+            return new MagentoApiError(
+              String(err.message ?? 'Request failed'),
+              String(err.code ?? 'UNKNOWN'),
+              _status
+            );
+          }
         }
-        return new MagentoApiError(
-          String(err.message ?? 'Request failed'),
-          String(err.code ?? 'UNKNOWN'),
-          _status
-        );
-      }
-    }
-    return null;
-  },
-});
+        return null;
+      },
+    });
+  }
+  return _rawClient;
+}
 
 function unwrapResponse<T>(data: unknown): T {
   if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
@@ -65,23 +72,23 @@ function unwrapResponse<T>(data: unknown): T {
 
 export const ssoClient: HttpClient = {
   async get<T>(path: string, opts?: ReqOptions) {
-    const result = await rawClient.get<T>(path, opts);
+    const result = await getRawClient().get<T>(path, opts);
     return unwrapResponse<T>(result);
   },
   async post<T>(path: string, opts?: ReqOptions) {
-    const result = await rawClient.post<T>(path, opts);
+    const result = await getRawClient().post<T>(path, opts);
     return unwrapResponse<T>(result);
   },
   async put<T>(path: string, opts?: ReqOptions) {
-    const result = await rawClient.put<T>(path, opts);
+    const result = await getRawClient().put<T>(path, opts);
     return unwrapResponse<T>(result);
   },
   async patch<T>(path: string, opts?: ReqOptions) {
-    const result = await rawClient.patch<T>(path, opts);
+    const result = await getRawClient().patch<T>(path, opts);
     return unwrapResponse<T>(result);
   },
   async delete<T>(path: string, opts?: ReqOptions) {
-    const result = await rawClient.delete<T>(path, opts);
+    const result = await getRawClient().delete<T>(path, opts);
     return unwrapResponse<T>(result);
   },
 };

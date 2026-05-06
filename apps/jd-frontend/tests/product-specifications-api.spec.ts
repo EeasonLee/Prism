@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeSpecifications,
   type StrapiSpecificationRowRaw,
-} from '@/features/product/enrichment.api';
+} from '@/features/product';
 
 describe('Product Specifications API - normalizeSpecifications', () => {
   it('groups raw rows by group_key and group_title', () => {

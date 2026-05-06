@@ -41,21 +41,27 @@ export type {
 } from '@/features/category/types';
 
 // ――― Unified product API ――――――――――――――――――――――――――――――――――――――――――――――
-export { fetchUnifiedProduct } from './api/unified.api';
+export {
+  fetchUnifiedProductBySku,
+  fetchUnifiedProductBySlug,
+  fetchUnifiedProducts,
+  mapGQLProduct,
+  mapLinkedProduct,
+  mergeProduct,
+} from './api/unified.api';
 export type { UnifiedLinkedProduct, UnifiedProduct } from './api/unified.api';
 
 // ――― BFF layer ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
-export { fetchProductPageData } from './api/detail.bff';
 export {
   getProductDetailAggregate,
   resolveProductDetailAggregate,
   getProductDetailBFF,
 } from './api/detail.bff';
 export { getProductListBFF } from './api/list.bff';
-export { fetchRelatedProducts } from './api/related.bff';
-export { fetchUpsellProducts } from './api/upsell.bff';
-export { fetchProductStock } from './api/stock.bff';
-export { fetchProductVariants } from './api/variants.bff';
+export { getRelatedProductsBFF } from './api/related.bff';
+export { getUpsellProductsBFF } from './api/upsell.bff';
+export { getProductStockBFF } from './api/stock.bff';
+export { getProductVariantsBFF } from './api/variants.bff';
 export {
   searchProductsForBFF,
   searchProductsBySkusForBFF,
@@ -66,9 +72,10 @@ export { productQueryFacade } from './api/query-facade';
 
 // ――― API services ―――――――――――――――――――――――――――――――――――――――――――――――――――――
 export {
-  catalogApi,
   fetchCategoryTree,
+  fetchCategoryById,
   fetchProducts,
+  fetchProductBySku,
 } from './api/catalog.api';
 export {
   fetchPdpArticlesBySku,
@@ -79,6 +86,7 @@ export {
   fetchReviewsBySku,
   submitReview,
   fetchReviewDimensionSummaryBySku,
+  fetchReviewMediaBySku,
   fetchReviewTags,
   type ProductReview,
   type ProductReviewSummary,

@@ -32,7 +32,7 @@ export class ProductQueryFacade {
     const facetKeys =
       query.includeFacets === false
         ? undefined
-        : (['brand', 'size', 'categories', 'stock_status'] as const);
+        : (['manufacturer', 'category_slugs', 'stock_status'] as const);
 
     if (query.sku) {
       const item = await searchProductBySkuFromMeilisearch(query.sku);

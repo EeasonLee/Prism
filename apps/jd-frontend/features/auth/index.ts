@@ -16,7 +16,7 @@ export {
 } from './api/auth.service';
 export { LoginModal } from './components/LoginModal';
 export { requireAuth } from './services/require-auth';
-export { getSession, getSessionResponse } from './services/get-session';
+export { getSessionResponse } from './services/get-session';
 export { getAccessToken, getRefreshToken } from './services/cookies';
 export {
   extractWrappedMagentoAccessToken,

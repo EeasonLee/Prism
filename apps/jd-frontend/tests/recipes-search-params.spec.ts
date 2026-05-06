@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseRecipeKeywordSearchParams,
   parseRecipeSearchParams,
-} from '@/features/recipe/recipes-search-params';
+} from '@/features/recipe';
 
 describe('parseRecipeSearchParams', () => {
   it('parses page, pageSize, includeFacets and comma-separated filter ids', () => {

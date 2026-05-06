@@ -16,6 +16,26 @@ export {
 } from './api/cart-bff.service';
 export { useAddToCartAction } from './hooks/use-add-to-cart-action';
 export { authenticatedCartRequest } from './api/cart-rest-handler.bff';
+export {
+  createGuestCart,
+  ensureCustomerCartQuoteId,
+  getGuestCart,
+  getCustomerCart,
+  addGuestCartItem,
+  addCustomerCartItem,
+  updateGuestCartItem,
+  updateCustomerCartItem,
+  removeGuestCartItem,
+  removeCustomerCartItem,
+  clearGuestCart,
+  clearCustomerCart,
+  getGuestCartId,
+  resolveGuestQuoteId,
+  applyGuestCoupon,
+  applyCustomerCoupon,
+  removeGuestCoupon,
+  removeCustomerCoupon,
+} from './api/cart-rest.service';
 export type {
   CartMoney,
   CartTotals,

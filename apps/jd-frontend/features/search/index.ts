@@ -3,7 +3,10 @@ export {
   searchProducts as searchProductsFromMeilisearch,
   type MeilisearchSearchResult,
 } from './api/search-meilisearch';
-export type { RelatedProductItem } from './api/meilisearch.service';
+export {
+  fetchRelatedBySlug,
+  type RelatedProductItem,
+} from './api/meilisearch.service';
 export { searchProducts, type ShopSortOption } from './api/shop-search';
 export { GlobalSearch } from './components/GlobalSearch';
 export { FilterPanel } from './components/FilterPanel';

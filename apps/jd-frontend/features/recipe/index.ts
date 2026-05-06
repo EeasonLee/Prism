@@ -7,9 +7,13 @@ export { FiltersPanel } from './components/FiltersPanel';
 export { Pagination } from './components/Pagination';
 export { useRecipesData } from './hooks/useRecipesData';
 export {
-  recipesApi,
   fetchRecipeFacetedSearchStrapi,
   fetchRecipeKeywordSearchStrapi,
+  searchRecipes,
+  searchRecipesByKeyword,
+  getRecipeBySlug,
+  getFilterTypes,
+  getFilters,
 } from './api/recipes.api';
 export {
   parseRecipeSearchParams,

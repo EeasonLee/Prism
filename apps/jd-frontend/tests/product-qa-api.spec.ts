@@ -16,8 +16,8 @@ import { strapiClient } from '@/infrastructure/api/clients/strapi';
 import {
   fetchProductQaByProduct,
   submitProductQuestion,
-} from '@/features/product/qa.api';
-import type { SubmitProductQuestionInput } from '@/features/product/qa.api';
+} from '@/features/product';
+import type { SubmitProductQuestionInput } from '@/features/product';
 
 const mockGet = vi.mocked(strapiClient.get);
 const mockPost = vi.mocked(strapiClient.post);

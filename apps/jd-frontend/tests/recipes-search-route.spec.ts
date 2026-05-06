@@ -13,7 +13,7 @@ vi.mock('@/features/recipe/recipes.api', () => ({
 import {
   fetchRecipeFacetedSearchStrapi,
   fetchRecipeKeywordSearchStrapi,
-} from '@/features/recipe/recipes.api';
+} from '@/features/recipe';
 import { GET as getFacetedSearch } from '../app/api/recipes/search/route';
 import { GET as getKeywordSearch } from '../app/api/search/recipes/route';
 
