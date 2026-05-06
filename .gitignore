@@ -53,6 +53,7 @@ vitest.config.*.timestamp*
 test-output
 
 .claude/worktrees/
+.worktrees/
 
 # Environment files
 .env*.local
