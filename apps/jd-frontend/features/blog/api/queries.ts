@@ -3,7 +3,7 @@
  */
 
 import { isServerSide } from '@prism/shared';
-import type { ApiClientAdapter } from './client-adapter';
+import { strapiClient } from '@/core/api/clients/strapi';
 import type {
   ArticleBySlugResponse,
   ArticleSearchResponse,
@@ -12,28 +12,6 @@ import type {
   CategoryBySlugResponse,
   CategoryDetail,
 } from './types';
-
-// 默认 apiClient（由应用层注入）
-let defaultApiClient: ApiClientAdapter | null = null;
-
-/**
- * 设置默认 API Client（由应用层调用）
- */
-export function setApiClient(client: ApiClientAdapter): void {
-  defaultApiClient = client;
-}
-
-/**
- * 获取 API Client（如果未设置则抛出错误）
- */
-function getApiClient(): ApiClientAdapter {
-  if (!defaultApiClient) {
-    throw new Error(
-      'API Client not initialized. Call setApiClient() from @prism/blog/api/queries first.'
-    );
-  }
-  return defaultApiClient;
-}
 
 function buildQuery(params: Record<string, unknown>): string {
   const qs = new URLSearchParams();
@@ -73,7 +51,7 @@ export async function searchArticles(params: {
     sort: params.sort ?? 'publishedAt:desc',
     locale: params.locale,
   });
-  return getApiClient().get<ArticleSearchResponse>(
+  return strapiClient.get<ArticleSearchResponse>(
     `api/articles/search?${queryString}`,
     {
       signal: params.signal,
@@ -87,12 +65,11 @@ export async function fetchArticleCategories(_params?: {
   level?: string;
   locale?: string;
 }): Promise<{ data: CategoryDetail[] }> {
-  // 直接使用 /api/categories，不添加任何查询参数
   const endpoint = `api/categories`;
   const options = isServerSide()
     ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
-  return getApiClient().get<{ data: CategoryDetail[] }>(endpoint, options);
+  return strapiClient.get<{ data: CategoryDetail[] }>(endpoint, options);
 }
 
 export async function fetchCategoryCounts(params?: {
@@ -105,7 +82,7 @@ export async function fetchCategoryCounts(params?: {
   const options = isServerSide()
     ? ({ next: { revalidate: 3600 }, skipLogging: true } as const)
     : { skipLogging: true };
-  return getApiClient().get<{ data: CategoryDetail[] }>(endpoint, options);
+  return strapiClient.get<{ data: CategoryDetail[] }>(endpoint, options);
 }
 
 export async function fetchArticleTags(params?: {
@@ -116,7 +93,7 @@ export async function fetchArticleTags(params?: {
   const options = isServerSide()
     ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
-  return getApiClient().get<{ data: ArticleTag[] }>(endpoint, options);
+  return strapiClient.get<{ data: ArticleTag[] }>(endpoint, options);
 }
 
 /**
@@ -136,7 +113,7 @@ export async function fetchCategoryByType(
   const options = isServerSide()
     ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
-  return getApiClient().get<CategoryBySlugResponse>(endpoint, options);
+  return strapiClient.get<CategoryBySlugResponse>(endpoint, options);
 }
 
 /**
@@ -153,5 +130,5 @@ export async function fetchArticleBySlug(
   const options = isServerSide()
     ? ({ next: { revalidate: 3600 } } as const)
     : undefined;
-  return getApiClient().get<ArticleBySlugResponse>(endpoint, options);
+  return strapiClient.get<ArticleBySlugResponse>(endpoint, options);
 }

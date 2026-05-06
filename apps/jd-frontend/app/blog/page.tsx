@@ -1,12 +1,11 @@
 import type { HeroSlide } from '@/shared/ui/HeroCarousel';
 import { HeroCarousel } from '@/shared/ui/HeroCarousel';
-import { fetchCategoryByType } from '@/features/product/blog-bridge.api'; // 使用应用层的导出，确保 API Client 已初始化
+import { fetchCategoryByType, type CategoryDetail } from '@/features/blog/api';
 import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
-import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
-import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
-import { ProductCategories } from '@prism/blog/components/ProductCategories';
-import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
+import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
+import { ProductCategories } from '@/features/blog/components/ProductCategories';
+import { ThemeCategories } from '@/features/blog/components/ThemeCategories';
 import { processImageUrl } from '@prism/shared';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import type { CarouselItemResponse } from '@/features/cms-page/carousel.api';

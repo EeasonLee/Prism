@@ -212,7 +212,7 @@ export function ArticlesSearchClient({
     const next = { ...filters, tagIds: nextIds };
     setFilters(next);
     setPage(1);
-    fetchList(next, 1, pageSize);
+    void fetchList(next, 1, pageSize);
   };
 
   const handleCategorySelect = (cat: CategoryWithCounts) => {
@@ -240,25 +240,25 @@ export function ArticlesSearchClient({
     };
     setFilters(next);
     setPage(1);
-    fetchList(next, 1, pageSize);
+    void fetchList(next, 1, pageSize);
   };
 
   const handleSortChange = (value: ArticleSort) => {
     const next = { ...filters, sort: value };
     setFilters(next);
-    fetchList(next, 1, pageSize);
+    void fetchList(next, 1, pageSize);
     setPage(1);
   };
 
   const handlePageChange = (target: number) => {
     setPage(target);
-    fetchList(filters, target, pageSize);
+    void fetchList(filters, target, pageSize);
   };
 
   const handlePageSizeChange = (size: number) => {
     const nextSize = Math.max(1, size);
     setPageSize(nextSize);
-    fetchList(filters, 1, nextSize);
+    void fetchList(filters, 1, nextSize);
     setPage(1);
   };
 
@@ -272,7 +272,7 @@ export function ArticlesSearchClient({
     setPage(1);
     setPageSize(10);
     // fetchList 内部的 updateUrl 会自动处理 URL 跳转到 /blog/all
-    fetchList(next, 1, 10);
+    void fetchList(next, 1, 10);
   };
 
   const activeFiltersCount =

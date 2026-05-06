@@ -38,7 +38,7 @@ All commands run via Nx under the hood, enabling build caching and affected-proj
 This is an **Nx monorepo** with a layered dependency hierarchy that flows strictly one direction:
 
 ```
-apps/jd-frontend  →  libs/blog, libs/ui  →  libs/shared
+apps/jd-frontend  →  libs/ui  →  libs/shared
 ```
 
 ### Key Packages
@@ -46,13 +46,12 @@ apps/jd-frontend  →  libs/blog, libs/ui  →  libs/shared
 - `**apps/jd-frontend/**` — Next.js 15 app with App Router. Pages live under `app/`, app-specific components under `app/components/`, API wrappers under `lib/api/`. Recipe domain is handled entirely within this app (no separate lib).
 - `**libs/shared/**` (`@prism/shared`) — Shared base: API types, utility functions, type guards. Cannot depend on anything else.
 - `**libs/ui/**` (`@prism/ui`) — Reusable UI components (Button, PageContainer, etc.) using shadcn/ui pattern. No business logic.
-- `**libs/blog/**` (`@prism/blog`) — Blog domain: components, API adapters, hooks.
 - `**libs/tokens/**` (`@prism/tokens`) — Design tokens (colors, spacing, typography) as Tailwind preset.
 
 ### Module Boundary Rules (enforced by ESLint `@nx/enforce-module-boundaries`)
 
 - `libs/shared` can only depend on itself
-- `libs/ui` and domain libs (`libs/blog`, etc.) can only depend on `libs/shared`
+- `libs/ui` can only depend on `libs/shared`
 - `apps/jd-frontend` can depend on all libs
 - **No circular dependencies** — if two libs need to share code, extract to `libs/shared`
 
@@ -62,7 +61,6 @@ Defined in `tsconfig.base.json` (cross-project):
 
 - `@prism/shared` → `libs/shared/src/index.ts`
 - `@prism/ui` → `libs/ui/src/index.ts`
-- `@prism/blog` → `libs/blog/src/index.ts`
 - `@prism/tokens` → `libs/tokens/src/index.ts`
 
 Defined in `apps/jd-frontend/tsconfig.app.json` (app-only):

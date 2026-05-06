@@ -3,7 +3,7 @@ import {
   searchArticles,
   type ArticleDetail,
   type CategoryDetail,
-} from '@/features/product/blog-bridge.api';
+} from '@/features/blog/api';
 import { absoluteUrl } from '@/shared/utils/seo';
 import type { MetadataRoute } from 'next';
 import { searchRecipes } from '@/features/recipe/recipes.api';

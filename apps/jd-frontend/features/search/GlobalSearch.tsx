@@ -15,7 +15,7 @@ import { debounce } from '@prism/shared';
 import { Loader2 } from 'lucide-react';
 import { formatPrice } from '@/shared/utils/format-price';
 import type { ProductCardItem } from './types';
-import type { ArticleListItem } from '@prism/blog';
+import type { ArticleListItem } from '@/features/blog/api';
 import type { SearchRecipeItem } from '../../app/recipes/types';
 
 interface GlobalSearchResponse {

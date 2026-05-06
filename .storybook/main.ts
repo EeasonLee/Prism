@@ -34,7 +34,6 @@ const config: StorybookConfig = {
       ...(config.resolve.alias as Record<string, string>),
       '@prism/shared': join(root, 'libs/shared/src/index.ts'),
       '@prism/ui': join(root, 'libs/ui/src/index.ts'),
-      '@prism/blog': join(root, 'libs/blog/src/index.ts'),
       '@prism/tokens': join(root, 'libs/tokens/src/index.ts'),
     };
     return config;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchProducts } from '@/features/search/search-meilisearch';
-import { searchArticles } from '@/features/product/blog-bridge.api';
+import { searchArticles } from '@/features/blog/api';
 import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe/recipes.api';
 import type { MeilisearchSearchResult } from '@/features/search/search-meilisearch';
 

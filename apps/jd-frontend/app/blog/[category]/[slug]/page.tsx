@@ -1,4 +1,4 @@
-import { fetchArticleBySlug } from '@/features/product/blog-bridge.api'; // 使用应用层的导出，确保 API Client 已初始化
+import { fetchArticleBySlug } from '@/features/blog/api';
 import {
   buildArticleMetadata,
   buildArticleSchema,
@@ -6,9 +6,9 @@ import {
 } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import { cache } from 'react';
-import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
-import { ArticleSidebar } from '@prism/blog/components/ArticleSidebar';
-import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { ArticleDetail } from '@/features/blog/components/ArticleDetail';
+import { ArticleSidebar } from '@/features/blog/components/ArticleSidebar';
+import { Breadcrumb } from '@/features/blog/components/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { notFound, redirect } from 'next/navigation';
 

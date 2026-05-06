@@ -34,7 +34,7 @@ export default [
             },
             {
               sourceTag: 'scope:frontend',
-              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared', 'scope:ui', 'scope:blog', 'type:lib', 'type:ui'],
+              onlyDependOnLibsWithTags: ['scope:frontend', 'scope:shared', 'scope:ui', 'type:lib', 'type:ui'],
             },
             {
               sourceTag: 'scope:shared',

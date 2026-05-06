@@ -1,4 +1,4 @@
-import type { ArticleListItem } from '@prism/blog';
+import type { ArticleListItem } from '@/features/blog/api';
 import type { Recipe } from '@/features/recipe/types';
 import type {
   BlogPost,

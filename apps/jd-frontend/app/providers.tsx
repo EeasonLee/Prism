@@ -1,6 +1,5 @@
 'use client';
 
-import { setApiClient } from '@prism/blog';
 import {
   createContext,
   PropsWithChildren,
@@ -9,7 +8,6 @@ import {
   useMemo,
 } from 'react';
 import { SignupPromoController } from '@/shared/ui/SignupPromoController';
-import { strapiClient } from '@/core/api/clients/strapi';
 import { AuthProvider } from '@/features/auth/auth.context';
 import { AuthModalProvider } from '@/features/auth/auth-modal.context';
 import { CartProvider } from '@/features/cart/cart.context';
@@ -29,9 +27,6 @@ function AppConfigProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppConfig>(() => ({ appName: 'Prism' }), []);
 
   useEffect(() => {
-    // 在客户端初始化 Blog API Client
-    setApiClient(strapiClient);
-
     logger.info('AppProviders mounted', {
       logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL ?? 'info',
     });

@@ -17,9 +17,7 @@
       "@prism/shared": ["../../libs/shared/src/index.ts"],
       "@prism/shared/*": ["../../libs/shared/*"],
       "@prism/ui": ["../../libs/ui/src/index.ts"],
-      "@prism/ui/*": ["../../libs/ui/src/*"],
-      "@prism/blog": ["../../libs/blog/src/index.ts"],
-      "@prism/blog/*": ["../../libs/blog/src/*"]
+      "@prism/ui/*": ["../../libs/ui/src/*"]
     },
     "types": [
       "node",
@@ -57,9 +55,6 @@
   "references": [
     {
       "path": "../../libs/shared/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/blog/tsconfig.lib.json"
     },
     {
       "path": "../../libs/tokens/tsconfig.lib.json"
