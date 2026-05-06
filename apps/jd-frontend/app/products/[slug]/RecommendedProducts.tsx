@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/shared/utils/format-price';
-import type { RecommendedProduct } from './product-page-types';
+import type { RecommendedProduct } from '@/features/product/bff-types';
 
 interface RecommendedProductsProps {
   products: RecommendedProduct[];

@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
-import type { BlogPost } from './product-page-types';
+import type { BlogPost } from '@/features/product/bff-types';
 
 interface BlogSectionProps {
   posts: BlogPost[];

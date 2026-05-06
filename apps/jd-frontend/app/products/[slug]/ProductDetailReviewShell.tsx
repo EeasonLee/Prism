@@ -22,7 +22,10 @@ import type {
   UnifiedProduct,
   UnifiedProductImage,
 } from '@/features/product/unified.api';
-import type { ProductVideoCard, Recipe } from './product-page-types';
+import type {
+  ProductVideoCard,
+  PdpRecipeCard,
+} from '@/features/product/bff-types';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -37,7 +40,7 @@ interface ProductDetailReviewShellProps {
   initialProductQa: ProductQaListResult;
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
-  recipes?: Recipe[];
+  recipes?: PdpRecipeCard[];
 }
 
 export function ProductDetailReviewShell({

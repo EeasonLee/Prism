@@ -5,7 +5,7 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from '@/features/product/content.api';
-import type { ProductPageCms } from './product-page-types';
+import type { ProductPageCms } from '@/features/product/bff-types';
 import { PDP_FEATURES } from './pdp-features';
 
 /**
