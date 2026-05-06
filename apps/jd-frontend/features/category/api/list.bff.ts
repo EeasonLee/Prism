@@ -1,4 +1,4 @@
-import { getProductListBFF } from '@/features/product';
+import { productQueryFacade } from '@/features/product';
 import { categoryService } from './category.service';
 import type {
   CategoryContext,
@@ -113,12 +113,11 @@ export async function resolveCategoryBySlug(
 export async function getCategoryProductList(
   query: CategoryProductQuery
 ): Promise<CategoryProductListResult> {
-  return getProductListBFF({
-    categoryId: query.categoryId,
-    categoryName: query.categoryName,
-    categorySlug: query.slug,
+  return productQueryFacade.queryProducts({
+    magentoCategoryId: query.categoryId,
     page: query.page ?? 1,
-    limit: query.pageSize ?? 24,
+    pageSize: query.pageSize ?? 24,
+    filters: query.categoryName ? { category: query.categoryName } : undefined,
   });
 }
 

@@ -119,13 +119,15 @@ async function fetchBffJson<T>(relativePath: string): Promise<T> {
   }
 
   if (!response.ok) {
-    const message =
-      typeof data === 'object' &&
-      data !== null &&
-      'error' in data &&
-      typeof (data as { error: unknown }).error === 'string'
-        ? (data as { error: string }).error
-        : `API request failed: ${response.statusText}`;
+    let message = `API request failed: ${response.statusText}`;
+    if (data && typeof data === 'object') {
+      const err = (data as Record<string, unknown>).error;
+      if (typeof err === 'string') {
+        message = err;
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        message = String((err as { message: unknown }).message);
+      }
+    }
     throw new ApiError(message, response.status, undefined, data);
   }
 
@@ -219,7 +221,7 @@ export async function searchRecipesByKeyword(params: {
 
   if (!isServerSide()) {
     return fetchBffJson<SearchRecipesResponse>(
-      `/api/search/recipes?${queryString}`
+      `/api/recipes/search?${queryString}`
     );
   }
 

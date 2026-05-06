@@ -59,9 +59,12 @@ export function ProductQA({
         );
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as {
-            error?: string;
+            success?: boolean;
+            error?: string | { message?: string };
           };
-          throw new Error(body.error ?? 'Failed to load questions');
+          const msg =
+            typeof body.error === 'string' ? body.error : body.error?.message;
+          throw new Error(msg ?? 'Failed to load questions');
         }
         const data = (await res.json()) as ProductQaListResult;
         setResult(data);
@@ -133,11 +136,13 @@ export function ProductQA({
       const body = (await res.json()) as {
         success?: boolean;
         message?: string;
-        error?: string;
+        error?: string | { message?: string };
       };
 
       if (!res.ok) {
-        throw new Error(body.error ?? 'Submission failed');
+        const msg =
+          typeof body.error === 'string' ? body.error : body.error?.message;
+        throw new Error(msg ?? 'Submission failed');
       }
 
       setSuccessMessage(

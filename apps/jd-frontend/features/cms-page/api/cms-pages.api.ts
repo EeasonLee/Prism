@@ -15,7 +15,7 @@ import {
   cacheTagCmsPage,
 } from '@/infrastructure/config/cache-policy';
 import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
-import { searchProductsBySkusForBFF } from '@/features/product';
+import { productQueryFacade } from '@/features/product';
 import {
   normalizePageLayoutPreset,
   normalizePageTemplate,
@@ -443,7 +443,7 @@ async function enrichImageTextBlockConfig(
   if (!sku) return config;
 
   try {
-    const products = await searchProductsBySkusForBFF([sku]);
+    const products = await productQueryFacade.queryBySkus([sku]);
     const product = products[0];
     if (!product) return config;
 

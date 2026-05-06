@@ -1,33 +1,37 @@
-import { NextResponse } from 'next/server';
-import type { ShopSortOption } from '@/features/search';
+import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
 import { resolveCategoryBySlug } from '@/features/category';
 import { productQueryFacade } from '@/features/product';
+import type { UnifiedProductSortOption } from '@/features/product';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const { searchParams } = new URL(request.url);
+  const sp = request.nextUrl.searchParams;
 
-  const brand = searchParams.get('brand') ?? undefined;
-  const size = searchParams.get('size') ?? undefined;
-  const stockStatus = searchParams.get('stock_status') ?? undefined;
-  const priceMin = searchParams.get('price_min');
-  const priceMax = searchParams.get('price_max');
-  const sort = (searchParams.get('sort') as ShopSortOption) || undefined;
-  const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
+  const brand = sp.get('brand')?.trim() || undefined;
+  const size = sp.get('size')?.trim() || undefined;
+  const stockStatus = sp.get('stock_status')?.trim() || undefined;
+  const priceMin = sp.get('price_min');
+  const priceMax = sp.get('price_max');
+  const sort = (sp.get('sort') as UnifiedProductSortOption) || undefined;
+  const page = Math.max(1, Number(sp.get('page') ?? '1'));
   const pageSize = Math.min(
     48,
-    Math.max(1, Number(searchParams.get('pageSize') ?? '24'))
+    Math.max(1, Number(sp.get('pageSize') ?? '24'))
   );
 
   try {
-    // 解析分类
     const category = await resolveCategoryBySlug(slug).catch(() => null);
     if (!category) {
       return NextResponse.json(
-        { success: false, error: 'Category not found' },
+        {
+          success: false,
+          data: null,
+          error: { message: 'Category not found', code: 'NOT_FOUND' },
+        },
         { status: 404 }
       );
     }
@@ -36,7 +40,6 @@ export async function GET(
       typeof category.magentoCategoryId === 'number' &&
       category.magentoCategoryId > 0;
 
-    // 搜索产品（仅走 Meilisearch）
     const result = await productQueryFacade.queryProducts({
       ...(hasMagentoCategoryId
         ? { magentoCategoryId: category.magentoCategoryId }
@@ -53,12 +56,8 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ success: true, data: result });
+    return NextResponse.json({ success: true, data: result, error: null });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Search failed';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

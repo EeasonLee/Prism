@@ -5,7 +5,8 @@ import { Skeleton } from '@prism/ui';
 import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
-import { searchProducts, type ShopSearchResult } from '@/features/search';
+import { productQueryFacade } from '@/features/product';
+import type { UnifiedProductQueryResult } from '@/features/product';
 import type { CategoryContext } from '@/features/category';
 import { MobileFilterButton } from './MobileFilterButton';
 import { CategoryProductGrid } from './CategoryProductGrid';
@@ -31,7 +32,7 @@ async function CategoryFilterSidebar({
   searchPromise,
   sp,
 }: {
-  searchPromise: Promise<ShopSearchResult | null>;
+  searchPromise: Promise<UnifiedProductQueryResult | null>;
   sp: CategoryPageContentProps['searchParams'];
 }) {
   const result = await searchPromise;
@@ -54,7 +55,7 @@ async function CategoryProductList({
   slug,
   sp,
 }: {
-  searchPromise: Promise<ShopSearchResult | null>;
+  searchPromise: Promise<UnifiedProductQueryResult | null>;
   slug: string;
   sp: CategoryPageContentProps['searchParams'];
 }) {
@@ -115,7 +116,7 @@ async function CategoryMobileFilters({
   searchPromise,
   sp,
 }: {
-  searchPromise: Promise<ShopSearchResult | null>;
+  searchPromise: Promise<UnifiedProductQueryResult | null>;
   sp: CategoryPageContentProps['searchParams'];
 }) {
   const result = await searchPromise;
@@ -165,19 +166,23 @@ export function CategoryPageContent({
     'currentCategory.magentoCategoryId',
     currentCategory.magentoCategoryId
   );
-  const searchPromise = searchProducts({
-    ...(hasMagentoCategoryId
-      ? { categoryId: currentCategory.magentoCategoryId }
-      : { strapiCategorySlug: currentCategory.slug }),
-    page: sp.page ? Math.max(1, Number(sp.page)) : 1,
-    pageSize: 24,
-    brand: sp.brand,
-    size: sp.size,
-    stockStatus: sp.stock_status,
-    priceMin: sp.price_min ? Number(sp.price_min) : undefined,
-    priceMax: sp.price_max ? Number(sp.price_max) : undefined,
-    sort: (sp.sort as ShopSortOption) || undefined,
-  }).catch(() => null);
+  const searchPromise = productQueryFacade
+    .queryProducts({
+      ...(hasMagentoCategoryId
+        ? { magentoCategoryId: currentCategory.magentoCategoryId }
+        : { strapiCategorySlug: currentCategory.slug }),
+      page: sp.page ? Math.max(1, Number(sp.page)) : 1,
+      pageSize: 24,
+      sort: (sp.sort as ShopSortOption) || undefined,
+      filters: {
+        brand: sp.brand,
+        size: sp.size,
+        stockStatus: sp.stock_status,
+        priceMin: sp.price_min ? Number(sp.price_min) : undefined,
+        priceMax: sp.price_max ? Number(sp.price_max) : undefined,
+      },
+    })
+    .catch(() => null);
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 pb-[calc(var(--mobile-tabbar-height)+var(--mobile-safe-area-bottom)+6rem)] sm:px-6 lg:px-[50px] lg:pb-10">

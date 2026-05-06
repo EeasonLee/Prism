@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
 import type { PageSection } from '../types';
 import { categoryService } from '@/features/category';
-import { ProductCard } from '@/features/product';
-import { searchProducts } from '@/features/search';
+import { ProductCard, productQueryFacade } from '@/features/product';
 
 const PRODUCTS_PER_SECTION = 8;
 
@@ -15,7 +14,9 @@ interface MallCategorySection {
   magentoCategoryId?: number | null;
   description?: string | null;
   listImageUrl?: string | null;
-  products: Awaited<ReturnType<typeof searchProducts>>['items'];
+  products: Awaited<
+    ReturnType<typeof productQueryFacade.queryProducts>
+  >['items'];
 }
 
 interface MallCategorySeed {
@@ -130,9 +131,9 @@ async function getMallPageData(sections: PageSection[]): Promise<MallPageData> {
         category.magentoCategoryId > 0;
 
       try {
-        const result = await searchProducts({
+        const result = await productQueryFacade.queryProducts({
           ...(hasMagentoCategoryId
-            ? { categoryId: category.magentoCategoryId }
+            ? { magentoCategoryId: category.magentoCategoryId }
             : category.slug?.trim()
             ? { strapiCategorySlug: category.slug.trim() }
             : { strapiCategoryId: category.id }),

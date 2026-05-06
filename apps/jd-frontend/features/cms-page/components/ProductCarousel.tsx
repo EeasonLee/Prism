@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ProductCarouselProps } from '../types';
-import { searchProductsBySkusForBFF } from '@/features/product';
+import { productQueryFacade } from '@/features/product';
 import { ProductCardCompact } from '@/features/product';
 
 const LAYOUT_CLASSES = {
@@ -24,13 +24,15 @@ export async function ProductCarousel({
     return null;
   }
 
-  const validProducts = await searchProductsBySkusForBFF(skus).catch(error => {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      `Failed to fetch carousel products from Meilisearch: ${message}`
-    );
-    return [];
-  });
+  const validProducts = await productQueryFacade
+    .queryBySkus(skus)
+    .catch(error => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `Failed to fetch carousel products from Meilisearch: ${message}`
+      );
+      return [];
+    });
 
   if (validProducts.length === 0) {
     return null;

@@ -556,15 +556,17 @@ export function ProductReviews({
         );
         const data = (await response.json().catch(() => null)) as
           | ProductReviewListResult
-          | { error?: string }
+          | { success?: boolean; error?: string | { message?: string } }
           | null;
 
         if (!response.ok || !data || !('items' in data)) {
-          throw new Error(
-            data && 'error' in data && typeof data.error === 'string'
-              ? data.error
-              : 'Failed to load reviews'
-          );
+          const errorMessage =
+            data && 'error' in data
+              ? typeof data.error === 'string'
+                ? data.error
+                : data.error?.message
+              : undefined;
+          throw new Error(errorMessage ?? 'Failed to load reviews');
         }
 
         setReviews(data.items);
@@ -656,11 +658,14 @@ export function ProductReviews({
         const data = (await response.json().catch(() => null)) as {
           helpfulCount?: number;
           viewerHasMarkedHelpful?: boolean;
-          error?: string;
+          success?: boolean;
+          error?: string | { message?: string };
         } | null;
 
         if (!response.ok) {
-          throw new Error(data?.error ?? 'Failed to update helpful state');
+          const msg =
+            typeof data?.error === 'string' ? data.error : data?.error?.message;
+          throw new Error(msg ?? 'Failed to update helpful state');
         }
 
         setReviews(current =>

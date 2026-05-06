@@ -1,7 +1,6 @@
-import { ProductCard } from '@/features/product';
+import { ProductCard, productQueryFacade } from '@/features/product';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
-import { searchProducts } from '@/features/search';
 
 export const metadata = {
   title: 'Shop - Joydeem',
@@ -42,17 +41,21 @@ function buildPageHref(
 export default async function ShopPage({ searchParams }: Props) {
   const sp = await searchParams;
 
-  const result = await searchProducts({
-    q: sp.q?.trim(),
-    page: sp.page ? Math.max(1, Number(sp.page)) : 1,
-    pageSize: 24,
-    brand: sp.brand,
-    size: sp.size,
-    category: sp.category,
-    priceMin: sp.price_min ? Number(sp.price_min) : undefined,
-    priceMax: sp.price_max ? Number(sp.price_max) : undefined,
-    sort: (sp.sort as ShopSortOption) || undefined,
-  }).catch(() => null);
+  const result = await productQueryFacade
+    .queryProducts({
+      q: sp.q?.trim() || undefined,
+      page: sp.page ? Math.max(1, Number(sp.page)) : 1,
+      pageSize: 24,
+      sort: (sp.sort as ShopSortOption) || undefined,
+      filters: {
+        brand: sp.brand,
+        size: sp.size,
+        category: sp.category,
+        priceMin: sp.price_min ? Number(sp.price_min) : undefined,
+        priceMax: sp.price_max ? Number(sp.price_max) : undefined,
+      },
+    })
+    .catch(() => null);
 
   const products = result?.items ?? [];
   const total = result?.pagination.total ?? products.length;

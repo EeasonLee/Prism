@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
-import { ProductCard } from '@/features/product';
+import { ProductCard, productQueryFacade } from '@/features/product';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
-import { searchProducts } from '@/features/search';
 import { getCategoryContextBySlug } from '@/features/category';
 
 interface Props {
@@ -51,19 +50,28 @@ export default async function ShopCategoryPage({
 
   const categoryData = await getCategoryContextBySlug(slug).catch(() => null);
 
-  const result = await searchProducts({
-    slug,
-    categoryId: categoryData?.currentCategory?.id,
-    q: sp.q?.trim(),
-    page: sp.page ? Math.max(1, Number(sp.page)) : 1,
-    pageSize: 24,
-    brand: sp.brand,
-    size: sp.size,
-    category: sp.category,
-    priceMin: sp.price_min ? Number(sp.price_min) : undefined,
-    priceMax: sp.price_max ? Number(sp.price_max) : undefined,
-    sort: (sp.sort as ShopSortOption) || undefined,
-  }).catch(() => null);
+  const categoryId = categoryData?.currentCategory?.id;
+
+  const result = await productQueryFacade
+    .queryProducts({
+      ...(typeof categoryId === 'number' &&
+      Number.isFinite(categoryId) &&
+      categoryId > 0
+        ? { magentoCategoryId: categoryId }
+        : { strapiCategorySlug: slug }),
+      q: sp.q?.trim() || undefined,
+      page: sp.page ? Math.max(1, Number(sp.page)) : 1,
+      pageSize: 24,
+      sort: (sp.sort as ShopSortOption) || undefined,
+      filters: {
+        brand: sp.brand,
+        size: sp.size,
+        category: sp.category,
+        priceMin: sp.price_min ? Number(sp.price_min) : undefined,
+        priceMax: sp.price_max ? Number(sp.price_max) : undefined,
+      },
+    })
+    .catch(() => null);
 
   if (!result) notFound();
 

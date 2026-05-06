@@ -56,7 +56,7 @@ export function CategoryGrid({ title, categories }: CategoryGridProps) {
           params.set('strapiCategoryId', activeCategoryId);
         }
         params.set('pageSize', '4');
-        const res = await fetch(`/api/deal-products?${params.toString()}`, {
+        const res = await fetch(`/api/products?${params.toString()}`, {
           signal: controller.signal,
           cache: 'no-store',
         });

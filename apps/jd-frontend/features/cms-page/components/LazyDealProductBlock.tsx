@@ -53,7 +53,7 @@ export function LazyDealProductBlock({ block }: LazyDealProductBlockProps) {
         params.set('strapiCategorySlug', block.categoryUrlKey);
       }
       params.set('pageSize', String(getPageSizeByLayout(block.layout)));
-      const res = await fetch(`/api/deal-products?${params.toString()}`);
+      const res = await fetch(`/api/products?${params.toString()}`);
       const json = await res.json();
       if (json.success && json.data) {
         setProducts(json.data.items ?? []);

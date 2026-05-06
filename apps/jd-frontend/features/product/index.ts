@@ -57,18 +57,18 @@ export {
   resolveProductDetailAggregate,
   getProductDetailBFF,
 } from './api/detail.bff';
-export { getProductListBFF } from './api/list.bff';
 export { getRelatedProductsBFF } from './api/related.bff';
 export { getUpsellProductsBFF } from './api/upsell.bff';
 export { getProductStockBFF } from './api/stock.bff';
 export { getProductVariantsBFF } from './api/variants.bff';
-export {
-  searchProductsForBFF,
-  searchProductsBySkusForBFF,
-} from './api/meilisearch.bff';
 
 // ――― Query facade ―――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { productQueryFacade } from './api/query-facade';
+export { parseProductQueryParams } from './api/product-params';
+export type {
+  UnifiedProductQueryResult,
+  UnifiedProductSortOption,
+} from './services/query.model';
 
 // ――― API services ―――――――――――――――――――――――――――――――――――――――――――――――――――――
 export {

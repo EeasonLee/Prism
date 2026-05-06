@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AddToCartButton } from '@/features/product';
 import type { FeaturedProductsProps } from '../types';
-import { searchProductsBySkusForBFF } from '@/features/product';
+import { productQueryFacade } from '@/features/product';
 import { formatPrice } from '@prism/shared';
 
 function stripHtml(value: string | null | undefined): string {
@@ -42,13 +42,15 @@ export async function FeaturedProducts({
     return null;
   }
 
-  const validProducts = await searchProductsBySkusForBFF(skus).catch(error => {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      `Failed to fetch featured products from Meilisearch: ${message}`
-    );
-    return [];
-  });
+  const validProducts = await productQueryFacade
+    .queryBySkus(skus)
+    .catch(error => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `Failed to fetch featured products from Meilisearch: ${message}`
+      );
+      return [];
+    });
 
   if (validProducts.length === 0) {
     return null;

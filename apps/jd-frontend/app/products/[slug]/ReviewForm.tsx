@@ -191,10 +191,12 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
         });
         const data = (await response.json().catch(() => null)) as {
           items?: ProductReviewTag[];
-          error?: string;
+          error?: string | { message?: string };
         } | null;
         if (!response.ok || !data?.items) {
-          throw new Error(data?.error ?? 'Failed to fetch review tags');
+          const msg =
+            typeof data?.error === 'string' ? data.error : data?.error?.message;
+          throw new Error(msg ?? 'Failed to fetch review tags');
         }
         setAvailableTags(data.items);
         setDimensionScores(current => {
@@ -285,11 +287,15 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
 
           const data = (await response.json().catch(() => null)) as {
             items?: ProductReviewMedia[];
-            error?: string;
+            error?: string | { message?: string };
           } | null;
 
           if (!response.ok || !data?.items?.[0]) {
-            throw new Error(data?.error ?? 'Failed to upload media');
+            const msg =
+              typeof data?.error === 'string'
+                ? data.error
+                : data?.error?.message;
+            throw new Error(msg ?? 'Failed to upload media');
           }
 
           const uploadedMedia = data.items[0];
@@ -394,20 +400,25 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
       });
 
       const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
         message?: string;
-        error?: string;
+        error?: string | { message?: string; detail?: unknown };
         detail?: unknown;
       } | null;
 
       if (!response.ok) {
+        const errorMessage =
+          typeof data?.error === 'string' ? data.error : data?.error?.message;
         const detail =
           data?.detail && typeof data.detail === 'object'
             ? JSON.stringify(data.detail)
+            : typeof data?.error === 'object' && data?.error?.detail
+            ? JSON.stringify(data.error.detail)
             : null;
         throw new Error(
           detail
-            ? `${data?.error ?? 'Failed to submit review'} (${detail})`
-            : data?.error ?? 'Failed to submit review'
+            ? `${errorMessage ?? 'Failed to submit review'} (${detail})`
+            : errorMessage ?? 'Failed to submit review'
         );
       }
 
