@@ -14,6 +14,7 @@ export { CmsPageRichContent } from './components/CmsPageRichContent';
 export { HeroBanner } from './components/HeroBanner';
 export { ProductCarousel } from './components/ProductCarousel';
 export { ImageTextBlock } from './components/ImageTextBlock';
+export { CategoryTemplate } from './components/CategoryTemplate';
 export { VideoShowcase } from './components/VideoShowcase';
 export { FeaturedProducts } from './components/FeaturedProducts';
 export { ServiceBadges } from './components/ServiceBadges';
