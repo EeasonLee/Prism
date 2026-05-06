@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { formatPrice } from '@/shared/utils/format-price';
-import { fetchProductSearchResult } from '@/features/search/search-service';
+import { formatPrice } from '@prism/shared';
+import { fetchProductSearchResult } from '@/features/search';
 import type {
   SearchSortOption,
   ProductSearchQuery,

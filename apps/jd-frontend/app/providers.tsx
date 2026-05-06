@@ -7,10 +7,10 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { SignupPromoController } from '@/shared/ui/SignupPromoController';
-import { AuthProvider } from '@/features/auth/auth.context';
-import { AuthModalProvider } from '@/features/auth/auth-modal.context';
-import { CartProvider } from '@/features/cart/cart.context';
+import { SignupPromoController } from '@/app/_ui/SignupPromoController';
+import { AuthProvider } from '@/features/auth';
+import { AuthModalProvider } from '@/features/auth';
+import { CartProvider } from '@/features/cart';
 import { logger } from '@/infrastructure/observability/logger';
 
 type AppConfig = {

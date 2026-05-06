@@ -5,7 +5,7 @@
 
 import type { MagentoProduct } from '../../../lib/api/magento/types';
 import type { ProductDetailSelection } from './ProductDetailClient';
-import type { ShareTarget } from '@/shared/ui/share';
+import type { ShareTarget } from '@/app/_ui/share';
 
 export function buildProductShareTarget(
   product: MagentoProduct,

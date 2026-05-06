@@ -1,11 +1,11 @@
-import type { HeroSlide } from '@/shared/ui/HeroCarousel';
+import type { HeroSlide } from '@/app/_ui/HeroCarousel';
 import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import { processImageUrl } from '@prism/shared';
-import type { CarouselItemResponse } from '@/features/cms-page/carousel.api';
-import { getCarouselItems } from '@/features/cms-page/carousel.api';
-import { getFilterTypes, searchRecipes } from '@/features/recipe/recipes.api';
-import { RecipesClient } from '@/features/recipe/RecipesClient';
+import type { CarouselItemResponse } from '@/features/cms-page';
+import { getCarouselItems } from '@/features/cms-page';
+import { getFilterTypes, searchRecipes } from '@/features/recipe';
+import { RecipesClient } from '@/features/recipe';
 import type { SelectedFilters } from '@/features/recipe/types';
 
 // Numeric literal required by Next.js segment config; sync with REVALIDATE_SECONDS_CMS_ASSOCIATION in cache-policy.ts

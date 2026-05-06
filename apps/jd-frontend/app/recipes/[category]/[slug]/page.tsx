@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
-import { getRecipeBySlug } from '@/features/recipe/recipes.api';
+import { getRecipeBySlug } from '@/features/recipe';
 import {
   buildBreadcrumbSchema,
   buildRecipeMetadata,
   buildRecipeSchema,
 } from '@/shared/utils/seo';
-import { RecipeDetail } from '@/features/recipe/RecipeDetail';
+import { RecipeDetail } from '@/features/recipe';
 
 type RecipeDetailPageProps = {
   params: Promise<{

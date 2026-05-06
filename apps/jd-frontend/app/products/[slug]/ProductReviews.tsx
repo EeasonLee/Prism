@@ -18,9 +18,9 @@ import type {
   ProductReviewPagination,
   ProductReviewSummary,
   ProductReviewTag,
-} from '@/features/product/reviews.api';
+} from '@/features/product';
 import { cn } from '@prism/shared';
-import { Pagination } from '@/features/recipe/Pagination';
+import { Pagination } from '@/features/recipe';
 import { getReviewVisitorKey } from './review-visitor-key';
 import { ReviewForm } from './ReviewForm';
 import { ReviewImagePreview } from './ReviewImagePreview';

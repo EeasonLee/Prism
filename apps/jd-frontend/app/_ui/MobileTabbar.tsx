@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@prism/shared';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
-import { useCart } from '@/features/cart/cart.context';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
+import { useCart } from '@/features/cart';
 import {
   getNavBadgeValue,
   MOBILE_TABBAR_ITEMS,

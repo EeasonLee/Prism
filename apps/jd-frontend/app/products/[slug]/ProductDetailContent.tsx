@@ -2,20 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Heart } from 'lucide-react';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
 import {
   ProductDetailClient,
   type ProductDetailSelection,
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
-import { ShareTrigger } from '@/shared/ui/share';
-import { normalizeCpPrice } from '@/features/product/unified-utils';
-import type {
-  UnifiedProduct,
-  UnifiedProductImage,
-} from '@/features/product/unified.api';
-import type { ShareTarget } from '@/shared/ui/share';
+import { ShareTrigger } from '@/app/_ui/share';
+import { normalizeCpPrice } from '@/features/product';
+import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
+import type { ShareTarget } from '@/app/_ui/share';
 
 interface ProductDetailContentProps {
   product: UnifiedProduct;

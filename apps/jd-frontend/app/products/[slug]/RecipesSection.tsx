@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Clock } from 'lucide-react';
-import type { PdpRecipeCard } from '@/features/product/bff-types';
+import type { PdpRecipeCard } from '@/features/product';
 
 interface RecipesSectionProps {
   recipes: PdpRecipeCard[];

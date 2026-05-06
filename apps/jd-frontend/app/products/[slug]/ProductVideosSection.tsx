@@ -1,4 +1,4 @@
-import type { ProductVideoCard } from '@/features/product/bff-types';
+import type { ProductVideoCard } from '@/features/product';
 import { ProductVideosCarousel } from './ProductVideosCarousel';
 
 interface ProductVideosSectionProps {

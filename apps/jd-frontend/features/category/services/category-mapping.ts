@@ -1,4 +1,4 @@
-import { categoryService } from '@/features/category/category.service';
+import { categoryService } from '../api/category.service';
 
 export async function resolveMagentoCategoryIdFromStrapiCategoryId(
   strapiCategoryId: number

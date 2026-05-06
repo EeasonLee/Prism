@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import { submitProductQuestion } from '@/features/product/qa.api';
+import { submitProductQuestion } from '@/features/product';
 import { getAccessToken } from '@/features/auth/cookies';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '@/shared/utils/email-validation';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitQuestionRequestBody {
   productId?: unknown;

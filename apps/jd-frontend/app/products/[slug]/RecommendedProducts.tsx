@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { formatPrice } from '@/shared/utils/format-price';
-import type { RecommendedProduct } from '@/features/product/bff-types';
+import { formatPrice } from '@prism/shared';
+import type { RecommendedProduct } from '@/features/product';
 
 interface RecommendedProductsProps {
   products: RecommendedProduct[];

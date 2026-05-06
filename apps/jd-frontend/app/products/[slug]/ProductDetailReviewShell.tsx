@@ -15,17 +15,11 @@ import type {
   ProductReview,
   ProductReviewPagination,
   ProductReviewSummary,
-} from '@/features/product/reviews.api';
-import type { ProductQaListResult } from '@/features/product/qa.api';
+} from '@/features/product';
+import type { ProductQaListResult } from '@/features/product';
 import { ProductQA } from './ProductQA';
-import type {
-  UnifiedProduct,
-  UnifiedProductImage,
-} from '@/features/product/unified.api';
-import type {
-  ProductVideoCard,
-  PdpRecipeCard,
-} from '@/features/product/bff-types';
+import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
+import type { ProductVideoCard, PdpRecipeCard } from '@/features/product';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;

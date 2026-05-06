@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import {
-  fetchReviewsBySku,
-  submitReview,
-} from '@/features/product/reviews.api';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '@/shared/utils/email-validation';
+import { fetchReviewsBySku, submitReview } from '@/features/product';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitReviewRequestBody {
   authorName?: unknown;

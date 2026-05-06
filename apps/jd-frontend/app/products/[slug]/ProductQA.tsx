@@ -2,16 +2,10 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { LoaderCircle, Plus, X } from 'lucide-react';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
-import type {
-  ProductQaListResult,
-  ProductQuestion,
-} from '@/features/product/qa.api';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '@/shared/utils/email-validation';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
+import type { ProductQaListResult, ProductQuestion } from '@/features/product';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
   if (!user) return '';

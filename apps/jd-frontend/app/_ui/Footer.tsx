@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
 import { env } from '@/infrastructure/config/env';
 
 interface InfoLinkItem {

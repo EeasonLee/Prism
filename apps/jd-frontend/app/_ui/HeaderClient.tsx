@@ -7,12 +7,12 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { HeaderMenuNode } from '@/features/navigation/types';
 import { isRouteActive } from '@/features/navigation/is-route-active';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
-import { useCart } from '@/features/cart/cart.context';
-import { CartDrawer } from '@/features/cart/CartDrawer';
-import { GlobalSearch } from '@/features/search/GlobalSearch';
-import { MobileNavBar } from '@/shared/ui/MobileNavBar';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
+import { useCart } from '@/features/cart';
+import { CartDrawer } from '@/features/cart';
+import { GlobalSearch } from '@/features/search';
+import { MobileNavBar } from '@/app/_ui/MobileNavBar';
 
 /** 主导航项下划线：绝对定位在文字下方，不占布局高度，避免与旁侧箭头纵向错位 */
 const NAV_UNDERLINE_CLASS =

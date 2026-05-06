@@ -1,4 +1,4 @@
-import type { ProductSpecificationGroup } from '@/features/product/enrichment.api';
+import type { ProductSpecificationGroup } from '@/features/product';
 
 interface ProductSpecificationsProps {
   groups: ProductSpecificationGroup[];

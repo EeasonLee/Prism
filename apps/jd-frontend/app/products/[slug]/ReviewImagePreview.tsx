@@ -3,7 +3,7 @@
 
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ProductReviewMedia } from '@/features/product/reviews.api';
+import type { ProductReviewMedia } from '@/features/product';
 
 interface ReviewMediaViewerProps {
   media: ProductReviewMedia[];

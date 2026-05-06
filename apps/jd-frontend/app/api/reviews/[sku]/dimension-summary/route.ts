@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import { fetchReviewDimensionSummaryBySku } from '@/features/product/reviews.api';
+import { fetchReviewDimensionSummaryBySku } from '@/features/product';
 
 export async function GET(
   _request: Request,

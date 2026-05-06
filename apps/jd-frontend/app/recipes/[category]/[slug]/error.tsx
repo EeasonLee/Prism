@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { ErrorPage } from '@/shared/ui/ErrorPage';
+import { ErrorPage } from '@/app/_ui/ErrorPage';
 
 export default function Error({
   error,

@@ -6,7 +6,7 @@ import {
 } from '@/features/blog/api';
 import { absoluteUrl } from '@/shared/utils/seo';
 import type { MetadataRoute } from 'next';
-import { searchRecipes } from '@/features/recipe/recipes.api';
+import { searchRecipes } from '@/features/recipe';
 import type { Recipe } from '@/features/recipe/types';
 
 const SITEMAP_PAGE_SIZE = 100;

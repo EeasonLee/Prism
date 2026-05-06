@@ -8,7 +8,7 @@ import { ChevronDown, Menu, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { HeaderMenuNode } from '@/features/navigation/types';
 import { isRouteActive } from '@/features/navigation/is-route-active';
-import { GlobalSearch } from '@/features/search/GlobalSearch';
+import { GlobalSearch } from '@/features/search';
 
 function MobileIconButton({
   label,

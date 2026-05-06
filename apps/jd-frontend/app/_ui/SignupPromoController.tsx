@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
-import { SignupPromoModal } from '@/shared/ui/SignupPromoModal';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
+import { SignupPromoModal } from '@/app/_ui/SignupPromoModal';
 
 const STORAGE_KEY = 'signup_promo_dismissed';
 

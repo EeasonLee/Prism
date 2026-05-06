@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UnifiedProductQueryResult } from '@/features/product/query.model';
+import type { UnifiedProductQueryResult } from '@/features/product';
 
 const {
   searchProductsFromMeilisearchMock,
@@ -19,7 +19,7 @@ vi.mock('@/features/product/meilisearch.repo', () => ({
   searchProductsBySkusFromMeilisearch: vi.fn(),
 }));
 
-vi.mock('@/shared/mapping/category-mapping', () => ({
+vi.mock('@/features/category', () => ({
   resolveMagentoCategoryIdFromStrapiCategoryId:
     resolveMagentoCategoryIdFromStrapiCategoryIdMock,
   resolveMagentoCategoryIdFromStrapiCategorySlug:

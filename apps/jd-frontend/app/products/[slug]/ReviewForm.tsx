@@ -6,15 +6,12 @@ import type {
   ProductReviewDimensionRating,
   ProductReviewMedia,
   ProductReviewTag,
-} from '@/features/product/reviews.api';
-import { useAuth } from '@/features/auth/auth.context';
-import { useAuthModal } from '@/features/auth/auth-modal.context';
+} from '@/features/product';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
 import type { ReviewTarget } from './ProductReviews';
 import { ReviewImagePreview } from './ReviewImagePreview';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '@/shared/utils/email-validation';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface ReviewFormProps {
   sku: string;

@@ -11,7 +11,7 @@ import { AccountSkeleton } from '../components/AccountSkeleton';
 import { useAuth } from '@/features/auth/auth.context';
 import { useAccount } from '@/features/account/use-account';
 import type { WishlistItem } from '@/features/account/types';
-import { formatPrice } from '@/shared/utils/format-price';
+import { formatPrice } from '@prism/shared';
 
 export default function WishlistPage() {
   const router = useRouter();

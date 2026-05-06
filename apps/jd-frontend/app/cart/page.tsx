@@ -4,16 +4,16 @@ import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { env } from '@/infrastructure/config/env';
-import { formatPrice } from '@/shared/utils/format-price';
+import { formatPrice } from '@prism/shared';
 import {
   formatCartLineTotal,
   formatCartMoney,
   getCartSnapshot,
   getCheckoutRedirectLink,
-} from '@/features/cart/cart-bff.service';
+} from '@/features/cart';
 import type { CartTotals } from '@/features/cart/types';
 import { useAuth } from '@/features/auth/auth.context';
-import { useCart } from '@/features/cart/cart.context';
+import { useCart } from '@/features/cart';
 import { LoginModal } from '@/features/auth/LoginModal';
 
 export default function CartPage() {

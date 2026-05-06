@@ -2,14 +2,14 @@
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { HOME_ANIMATIONS_ENABLED } from '@/shared/utils/animations';
+import { HOME_ANIMATIONS_ENABLED } from '@prism/shared';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
-import { formatPrice } from '@/shared/utils/format-price';
-import type { ImageTextBlockProps } from '@/features/cms-page/types';
-import { AddToCartButton } from '@/features/product/AddToCartButton';
+import { formatPrice } from '@prism/shared';
+import type { ImageTextBlockProps } from '@/features/cms-page';
+import { AddToCartButton } from '@/features/product';
 
 gsap.registerPlugin(ScrollTrigger);
 

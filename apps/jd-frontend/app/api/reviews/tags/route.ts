@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
-import { fetchReviewTags } from '@/features/product/reviews.api';
+import { fetchReviewTags } from '@/features/product';
 
 export async function GET() {
   try {

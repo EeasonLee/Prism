@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import type { DetailSection } from '@/features/product/bff-types';
+import type { DetailSection } from '@/features/product';
 
 interface RichDetailSectionsProps {
   sections: DetailSection[];
