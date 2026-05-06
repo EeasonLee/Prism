@@ -32,6 +32,12 @@ export interface MagentoAuthProvider {
     refreshToken: string;
   }): Promise<AuthProviderLoginResult>;
   logout(magentoAccessToken: string): Promise<void>;
+  forgotPassword(input: { email: string; template: string }): Promise<boolean>;
+  resetPassword(input: {
+    email: string;
+    resetToken: string;
+    newPassword: string;
+  }): Promise<boolean>;
 }
 
 export const magentoAuthProvider: MagentoAuthProvider = {
@@ -111,6 +117,22 @@ export const magentoAuthProvider: MagentoAuthProvider = {
     throw new Error(
       'magentoAuthProvider.refreshCustomerSession is not implemented'
     );
+  },
+  async forgotPassword(input) {
+    await magentoClient.put<boolean>('customers/password', {
+      body: { email: input.email, template: input.template },
+    });
+    return true;
+  },
+  async resetPassword(input) {
+    await magentoClient.post<boolean>('customers/resetPassword', {
+      body: {
+        email: input.email,
+        resetToken: input.resetToken,
+        newPassword: input.newPassword,
+      },
+    });
+    return true;
   },
   async logout(magentoAccessToken) {
     await magentoClient.post<boolean>(

@@ -216,6 +216,18 @@ export async function logout(request: Request): Promise<NextResponse> {
   return guestResponse;
 }
 
+export async function forgotPassword(email: string): Promise<boolean> {
+  return magentoAuthProvider.forgotPassword({ email, template: 'email_reset' });
+}
+
+export async function resetPassword(
+  email: string,
+  resetToken: string,
+  newPassword: string
+): Promise<boolean> {
+  return magentoAuthProvider.resetPassword({ email, resetToken, newPassword });
+}
+
 export function clearSessionOnError(
   error: unknown,
   fallbackMessage: string

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { magentoClient } from '@/core/api/clients/magento';
+import { resetPassword } from '@/features/auth/auth.service';
 
 export async function POST(request: Request) {
   try {
@@ -37,9 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await magentoClient.post<boolean>('customers/resetPassword', {
-      body: { email, resetToken, newPassword },
-    });
+    await resetPassword(email, resetToken, newPassword);
 
     return NextResponse.json({ success: true });
   } catch (error) {
