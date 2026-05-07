@@ -27,6 +27,8 @@ import {
   processProductImageUrl,
   shouldDisableImageOptimization,
 } from '@prism/shared';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { buildBreadcrumbSchema } from '@/shared/utils/seo';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -247,29 +249,45 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const specificationGroups = getSpecificationGroups(product);
 
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Home', href: '/' },
+    { label: 'Categories', href: '/categories' },
+    ...(product.categories?.[0]
+      ? [
+          {
+            label: product.categories[0].name,
+            href: `/categories/${
+              product.categories[0].url_key ?? product.categories[0].id
+            }`,
+          },
+        ]
+      : []),
+    { label: product.display_name },
+  ];
+
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' },
+    ...(product.categories?.[0]
+      ? [
+          {
+            name: product.categories[0].name,
+            path: `/categories/${
+              product.categories[0].url_key ?? product.categories[0].id
+            }`,
+          },
+        ]
+      : []),
+    { name: product.display_name, path: `/products/${product.sku ?? slug}` },
+  ]);
+
   return (
     <PageContainer className="py-6">
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-5 flex items-center gap-2 text-sm text-ink-muted"
-      >
-        <Link href="/categories" className="transition hover:text-ink">
-          Categories
-        </Link>
-        <span aria-hidden="true">/</span>
-        {product.categories?.[0] && (
-          <>
-            <Link
-              href={`/categories/${product.categories[0].url_key}`}
-              className="transition hover:text-ink"
-            >
-              {product.categories[0].name}
-            </Link>
-            <span aria-hidden="true">/</span>
-          </>
-        )}
-        <span className="text-ink">{product.display_name}</span>
-      </nav>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <Breadcrumb items={breadcrumbItems} className="mb-5" />
       {sectionNavItems.length > 0 && (
         <ProductSectionNav sections={sectionNavItems} />
       )}
