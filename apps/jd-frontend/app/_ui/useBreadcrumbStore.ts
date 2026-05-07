@@ -34,6 +34,7 @@ function mergeHistory(
   items: BreadcrumbItem[],
   currentUrl: string
 ): BreadcrumbItem[] {
+  if (items.length === 0) return history;
   if (history.length === 0) {
     // 首访：把 currentUrl 赋给最后一项（当前页），以便后续页面复用
     return items.map((item, i) =>
