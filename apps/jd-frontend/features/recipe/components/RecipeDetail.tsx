@@ -1,12 +1,12 @@
-import type { Route } from 'next';
-import Link from 'next/link';
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import { PageContainer } from '@prism/ui/components/PageContainer';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 
 interface RecipeDetailProps {
   recipe: Recipe;
+  breadcrumbItems: BreadcrumbItem[];
 }
 
 // Format time
@@ -45,73 +45,14 @@ function DifficultyBadge({ difficulty }: { difficulty?: string }) {
   );
 }
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, breadcrumbItems }: RecipeDetailProps) {
   const imageAlt = recipe.featuredImage?.alternativeText || recipe.title;
-
-  // Get the first category for breadcrumb
-  const category = recipe.categories?.[0];
-  const categoryId = category?.id;
-  const categoryName = category?.name || 'Recipe';
-
-  const parentHref = categoryId
-    ? `/recipes?categoryId=${categoryId}`
-    : '/recipes';
-  const parentLabel = category ? categoryName : 'Recipes';
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Breadcrumb：移动端 Back to + 当前页，桌面端完整路径 */}
-      <div className="border-b border-gray-200 bg-white">
-        <PageContainer className="py-4">
-          <nav
-            className="flex min-w-0 items-center overflow-hidden text-sm"
-            aria-label="Breadcrumb"
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:hidden">
-              <Link
-                href={parentHref as Route}
-                className="min-w-0 flex-1 truncate text-gray-600 transition-colors hover:text-gray-900"
-                title={`Back to ${parentLabel}`}
-              >
-                Back to {parentLabel}
-              </Link>
-              <span
-                className="min-w-0 max-w-[55%] shrink-0 truncate text-gray-900 font-medium"
-                title={recipe.title}
-              >
-                {recipe.title}
-              </span>
-            </div>
-            <div className="hidden items-center space-x-2 md:flex">
-              <Link
-                href="/recipes"
-                className="text-gray-600 transition-colors hover:text-gray-900"
-              >
-                Recipes
-              </Link>
-              {category && (
-                <>
-                  <span className="text-gray-400" aria-hidden="true">
-                    &gt;
-                  </span>
-                  <Link
-                    href={parentHref as Route}
-                    className="text-gray-600 transition-colors hover:text-gray-900"
-                  >
-                    {categoryName}
-                  </Link>
-                </>
-              )}
-              <span className="text-gray-400" aria-hidden="true">
-                &gt;
-              </span>
-              <span className="text-gray-900 font-medium" aria-current="page">
-                {recipe.title}
-              </span>
-            </div>
-          </nav>
-        </PageContainer>
-      </div>
+      <PageContainer className="py-4">
+        <Breadcrumb items={breadcrumbItems} />
+      </PageContainer>
 
       {/* Hero：内容左、图片右 */}
       <PageContainer className="py-6 md:py-10">
