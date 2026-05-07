@@ -437,6 +437,7 @@ export interface CartProductEnrichment {
     image_url: string | null;
     option_values: Record<string, string>;
   }>;
+  url_key: string | null;
   parent_sku: string | null;
   parent_url: string | null;
   parent_configurable_options: Array<{
@@ -466,6 +467,7 @@ function hitToCartEnrichment(hit: MeilisearchHit): CartProductEnrichment {
     sku: hit.sku ?? hit.id ?? '',
     name: hit.name ?? '',
     image: hit.thumbnail_url ?? hit.image_url ?? hit.thumbnail ?? null,
+    url_key: hit.url_key ?? null,
     configurable_options: (hit.configurable_options ?? []).map(opt => ({
       attribute_id: String(opt.attribute_id ?? ''),
       attribute_code: opt.attribute_code ?? '',
@@ -535,6 +537,7 @@ const CART_ENRICH_FIELDS = [
   'thumbnail_url',
   'image_url',
   'thumbnail',
+  'url_key',
   'configurable_options',
   'custom_options',
   'parent_sku',

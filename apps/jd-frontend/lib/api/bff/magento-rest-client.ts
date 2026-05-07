@@ -116,6 +116,16 @@ export async function magentoRestFetch<T>(
       );
     }
 
+    // 优惠券 404 错误改为人性化提示
+    if (res.status === 404 && url.includes('/coupons/')) {
+      throw new MagentoApiError(
+        'The coupon code is not valid. Please check and try again.',
+        'COUPON_NOT_FOUND',
+        404,
+        json
+      );
+    }
+
     throw new MagentoApiError(
       `Magento REST API error: ${errMsg} (status: ${res.status}, ${method} ${url})`,
       errCode,
