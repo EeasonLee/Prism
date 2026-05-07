@@ -253,8 +253,8 @@ export default async function ProductDetailPage({ params }: Props) {
         aria-label="Breadcrumb"
         className="mb-5 flex items-center gap-2 text-sm text-ink-muted"
       >
-        <Link href="/shop" className="transition hover:text-ink">
-          Shop
+        <Link href="/categories" className="transition hover:text-ink">
+          Categories
         </Link>
         <span aria-hidden="true">/</span>
         {product.categories?.[0] && (

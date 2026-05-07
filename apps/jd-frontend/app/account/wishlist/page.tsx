@@ -100,7 +100,7 @@ export default function WishlistPage() {
             Save items you love and view them here.
           </p>
           <Link
-            href="/shop"
+            href="/categories"
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90"
           >
             Browse products

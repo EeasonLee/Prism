@@ -173,7 +173,10 @@ export default function CartPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="heading-2 text-ink">Shopping Cart</h1>
-        <Link href="/shop" className="text-sm font-medium text-brand underline">
+        <Link
+          href="/categories"
+          className="text-sm font-medium text-brand underline"
+        >
           Continue shopping
         </Link>
       </div>

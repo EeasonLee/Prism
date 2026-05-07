@@ -189,8 +189,8 @@ export function CategoryPageContent({
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/shop" className="hover:text-ink hover:underline">
-              Shop
+            <Link href="/categories" className="hover:text-ink hover:underline">
+              Categories
             </Link>
           </li>
           <li aria-hidden="true">/</li>

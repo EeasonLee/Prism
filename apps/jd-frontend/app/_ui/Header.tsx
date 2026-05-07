@@ -4,8 +4,8 @@ import type { HeaderMenuNode } from '@/features/navigation/types';
 
 const FALLBACK_MENU_ITEMS: HeaderMenuNode[] = [
   {
-    title: 'Shop',
-    url: '/shop',
+    title: 'Categories',
+    url: '/categories',
     openInNewTab: false,
     children: [],
   },

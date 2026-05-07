@@ -24,9 +24,10 @@ export const MOBILE_TABBAR_ITEMS: MobileNavItem[] = [
   {
     key: 'categories',
     label: 'Categories',
-    href: '/shop',
+    href: '/categories',
     icon: Grid2x2,
-    match: pathname => pathname === '/shop' || pathname.startsWith('/shop/'),
+    match: pathname =>
+      pathname === '/categories' || pathname.startsWith('/categories/'),
   },
   {
     key: 'cart',

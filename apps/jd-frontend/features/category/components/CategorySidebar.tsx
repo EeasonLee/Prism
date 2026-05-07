@@ -90,7 +90,7 @@ export function CategorySidebar({
       <ul className="space-y-0.5">
         <li>
           <Link
-            href="/shop"
+            href="/categories"
             className={`flex items-center rounded-lg px-3 py-2 text-sm transition ${
               !activeCategoryId
                 ? 'bg-brand/10 font-semibold text-brand'

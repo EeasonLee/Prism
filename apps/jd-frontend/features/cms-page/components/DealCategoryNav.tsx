@@ -55,7 +55,7 @@ export function DealCategoryNav({ title, items }: DealCategoryNavProps) {
             {items.map(item => (
               <Link
                 key={item.id}
-                href={item.link ?? `/shop/${item.categoryUrlKey}`}
+                href={item.link ?? `/categories/${item.categoryUrlKey}`}
                 onClick={e => {
                   const targetId = `deal-section-${item.categoryUrlKey}`;
                   const target = document.getElementById(targetId);
