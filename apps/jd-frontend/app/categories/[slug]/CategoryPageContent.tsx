@@ -158,17 +158,10 @@ export function CategoryPageContent({
   const hasCategoryIntro =
     Boolean(categoryIntroText) || Boolean(categoryBackgroundImageUrl);
 
-  const hasMagentoCategoryId =
-    typeof currentCategory.magentoCategoryId === 'number' &&
-    currentCategory.magentoCategoryId > 0;
-  console.log('hasMagentoCategoryId', hasMagentoCategoryId);
-  console.log(
-    'currentCategory.magentoCategoryId',
-    currentCategory.magentoCategoryId
-  );
   const searchPromise = productQueryFacade
     .queryProducts({
-      ...(hasMagentoCategoryId
+      ...(typeof currentCategory.magentoCategoryId === 'number' &&
+      currentCategory.magentoCategoryId > 0
         ? { magentoCategoryId: currentCategory.magentoCategoryId }
         : { strapiCategorySlug: currentCategory.slug }),
       page: sp.page ? Math.max(1, Number(sp.page)) : 1,

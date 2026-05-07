@@ -11,10 +11,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const sp = await searchParams;
 
-  console.log('slug', slug);
-
   const category = await resolveCategoryBySlug(slug).catch(() => null);
-  console.log('category', category);
   if (!category) {
     notFound();
   }

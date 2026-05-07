@@ -93,7 +93,10 @@ export async function resolveCategoryBySlug(
   try {
     const result = await getCategoryContextBySlug(slug);
     if (result.currentCategory) {
-      return result.currentCategory;
+      return {
+        ...result.currentCategory,
+        magentoCategoryId: result.currentCategory.id,
+      };
     }
   } catch {
     /* 浅层树未包含该 slug（例如第三层以下），继续按 url_key 查询 */
@@ -104,7 +107,12 @@ export async function resolveCategoryBySlug(
     if (!row) {
       return null;
     }
-    return { id: row.id, name: row.name, slug: row.url_key };
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.url_key,
+      magentoCategoryId: row.id,
+    };
   } catch {
     return null;
   }

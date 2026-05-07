@@ -1,5 +1,6 @@
 import { magentoGraphQL } from '@/infrastructure/api/clients/magento-graphql';
 import { serverRequest } from '@/infrastructure/api/clients/strapi-server';
+import { REVALIDATE_SECONDS_CATEGORY_DETAIL } from '@/infrastructure/config/cache-policy';
 
 interface StrapiProductCategoryRow {
   id?: number;
@@ -155,7 +156,7 @@ export class CategoryService {
     ].join('&');
 
     const response = await serverRequest(`api/product-categories?${query}`, {
-      cache: 'no-store',
+      next: { revalidate: REVALIDATE_SECONDS_CATEGORY_DETAIL },
     });
 
     if (!response.ok) {
@@ -239,7 +240,7 @@ export class CategoryService {
     ].join('&');
 
     const response = await serverRequest(`api/product-categories?${query}`, {
-      cache: 'no-store',
+      next: { revalidate: REVALIDATE_SECONDS_CATEGORY_DETAIL },
     });
 
     if (!response.ok) {
