@@ -12,12 +12,12 @@ type: design
 
 当前项目面包屑处于各自为政的状态，存在 4 种不同实现：
 
-| 页面        | 实现方式            | 移动端                 | 组件                       | BreadcrumbList Schema |
-| ----------- | ------------------- | ---------------------- | -------------------------- | --------------------- |
-| Blog 详情   | `<Breadcrumb>` 组件 | 有（Back to + 当前页） | `libs/blog/Breadcrumb.tsx` | 有                    |
-| Recipe 详情 | 内联 HTML           | 有（Back to + 当前页） | 无，手写                   | 有                    |
-| 分类页      | 内联 HTML           | **无**                 | 无，手写                   | **无**                |
-| 商品详情    | 内联 HTML           | **无**                 | 无，手写                   | **无**                |
+| 页面        | 实现方式            | 移动端                 | 组件                                      | BreadcrumbList Schema |
+| ----------- | ------------------- | ---------------------- | ----------------------------------------- | --------------------- |
+| Blog 详情   | `<Breadcrumb>` 组件 | 有（Back to + 当前页） | `features/blog/components/Breadcrumb.tsx` | 有                    |
+| Recipe 详情 | 内联 HTML           | 有（Back to + 当前页） | 无，手写                                  | 有                    |
+| 分类页      | 内联 HTML           | **无**                 | 无，手写                                  | **无**                |
+| 商品详情    | 内联 HTML           | **无**                 | 无，手写                                  | **无**                |
 
 核心问题：
 
@@ -25,11 +25,12 @@ type: design
 2. 移动端体验不一致（分类页和商品详情无移动端面包屑）
 3. 未使用设计系统 Token，硬编码 `text-gray-400/600/900`
 4. JSON-LD BreadcrumbList Schema 输出不完整（分类页、商品详情页缺失）
-5. 现有共享组件放在 `libs/blog`，语义上不属于 blog 域
+5. 现有共享组件放在 `features/blog`，语义上不属于 blog 域
+6. 分类页和商品详情页的分隔符不统一（`>` vs `/`）
 
 ### 1.2 设计目标
 
-- **统一组件**：提取单一 `Breadcrumb` 组件到 `apps/jd-frontend/components/`
+- **统一组件**：提取单一 `Breadcrumb` 组件到 `app/_ui/Breadcrumb.tsx`（L2 布局壳层，符合项目架构规范）
 - **响应式覆盖**：桌面端完整路径 + 移动端折叠省略/横向滚动
 - **设计 Token 化**：全部使用 `text-ink` / `text-ink-muted` / `text-ink-faint`
 - **SEO 补齐**：所有目标页面输出 `BreadcrumbList` JSON-LD
@@ -37,12 +38,14 @@ type: design
 
 ### 1.3 覆盖范围（按页面类型分级）
 
-| 页面        | 面包屑路径                         | 优先级 |
-| ----------- | ---------------------------------- | ------ |
-| Blog 详情   | `Blog / Category / Article`        | P0     |
-| Recipe 详情 | `Recipes / Category / Recipe`      | P0     |
-| 分类页      | `Home / Shop / Category`           | P0     |
-| 商品详情    | `Home / Shop / Category / Product` | P0     |
+| 页面        | 面包屑路径                                 | 优先级 |
+| ----------- | ------------------------------------------ | ------ |
+| Blog 详情   | `Blog / Category / Article`                | P0     |
+| Recipe 详情 | `Recipes / Category / Recipe`              | P0     |
+| 分类页      | `Home / Categories / {Category}`           | P0     |
+| 商品详情    | `Home / Categories / {Category} / Product` | P0     |
+
+> 注：项目已移除 `(shop)` 路由组及 `/shop` 路由，分类入口为 `/categories/[slug]`。
 
 静态页（About、Contact 等）不需要面包屑。
 
@@ -53,10 +56,14 @@ type: design
 ### 2.1 组件位置
 
 ```
-apps/jd-frontend/components/Breadcrumb.tsx
+apps/jd-frontend/app/_ui/Breadcrumb.tsx
 ```
 
-放在 app 层而非 `libs/ui`，因为面包屑仅此 app 使用，不涉及跨项目复用。
+**位置决策理由：**
+
+- 按项目架构规范（`docs/architecture/file-layout-spec.md`），`app/_ui/` 是 L2 布局壳层，放跨路由使用的布局组件
+- Breadcrumb 是跨 4 类页面复用的导航壳组件，符合 `app/_ui/` 的定位
+- 不放在 `libs/ui`：面包屑仅此 app 使用，不涉及跨项目复用
 
 ### 2.2 Props API
 
@@ -76,7 +83,7 @@ interface BreadcrumbProps {
 
 **行为约定：**
 
-- `items` 数组最后一项自动视为当前页：无链接、加粗、`aria-current="page"`
+- `items` 数组最后一项自动视为当前页：无链接、`font-medium`、`aria-current="page"`
 - 空数组或 `undefined` → `return null`
 - 组件只负责 UI 渲染，**不输出 Schema**
 
@@ -115,7 +122,7 @@ interface BreadcrumbProps {
   <ol>
     <li><a href="...">Home</a></li>
     <li aria-hidden="true">/</li>
-    <li><a href="...">Shop</a></li>
+    <li><a href="...">Categories</a></li>
     <li aria-hidden="true">/</li>
     <li aria-current="page">Current</li>
   </ol>
@@ -131,29 +138,84 @@ interface BreadcrumbProps {
 
 ## 三、数据源策略（混合式）
 
-### 3.1 各页面数据获取方式
+### 3.1 核心理念：UI 与 Schema 数据源分离
 
-| 页面        | 数据来源 | 获取路径                                                |
-| ----------- | -------- | ------------------------------------------------------- |
-| Blog 详情   | Strapi   | `article.categories[0]` + 硬编码 "Blog" 根节点          |
-| Recipe 详情 | Strapi   | `recipe.categories[0]` + 硬编码 "Recipes" 根节点        |
-| 分类页      | Magento  | `categoryService.getCategoryDetail(id).breadcrumbs`     |
-| 商品详情    | Magento  | `product.categories[0]` + 硬编码 "Home" / "Shop" 根节点 |
+```
+┌──────────────────────────────────────────────────┐
+│  UI 面包屑（客户端主导）                           │
+│  优先用导航栈/路由历史构建，回退到数据驱动          │
+│  目标：反映用户实际浏览路径，保留上下文状态         │
+├──────────────────────────────────────────────────┤
+│  SEO Schema（服务端数据驱动）                      │
+│  由后端数据构建规范的 BreadcrumbList 结构化数据     │
+│  目标：搜索引擎爬虫正确理解页面层级关系             │
+└──────────────────────────────────────────────────┘
+```
 
-### 3.2 数据转换约定
+**为什么需要分离？**
+
+| 场景                               | 纯数据驱动                   | 纯导航栈                 | 混合策略               |
+| ---------------------------------- | ---------------------------- | ------------------------ | ---------------------- |
+| 从分类页（带筛选参数）进入商品详情 | 面包屑分类链接不包含筛选参数 | 回退链接保留完整筛选参数 | 回退保留参数（导航栈） |
+| 从外部链接/书签直接进入商品详情    | 能构建规范面包屑             | 无历史记录，面包屑为空   | 回退到数据驱动         |
+| SEO 爬虫抓取                       | 正确生成层级关系             | 无法生成（纯客户端）     | Schema 由服务端生成    |
+| 新标签页打开商品详情               | 能构建规范面包屑             | 无历史记录               | 回退到数据驱动         |
+
+### 3.2 UI 面包屑：导航栈方案（客户端）
+
+**实现方式：** 使用 Zustand store (`useBreadcrumbStore`) 在客户端维护导航历史栈。
+
+```typescript
+// app/_ui/useBreadcrumbStore.ts — 示意
+interface BreadcrumbStackState {
+  stack: BreadcrumbItem[];
+  push: (item: BreadcrumbItem) => void;
+  popTo: (index: number) => void;
+  replace: (items: BreadcrumbItem[]) => void;
+}
+```
+
+**工作流程：**
+
+1. 用户从首页 → 分类页 → 商品详情，各页面在挂载时 `push` 当前页信息到栈
+2. 面包屑组件从栈中读取路径并渲染
+3. 点击面包屑祖先链接时，`popTo` 回到对应层级，保留该层级的完整状态（筛选参数、分页等）
+4. 直接访问（无历史栈）时，**回退到数据源构建的默认面包屑**
+
+**各页面入栈逻辑：**
+
+| 页面      | push 逻辑                                                        |
+| --------- | ---------------------------------------------------------------- |
+| 首页      | `{ label: 'Home', href: '/' }`                                   |
+| 分类页    | `{ label: categoryName, href: '/categories/slug?保留筛选参数' }` |
+| 商品详情  | `{ label: productName }`（当前页，无 href）                      |
+| Blog 详情 | `{ label: articleTitle }`（当前页）                              |
+
+### 3.3 SEO Schema：数据驱动（服务端）
+
+使用已有的 `buildBreadcrumbSchema()` in `shared/utils/seo.ts`，由各页面服务端组件根据后端数据构建：
+
+| 页面        | 数据来源         | Schema 面包屑路径                          |
+| ----------- | ---------------- | ------------------------------------------ |
+| Blog 详情   | Strapi article   | Blog → Category → Article                  |
+| Recipe 详情 | Strapi recipe    | Recipes → Category → Recipe                |
+| 分类页      | Magento category | Home → Categories → {Category}             |
+| 商品详情    | Magento product  | Home → Categories → {Category} → {Product} |
+
+### 3.4 数据转换约定
 
 各页面在服务端将原始数据转换为统一的 `{ label, href }[]`：
 
 ```typescript
-// 示例：商品详情页
-const breadcrumbItems = [
+// 示例：商品详情页（数据回退用）
+const defaultBreadcrumbItems = [
   { label: 'Home', href: '/' },
-  { label: 'Shop', href: '/shop' },
+  { label: 'Categories', href: '/categories' },
   ...(product.categories?.[0]
     ? [
         {
           label: product.categories[0].name,
-          href: `/categories/${product.categories[0].url_key}`,
+          href: `/categories/${product.categories[0].id}`,
         },
       ]
     : []),
@@ -161,10 +223,11 @@ const breadcrumbItems = [
 ];
 ```
 
-### 3.3 现有组件迁移
+### 3.5 现有组件迁移
 
-- `libs/blog/src/components/Breadcrumb.tsx` → **删除**，改为从 `@/components/Breadcrumb` 导入
-- `libs/blog/src/index.ts` → 移除 Breadcrumb 导出
+- `features/blog/components/Breadcrumb.tsx` → **删除**，改为从 `@/app/_ui/Breadcrumb` 导入
+- `features/blog/components/index.ts` → 移除 Breadcrumb 导出
+- `features/blog/index.ts` → 移除 Breadcrumb 导出
 - 各页面内联面包屑 HTML → 替换为 `<Breadcrumb items={...} />`
 
 ---
@@ -178,7 +241,7 @@ const breadcrumbItems = [
 
 ### 4.2 Schema 输出
 
-使用已有的 `buildBreadcrumbSchema()` in `apps/jd-frontend/shared/utils/seo.ts`：
+使用已有的 `buildBreadcrumbSchema()` in `shared/utils/seo.ts`：
 
 ```typescript
 // 各页面中的使用模式
@@ -193,7 +256,7 @@ const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
 <script
   type="application/ld+json"
   dangerouslySetInnerHTML={{
-    __html: JSON.stringify([breadcrumbSchema, articleSchema]),
+    __html: JSON.stringify([breadcrumbSchema, otherSchema]),
   }}
 />;
 ```
@@ -209,22 +272,27 @@ const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
 
 ### 5.1 新建文件
 
-- `apps/jd-frontend/components/Breadcrumb.tsx` — 统一面包屑组件
+| 文件                                             | 说明                            |
+| ------------------------------------------------ | ------------------------------- |
+| `apps/jd-frontend/app/_ui/Breadcrumb.tsx`        | 统一面包屑 UI 组件（L2 布局壳） |
+| `apps/jd-frontend/app/_ui/useBreadcrumbStack.ts` | Zustand 导航栈 store（客户端）  |
 
 ### 5.2 修改文件
 
-| 文件                                                         | 改动                                                    |
-| ------------------------------------------------------------ | ------------------------------------------------------- |
-| `apps/jd-frontend/app/blog/[category]/[slug]/page.tsx`       | 替换导入路径，`@prism/blog` → `@/components/Breadcrumb` |
-| `apps/jd-frontend/features/recipe/RecipeDetail.tsx`          | 内联面包屑 → `<Breadcrumb>`                             |
-| `apps/jd-frontend/features/category/CategoryPageContent.tsx` | 内联面包屑 → `<Breadcrumb>`，补充移动端                 |
-| `apps/jd-frontend/app/products/[slug]/page.tsx`              | 内联面包屑 → `<Breadcrumb>`，补充移动端                 |
-| `libs/blog/src/components/index.ts`                          | 移除 Breadcrumb 导出                                    |
-| `libs/blog/src/index.ts`                                     | 移除 Breadcrumb 导出                                    |
+| 文件                                                             | 改动                                                 |
+| ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `apps/jd-frontend/app/blog/[category]/[slug]/page.tsx`           | 替换导入，`@/features/blog` → `@/app/_ui/Breadcrumb` |
+| `apps/jd-frontend/features/recipe/components/RecipeDetail.tsx`   | 内联面包屑 → `<Breadcrumb>`                          |
+| `apps/jd-frontend/app/categories/[slug]/CategoryPageContent.tsx` | 内联面包屑 → `<Breadcrumb>`，补充移动端              |
+| `apps/jd-frontend/app/products/[slug]/page.tsx`                  | 内联面包屑 → `<Breadcrumb>`，补充移动端              |
+| `apps/jd-frontend/features/blog/components/index.ts`             | 移除 Breadcrumb 导出                                 |
+| `apps/jd-frontend/features/blog/index.ts`                        | 移除 Breadcrumb 导出                                 |
+
+> 注：Blog 分类列表页 (`app/blog/[category]/page.tsx`) 也使用了旧 Breadcrumb 组件，需一并替换。
 
 ### 5.3 删除文件
 
-- `libs/blog/src/components/Breadcrumb.tsx`
+- `apps/jd-frontend/features/blog/components/Breadcrumb.tsx`
 
 ---
 
@@ -237,6 +305,7 @@ const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
 - [ ] 移动端点击 "…" 展开为横向滚动完整路径
 - [ ] 面包屑各链接可点击跳转
 - [ ] 空 items 时不渲染任何内容
+- [ ] 从分类页（带筛选参数）进入商品详情后，面包屑分类链接保留筛选参数
 
 ### 6.2 SEO 验证
 
@@ -257,3 +326,12 @@ const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
 - [ ] 分隔符统一为 `/`
 - [ ] 移动端触控区域 ≥ 44×44px
 - [ ] 响应式断点：320px / 375px / 768px / 1280px 均正常
+
+---
+
+## 七、版本历史
+
+| 日期       | 版本 | 变更                                                                                                                                                                       |
+| ---------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-06 | v1.0 | 初始版本                                                                                                                                                                   |
+| 2026-05-07 | v1.1 | 修正组件位置（`app/_ui/` 替代 `app/components/`）；修正面包屑路径（移除已废弃的 Shop）；补充混合式数据源策略（导航栈 + 数据驱动）；修正 `libs/blog` → `features/blog` 引用 |

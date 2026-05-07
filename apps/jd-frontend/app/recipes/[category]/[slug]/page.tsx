@@ -7,7 +7,8 @@ import {
   buildRecipeMetadata,
   buildRecipeSchema,
 } from '@/shared/utils/seo';
-import { type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { PageContainer } from '@prism/ui';
 import { RecipeDetail } from '@/features/recipe';
 
 type RecipeDetailPageProps = {
@@ -100,7 +101,10 @@ export default async function RecipeDetailPage({
             __html: JSON.stringify([breadcrumbSchema, recipeSchema]),
           }}
         />
-        <RecipeDetail recipe={recipe} breadcrumbItems={breadcrumbItems} />
+        <PageContainer className="py-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </PageContainer>
+        <RecipeDetail recipe={recipe} />
       </>
     );
   } catch (error) {

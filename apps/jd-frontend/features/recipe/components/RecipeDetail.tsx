@@ -1,12 +1,10 @@
 import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 
 interface RecipeDetailProps {
   recipe: Recipe;
-  breadcrumbItems: BreadcrumbItem[];
 }
 
 // Format time
@@ -45,15 +43,11 @@ function DifficultyBadge({ difficulty }: { difficulty?: string }) {
   );
 }
 
-export function RecipeDetail({ recipe, breadcrumbItems }: RecipeDetailProps) {
+export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const imageAlt = recipe.featuredImage?.alternativeText || recipe.title;
 
   return (
     <div className="min-h-screen bg-white">
-      <PageContainer className="py-4">
-        <Breadcrumb items={breadcrumbItems} />
-      </PageContainer>
-
       {/* Hero：内容左、图片右 */}
       <PageContainer className="py-6 md:py-10">
         <div className="grid min-w-0 gap-6 md:gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
