@@ -8,6 +8,7 @@ import { SortPanel, type ShopSortOption } from '@/features/search';
 import { productQueryFacade } from '@/features/product';
 import type { UnifiedProductQueryResult } from '@/features/product';
 import type { CategoryContext } from '@/features/category';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
 import { MobileFilterButton } from './MobileFilterButton';
 import { CategoryProductGrid } from './CategoryProductGrid';
 import { CategoryProductGridSkeleton } from './CategoryProductGridSkeleton';
@@ -24,6 +25,7 @@ interface CategoryPageContentProps {
     price_max?: string;
     sort?: string;
   };
+  breadcrumbItems: BreadcrumbItem[];
 }
 
 // Async sub-components for Suspense streaming -----------------------------
@@ -140,6 +142,7 @@ async function CategoryMobileFilters({
 export function CategoryPageContent({
   currentCategory,
   searchParams: sp,
+  breadcrumbItems,
 }: CategoryPageContentProps) {
   const categoryIntroText = currentCategory.content?.trim() ?? '';
   const categoryIntroLines = categoryIntroText
@@ -179,26 +182,7 @@ export function CategoryPageContent({
 
   return (
     <div className="mx-auto w-full max-w-[1720px] px-4 py-10 pb-[calc(var(--mobile-tabbar-height)+var(--mobile-safe-area-bottom)+6rem)] sm:px-6 lg:px-[50px] lg:pb-10">
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mb-4">
-        <ol className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-          <li>
-            <Link href="/" className="hover:text-ink hover:underline">
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link href="/categories" className="hover:text-ink hover:underline">
-              Categories
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-ink">
-            {currentCategory.name}
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
 
       <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">
         {currentCategory.name}

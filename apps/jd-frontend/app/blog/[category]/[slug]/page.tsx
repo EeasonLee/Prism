@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import { ArticleDetail } from '@/features/blog/components/ArticleDetail';
 import { ArticleSidebar } from '@/features/blog/components/ArticleSidebar';
-import { Breadcrumb } from '@/features/blog/components/Breadcrumb';
+import { Breadcrumb } from '@/app/_ui/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { notFound, redirect } from 'next/navigation';
 
@@ -105,7 +105,7 @@ export default async function ArticleDetailPage({
     ];
     const breadcrumbItems = breadcrumbSource.map((item, index) => ({
       label: item.name,
-      href: index === breadcrumbSource.length - 1 ? '#' : item.path,
+      ...(index < breadcrumbSource.length - 1 ? { href: item.path } : {}),
     }));
     const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
     const articleSchema = buildArticleSchema(article, canonicalCategory);

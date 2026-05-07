@@ -13,7 +13,7 @@ import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
 import { ArticlesSearchClient } from '@/features/blog/components/ArticlesSearchClient';
-import { Breadcrumb } from '@/features/blog/components/Breadcrumb';
+import { Breadcrumb } from '@/app/_ui/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { redirect } from 'next/navigation';
 

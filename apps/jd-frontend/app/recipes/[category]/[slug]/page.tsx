@@ -7,6 +7,8 @@ import {
   buildRecipeMetadata,
   buildRecipeSchema,
 } from '@/shared/utils/seo';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { PageContainer } from '@prism/ui';
 import { RecipeDetail } from '@/features/recipe';
 
 type RecipeDetailPageProps = {
@@ -65,6 +67,18 @@ export default async function RecipeDetailPage({
     }
 
     const canonicalCategory = actualCategorySlug ?? category;
+    const breadcrumbItems: BreadcrumbItem[] = [
+      { label: 'Recipes', href: '/recipes' },
+      ...(primaryCategory
+        ? [
+            {
+              label: primaryCategory.name,
+              href: `/recipes/${primaryCategory.slug}`,
+            },
+          ]
+        : []),
+      { label: recipe.title },
+    ];
     const breadcrumbSchema = buildBreadcrumbSchema([
       { name: 'Recipes', path: '/recipes' },
       ...(primaryCategory
@@ -87,6 +101,9 @@ export default async function RecipeDetailPage({
             __html: JSON.stringify([breadcrumbSchema, recipeSchema]),
           }}
         />
+        <PageContainer className="py-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </PageContainer>
         <RecipeDetail recipe={recipe} />
       </>
     );
