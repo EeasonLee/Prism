@@ -51,13 +51,14 @@ function mergeHistory(
     commonLen++;
   }
 
-  // 公共前缀保持历史项（保留已存储的 href）
+  // 公共前缀保持历史项（保留已存储的 href），但排除最后一项以确保最后一项始终使用 currentUrl
+  const prefixEnd = Math.min(commonLen, items.length - 1);
   const result: BreadcrumbItem[] = history
-    .slice(0, commonLen)
+    .slice(0, prefixEnd)
     .map(h => ({ ...h }));
 
-  // 新项追加
-  for (let i = commonLen; i < items.length; i++) {
+  // 新项追加（含最后一项，始终使用 currentUrl）
+  for (let i = prefixEnd; i < items.length; i++) {
     const isLast = i === items.length - 1;
     result.push({
       label: items[i].label,
