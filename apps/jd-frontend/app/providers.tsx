@@ -12,6 +12,7 @@ import { AuthProvider } from '@/features/auth';
 import { AuthModalProvider } from '@/features/auth';
 import { CartProvider } from '@/features/cart';
 import { logger } from '@/infrastructure/observability/logger';
+import { ImageConfigContext } from '@prism/ui';
 
 type AppConfig = {
   appName: string;
@@ -21,6 +22,21 @@ const AppConfigContext = createContext<AppConfig>({ appName: 'Prism' });
 
 export function useAppConfig() {
   return useContext(AppConfigContext);
+}
+
+function ImageConfigProvider({ children }: PropsWithChildren) {
+  const value = useMemo(
+    () => ({
+      baseUrl: process.env['NEXT_PUBLIC_IMAGE_BASE_URL'] || '',
+    }),
+    []
+  );
+
+  return (
+    <ImageConfigContext.Provider value={value}>
+      {children}
+    </ImageConfigContext.Provider>
+  );
 }
 
 function AppConfigProvider({ children }: PropsWithChildren) {
@@ -45,8 +61,10 @@ export function AppProviders({ children }: PropsWithChildren) {
       <AuthModalProvider>
         <CartProvider>
           <AppConfigProvider>
-            <SignupPromoController />
-            {children}
+            <ImageConfigProvider>
+              <SignupPromoController />
+              {children}
+            </ImageConfigProvider>
           </AppConfigProvider>
         </CartProvider>
       </AuthModalProvider>

@@ -9,6 +9,7 @@ export * from './button';
 export * from './carousel';
 export * from './checkbox';
 export * from './loader';
+export * from './image-config-context';
 export * from './OptimizedImage';
 export * from './PageContainer';
 export * from './select';

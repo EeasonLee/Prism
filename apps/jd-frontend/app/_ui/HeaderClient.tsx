@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -238,13 +238,14 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
       <header className="sticky top-0 z-30 bg-surface-muted">
         <div className="relative mx-auto hidden h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px] md:flex">
           <Link href="/" className="hidden shrink-0 items-center md:flex">
-            <Image
+            <OptimizedImage
               src="/images/logo.png"
               alt="Joydeem"
               width={170}
               height={57}
               className="h-[57px] w-auto"
               priority
+              maxDisplayWidth={170}
             />
           </Link>
 

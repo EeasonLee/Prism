@@ -3,7 +3,7 @@ import type { Recipe } from '@/features/recipe/types';
 import type { BlogPost, PdpRecipeCard, ProductVideoCard } from '../bff-types';
 import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/infrastructure/config/cache-policy';
 import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
-import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 interface ArticleImageLike {
   url?: string | null;
@@ -33,21 +33,8 @@ interface StrapiListResponse<T> {
   data: T[];
 }
 
-function resolveStrapiUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${getStrapiBaseUrl()}${url}`;
-}
-
 function pickImageUrl(image: StrapiImageLike | null | undefined): string {
-  return (
-    resolveStrapiUrl(
-      image?.formats?.medium?.url ??
-        image?.formats?.small?.url ??
-        image?.formats?.thumbnail?.url ??
-        image?.url
-    ) ?? ''
-  );
+  return resolveImageUrl(image) ?? '';
 }
 
 function formatRecipeTime(recipe: Recipe): string {
@@ -177,7 +164,7 @@ interface StrapiProductVideoRaw {
 function pickUploadedVideoUrl(
   file: StrapiVideoFileLike | null | undefined
 ): string {
-  return resolveStrapiUrl(file?.url ?? null) ?? '';
+  return resolveImageUrl(file?.url ?? null) ?? '';
 }
 
 function mapProductVideoToCard(

@@ -1,4 +1,4 @@
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { OptimizedImage } from '@prism/ui';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ArticleDetail } from '../api/types';

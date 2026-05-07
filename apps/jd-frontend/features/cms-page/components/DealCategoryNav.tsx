@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -70,11 +70,12 @@ export function DealCategoryNav({ title, items }: DealCategoryNavProps) {
                 className="group shrink-0"
               >
                 <div className="relative h-24 w-24 overflow-hidden rounded-full border border-border transition-all hover:border-brand md:h-28 md:w-28">
-                  <Image
+                  <OptimizedImage
                     src={item.image.url}
                     alt={item.label}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    maxDisplayWidth={112}
                     sizes="112px"
                     loading="lazy"
                   />

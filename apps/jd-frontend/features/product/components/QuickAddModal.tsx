@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { X, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatPrice } from '@prism/shared';
@@ -209,11 +209,10 @@ export function QuickAddModal({
           <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
             <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-surface">
               {imageUrl ? (
-                <Image
+                <OptimizedImage
                   src={imageUrl}
                   alt={product.displayName}
                   fill
-                  unoptimized
                   className="object-contain p-3"
                   sizes="180px"
                 />

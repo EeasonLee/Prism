@@ -1,7 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
-import { PageContainer } from '@prism/ui/components/PageContainer';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import {
   Accordion,
   AccordionContent,

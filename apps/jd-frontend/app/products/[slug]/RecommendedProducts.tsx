@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { formatPrice } from '@prism/shared';
 import type { RecommendedProduct } from '@/features/product';
@@ -38,11 +38,10 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
               >
                 {/* 图片 */}
                 <div className="relative aspect-square overflow-hidden bg-surface">
-                  <Image
+                  <OptimizedImage
                     src={product.image}
                     alt={product.name}
                     fill
-                    unoptimized
                     sizes="208px"
                     className="object-contain p-4 transition group-hover:scale-105"
                   />

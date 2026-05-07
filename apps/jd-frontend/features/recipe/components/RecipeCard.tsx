@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { OptimizedImage } from '@prism/ui';
 import type { Recipe } from '../types';
 
 interface RecipeCardProps {

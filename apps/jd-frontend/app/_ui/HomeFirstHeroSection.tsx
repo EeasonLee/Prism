@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { HOME_ANIMATIONS_ENABLED } from '@prism/shared';
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
 import { formatPrice } from '@prism/shared';
@@ -161,12 +161,13 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
               sideCards.length > 0 ? 'lg:flex-[2]' : 'lg:w-full'
             } ${imagePosition === 'right' ? 'lg:order-2' : 'lg:order-1'}`}
           >
-            <Image
+            <OptimizedImage
               src={mainCard.image.url}
               alt={mainCard.image.alt ?? mainCard.title}
               fill
               className="object-cover transition-transform duration-1000 group-hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 66vw"
+              maxDisplayWidth={1080}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
@@ -250,12 +251,13 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
                     href={card.cta.link}
                     className="group relative flex min-h-[260px] flex-1 overflow-hidden rounded-3xl lg:min-h-[280px]"
                   >
-                    <Image
+                    <OptimizedImage
                       src={card.image.url}
                       alt={card.image.alt ?? card.title}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                       sizes="(max-width: 1024px) 100vw, 33vw"
+                      maxDisplayWidth={540}
                     />
                     <div className={`absolute inset-0 ${gradientClass}`} />
 

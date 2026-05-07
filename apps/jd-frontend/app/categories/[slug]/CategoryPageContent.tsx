@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { Suspense } from 'react';
 import { Skeleton } from '@prism/ui';
-import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
 import { productQueryFacade } from '@/features/product';
@@ -152,7 +152,7 @@ export function CategoryPageContent({
     .replace(/^#{1,6}\s*/, '')
     .trim();
 
-  const categoryBackgroundImageUrl = processImageUrl(
+  const categoryBackgroundImageUrl = resolveImageUrl(
     currentCategory.backgroundImageUrl
   );
   const hasCategoryIntro =
@@ -224,13 +224,11 @@ export function CategoryPageContent({
           </div>
           {categoryBackgroundImageUrl ? (
             <div className="relative h-[240px]  md:h-[420px]">
-              <Image
+              <OptimizedImage
                 src={categoryBackgroundImageUrl}
                 alt={`${currentCategory.name} background`}
                 fill
-                unoptimized={shouldDisableImageOptimization(
-                  categoryBackgroundImageUrl
-                )}
+                maxDisplayWidth={800}
                 className="rounded-2xl"
                 sizes="(max-width: 767px) 100vw, 50vw"
               />

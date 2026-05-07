@@ -17,7 +17,7 @@ import {
   REVALIDATE_SECONDS_CMS_ASSOCIATION,
 } from '@/infrastructure/config/cache-policy';
 import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
-import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 import { fetchPdpArticlesBySku, fetchPdpRecipesBySku } from './content.api';
 
 // ─── Strapi 响应原始结构 ──────────────────────────────────────────────────────
@@ -243,22 +243,12 @@ export interface StrapiProductEnrichment {
 
 // ─── 内部工具函数 ─────────────────────────────────────────────────────────────
 
-/**
- * 将 Strapi 返回的相对 URL（/uploads/...）转换为绝对 URL
- * Strapi v5 media URL 可能是相对路径，需要拼接 API base URL
- */
-function resolveStrapiUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${getStrapiBaseUrl()}${url}`;
-}
-
 function normalizeImage(
   img: StrapiImage,
   altOverride?: string | null
 ): ProductEnrichmentImage {
   return {
-    url: resolveStrapiUrl(img.url) ?? img.url,
+    url: resolveImageUrl(img.url) ?? img.url,
     alt: altOverride ?? img.alternativeText ?? '',
     width: img.width ?? undefined,
     height: img.height ?? undefined,
@@ -304,7 +294,7 @@ function normalizeVideos(
     .map(video => ({
       video_url: video.video_url as string,
       provider: video.provider ?? undefined,
-      poster_url: resolveStrapiUrl(video.poster?.url) ?? undefined,
+      poster_url: resolveImageUrl(video.poster?.url) ?? undefined,
       title: video.title ?? undefined,
       description: video.description ?? undefined,
       sort_order: video.sort_order ?? undefined,

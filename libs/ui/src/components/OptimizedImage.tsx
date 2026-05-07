@@ -2,17 +2,21 @@
 
 import {
   extractImageUrl,
-  processImageUrl,
+  resolveImageUrl,
   shouldDisableImageOptimization,
+  getOptimalCdnSize,
   type StrapiImage,
+  type ProductImageSize,
 } from '@prism/shared';
 import Image from 'next/image';
 import {
   type ComponentProps,
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
+import { useImageConfig } from './image-config-context';
 
 /**
  * OptimizedImage 组件的 props
@@ -51,6 +55,15 @@ export interface OptimizedImageProps
    * 强制禁用 Next.js 图片优化，适用于轮播等需要避免多尺寸重复请求的场景
    */
   forceUnoptimized?: boolean;
+  /**
+   * 最大显示宽度（CSS px），组件自动选择最优 CDN 尺寸
+   * 传入后忽略 cdnSize
+   */
+  maxDisplayWidth?: number;
+  /** 显式指定 CDN 尺寸，优先级低于 maxDisplayWidth */
+  cdnSize?: ProductImageSize;
+  /** 设备像素比，默认 2（retina） */
+  pixelRatio?: number;
 }
 
 /**
@@ -89,21 +102,38 @@ export function OptimizedImage({
   preferredFormat,
   onImageError,
   forceUnoptimized = false,
+  maxDisplayWidth,
+  cdnSize,
+  pixelRatio,
   ...imageProps
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
   const [useOriginalAbsoluteUrl, setUseOriginalAbsoluteUrl] = useState(false);
+  const { baseUrl } = useImageConfig();
 
-  // 从 Strapi 图片对象或字符串中提取 URL
+  // 从 Strapi 图片对象或字符串中提取原始 URL（用于重试回退比较）
   let rawUrl: string | null = null;
   if (typeof src === 'string') {
-    rawUrl = src;
+    rawUrl = src.trim() || null;
   } else if (src && typeof src === 'object') {
     rawUrl = extractImageUrl(src, preferredFormat);
   }
 
-  // 处理 URL（自动处理相对路径和完整路径）
-  const imageUrl = processImageUrl(rawUrl);
+  // CDN 尺寸推导：maxDisplayWidth 优先，其次 cdnSize
+  const derivedCdnSize = useMemo(() => {
+    if (maxDisplayWidth) {
+      return getOptimalCdnSize(maxDisplayWidth, pixelRatio ?? 2);
+    }
+    return cdnSize;
+  }, [maxDisplayWidth, cdnSize, pixelRatio]);
+
+  // 统一的图片 URL 处理
+  const imageUrl = resolveImageUrl(src, {
+    format: preferredFormat,
+    size: derivedCdnSize,
+    baseUrl,
+  });
+
   const rawUrlIsAbsolute =
     typeof rawUrl === 'string' &&
     (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'));

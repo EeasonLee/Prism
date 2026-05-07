@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
@@ -23,10 +23,7 @@ import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
 import { AddToCartButton } from '@/features/product';
-import {
-  processProductImageUrl,
-  shouldDisableImageOptimization,
-} from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -85,7 +82,7 @@ async function DeferredRelatedProductsSection({
             const hasDiscount =
               item.special_price != null && item.special_price < item.price;
             const cardImageUrl =
-              processProductImageUrl(item.unified_thumbnail, 350) ??
+              resolveImageUrl(item.unified_thumbnail, { size: 350 }) ??
               item.unified_thumbnail;
 
             return (
@@ -96,13 +93,11 @@ async function DeferredRelatedProductsSection({
                 <Link href={`/products/${item.url_key ?? item.sku}`}>
                   <div className="relative aspect-square bg-surface-muted">
                     {cardImageUrl ? (
-                      <Image
+                      <OptimizedImage
                         src={cardImageUrl}
                         alt={item.display_name}
                         fill
-                        unoptimized={shouldDisableImageOptimization(
-                          cardImageUrl
-                        )}
+                        maxDisplayWidth={350}
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />

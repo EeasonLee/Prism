@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -118,7 +118,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
             aria-label="Go to home page"
             className="flex shrink-0 items-center"
           >
-            <Image
+            <OptimizedImage
               src="/images/logo.png"
               alt="Joydeem"
               width={132}

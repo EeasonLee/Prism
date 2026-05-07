@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { formatPrice } from '@prism/shared';
-import { processImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 
 type BadgeStyle = 'brand' | 'dark' | 'light';
 
@@ -50,7 +50,7 @@ export function CategoryProductCard({
   const resolvedImage = rawImage
     ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
       ? rawImage
-      : processImageUrl(rawImage) ?? rawImage
+      : resolveImageUrl(rawImage) ?? rawImage
     : null;
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
@@ -74,11 +74,12 @@ export function CategoryProductCard({
       >
         <div className="group/image relative aspect-square overflow-hidden rounded-xl bg-white">
           {resolvedImage && !imageLoadFailed ? (
-            <Image
+            <OptimizedImage
               src={resolvedImage}
               alt={name}
               fill
               className="object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
+              maxDisplayWidth={350}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               loading="lazy"
               onError={() => setImageLoadFailed(true)}

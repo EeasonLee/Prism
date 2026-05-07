@@ -6,7 +6,7 @@
  */
 
 import { productQueryFacade } from '@/features/product';
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 export interface RelatedProductItem {
   sku: string;
@@ -40,7 +40,7 @@ export async function fetchRelatedBySlug(
       sku: item.sku,
       name: item.name,
       price: item.price.value ?? 0,
-      image: processProductImageUrl(item.image) ?? item.image ?? '',
+      image: resolveImageUrl(item.image) ?? item.image ?? '',
       inStock: item.inStock ?? true,
     }));
 }

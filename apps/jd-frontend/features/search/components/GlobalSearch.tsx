@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -313,11 +313,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                           >
                             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                               {item.thumbnail ? (
-                                <Image
+                                <OptimizedImage
                                   src={item.thumbnail}
                                   alt={item.name}
                                   fill
-                                  unoptimized
                                   sizes="48px"
                                   className="object-contain p-1"
                                 />
@@ -421,11 +420,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                           >
                             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                               {item.thumbnail ? (
-                                <Image
+                                <OptimizedImage
                                   src={item.thumbnail}
                                   alt={item.title}
                                   fill
-                                  unoptimized
                                   sizes="48px"
                                   className="object-cover"
                                 />
@@ -597,11 +595,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                             >
                               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                                 {item.thumbnail ? (
-                                  <Image
+                                  <OptimizedImage
                                     src={item.thumbnail}
                                     alt={item.name}
                                     fill
-                                    unoptimized
                                     sizes="40px"
                                     className="object-contain p-1"
                                   />
@@ -707,11 +704,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                             >
                               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                                 {item.thumbnail ? (
-                                  <Image
+                                  <OptimizedImage
                                     src={item.thumbnail}
                                     alt={item.title}
                                     fill
-                                    unoptimized
                                     sizes="40px"
                                     className="object-cover"
                                   />

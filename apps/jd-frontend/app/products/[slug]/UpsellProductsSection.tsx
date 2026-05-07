@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { AddToCartButton } from '@/features/product';
 import { formatPrice } from '@prism/shared';
@@ -49,7 +49,7 @@ export function UpsellProductsSection({
                   className="relative block w-[132px] shrink-0 bg-surface-muted sm:w-[140px]"
                 >
                   {item.unified_thumbnail ? (
-                    <Image
+                    <OptimizedImage
                       src={item.unified_thumbnail}
                       alt={item.display_name}
                       fill

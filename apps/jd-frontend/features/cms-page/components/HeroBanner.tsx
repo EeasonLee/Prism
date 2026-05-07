@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { useCallback, useEffect, useState } from 'react';
 import type { HeroBannerProps } from '../types';
 
@@ -93,12 +93,13 @@ export function HeroBanner({
           }`}
         >
           <div className="absolute inset-0">
-            <Image
+            <OptimizedImage
               src={slide.image.url}
               alt={slide.image.alternativeText ?? slide.title}
               fill
               className="object-cover"
               priority={index === 0}
+              maxDisplayWidth={1920}
               sizes="100vw"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />

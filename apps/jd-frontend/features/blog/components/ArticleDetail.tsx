@@ -1,4 +1,4 @@
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { OptimizedImage } from '@prism/ui';
 import type { ArticleDetail as ArticleDetailType } from '../api/types';
 
 interface ArticleDetailProps {

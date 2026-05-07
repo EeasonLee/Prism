@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Calendar, ShieldCheck, ShoppingCart, Truck } from 'lucide-react';
@@ -300,7 +300,7 @@ function StickyAddToCartBar({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-3">
             {thumbnailUrl ? (
-              <Image
+              <OptimizedImage
                 src={thumbnailUrl}
                 alt={productName}
                 width={44}
@@ -830,7 +830,7 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {item.thumbnail_url && (
-                <Image
+                <OptimizedImage
                   src={item.thumbnail_url}
                   alt={item.name}
                   width={48}

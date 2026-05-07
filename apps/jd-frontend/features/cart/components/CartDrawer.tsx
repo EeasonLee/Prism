@@ -3,7 +3,7 @@
 import { env } from '@/infrastructure/config/env';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@prism/shared';
 import {
@@ -481,7 +481,7 @@ export function CartDrawer() {
                     {/* Product image */}
                     {imageUrl ? (
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface">
-                        <Image
+                        <OptimizedImage
                           src={imageUrl}
                           alt={displayName}
                           width={64}

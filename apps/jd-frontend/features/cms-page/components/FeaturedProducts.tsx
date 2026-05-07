@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { AddToCartButton } from '@/features/product';
 import type { FeaturedProductsProps } from '../types';
@@ -99,12 +99,13 @@ export async function FeaturedProducts({
               >
                 <div className="grid grid-cols-1 items-start md:grid-cols-[1fr,2fr] md:items-stretch">
                   <div className="relative w-full shrink-0 overflow-hidden aspect-square">
-                    <Image
+                    <OptimizedImage
                       src={imageUrl}
                       alt={displayName}
                       fill
                       // Ensure the full image is visible within the square thumbnail
                       className="object-contain transition-transform duration-500 group-hover:scale-105"
+                      maxDisplayWidth={280}
                       sizes="(max-width: 640px) 100vw, 280px"
                     />
                     {product.promotionLabel && (

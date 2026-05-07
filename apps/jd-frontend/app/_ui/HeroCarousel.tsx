@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from '@prism/ui/components/carousel';
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
+import { OptimizedImage } from '@prism/ui';
 import Autoplay from 'embla-carousel-autoplay';
 import { useEffect, useMemo, useState } from 'react';
 

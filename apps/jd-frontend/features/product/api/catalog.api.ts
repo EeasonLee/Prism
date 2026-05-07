@@ -3,7 +3,7 @@
  */
 
 import { ssoClient as magentoClient } from '@/infrastructure/api/clients/sso';
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 import type {
   FetchProductsParams,
   MagentoConfigurableOption,
@@ -485,7 +485,7 @@ function normalizeMediaGallery(
   items: RawMediaGalleryItem[] | null | undefined
 ) {
   return (items ?? []).map(item => ({
-    url: processProductImageUrl(item.url) ?? item.url ?? '',
+    url: resolveImageUrl(item.url) ?? item.url ?? '',
     label: item.label ?? null,
     position: item.position ?? 0,
     media_type: item.media_type ?? null,
@@ -509,7 +509,7 @@ function normalizeGroupedItems(
       item.is_in_stock ??
       (item.stock_status ? item.stock_status === 'IN_STOCK' : true),
     thumbnail_url:
-      processProductImageUrl(item.thumbnail_url) ?? item.thumbnail_url ?? null,
+      resolveImageUrl(item.thumbnail_url) ?? item.thumbnail_url ?? null,
   }));
 }
 
@@ -545,8 +545,7 @@ function normalizeProduct(raw: RawMagentoProduct): MagentoProduct {
     raw.image_url ??
     raw.media_gallery?.[0]?.url ??
     null;
-  const thumbnailUrl =
-    processProductImageUrl(rawThumbnailUrl) ?? rawThumbnailUrl;
+  const thumbnailUrl = resolveImageUrl(rawThumbnailUrl) ?? rawThumbnailUrl;
   const ratingPercentage =
     raw.rating_summary ??
     raw.rating_percentage ??

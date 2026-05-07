@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import type { DetailSection } from '@/features/product';
 
 interface RichDetailSectionsProps {
@@ -31,11 +31,10 @@ export function RichDetailSections({ sections }: RichDetailSectionsProps) {
             {/* 图片 */}
             <div className="w-full lg:w-1/2">
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface">
-                <Image
+                <OptimizedImage
                   src={section.image}
                   alt={section.imageAlt}
                   fill
-                  unoptimized
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />

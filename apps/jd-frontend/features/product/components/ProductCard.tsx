@@ -1,12 +1,12 @@
 'use client';
 
 import type { Route } from 'next';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Minus, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { formatPrice } from '@prism/shared';
-import { processImageUrl, processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import type { ProductCardItem } from '../bff-types';
 import { useCart } from '@/features/cart';
 import { useAddToCartAction } from '@/features/cart';
@@ -126,9 +126,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageUrl = rawImage
     ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
       ? rawImage
-      : processProductImageUrl(rawImage) ??
-        processImageUrl(rawImage) ??
-        rawImage
+      : resolveImageUrl(rawImage) ?? resolveImageUrl(rawImage) ?? rawImage
     : null;
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
@@ -310,13 +308,14 @@ export function ProductCard({ product }: ProductCardProps) {
         <Link href={productHref} className="flex min-h-0 flex-1 flex-col">
           <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
             {imageUrl && !imageLoadFailed ? (
-              <Image
+              <OptimizedImage
                 src={imageUrl}
                 alt={product.displayName}
                 fill
                 className={`object-cover ${
                   isOutOfStock ? 'opacity-60 grayscale' : ''
                 }`}
+                maxDisplayWidth={350}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 loading="lazy"
                 onError={() => setImageLoadFailed(true)}

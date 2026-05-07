@@ -16,7 +16,7 @@ import type {
   MagentoProduct,
   MagentoProductListResponse,
 } from '../bff-types';
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 import { normalizeCpPrice } from '../services/unified-utils';
 
 // ─── 统一图片类型 ─────────────────────────────────────────────────────────────
@@ -256,14 +256,14 @@ export function mergeProduct(magento: MagentoProduct): UnifiedProduct {
   const magentoImages: UnifiedProductImage[] = (magento.media_gallery ?? [])
     .filter(img => img.url)
     .map(img => ({
-      url: processProductImageUrl(img.url) ?? img.url,
+      url: resolveImageUrl(img.url) ?? img.url,
       alt: img.label ?? magento.name,
     }));
 
   const unified_images = magentoImages;
   const unified_thumbnail =
     unified_images[0]?.url ??
-    processProductImageUrl(magento.thumbnail_url) ??
+    resolveImageUrl(magento.thumbnail_url) ??
     magento.thumbnail_url ??
     null;
 
@@ -330,7 +330,7 @@ export function mapLinkedProduct(raw: {
   const regularPrice = raw.price_range.minimum_price.regular_price.value;
 
   const thumbnailUrl =
-    processProductImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? null;
+    resolveImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? null;
 
   return {
     id: raw.id,
@@ -357,7 +357,7 @@ export function mapGQLProduct(
   const regularPrice = raw.price_range.minimum_price.regular_price.value;
 
   const thumbnailUrl =
-    processProductImageUrl(raw.thumbnail?.url ?? raw.media_gallery[0]?.url) ??
+    resolveImageUrl(raw.thumbnail?.url ?? raw.media_gallery[0]?.url) ??
     raw.thumbnail?.url ??
     raw.media_gallery[0]?.url ??
     null;
@@ -387,7 +387,7 @@ export function mapGQLProduct(
       .filter(m => !m.disabled)
       .sort((a, b) => a.position - b.position)
       .map(m => ({
-        url: processProductImageUrl(m.url) ?? m.url,
+        url: resolveImageUrl(m.url) ?? m.url,
         label: m.label,
         position: m.position,
         media_type: 'image',
@@ -442,7 +442,7 @@ export function mapGQLProduct(
           return acc;
         }, {}),
         media_gallery: v.product.media_gallery.map((m, idx) => ({
-          url: processProductImageUrl(m.url) ?? m.url,
+          url: resolveImageUrl(m.url) ?? m.url,
           label: null,
           position: idx,
           media_type: 'image',

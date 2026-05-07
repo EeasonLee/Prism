@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 
 /** Mock 弹窗内容配置，后续对接接口 */
 const MOCK_CONTENT = {
@@ -51,7 +51,7 @@ export function SignupPromoModal({
         </button>
 
         <div className="relative h-48 w-full shrink-0 overflow-hidden bg-surface-muted sm:h-auto sm:min-h-[420px] sm:w-1/2">
-          <Image
+          <OptimizedImage
             src={MOCK_CONTENT.imageUrl}
             alt=""
             fill

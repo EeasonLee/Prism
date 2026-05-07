@@ -1,4 +1,4 @@
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 export interface ProductListItem {
   sku: string;
@@ -39,7 +39,7 @@ interface GraphQLProduct {
 
 export function mapProductListItem(raw: GraphQLProduct): ProductListItem {
   const imageUrl =
-    processProductImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? '';
+    resolveImageUrl(raw.thumbnail?.url) ?? raw.thumbnail?.url ?? '';
 
   return {
     sku: raw.sku,
@@ -160,9 +160,9 @@ export function mapProductDetail(raw: MagentoProductDetail): ProductDetail {
   const images = raw.media_gallery
     .filter(item => !item.disabled)
     .sort((a, b) => a.position - b.position)
-    .map(item => processProductImageUrl(item.url) ?? item.url);
+    .map(item => resolveImageUrl(item.url) ?? item.url);
   const thumbnail =
-    processProductImageUrl(raw.thumbnail?.url ?? images[0]) ??
+    resolveImageUrl(raw.thumbnail?.url ?? images[0]) ??
     raw.thumbnail?.url ??
     images[0] ??
     '';

@@ -15,6 +15,7 @@ import {
   cacheTagCmsPage,
 } from '@/infrastructure/config/cache-policy';
 import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 import { productQueryFacade } from '@/features/product';
 import {
   normalizePageLayoutPreset,
@@ -316,14 +317,13 @@ interface RawDealProductBlockItem {
 }
 
 /**
- * 解析 Strapi URL
- * 如果是相对路径，拼接 API 基础 URL
+ * 将 Strapi Image Raw 中的相对 URL 转换为绝对 URL
+ * 统一走 resolveImageUrl 处理
  */
-function resolveStrapiUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-
-  return `http://localhost:1337${url}`;
+function resolveImageUrlFromStrapi(
+  url: string | null | undefined
+): string | null {
+  return resolveImageUrl(url);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -371,7 +371,7 @@ function normalizeImageTextBlockConfig(value: unknown): ImageTextBlockConfig {
   const mainImageUrl = asString(mainImageObj?.url);
   const mainImage = mainImageUrl
     ? {
-        url: resolveStrapiUrl(mainImageUrl) || mainImageUrl,
+        url: resolveImageUrlFromStrapi(mainImageUrl) || mainImageUrl,
         alt: asString(mainImageObj?.alt),
       }
     : undefined;
@@ -411,7 +411,7 @@ function normalizeImageTextBlockConfig(value: unknown): ImageTextBlockConfig {
       const cardImageUrl = asString(cardImageObj?.url);
       const cardImage = cardImageUrl
         ? {
-            url: resolveStrapiUrl(cardImageUrl) || cardImageUrl,
+            url: resolveImageUrlFromStrapi(cardImageUrl) || cardImageUrl,
             alt: asString(cardImageObj?.alt),
           }
         : undefined;
@@ -502,7 +502,7 @@ function transformImage(
   return {
     id: image.id ?? 0,
     documentId: image.documentId ?? '',
-    url: resolveStrapiUrl(image.url) || '',
+    url: resolveImageUrlFromStrapi(image.url) || '',
     alternativeText: image.alternativeText || null,
     width: image.width || 0,
     height: image.height || 0,
@@ -510,28 +510,29 @@ function transformImage(
       ? {
           large: image.formats.large
             ? {
-                url: resolveStrapiUrl(image.formats.large.url) || '',
+                url: resolveImageUrlFromStrapi(image.formats.large.url) || '',
                 width: image.formats.large.width ?? 0,
                 height: image.formats.large.height ?? 0,
               }
             : undefined,
           medium: image.formats.medium
             ? {
-                url: resolveStrapiUrl(image.formats.medium.url) || '',
+                url: resolveImageUrlFromStrapi(image.formats.medium.url) || '',
                 width: image.formats.medium.width ?? 0,
                 height: image.formats.medium.height ?? 0,
               }
             : undefined,
           small: image.formats.small
             ? {
-                url: resolveStrapiUrl(image.formats.small.url) || '',
+                url: resolveImageUrlFromStrapi(image.formats.small.url) || '',
                 width: image.formats.small.width ?? 0,
                 height: image.formats.small.height ?? 0,
               }
             : undefined,
           thumbnail: image.formats.thumbnail
             ? {
-                url: resolveStrapiUrl(image.formats.thumbnail.url) || '',
+                url:
+                  resolveImageUrlFromStrapi(image.formats.thumbnail.url) || '',
                 width: image.formats.thumbnail.width ?? 0,
                 height: image.formats.thumbnail.height ?? 0,
               }

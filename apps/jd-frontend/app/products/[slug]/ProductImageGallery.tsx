@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { useEffect, useRef, useState } from 'react';
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import {
   ChevronDown,
   ChevronLeft,
@@ -58,8 +58,8 @@ export function ProductImageGallery({
       : []),
     ...images.map(image => ({
       type: 'image' as const,
-      url: processProductImageUrl(image.url, 800) ?? image.url,
-      thumbUrl: processProductImageUrl(image.url, 150) ?? image.url,
+      url: resolveImageUrl(image.url, { size: 800 }) ?? image.url,
+      thumbUrl: resolveImageUrl(image.url, { size: 150 }) ?? image.url,
       alt: image.alt ?? productName,
     })),
   ];
@@ -206,11 +206,11 @@ export function ProductImageGallery({
                 }`}
               >
                 {item.type === 'image' ? (
-                  <Image
+                  <OptimizedImage
                     src={item.thumbUrl ?? item.url}
                     alt={item.alt}
                     fill
-                    unoptimized
+                    maxDisplayWidth={80}
                     sizes="80px"
                     className="object-cover"
                   />
@@ -218,11 +218,11 @@ export function ProductImageGallery({
                   <>
                     <div className="relative h-full w-full bg-surface-muted">
                       {item.poster ? (
-                        <Image
+                        <OptimizedImage
                           src={item.poster}
                           alt={item.alt}
                           fill
-                          unoptimized
+                          maxDisplayWidth={80}
                           sizes="80px"
                           className="object-cover"
                         />
@@ -268,12 +268,12 @@ export function ProductImageGallery({
           className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background"
         >
           {activeMedia?.type === 'image' && (
-            <Image
+            <OptimizedImage
               src={activeMedia.url}
               alt={activeMedia.alt}
               fill
               priority
-              unoptimized
+              maxDisplayWidth={800}
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover transition-opacity duration-300"
             />

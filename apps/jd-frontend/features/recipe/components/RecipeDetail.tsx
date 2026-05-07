@@ -1,7 +1,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
-import { PageContainer } from '@prism/ui/components/PageContainer';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, Clock, User } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { ContentCarouselProps } from '../types';
@@ -85,11 +85,12 @@ export function ContentCarousel({
                   className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
-                    <Image
+                    <OptimizedImage
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
                       width={400}
                       height={300}
+                      maxDisplayWidth={400}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -135,11 +136,12 @@ export function ContentCarousel({
                   className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <div className="aspect-[16/10] overflow-hidden">
-                    <Image
+                    <OptimizedImage
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
                       width={400}
                       height={250}
+                      maxDisplayWidth={400}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>

@@ -2,7 +2,7 @@ import type { ArticleDetail } from '@/features/blog/api';
 import type { Metadata } from 'next';
 import { env } from '@/infrastructure/config/env';
 import type { Recipe } from '@/features/recipe/types';
-import { processImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 
 const SITE_NAME = 'Joydeem';
 const DEFAULT_LOCALE = 'en_US';
@@ -33,7 +33,7 @@ function truncate(
 }
 
 function resolveImage(url?: string | null): string | undefined {
-  const resolved = processImageUrl(url);
+  const resolved = resolveImageUrl(url);
   return resolved ?? undefined;
 }
 

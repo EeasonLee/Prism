@@ -16,20 +16,7 @@
 
 // ============ 基础类型 ============
 
-export interface StrapiImage {
-  id: number;
-  documentId: string;
-  url: string;
-  alternativeText: string | null;
-  width: number;
-  height: number;
-  formats?: {
-    large?: { url: string; width: number; height: number };
-    medium?: { url: string; width: number; height: number };
-    small?: { url: string; width: number; height: number };
-    thumbnail?: { url: string; width: number; height: number };
-  };
-}
+export { type StrapiImage } from '@prism/shared';
 
 export interface SEO {
   title: string;

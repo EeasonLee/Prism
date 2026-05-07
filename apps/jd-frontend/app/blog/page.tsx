@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
 import { ProductCategories } from '@/features/blog/components/ProductCategories';
 import { ThemeCategories } from '@/features/blog/components/ThemeCategories';
-import { processImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import type { CarouselItemResponse } from '@/features/cms-page';
 import { getCarouselItems } from '@/features/cms-page';
@@ -24,7 +24,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       (item.slides ?? [])
         .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url) ?? '',
+          image: resolveImageUrl(slide.image?.url) ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

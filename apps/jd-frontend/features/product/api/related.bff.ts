@@ -1,7 +1,7 @@
 import { fetchProductDetailBySkuGQL } from './product-graphql.service';
 import { fetchRelatedBySlug } from '@/features/search';
 import type { RelatedProductItem } from '@/features/search';
-import { processProductImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 /**
  * PDP related products BFF 入口。
@@ -40,7 +40,7 @@ async function fetchRelatedFromMagento(
       name: v.product.name,
       price: v.product.price_range.minimum_price.final_price.value,
       image:
-        processProductImageUrl(v.product.media_gallery?.[0]?.url) ??
+        resolveImageUrl(v.product.media_gallery?.[0]?.url) ??
         v.product.media_gallery?.[0]?.url ??
         '',
       inStock: v.product.stock_status === 'IN_STOCK',

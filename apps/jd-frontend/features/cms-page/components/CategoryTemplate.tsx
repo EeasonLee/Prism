@@ -1,6 +1,6 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { processImageUrl, shouldDisableImageOptimization } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import type { PageSection } from '../types';
 import { categoryService } from '@/features/category';
 import { ProductCard, productQueryFacade } from '@/features/product';
@@ -162,16 +162,16 @@ async function getMallPageData(sections: PageSection[]): Promise<MallPageData> {
 
 function CategoryFilterItem({ section }: { section: MallCategorySection }) {
   const imageUrl =
-    processImageUrl(section.listImageUrl) ?? section.listImageUrl;
+    resolveImageUrl(section.listImageUrl) ?? section.listImageUrl;
   const content = (
     <>
       <div className="relative h-16 w-16 overflow-hidden rounded-full border border-line bg-bg-subtle sm:h-20 sm:w-20">
         {imageUrl ? (
-          <Image
+          <OptimizedImage
             src={imageUrl}
             alt={section.name}
             fill
-            unoptimized={shouldDisableImageOptimization(imageUrl)}
+            maxDisplayWidth={80}
             className="object-cover"
             sizes="80px"
           />
@@ -211,11 +211,11 @@ export async function CategoryTemplate({
       <section className="overflow-hidden rounded-xl border border-line">
         <div className="relative aspect-[3/1] min-h-[180px] w-full bg-bg-subtle">
           {bannerImageUrl ? (
-            <Image
+            <OptimizedImage
               src={bannerImageUrl}
               alt="Mall banner"
               fill
-              unoptimized={shouldDisableImageOptimization(bannerImageUrl)}
+              maxDisplayWidth={1920}
               className="object-cover"
               priority
               sizes="100vw"

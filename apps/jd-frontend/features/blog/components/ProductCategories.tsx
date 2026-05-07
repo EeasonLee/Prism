@@ -1,7 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui/components/OptimizedImage';
-import { PageContainer } from '@prism/ui/components/PageContainer';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';

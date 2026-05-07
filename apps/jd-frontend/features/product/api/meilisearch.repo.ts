@@ -1,4 +1,4 @@
-import { processImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 import { env } from '@/infrastructure/config/env';
 import { notifyError } from '@/infrastructure/observability/notify';
 import { meilisearchClient } from '@/infrastructure/api/clients/meilisearch';
@@ -159,7 +159,7 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
   const image =
     rawImage && /^https?:\/\//i.test(rawImage)
       ? rawImage
-      : processImageUrl(rawImage) ?? rawImage;
+      : resolveImageUrl(rawImage) ?? rawImage;
 
   return {
     sku: hit.sku ?? hit.id ?? '',

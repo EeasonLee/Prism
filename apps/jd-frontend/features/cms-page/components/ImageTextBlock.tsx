@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import type { ImageTextBlockProps } from '../types';
 
@@ -18,11 +18,12 @@ export function ImageTextBlock({
 
   const imageBlock = (
     <div className="group relative min-h-[560px] overflow-hidden rounded-3xl lg:aspect-auto lg:min-h-0 lg:flex-[2]">
-      <Image
+      <OptimizedImage
         src={image.url}
         alt={image.alternativeText || title}
         fill
         className="object-cover transition-transform duration-1000 group-hover:scale-105"
+        maxDisplayWidth={860}
         sizes="(max-width: 1024px) 100vw, 66vw"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

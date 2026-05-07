@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import { productQueryFacade } from '@/features/product';
 
@@ -77,11 +77,10 @@ export default async function SearchPage({ searchParams }: Props) {
                   >
                     <div className="relative aspect-square overflow-hidden bg-surface">
                       {item.image ? (
-                        <Image
+                        <OptimizedImage
                           src={item.image}
                           alt={displayName}
                           fill
-                          unoptimized
                           sizes="(max-width: 640px) 50vw, 25vw"
                           className="object-contain p-4 transition duration-300 group-hover:scale-105"
                         />

@@ -1,7 +1,7 @@
 'use client';
 
 import { ShoppingCart } from 'lucide-react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { formatPrice } from '@prism/shared';
 import type { UnifiedProduct } from '../api/unified.api';
@@ -52,7 +52,7 @@ export function ProductCardCompact({
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
         {imageUrl && (
-          <Image
+          <OptimizedImage
             src={imageUrl}
             alt={title}
             fill

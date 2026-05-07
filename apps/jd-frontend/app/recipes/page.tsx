@@ -1,7 +1,7 @@
 import type { HeroSlide } from '@/app/_ui/HeroCarousel';
 import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
-import { processImageUrl } from '@prism/shared';
+import { resolveImageUrl } from '@prism/shared';
 import type { CarouselItemResponse } from '@/features/cms-page';
 import { getCarouselItems } from '@/features/cms-page';
 import { getFilterTypes, searchRecipes } from '@/features/recipe';
@@ -42,7 +42,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       (item.slides ?? [])
         .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url ?? '') ?? '',
+          image: resolveImageUrl(slide.image?.url ?? '') ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

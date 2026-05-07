@@ -3,9 +3,8 @@ import {
   CACHE_TAG_PRODUCT_REVIEW_SUMMARIES,
   REVALIDATE_SECONDS_REVIEW_UGC,
 } from '@/infrastructure/config/cache-policy';
-import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
 import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
-import { env } from '@/infrastructure/config/env';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 interface StrapiReviewMediaRaw {
   id: number;
@@ -232,30 +231,10 @@ export interface SubmitProductReviewResult {
   message: string;
 }
 
-function toAbsoluteStrapiUrl(url: string | null | undefined) {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-
-  const baseUrl = getStrapiBaseUrl();
-  if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
-    return `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-  }
-
-  return url;
-}
-
 function normalizeRelativePath(path: string): string {
   const trimmed = path.trim().replace(/^['"]|['"]$/g, '');
   if (!trimmed) return '';
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-}
-
-function getReviewImageBaseUrl(): string | null {
-  const baseUrl = env.NEXT_PUBLIC_IMAGE_BASE_URL?.trim();
-  if (!baseUrl) return null;
-  return baseUrl.replace(/\/+$/, '');
 }
 
 function toReviewImageUrl(
@@ -270,17 +249,17 @@ function toReviewImageUrl(
   const normalizedPath = normalizeRelativePath(path);
   if (!normalizedPath) return '';
 
-  const baseUrl = getReviewImageBaseUrl();
-  if (!baseUrl) {
-    return toAbsoluteStrapiUrl(normalizedPath);
-  }
-
   const resolvedSize =
     typeof width === 'number' && Number.isFinite(width) && width > 0
       ? Math.round(width)
       : 800;
 
-  return `${baseUrl}/${resolvedSize}/amasty/review${normalizedPath}`;
+  return (
+    resolveImageUrl(normalizedPath, {
+      size: resolvedSize,
+      subPath: 'amasty/review',
+    }) ?? normalizedPath
+  );
 }
 
 function parseLegacyImagesField(value: unknown): string[] {
