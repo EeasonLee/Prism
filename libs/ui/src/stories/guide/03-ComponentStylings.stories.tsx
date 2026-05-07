@@ -1,24 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from '../../components/button';
-import {
-  FoundationCard,
-  FoundationPage,
-  FoundationSection,
-} from './foundation-primitives';
+import { Page, Section, Card } from '../shared-primitives';
 
 function ComponentStylingsPage() {
   return (
-    <FoundationPage
+    <Page
       title="组件样式规范"
       description="沉淀按钮、卡片、输入框、导航等核心组件的状态样式。"
     >
-      <FoundationSection
+      <Section
         title="按钮"
         description="主操作使用 brand 变体，并保证禁用态和焦点态清晰可见。"
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <FoundationCard className="space-y-3">
+          <Card className="space-y-3">
             <p className="micro-text text-ink-faint">
               默认态 / 悬浮态 / 焦点态
             </p>
@@ -30,8 +26,8 @@ function ComponentStylingsPage() {
             <p className="body-text text-ink-muted">
               Hover 与 Focus 通过组件变体和 ring Token 统一管理。
             </p>
-          </FoundationCard>
-          <FoundationCard className="space-y-3">
+          </Card>
+          <Card className="space-y-3">
             <p className="micro-text text-ink-faint">禁用态</p>
             <div className="flex flex-wrap gap-3">
               <Button variant="brand" disabled>
@@ -44,11 +40,11 @@ function ComponentStylingsPage() {
             <p className="body-text text-ink-muted">
               禁用态应保持布局稳定并避免误触。
             </p>
-          </FoundationCard>
+          </Card>
         </div>
-      </FoundationSection>
+      </Section>
 
-      <FoundationSection
+      <Section
         title="卡片"
         description="卡片应基于 surface 与 elevation Token，而非随意边框样式。"
       >
@@ -66,14 +62,14 @@ function ComponentStylingsPage() {
             </p>
           </div>
         </div>
-      </FoundationSection>
+      </Section>
 
-      <FoundationSection
+      <Section
         title="输入框"
         description="输入控件必须保证可读字号与清晰焦点反馈。"
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <FoundationCard className="space-y-2">
+          <Card className="space-y-2">
             <label
               className="micro-text text-ink-faint"
               htmlFor="default-input"
@@ -85,8 +81,8 @@ function ComponentStylingsPage() {
               className="h-10 w-full rounded-md border border-input bg-background px-3 body-text text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="搜索商品"
             />
-          </FoundationCard>
-          <FoundationCard className="space-y-2">
+          </Card>
+          <Card className="space-y-2">
             <label className="micro-text text-ink-faint" htmlFor="error-input">
               错误状态
             </label>
@@ -95,15 +91,15 @@ function ComponentStylingsPage() {
               className="h-10 w-full rounded-md border border-destructive bg-background px-3 body-text text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
               defaultValue="输入值无效"
             />
-          </FoundationCard>
+          </Card>
         </div>
-      </FoundationSection>
+      </Section>
 
-      <FoundationSection
+      <Section
         title="导航"
         description="导航需通过语义色清晰区分激活态与未激活态。"
       >
-        <FoundationCard>
+        <Card>
           <nav className="flex flex-wrap gap-2">
             <button className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">
               当前页
@@ -115,14 +111,14 @@ function ComponentStylingsPage() {
               菜单项
             </button>
           </nav>
-        </FoundationCard>
-      </FoundationSection>
-    </FoundationPage>
+        </Card>
+      </Section>
+    </Page>
   );
 }
 
 const meta: Meta = {
-  title: '基础规范/03 组件样式规范',
+  title: 'Design Guide/组件样式',
   component: ComponentStylingsPage,
   parameters: {
     layout: 'fullscreen',
@@ -132,11 +128,11 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const 亮色模式: Story = {
+export const Light: Story = {
   render: () => <ComponentStylingsPage />,
 };
 
-export const 暗色模式: Story = {
+export const Dark: Story = {
   render: () => (
     <div className="dark">
       <ComponentStylingsPage />

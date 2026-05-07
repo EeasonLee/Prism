@@ -2,22 +2,21 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@prism/shared';
 
-export function FoundationPage({
+export function Page({
   title,
   description,
   children,
 }: {
   title: string;
-  description: string;
+  description: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-background p-6 sm:p-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 space-y-2">
-          <p className="micro-text text-ink-faint">基础规范</p>
           <h1 className="heading-3 text-ink">{title}</h1>
-          <p className="body-text text-ink-muted">{description}</p>
+          <div className="body-text text-ink-muted">{description}</div>
         </header>
         <div className="space-y-8">{children}</div>
       </div>
@@ -25,7 +24,7 @@ export function FoundationPage({
   );
 }
 
-export function FoundationSection({
+export function Section({
   title,
   description,
   children,
@@ -45,7 +44,7 @@ export function FoundationSection({
   );
 }
 
-export function FoundationCard({
+export function Card({
   children,
   className,
 }: {
@@ -61,5 +60,32 @@ export function FoundationCard({
     >
       {children}
     </div>
+  );
+}
+
+export function ColorSwatch({
+  token,
+  className,
+  description,
+  lightHsl,
+}: {
+  token: string;
+  className: string;
+  description: string;
+  lightHsl: string;
+}) {
+  return (
+    <Card className="space-y-3">
+      <div
+        className="h-14 rounded-md border border-border"
+        style={{ backgroundColor: `hsl(var(${token}))` }}
+      />
+      <div className="space-y-1">
+        <p className="micro-text text-ink">{token}</p>
+        <p className="micro-text text-ink-faint">{className}</p>
+        <p className="body-text text-ink-muted">{description}</p>
+      </div>
+      <p className="micro-text text-ink-faint">浅色 HSL: {lightHsl}</p>
+    </Card>
   );
 }
