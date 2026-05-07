@@ -15,6 +15,5 @@ export { ArticleDetail } from './components/ArticleDetail';
 export * from './components/ArticleSearchBox';
 export * from './components/ArticlesSearchClient';
 export * from './components/ArticleSidebar';
-export * from './components/Breadcrumb';
 export * from './components/ProductCategories';
 export * from './components/ThemeCategories';
