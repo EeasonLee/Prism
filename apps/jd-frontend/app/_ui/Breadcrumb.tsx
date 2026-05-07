@@ -6,6 +6,38 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { cn } from '@prism/shared';
 import { useBreadcrumbStore, type BreadcrumbItem } from './useBreadcrumbStore';
 
+const LINK_CLASS =
+  'text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+
+function BreadcrumbListItem({
+  item,
+  isFirst,
+  isLast,
+}: {
+  item: BreadcrumbItem;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  return (
+    <li className="flex items-center gap-2">
+      {!isFirst && (
+        <span className="text-ink-faint" aria-hidden="true">
+          /
+        </span>
+      )}
+      {isLast ? (
+        <span className="text-ink font-medium" aria-current="page">
+          {item.label}
+        </span>
+      ) : (
+        <Link href={item.href as Route} className={LINK_CLASS}>
+          {item.label}
+        </Link>
+      )}
+    </li>
+  );
+}
+
 export type { BreadcrumbItem };
 
 interface BreadcrumbProps {
@@ -58,25 +90,12 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       {/* ---- 桌面端：完整路径 ---- */}
       <ol className="hidden items-center gap-2 md:flex">
         {resolvedItems.map((item, index) => (
-          <li key={item.label + index} className="flex items-center gap-2">
-            {index > 0 && (
-              <span className="text-ink-faint" aria-hidden="true">
-                /
-              </span>
-            )}
-            {index === resolvedItems.length - 1 ? (
-              <span className="text-ink font-medium" aria-current="page">
-                {item.label}
-              </span>
-            ) : (
-              <Link
-                href={item.href as Route}
-                className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                {item.label}
-              </Link>
-            )}
-          </li>
+          <BreadcrumbListItem
+            key={item.label + index}
+            item={item}
+            isFirst={index === 0}
+            isLast={index === resolvedItems.length - 1}
+          />
         ))}
       </ol>
 
@@ -87,31 +106,16 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             /* 展开态：横向滚动完整路径 */
             <ol
               ref={scrollRef}
+              role="list"
               className="no-scrollbar flex items-center gap-2 overflow-x-auto whitespace-nowrap"
             >
               {resolvedItems.map((item, index) => (
-                <li
+                <BreadcrumbListItem
                   key={item.label + index}
-                  className="flex items-center gap-2"
-                >
-                  {index > 0 && (
-                    <span className="text-ink-faint" aria-hidden="true">
-                      /
-                    </span>
-                  )}
-                  {index === resolvedItems.length - 1 ? (
-                    <span className="text-ink font-medium" aria-current="page">
-                      {item.label}
-                    </span>
-                  ) : (
-                    <Link
-                      href={item.href as Route}
-                      className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                    >
-                      {item.label}
-                    </Link>
-                  )}
-                </li>
+                  item={item}
+                  isFirst={index === 0}
+                  isLast={index === resolvedItems.length - 1}
+                />
               ))}
             </ol>
           ) : (
@@ -157,25 +161,12 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         /* items ≤ 2：移动端同桌面 */
         <ol className="flex items-center gap-2 md:hidden">
           {resolvedItems.map((item, index) => (
-            <li key={item.label + index} className="flex items-center gap-2">
-              {index > 0 && (
-                <span className="text-ink-faint" aria-hidden="true">
-                  /
-                </span>
-              )}
-              {index === resolvedItems.length - 1 ? (
-                <span className="text-ink font-medium" aria-current="page">
-                  {item.label}
-                </span>
-              ) : (
-                <Link
-                  href={item.href as Route}
-                  className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  {item.label}
-                </Link>
-              )}
-            </li>
+            <BreadcrumbListItem
+              key={item.label + index}
+              item={item}
+              isFirst={index === 0}
+              isLast={index === resolvedItems.length - 1}
+            />
           ))}
         </ol>
       )}
