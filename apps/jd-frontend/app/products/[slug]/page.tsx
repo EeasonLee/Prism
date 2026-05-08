@@ -10,7 +10,6 @@ import type {
   ProductReviewListResult,
   ProductReviewSummary,
 } from '@/features/product';
-import type { ProductQaListResult } from '@/features/product';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
@@ -35,6 +34,11 @@ function getSpecificationGroups(product: {
   specifications: unknown;
 }): ProductSpecificationGroup[] {
   const raw = product.specifications;
+  return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
+}
+
+function getFaqGroups(product: { faqs: unknown }): ProductSpecificationGroup[] {
+  const raw = product.faqs;
   return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
 }
 
@@ -170,18 +174,6 @@ export default async function ProductDetailPage({ params }: Props) {
     },
   };
 
-  let initialProductQa: ProductQaListResult = {
-    productId: 0,
-    sku: decodedSku,
-    items: [],
-    pagination: {
-      page: 1,
-      pageSize: 10,
-      pageCount: 0,
-      total: 0,
-    },
-  };
-
   let deferredRelated: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
   let deferredUpsell: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
 
@@ -193,9 +185,8 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const fetchedProduct = aggregate.core.product;
 
-  const [fetchedReviewsData, fetchedProductQa, fetchedCms] = await Promise.all([
+  const [fetchedReviewsData, fetchedCms] = await Promise.all([
     aggregate.deferred.reviews,
-    aggregate.deferred.productQa,
     aggregate.deferred.cms,
   ]);
 
@@ -208,7 +199,6 @@ export default async function ProductDetailPage({ params }: Props) {
     items: fetchedReviewsData.items,
     pagination: fetchedReviewsData.pagination,
   };
-  initialProductQa = fetchedProductQa;
   deferredRelated = aggregate.deferred.related;
   deferredUpsell = aggregate.deferred.upsell;
 
@@ -243,6 +233,7 @@ export default async function ProductDetailPage({ params }: Props) {
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
   const specificationGroups = getSpecificationGroups(product);
+  const faqGroups = getFaqGroups(product);
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
@@ -294,7 +285,7 @@ export default async function ProductDetailPage({ params }: Props) {
         initialReviews={reviewList.items}
         initialPagination={reviewList.pagination}
         allowSubmit
-        initialProductQa={initialProductQa}
+        faqGroups={faqGroups}
         beforeVideos={
           <Suspense fallback={null}>
             <DeferredUpsellProductsSection promise={deferredUpsell} />

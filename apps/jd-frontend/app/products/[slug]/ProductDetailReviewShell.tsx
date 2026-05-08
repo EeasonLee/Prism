@@ -16,10 +16,13 @@ import type {
   ProductReviewPagination,
   ProductReviewSummary,
 } from '@/features/product';
-import type { ProductQaListResult } from '@/features/product';
-import { ProductQA } from './ProductQA';
-import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
+import type {
+  UnifiedProduct,
+  UnifiedProductImage,
+  ProductSpecificationGroup,
+} from '@/features/product';
 import type { ProductVideoCard, PdpRecipeCard } from '@/features/product';
+import { ProductFaqs } from './ProductFaqs';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -31,7 +34,7 @@ interface ProductDetailReviewShellProps {
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
   allowSubmit?: boolean;
-  initialProductQa: ProductQaListResult;
+  faqGroups?: ProductSpecificationGroup[];
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
   recipes?: PdpRecipeCard[];
@@ -47,7 +50,7 @@ export function ProductDetailReviewShell({
   initialReviews,
   initialPagination,
   allowSubmit = true,
-  initialProductQa,
+  faqGroups = [],
   beforeVideos,
   videos = [],
   recipes = [],
@@ -136,14 +139,11 @@ export function ProductDetailReviewShell({
         </div>
       )}
 
-      <div id="section-product-qa">
-        <ProductQA
-          productId={product.id}
-          sku={reviewSku}
-          initialResult={initialProductQa}
-          allowSubmit={allowSubmit}
-        />
-      </div>
+      {faqGroups.length > 0 && (
+        <div id="section-product-faqs">
+          <ProductFaqs groups={faqGroups} />
+        </div>
+      )}
 
       <ProductBackToTopButton />
     </>

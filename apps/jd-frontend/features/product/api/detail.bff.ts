@@ -19,7 +19,6 @@ import {
   type ProductReviewPagination,
   type ProductReviewSummary,
 } from './reviews.api';
-import { fetchProductQaBySku, type ProductQaListResult } from './qa.api';
 import {
   fetchPdpArticlesBySku,
   fetchPdpProductVideosBySku,
@@ -61,7 +60,6 @@ interface ProductDetailDeferred {
   related: Promise<UnifiedLinkedProduct[]>;
   upsell: Promise<UnifiedLinkedProduct[]>;
   reviews: Promise<ProductReviewsData>;
-  productQa: Promise<ProductQaListResult>;
   cms: Promise<ProductDetailCms | null>;
 }
 
@@ -77,7 +75,6 @@ export interface ProductDetailApiResponse {
   related: UnifiedLinkedProduct[];
   upsell: UnifiedLinkedProduct[];
   reviews: ProductReviewsData;
-  productQa: ProductQaListResult;
   cms: ProductDetailCms | null;
 }
 
@@ -139,15 +136,6 @@ function emptyReviewPagination(): ProductReviewPagination {
     pageSize: 10,
     pageCount: 0,
     total: 0,
-  };
-}
-
-function emptyProductQa(product: UnifiedProduct): ProductQaListResult {
-  return {
-    productId: product.id,
-    sku: product.sku,
-    items: [],
-    pagination: emptyReviewPagination(),
   };
 }
 
@@ -239,11 +227,6 @@ export async function getProductDetailAggregate(
   const reviewsPromise = productPromise.then(product =>
     getProductReviewsBFF(product.sku)
   );
-  const productQaPromise = productPromise.then(product =>
-    fetchProductQaBySku(product.id, product.sku, 1, 10).catch(() =>
-      emptyProductQa(product)
-    )
-  );
   const cmsPromise = productPromise.then(product =>
     getProductCmsBFF(product.sku)
   );
@@ -260,7 +243,6 @@ export async function getProductDetailAggregate(
       related: relatedPromise,
       upsell: upsellPromise,
       reviews: reviewsPromise,
-      productQa: productQaPromise,
       cms: cmsPromise,
     },
   };
@@ -269,11 +251,10 @@ export async function getProductDetailAggregate(
 export async function resolveProductDetailAggregate(
   aggregate: ProductDetailAggregate
 ): Promise<ProductDetailApiResponse> {
-  const [related, upsell, reviews, productQa, cms] = await Promise.all([
+  const [related, upsell, reviews, cms] = await Promise.all([
     aggregate.deferred.related,
     aggregate.deferred.upsell,
     aggregate.deferred.reviews,
-    aggregate.deferred.productQa,
     aggregate.deferred.cms,
   ]);
 
@@ -284,7 +265,6 @@ export async function resolveProductDetailAggregate(
     related,
     upsell,
     reviews,
-    productQa,
     cms,
   };
 }

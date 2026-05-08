@@ -92,6 +92,11 @@ export interface UnifiedProduct extends MagentoProduct {
 
   /** 规格参数：Magento.specifications 自定义属性 */
   specifications: string | null;
+
+  // ── 常见问题 ──
+
+  /** 常见问题：Magento.faqs 自定义属性 */
+  faqs: string | null;
 }
 
 // ─── HTML 工具函数 ────────────────────────────────────────────────────────────
@@ -297,6 +302,7 @@ export function mergeProduct(magento: MagentoProduct): UnifiedProduct {
     seo_title: magento.meta_title ?? null,
     seo_description: magento.meta_description ?? null,
     specifications: magento.specifications ?? null,
+    faqs: magento.faqs ?? null,
   };
 }
 
@@ -375,6 +381,7 @@ export function mapGQLProduct(
     meta_title: raw.meta_title ?? null,
     meta_description: raw.meta_description ?? null,
     specifications: raw.specifications ?? null,
+    faqs: raw.faqs ?? null,
     price: regularPrice,
     final_price: finalPrice,
     special_price: finalPrice < regularPrice ? finalPrice : null,

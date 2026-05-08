@@ -8,7 +8,6 @@ const {
   getRelatedProductsBFFMock,
   fetchReviewsBySkuMock,
   fetchReviewSummaryBySkuMock,
-  fetchProductQaBySkuMock,
   fetchPdpRecipesBySkuMock,
   fetchPdpArticlesBySkuMock,
   fetchPdpProductVideosBySkuMock,
@@ -18,7 +17,6 @@ const {
   getRelatedProductsBFFMock: vi.fn(),
   fetchReviewsBySkuMock: vi.fn(),
   fetchReviewSummaryBySkuMock: vi.fn(),
-  fetchProductQaBySkuMock: vi.fn(),
   fetchPdpRecipesBySkuMock: vi.fn(),
   fetchPdpArticlesBySkuMock: vi.fn(),
   fetchPdpProductVideosBySkuMock: vi.fn(),
@@ -36,10 +34,6 @@ vi.mock('@/features/product/related.bff', () => ({
 vi.mock('@/features/product/reviews.api', () => ({
   fetchReviewsBySku: fetchReviewsBySkuMock,
   fetchReviewSummaryBySku: fetchReviewSummaryBySkuMock,
-}));
-
-vi.mock('@/features/product/qa.api', () => ({
-  fetchProductQaBySku: fetchProductQaBySkuMock,
 }));
 
 vi.mock('@/features/product/content.api', () => ({
@@ -221,36 +215,6 @@ describe('product detail aggregate', () => {
       },
     });
 
-    fetchProductQaBySkuMock.mockResolvedValueOnce({
-      productId: 30,
-      sku: 'BUYDEEM-K568',
-      items: [
-        {
-          id: 501,
-          productId: 30,
-          kind: 'user_qa',
-          sku: 'BUYDEEM-K568',
-          productSku: 'BUYDEEM-K568',
-          authorName: 'Taylor',
-          questionText: 'Does it support 220V?',
-          answerText: 'No, this model is 120V only.',
-          answeredAt: '2026-04-09T00:00:00.000Z',
-          answeredBy: 'Support',
-          status: 'answered',
-          helpfulCount: 3,
-          viewerHasMarkedHelpful: false,
-          createdAt: '2026-04-08T00:00:00.000Z',
-          updatedAt: '2026-04-09T00:00:00.000Z',
-        },
-      ],
-      pagination: {
-        page: 1,
-        pageSize: 10,
-        pageCount: 1,
-        total: 1,
-      },
-    });
-
     fetchPdpRecipesBySkuMock.mockResolvedValueOnce([
       {
         id: 71,
@@ -368,11 +332,6 @@ describe('product detail aggregate', () => {
       },
     });
 
-    await expect(aggregate.deferred.productQa).resolves.toMatchObject({
-      sku: 'BUYDEEM-K568',
-      items: [{ id: 501 }],
-    });
-
     await expect(aggregate.deferred.cms).resolves.toEqual({
       recipes: [
         {
@@ -410,10 +369,6 @@ describe('product detail aggregate', () => {
       reviews: {
         summary: { sku: 'BUYDEEM-K568' },
         items: [{ id: 99 }],
-      },
-      productQa: {
-        sku: 'BUYDEEM-K568',
-        items: [{ id: 501 }],
       },
       cms: {
         recipes: [{ id: 71 }],

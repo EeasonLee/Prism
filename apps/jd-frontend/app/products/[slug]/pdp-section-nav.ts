@@ -42,7 +42,10 @@ export function buildPdpSectionNav(
     });
   }
 
-  sections.push({ id: 'section-product-qa', label: 'Q&A' });
+  const faqRaw = product.faqs as unknown;
+  if (Array.isArray(faqRaw) && faqRaw.length > 0) {
+    sections.push({ id: 'section-product-faqs', label: 'FAQs' });
+  }
 
   if (PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0) {
     sections.push({ id: 'section-blog', label: 'Blog' });

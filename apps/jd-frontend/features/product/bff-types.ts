@@ -353,6 +353,7 @@ export interface MagentoProduct {
   meta_title?: string | null;
   meta_description?: string | null;
   specifications?: string | null;
+  faqs?: string | null;
   thumbnail_url?: string | null;
   image_url?: string | null;
   media_gallery?: MagentoMediaGalleryItem[];
