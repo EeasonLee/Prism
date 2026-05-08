@@ -1,9 +1,10 @@
 'use client';
 
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Loader2 } from 'lucide-react';
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { formatPrice } from '@prism/shared';
+import { useAddToCartAction } from '@/features/cart';
 import type { UnifiedProduct } from '../api/unified.api';
 import type { ProductCardItem } from '../bff-types';
 
@@ -39,10 +40,15 @@ export function ProductCardCompact({
   const imageUrl = isBffItem ? product.image : product.image?.url;
   const title = isBffItem ? product.displayName : product.name;
 
+  const { isAdding, addItemToCart } = useAddToCartAction({
+    openCartOnSuccess: true,
+  });
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    // TODO: Implement add to cart logic
-    console.log('Add to cart:', product.sku);
+    e.stopPropagation();
+    if (isAdding) return;
+    void addItemToCart({ sku: product.sku, qty: 1 });
   };
 
   return (
@@ -73,11 +79,16 @@ export function ProductCardCompact({
 
         <button
           type="button"
-          className="absolute right-2.5 top-2.5 flex h-8 w-8 -translate-y-1 items-center justify-center rounded-full bg-white/90 text-ink opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-brand hover:text-white"
+          className="absolute right-2.5 top-2.5 flex h-8 w-8 -translate-y-1 items-center justify-center rounded-full bg-white/90 text-ink opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-brand hover:text-white disabled:pointer-events-none"
           aria-label="Add to cart"
           onClick={handleAddToCart}
+          disabled={isAdding}
         >
-          <ShoppingCart className="h-3.5 w-3.5" />
+          {isAdding ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <ShoppingCart className="h-3.5 w-3.5" />
+          )}
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-3">
