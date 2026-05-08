@@ -2,6 +2,7 @@ import type { UnifiedProduct } from '@/features/product';
 import type { ProductReviewSummary } from '@/features/product';
 import type { ProductPageCms } from '@/features/product';
 import { PDP_FEATURES } from './pdp-features';
+import { parseHtmlIntoSections } from './parse-html-sections';
 
 export type ProductDetailCms = Partial<ProductPageCms>;
 
@@ -42,8 +43,7 @@ export function buildPdpSectionNav(
     });
   }
 
-  const faqRaw = product.faqs as unknown;
-  if (Array.isArray(faqRaw) && faqRaw.length > 0) {
+  if (parseHtmlIntoSections(product.faqs).length > 0) {
     sections.push({ id: 'section-product-faqs', label: 'FAQs' });
   }
 
@@ -64,8 +64,7 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-features', label: 'Features' });
   }
 
-  const specRaw = product.specifications as unknown;
-  if (Array.isArray(specRaw) && specRaw.length > 0) {
+  if (parseHtmlIntoSections(product.specifications).length > 0) {
     sections.push({ id: 'section-specifications', label: 'Specifications' });
   }
 

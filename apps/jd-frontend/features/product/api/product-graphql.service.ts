@@ -106,7 +106,6 @@ interface GQLProduct {
   url_key: string | null;
   name: string;
   // 自定义属性
-  long_title: string | null;
   cp_label: string | null;
   cp_code: string | null;
   cp_date: string | null;
@@ -160,7 +159,7 @@ const PRODUCT_DETAIL_QUERY = `
         sku
         url_key
         name
-        long_title
+
         cp_label
         cp_code
         cp_date
@@ -286,7 +285,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         sku
         url_key
         name
-        long_title
+
         cp_label
         cp_code
         cp_date

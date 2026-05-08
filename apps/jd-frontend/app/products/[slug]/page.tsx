@@ -37,11 +37,6 @@ function getSpecificationGroups(product: {
   return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
 }
 
-function getFaqGroups(product: { faqs: unknown }): ProductSpecificationGroup[] {
-  const raw = product.faqs;
-  return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
-}
-
 function emptyReviewSummary(sku: string): ProductReviewSummary {
   return {
     sku,
@@ -233,7 +228,6 @@ export default async function ProductDetailPage({ params }: Props) {
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
   const specificationGroups = getSpecificationGroups(product);
-  const faqGroups = getFaqGroups(product);
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
@@ -285,7 +279,6 @@ export default async function ProductDetailPage({ params }: Props) {
         initialReviews={reviewList.items}
         initialPagination={reviewList.pagination}
         allowSubmit
-        faqGroups={faqGroups}
         beforeVideos={
           <Suspense fallback={null}>
             <DeferredUpsellProductsSection promise={deferredUpsell} />
