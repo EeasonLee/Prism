@@ -181,6 +181,109 @@ function unwrapStrapiRelation<T extends object>(raw: unknown): T | null {
   return raw as T;
 }
 
+/**
+ * 从 Strapi 5 关系/媒体响应中提取数组
+ *
+ * Strapi 5 的 manyToMany 关系在 populate（非 fields）时返回
+ * { data: [...] } 格式，并非扁平数组。这里兼容两种格式。
+ */
+function unwrapStrapiArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === 'object' && 'data' in raw) {
+    const d = (raw as Record<string, unknown>).data;
+    if (Array.isArray(d)) return d;
+  }
+  return [];
+}
+
+/**
+ * 按 ID 批量查询 product-video 详情
+ *
+ * 使用自定义后端端点 /api/product-videos/by-ids，
+ * 绕过 Strapi 5 REST API 默认 find 对 relation populate 的限制。
+ */
+async function fetchProductVideosByIds(ids: number[]): Promise<VideoItem[]> {
+  if (ids.length === 0) return [];
+
+  try {
+    const url = `${getStrapiBaseUrl()}/api/product-videos/by-ids?ids=${ids.join(
+      ','
+    )}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      next: {
+        revalidate: REVALIDATE_SECONDS_CMS_PAGE,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(
+        `Failed to fetch product-videos: ${response.status} ${response.statusText}`
+      );
+      return [];
+    }
+
+    const json = await response.json();
+    const data = json.data as unknown[];
+    if (!Array.isArray(data)) {
+      console.warn(
+        '[video-showcase] product-videos API returned non-array data',
+        json
+      );
+      return [];
+    }
+
+    return data
+      .map((raw): VideoItem | null => {
+        const v = raw as Record<string, unknown>;
+
+        // 视频 URL：优先 media 上传文件，fallback 外部 URL
+        // Strapi 5 媒体字段返回 { data: { id, attributes: { url } } }
+        const videoMedia = unwrapStrapiRelation<{ url?: string | null }>(
+          v.video
+        );
+        const uploadUrl = resolveImageUrlFromStrapi(videoMedia?.url ?? null);
+        const externalUrl =
+          typeof v.video_url === 'string' ? v.video_url.trim() : '';
+        const videoUrl = uploadUrl || externalUrl || '';
+
+        if (!videoUrl) return null;
+
+        // 提取关联商品 SKU
+        const productSkus: string[] = [];
+        const productsArr = unwrapStrapiArray(v.products);
+        for (const p of productsArr) {
+          const prod = unwrapStrapiRelation<{ sku?: string | null }>(p);
+          if (prod?.sku) {
+            productSkus.push(prod.sku.trim());
+          }
+        }
+
+        return {
+          id: (v.id as number) ?? 0,
+          videoUrl,
+          title:
+            (typeof v.title === 'string' ? v.title.trim() : '') ||
+            (typeof v.caption === 'string' ? v.caption.trim() : '') ||
+            'Video',
+          caption: typeof v.caption === 'string' ? v.caption.trim() : undefined,
+          thumbnail: transformImage(
+            unwrapStrapiRelation<StrapiImageRaw>(v.thumbnail)
+          ),
+          productSkus,
+        };
+      })
+      .filter((item): item is VideoItem => item !== null);
+  } catch (error) {
+    console.error('Failed to fetch product-videos:', error);
+    return [];
+  }
+}
+
 function formatRecipeTotalMinutes(recipe: RawRecipeRef): string {
   const total = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
   if (total <= 0) return '';
@@ -280,16 +383,6 @@ function mapArticleToContentCard(
     link: `/blog/${categorySlug}/${articleRaw.slug}`,
     metadata,
   };
-}
-
-interface RawProductVideoRef {
-  id?: number;
-  title?: string | null;
-  caption?: string | null;
-  video?: { url?: string | null } | null;
-  video_url?: string | null;
-  thumbnail?: StrapiImageRaw | null;
-  products?: unknown[];
 }
 
 interface RawDealBannerSlide {
@@ -554,7 +647,8 @@ function transformImage(
  * - 禁止破坏性修改现有 Section
  */
 async function transformSection(
-  rawSection: RawStrapiSection
+  rawSection: RawStrapiSection,
+  productVideoMap: Map<number, VideoItem> = new Map()
 ): Promise<PageSection | null> {
   const { __component, id, ...rawProps } = rawSection;
 
@@ -770,40 +864,69 @@ async function transformSection(
     }
 
     case 'page.video-showcase': {
-      const videoList = Array.isArray(rawProps.videos) ? rawProps.videos : [];
-      const videos: VideoItem[] = videoList
-        .map((video): VideoItem | null => {
-          const v = unwrapStrapiRelation<RawProductVideoRef>(video);
-          if (!v) return null;
+      // video-showcase 的 videos 数据来自独立 product-video API 查询，
+      // 不依赖 page API 的深层 populate。这里只从 raw section 拿 ID 列表，再从 map 中查找。
+      const videoRefs = unwrapStrapiArray(rawProps.videos);
+      console.warn(
+        `[video-showcase] transform — id=${id}, videoRefs=${videoRefs.length}, mapSize=${productVideoMap.size}`
+      );
 
-          // 视频 URL：优先媒体库上传文件，fallback 外部 URL
-          const uploadUrl = resolveImageUrlFromStrapi(v.video?.url ?? null);
-          const externalUrl = (v.video_url ?? '').trim();
-          const videoUrl = uploadUrl || externalUrl || '';
+      // 判断是否为旧格式：内联 video-item 组件（包含 videoUrl 或 video_url 字段）
+      const maybeInline = videoRefs[0] as Record<string, unknown> | undefined;
+      const isLegacyFormat =
+        videoRefs.length > 0 &&
+        maybeInline != null &&
+        (typeof maybeInline.videoUrl === 'string' ||
+          typeof maybeInline.video_url === 'string');
 
-          if (!videoUrl) return null;
+      let videos: VideoItem[];
 
-          // 从 products 关系数组中提取 SKU
-          const productSkus: string[] = [];
-          const productsArr = Array.isArray(v.products) ? v.products : [];
-          for (const p of productsArr) {
-            const prod = unwrapStrapiRelation<{ sku?: string | null }>(p);
-            if (prod?.sku) {
-              productSkus.push(prod.sku.trim());
-            }
-          }
+      if (isLegacyFormat) {
+        // 兼容旧格式：内联 video-item 组件，直接从 raw 数据提取
+        console.warn('[video-showcase] using legacy inline video-item format');
+        videos = videoRefs
+          .map((raw): VideoItem | null => {
+            const v = raw as Record<string, unknown>;
+            const videoUrl =
+              (typeof v.videoUrl === 'string' && v.videoUrl.trim()) ||
+              (typeof v.video_url === 'string' && v.video_url.trim()) ||
+              '';
+            if (!videoUrl) return null;
+            return {
+              id: (v.id as number) ?? 0,
+              videoUrl,
+              title: (typeof v.title === 'string' && v.title.trim()) || 'Video',
+              caption:
+                typeof v.caption === 'string'
+                  ? v.caption.trim() || undefined
+                  : undefined,
+              thumbnail: transformImage(v as StrapiImageRaw | null | undefined),
+              productSkus: [],
+            };
+          })
+          .filter((v): v is VideoItem => v !== null);
+      } else {
+        // 新格式：relation ref，从独立 product-video API 查询结果的 map 中查找
+        const videoIds = videoRefs
+          .map(ref => (ref as { id?: number }).id ?? 0)
+          .filter(oid => oid > 0);
+        console.warn(
+          `[video-showcase] relation IDs: ${JSON.stringify(videoIds)}`
+        );
 
-          return {
-            id: v.id ?? 0,
-            videoUrl,
-            title:
-              (v.title ?? '').trim() || (v.caption ?? '').trim() || 'Video',
-            caption: (v.caption ?? '').trim() || undefined,
-            thumbnail: transformImage(v.thumbnail),
-            productSkus,
-          };
-        })
-        .filter((item): item is VideoItem => item !== null);
+        videos = videoIds
+          .map(oid => productVideoMap.get(oid))
+          .filter((v): v is VideoItem => v !== undefined);
+
+        if (videoIds.length > 0 && videos.length === 0) {
+          console.warn(
+            '[video-showcase] no matching data in productVideoMap — ' +
+              'verify /api/product-videos returned data and IDs match'
+          );
+        }
+      }
+
+      console.warn(`[video-showcase] resolved ${videos.length} videos`);
 
       return {
         __component,
@@ -944,9 +1067,7 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.featured-products]=true',
       'populate[sections][on][page.content-carousel][populate][recipe][populate]=*',
       'populate[sections][on][page.content-carousel][populate][article][populate]=*',
-      'populate[sections][on][page.video-showcase][populate][videos][populate][video]=*',
-      'populate[sections][on][page.video-showcase][populate][videos][populate][thumbnail]=*',
-      'populate[sections][on][page.video-showcase][populate][videos][populate][products][fields][0]=sku',
+      'populate[sections][on][page.video-showcase][populate][videos]=true',
       'populate[seo][populate]=*',
       'populate[featuredImage]=*',
     ].join('&');
@@ -984,9 +1105,43 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       return null;
     }
 
-    // 转换 sections
+    // 收集 video-showcase section 中关联的 product-video ID，
+    // 然后单独请求 /api/product-videos 获取完整数据
+    const productVideoIds: number[] = [];
+    for (const section of pageData.sections || []) {
+      if (section.__component === 'page.video-showcase') {
+        const videoRefs = unwrapStrapiArray(section.videos);
+        console.warn(
+          `[video-showcase] page sections — videoRefs type: ${typeof section.videos}, isArray: ${Array.isArray(
+            section.videos
+          )}, hasDataKey: ${
+            typeof section.videos === 'object' &&
+            section.videos !== null &&
+            'data' in section.videos
+          }, count: ${videoRefs.length}`
+        );
+        for (const ref of videoRefs) {
+          const id = (ref as { id?: number }).id;
+          if (id) productVideoIds.push(id);
+        }
+      }
+    }
+
+    console.warn(
+      `[video-showcase] collected ${
+        productVideoIds.length
+      } product-video IDs: ${JSON.stringify(productVideoIds)}`
+    );
+
+    const productVideos =
+      productVideoIds.length > 0
+        ? await fetchProductVideosByIds(productVideoIds)
+        : [];
+    const productVideoMap = new Map(productVideos.map(v => [v.id, v]));
+
+    // 转换 sections，video-showcase 使用独立查询的 product-video 数据
     const sectionsRaw = await Promise.all(
-      (pageData.sections || []).map(transformSection)
+      (pageData.sections || []).map(s => transformSection(s, productVideoMap))
     );
     const sections = sectionsRaw.filter((s): s is PageSection => s !== null);
 

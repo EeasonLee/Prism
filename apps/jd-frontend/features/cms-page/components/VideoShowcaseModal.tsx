@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 
 import { OptimizedImage, Skeleton } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
-import { productQueryFacade, type ProductCardItem } from '@/features/product';
+import type { ProductCardItem } from '@/features/product';
 import type { VideoItem } from '../types';
 
 interface VideoShowcaseModalProps {
@@ -52,7 +52,7 @@ export function VideoShowcaseModal({
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  // 懒加载商品数据
+  // 懒加载商品数据（通过服务端 API 代理查 Meilisearch）
   useEffect(() => {
     if (!open || video.productSkus.length === 0) return;
 
@@ -60,8 +60,28 @@ export function VideoShowcaseModal({
     setIsLoading(true);
     setError(null);
 
-    productQueryFacade
-      .queryBySkus(video.productSkus)
+    fetch('/api/products/by-skus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skus: video.productSkus }),
+    })
+      .then(async res => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            (body as { error?: { message?: string } })?.error?.message ??
+              `Request failed: ${res.status}`
+          );
+        }
+        const body = (await res.json()) as {
+          success: boolean;
+          data: ProductCardItem[];
+        };
+        if (!body.success || !Array.isArray(body.data)) {
+          throw new Error('Invalid response');
+        }
+        return body.data;
+      })
       .then(items => {
         if (!cancelled) {
           setProducts(items);
