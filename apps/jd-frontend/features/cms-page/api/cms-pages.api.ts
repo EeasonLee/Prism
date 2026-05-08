@@ -282,11 +282,14 @@ function mapArticleToContentCard(
   };
 }
 
-interface RawVideoItem {
+interface RawProductVideoRef {
   id?: number;
-  videoUrl?: string;
-  title?: string;
+  title?: string | null;
+  caption?: string | null;
+  video?: { url?: string | null } | null;
+  video_url?: string | null;
   thumbnail?: StrapiImageRaw | null;
+  products?: unknown[];
 }
 
 interface RawDealBannerSlide {
@@ -768,21 +771,45 @@ async function transformSection(
 
     case 'page.video-showcase': {
       const videoList = Array.isArray(rawProps.videos) ? rawProps.videos : [];
-      const videos: VideoItem[] = videoList.map((video): VideoItem => {
-        const v = video as RawVideoItem;
-        return {
-          id: v.id ?? 0,
-          videoUrl: v.videoUrl ?? '',
-          title: v.title ?? '',
-          thumbnail: transformImage(v.thumbnail),
-        };
-      });
+      const videos: VideoItem[] = videoList
+        .map((video): VideoItem | null => {
+          const v = unwrapStrapiRelation<RawProductVideoRef>(video);
+          if (!v) return null;
+
+          // 视频 URL：优先媒体库上传文件，fallback 外部 URL
+          const uploadUrl = resolveImageUrlFromStrapi(v.video?.url ?? null);
+          const externalUrl = (v.video_url ?? '').trim();
+          const videoUrl = uploadUrl || externalUrl || '';
+
+          if (!videoUrl) return null;
+
+          // 从 products 关系数组中提取 SKU
+          const productSkus: string[] = [];
+          const productsArr = Array.isArray(v.products) ? v.products : [];
+          for (const p of productsArr) {
+            const prod = unwrapStrapiRelation<{ sku?: string | null }>(p);
+            if (prod?.sku) {
+              productSkus.push(prod.sku.trim());
+            }
+          }
+
+          return {
+            id: v.id ?? 0,
+            videoUrl,
+            title:
+              (v.title ?? '').trim() || (v.caption ?? '').trim() || 'Video',
+            caption: (v.caption ?? '').trim() || undefined,
+            thumbnail: transformImage(v.thumbnail),
+            productSkus,
+          };
+        })
+        .filter((item): item is VideoItem => item !== null);
 
       return {
         __component,
         id,
         props: {
-          title: rawProps.title || '',
+          title: (rawProps.title as string) || '',
           videos,
         } as VideoShowcaseProps,
       };
@@ -917,7 +944,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
       'populate[sections][on][page.featured-products]=true',
       'populate[sections][on][page.content-carousel][populate][recipe][populate]=*',
       'populate[sections][on][page.content-carousel][populate][article][populate]=*',
-      'populate[sections][on][page.video-showcase][populate][videos][populate]=*',
+      'populate[sections][on][page.video-showcase][populate][videos][populate][video]=*',
+      'populate[sections][on][page.video-showcase][populate][videos][populate][thumbnail]=*',
+      'populate[sections][on][page.video-showcase][populate][videos][populate][products][fields][0]=sku',
       'populate[seo][populate]=*',
       'populate[featuredImage]=*',
     ].join('&');

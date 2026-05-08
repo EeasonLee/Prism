@@ -200,7 +200,10 @@ export interface VideoItem {
   id: number;
   videoUrl: string;
   title: string;
+  caption?: string;
   thumbnail?: StrapiImage | null;
+  /** 从 product-video.products 关系提取的 SKU 列表，用于懒加载商品卡片 */
+  productSkus: string[];
 }
 
 /**
