@@ -4,18 +4,16 @@ import {
   fetchCategoryCounts,
   searchArticles,
   type CategoryDetail,
-} from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
-import { buildStaticMetadata } from '@/lib/seo';
+  type ArticlesFilters,
+  type ArticlesSearchInitialData,
+  type CategoryWithCounts,
+  type TagOption,
+} from '@/features/blog/api';
+import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
-import type {
-  ArticlesFilters,
-  ArticlesSearchInitialData,
-  CategoryWithCounts,
-  TagOption,
-} from '@prism/blog';
-import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
-import { ArticlesSearchClient } from '@prism/blog/components/ArticlesSearchClient';
-import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
+import { ArticlesSearchClient } from '@/features/blog/components/ArticlesSearchClient';
+import { Breadcrumb } from '@/app/_ui/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { redirect } from 'next/navigation';
 

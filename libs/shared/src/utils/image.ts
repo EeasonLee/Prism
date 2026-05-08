@@ -1,101 +1,36 @@
 /**
- * 获取环境变量（避免循环依赖）
+ * 图片 URL 处理工具
+ *
+ * 统一入口：resolveImageUrl() —— 处理商品图、评论图、CMS 页面图、Strapi 内容图、外部 URL。
+ *
+ * 纯函数，零环境依赖。baseUrl / domainRewriteMap 由调用方显式传入。
+ *
+ * CDN 路径结构：
+ * - 商品图：  ${baseUrl}/media/{size}/catalog/product/${subPath}
+ * - 评论图：  ${baseUrl}/media/{size}/amasty/review/${subPath}
+ * - 页面图：  ${baseUrl}/media/{size}/pages/${subPath}
  */
-function getEnv(key: string): string | undefined {
-  if (typeof globalThis !== 'undefined' && 'window' in globalThis) {
-    // 客户端：从 process.env 获取（Next.js 会在构建时注入）
-    return process.env[key];
-  }
-  // 服务端：从 process.env 获取
-  return process.env[key];
-}
 
-function isDevelopment(): boolean {
-  return process.env['NODE_ENV'] === 'development';
-}
+// ─── 尺寸常量 ──────────────────────────────────────────────────────────────────
 
-function getDefaultImageBaseUrl(): string {
-  return isDevelopment()
-    ? 'http://localhost:1337'
-    : 'https://d2s2mafqv46idp.cloudfront.net/joydeem';
-}
+const CDN_IMAGE_SIZES = [80, 100, 150, 350, 600, 800] as const;
 
-const JOYDEEM_PRODUCT_IMAGE_BASE_URL =
-  'https://d2s2mafqv46idp.cloudfront.net/joydeem';
+export type ProductImageSize = (typeof CDN_IMAGE_SIZES)[number];
 
-function getImageBaseUrl(): string {
-  return getEnv('NEXT_PUBLIC_IMAGE_BASE_URL') || getDefaultImageBaseUrl();
-}
+const CDN_IMAGE_SIZE_SET = new Set<number>(CDN_IMAGE_SIZES);
+const MAX_CDN_IMAGE_SIZE = 800;
 
-function getConfiguredImageBaseUrl(): string | null {
-  const configured = getEnv('NEXT_PUBLIC_IMAGE_BASE_URL')?.trim();
-  return configured ? configured : null;
-}
+// ─── 类型 ──────────────────────────────────────────────────────────────────────
 
-function extractProductImageBaseUrlFromRawUrl(rawUrl: string): string | null {
-  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(rawUrl);
-    const normalizedPath = parsed.pathname.replace(/\/{2,}/g, '/');
-    const mediaSegmentIndex = normalizedPath.toLowerCase().indexOf('/media/');
-
-    if (mediaSegmentIndex > 0) {
-      const prefixPath = normalizedPath
-        .slice(0, mediaSegmentIndex)
-        .replace(/\/+$/, '');
-
-      if (prefixPath) {
-        return normalizeProductImageBaseUrl(`${parsed.origin}${prefixPath}`);
-      }
-    }
-
-    return normalizeProductImageBaseUrl(parsed.origin);
-  } catch {
-    return null;
-  }
-}
-
-function resolveProductImageBaseUrl(rawUrl: string): string {
-  const configured = getConfiguredImageBaseUrl();
-  if (configured) {
-    return normalizeProductImageBaseUrl(configured);
-  }
-
-  // 未显式配置时：若原图是完整 URL，优先沿用其 origin，避免在开发环境强制回落到 localhost。
-  const extractedFromRawUrl = extractProductImageBaseUrlFromRawUrl(rawUrl);
-  if (extractedFromRawUrl) {
-    return extractedFromRawUrl;
-  }
-
-  return normalizeProductImageBaseUrl(getImageBaseUrl());
-}
-
-function isPrivateImageHost(url: string): boolean {
-  return (
-    url.startsWith('http://localhost') ||
-    url.startsWith('http://127.0.0.1') ||
-    url.startsWith('http://192.168') ||
-    url.startsWith('http://10.') ||
-    url.startsWith('http://172.')
-  );
-}
-
-/**
- * Strapi 图片格式类型
- */
+/** Strapi 图片格式 URL */
 export interface StrapiImageFormats {
-  small?: { url: string };
-  medium?: { url: string };
-  large?: { url: string };
-  thumbnail?: { url: string };
+  small?: { url: string; width?: number; height?: number };
+  medium?: { url: string; width?: number; height?: number };
+  large?: { url: string; width?: number; height?: number };
+  thumbnail?: { url: string; width?: number; height?: number };
 }
 
-/**
- * Strapi 图片对象类型
- */
+/** Strapi 图片对象（完整版，兼容 Strapi v4/v5） */
 export interface StrapiImage {
   id?: number;
   documentId?: string;
@@ -120,67 +55,90 @@ export interface StrapiImage {
   locale?: string | null;
 }
 
-const PRODUCT_IMAGE_SIZES = [80, 100, 150, 350, 600, 800] as const;
+/** StrapiImage 的宽松版本——resolveImageUrl 只要求 url 和可选的 formats */
+export interface StrapiImageLike {
+  url?: string | null;
+  alternativeText?: string | null;
+  width?: number | null;
+  height?: number | null;
+  formats?: {
+    large?: { url?: string | null } | null;
+    medium?: { url?: string | null } | null;
+    small?: { url?: string | null } | null;
+    thumbnail?: { url?: string | null } | null;
+  } | null;
+}
 
-export type ProductImageSize = (typeof PRODUCT_IMAGE_SIZES)[number];
+// ─── CDN 子目录枚举 ────────────────────────────────────────────────────────────
 
-const PRODUCT_IMAGE_SIZE_SET = new Set<number>(PRODUCT_IMAGE_SIZES);
+/** CDN 图片子目录，对应不同的媒体类型 */
+export type ImageCdnSubPath = 'catalog/product' | 'amasty/review' | 'pages';
 
-const MAX_PRODUCT_IMAGE_SIZE: ProductImageSize = 800;
-const DEFAULT_PRODUCT_IMAGE_SIZE: ProductImageSize = 80;
+// ─── resolveImageUrl 选项 ──────────────────────────────────────────────────────
 
-function extractExistingProductImageSize(pathname: string): number | null {
+export interface ResolveImageUrlOptions {
+  /**
+   * CDN 图片尺寸：80 / 100 / 150 / 350 / 600 / 800
+   * - 未传入时保持原尺寸（若 URL 已有尺寸）或原始路径
+   * - 超出 800 时取最接近的合法尺寸
+   */
+  size?: number;
+  /**
+   * Strapi 图片格式偏好（仅 source 是 StrapiImage/StrapiImageLike 对象时生效）
+   * - 'original' 使用原图 url
+   * - 指定格式不存在时回退：large → medium → small → original
+   */
+  format?: 'large' | 'medium' | 'small' | 'thumbnail' | 'original';
+  /**
+   * CDN 子目录，仅在 URL 路径无法自动识别类型时需要显式指定
+   * - URL 中含有 /catalog/product/ 时自动识别为商品图，无需指定
+   * - 评论图 /pages/ 等需要显式传入
+   */
+  subPath?: ImageCdnSubPath;
+  /**
+   * CDN 基础 URL（不含 /media 后缀）
+   * 不传时：对绝对 URL 保持原样，对相对路径直接返回相对路径
+   */
+  baseUrl?: string;
+  /**
+   * 域名重写映射，键为匹配正则（如 'joydeem.com'），值为替换后的 base URL
+   * 用于将历史域名重写到 CDN
+   */
+  domainRewriteMap?: Record<string, string>;
+}
+
+// ─── 内部：URL 解析工具 ────────────────────────────────────────────────────────
+
+function extractPathname(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      return new URL(trimmed).pathname;
+    } catch {
+      return null;
+    }
+  }
+  return trimmed.split('?')[0]?.split('#')[0] ?? trimmed;
+}
+
+function extractExistingSize(pathname: string): number | null {
   const normalizedPath = pathname.replace(/\/{2,}/g, '/');
-  const match = normalizedPath.match(/\/media\/(\d+)\/catalog\/product\/.+/i);
+  const match = normalizedPath.match(/\/media\/(\d+)\/[^/]+\/.+/i);
   if (!match) return null;
-
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function extractProductMediaSubPath(pathname: string): string | null {
-  const normalizedPath = pathname.replace(/\/{2,}/g, '/');
-  const patterns = [
-    /\/media\/catalog\/product\/cache\/[^/]+\/(.+)/i,
-    /\/media\/(\d+)\/catalog\/product\/(.+)/i,
-    /\/media\/catalog\/product\/(.+)/i,
-  ];
+function normalizeCdnSize(preferredSize?: number): number | null {
+  if (preferredSize === undefined || preferredSize === null) return null;
+  if (!Number.isFinite(preferredSize) || preferredSize <= 0) return null;
+  if (preferredSize > MAX_CDN_IMAGE_SIZE) return null;
 
-  for (const pattern of patterns) {
-    const match = normalizedPath.match(pattern);
-    if (!match) continue;
+  if (CDN_IMAGE_SIZE_SET.has(preferredSize)) return preferredSize;
 
-    const subPath = (match[2] ?? match[1] ?? '').replace(/^\/+/, '');
-    if (subPath) {
-      return subPath;
-    }
-  }
-
-  return null;
-}
-
-function normalizeProductImageSize(
-  preferredSize?: number
-): ProductImageSize | null {
-  if (preferredSize === undefined || preferredSize === null) {
-    return null;
-  }
-
-  if (!Number.isFinite(preferredSize) || preferredSize <= 0) {
-    return null;
-  }
-
-  if (preferredSize > MAX_PRODUCT_IMAGE_SIZE) {
-    return null;
-  }
-
-  if (PRODUCT_IMAGE_SIZE_SET.has(preferredSize)) {
-    return preferredSize as ProductImageSize;
-  }
-
-  let nearest: ProductImageSize = PRODUCT_IMAGE_SIZES[0];
+  let nearest: ProductImageSize = CDN_IMAGE_SIZES[0];
   let minDelta = Math.abs(preferredSize - nearest);
-  for (const size of PRODUCT_IMAGE_SIZES) {
+  for (const size of CDN_IMAGE_SIZES) {
     const delta = Math.abs(preferredSize - size);
     if (delta < minDelta) {
       nearest = size;
@@ -190,136 +148,373 @@ function normalizeProductImageSize(
   return nearest;
 }
 
-function normalizeProductImageBaseUrl(baseUrl: string): string {
-  const trimmed = baseUrl.replace(/\/+$/, '');
-  const withoutMediaPagesSegment = trimmed.replace(
-    /\/media\/pages(?:\/.*)?$/i,
-    ''
-  );
-  const withoutMediaSuffix = withoutMediaPagesSegment.replace(/\/media$/i, '');
-  const normalized = withoutMediaSuffix || withoutMediaPagesSegment || trimmed;
-
-  // 统一将 Joydeem 商品图指向 CloudFront，避免回落到源站域名。
-  if (/^https?:\/\/(?:www\.)?joydeem\.com(?:\/|$)/i.test(normalized)) {
-    return JOYDEEM_PRODUCT_IMAGE_BASE_URL;
-  }
-
+/** 规范化 CDN base URL：剥离 /media 后缀，去除末尾斜杠 */
+function normalizeBaseUrl(rawBaseUrl: string): string {
+  const trimmed = rawBaseUrl.replace(/\/+$/, '');
+  const withoutMediaPages = trimmed.replace(/\/media\/pages(?:\/.*)?$/i, '');
+  const normalized =
+    withoutMediaPages.replace(/\/media$/i, '') || withoutMediaPages || trimmed;
   return normalized;
 }
 
-/**
- * 规范化 Joydeem 商品图 URL：
- * - 自动识别并移除 Magento cache 路径段
- * - 输出到 CloudFront joydeem 根路径
- * - 支持 80/100/150/350/600/800 尺寸目录（仅显式传入时）
- * - 请求尺寸 > 800 时，回退到默认尺寸目录（80）
- */
-export function processProductImageUrl(
-  url: string | null | undefined,
-  preferredSize?: number
-): string | null {
-  if (!url) return null;
+/** 判断是否为私有/本地地址（开发环境 Strapi） */
+function isPrivateImageHost(url: string): boolean {
+  return (
+    url.startsWith('http://localhost') ||
+    url.startsWith('http://127.0.0.1') ||
+    url.startsWith('http://192.168') ||
+    url.startsWith('http://10.') ||
+    url.startsWith('http://172.')
+  );
+}
 
-  const trimmed = url.trim();
-  if (!trimmed) return null;
+// ─── 内部：从绝对 URL 提取 base 和路径信息 ───────────────────────────────────
 
-  let pathname = trimmed;
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    try {
-      pathname = new URL(trimmed).pathname;
-    } catch {
-      return null;
-    }
-  } else {
-    pathname = trimmed.split('?')[0]?.split('#')[0] ?? trimmed;
+interface ParsedAbsoluteUrl {
+  baseUrl: string;
+  pathname: string;
+  existingSize: number | null;
+  detectedSubPath: ImageCdnSubPath | null;
+  fileSubPath: string | null;
+}
+
+function parseAbsoluteUrl(url: string): ParsedAbsoluteUrl | null {
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.replace(/\/{2,}/g, '/');
+    const origin = `${parsed.protocol}//${parsed.host}`;
+
+    const pathInfo = detectPathInfo(pathname);
+    return {
+      baseUrl: normalizeBaseUrl(origin),
+      pathname,
+      existingSize: extractExistingSize(pathname),
+      detectedSubPath: pathInfo?.subPath ?? null,
+      fileSubPath: pathInfo?.fileSubPath ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+interface PathInfo {
+  subPath: ImageCdnSubPath;
+  fileSubPath: string;
+}
+
+function detectPathInfo(pathname: string): PathInfo | null {
+  const normalizedPath = pathname.replace(/\/{2,}/g, '/');
+
+  // 商品图 /catalog/product/...
+  let match = normalizedPath.match(
+    /\/media\/(?:\d+\/)?catalog\/product\/(?:cache\/[^/]+\/)?(.+)/i
+  );
+  if (match) {
+    return {
+      subPath: 'catalog/product',
+      fileSubPath: match[1].replace(/^\/+/, ''),
+    };
   }
 
-  const subPath = extractProductMediaSubPath(pathname);
-  if (!subPath) return null;
+  // 评论图 /amasty/review/...
+  match = normalizedPath.match(/\/media\/(?:\d+\/)?amasty\/review\/(.+)/i);
+  if (match) {
+    return {
+      subPath: 'amasty/review',
+      fileSubPath: match[1].replace(/^\/+/, ''),
+    };
+  }
 
-  const normalizedBaseUrl = resolveProductImageBaseUrl(trimmed);
-  const normalizedSubPath = subPath.replace(/^\/+/, '');
-  const existingSize = extractExistingProductImageSize(pathname);
-  const targetSize = normalizeProductImageSize(preferredSize);
+  // 页面图 /pages/...
+  match = normalizedPath.match(/\/media\/(?:\d+\/)?pages\/(.+)/i);
+  if (match) {
+    return { subPath: 'pages', fileSubPath: match[1].replace(/^\/+/, '') };
+  }
 
-  if (targetSize === null) {
-    const normalizedExistingSize = normalizeProductImageSize(
-      existingSize ?? undefined
+  return null;
+}
+
+// ─── 内部：构建 CDN URL ────────────────────────────────────────────────────────
+
+function buildCdnUrl(
+  subPath: ImageCdnSubPath,
+  fileSubPath: string,
+  baseUrl: string,
+  size?: number
+): string {
+  const normalizedBase = normalizeBaseUrl(baseUrl);
+  const resolvedSize = normalizeCdnSize(size);
+  const normalizedFile = fileSubPath.replace(/^\/+/, '');
+
+  // 只有显式传入合法 size 时才插入 /media/{size}/ 层级
+  if (resolvedSize !== null) {
+    return `${normalizedBase}/media/${resolvedSize}/${subPath}/${normalizedFile}`;
+  }
+  return `${normalizedBase}/media/${subPath}/${normalizedFile}`;
+}
+
+// ─── 内部：应用域名重写 ────────────────────────────────────────────────────────
+
+function applyDomainRewrite(
+  url: string,
+  rewriteMap?: Record<string, string>
+): string | null {
+  if (!rewriteMap) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.host.replace(/^www\./, '');
+    const hostWithWww = `www.${host}`;
+
+    // 精确匹配优先，再试不带 www 的匹配
+    for (const [pattern, target] of Object.entries(rewriteMap)) {
+      const normalizedPattern = pattern.replace(/^www\./, '');
+      if (
+        host === normalizedPattern ||
+        hostWithWww === `www.${normalizedPattern}`
+      ) {
+        return `${target}${parsed.pathname}`;
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return null;
+}
+
+// ─── 内部：处理相对路径 ────────────────────────────────────────────────────────
+
+function resolveRelativePath(
+  rawUrl: string,
+  options?: ResolveImageUrlOptions
+): string | null {
+  const pathname = extractPathname(rawUrl);
+  if (!pathname) return null;
+
+  // Next.js 本地静态资源（public 目录），不走 CDN
+  if (
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/_next/') ||
+    pathname === '/favicon.ico'
+  ) {
+    return pathname;
+  }
+
+  const pathInfo = detectPathInfo(pathname);
+  const effectiveSubPath = options?.subPath ?? pathInfo?.subPath;
+  const fileSubPath = pathInfo?.fileSubPath ?? pathname.replace(/^\/+/, '');
+
+  if (effectiveSubPath && options?.baseUrl) {
+    return buildCdnUrl(
+      effectiveSubPath,
+      fileSubPath,
+      options.baseUrl,
+      options?.size
     );
-    if (normalizedExistingSize !== null) {
-      return `${normalizedBaseUrl}/media/${normalizedExistingSize}/catalog/product/${normalizedSubPath}`;
+  }
+
+  if (effectiveSubPath && !options?.baseUrl) {
+    // 有 CDN 路径信息但没有 baseUrl，返回规范化相对路径
+    const normalizedFile = fileSubPath.replace(/^\/+/, '');
+    const resolvedSize = normalizeCdnSize(options?.size);
+    if (resolvedSize !== null) {
+      return `/media/${resolvedSize}/${effectiveSubPath}/${normalizedFile}`;
     }
-    return `${normalizedBaseUrl}/media/${DEFAULT_PRODUCT_IMAGE_SIZE}/catalog/product/${normalizedSubPath}`;
+    return `/media/${effectiveSubPath}/${normalizedFile}`;
   }
 
-  return `${normalizedBaseUrl}/media/${targetSize}/catalog/product/${normalizedSubPath}`;
+  // 未知路径类型
+  if (options?.baseUrl) {
+    const normalizedBaseUrl = options.baseUrl.replace(/\/+$/, '');
+    const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+    return `${normalizedBaseUrl}${normalizedPath}`;
+  }
+
+  // 无 baseUrl，返回原始相对路径
+  return pathname.startsWith('/') ? pathname : `/${pathname}`;
 }
 
-/**
- * 处理图片 URL
- * - 完整路径（http:// 或 https:// 开头）：直接返回
- * - 相对路径：根据环境变量拼接前缀
- *   - 开发环境：http://localhost:1337（可通过 NEXT_PUBLIC_IMAGE_BASE_URL 覆盖）
- *   - 生产环境：https://d2s2mafqv46idp.cloudfront.net/joydeem（可通过 NEXT_PUBLIC_IMAGE_BASE_URL 覆盖）
- */
-export function processImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
+// ─── 内部：处理完整 URL ───────────────────────────────────────────────────────
 
-  const normalizedProductImageUrl = processProductImageUrl(url);
-  if (normalizedProductImageUrl) {
-    return normalizedProductImageUrl;
-  }
-
-  // 完整路径，直接返回
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-
-  // 相对路径，根据环境变量拼接前缀
-  const baseUrl = getImageBaseUrl();
-
-  // 确保 baseUrl 不以 / 结尾（除了根路径）
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '') || baseUrl;
-
-  // 确保路径以 / 开头
-  const path = url.startsWith('/') ? url : `/${url}`;
-  return `${normalizedBaseUrl}${path}`;
-}
-
-/**
- * 从 Strapi 图片对象中提取 URL
- * 优先使用指定格式；original 表示直接用原图；若指定格式不存在则回退：large -> medium -> small -> original
- */
-export function extractImageUrl(
-  image: StrapiImage | null | undefined,
-  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail' | 'original'
+function resolveAbsoluteUrl(
+  url: string,
+  options?: ResolveImageUrlOptions
 ): string | null {
-  if (!image) return null;
+  const trimmed = url.trim();
+  const parsed = parseAbsoluteUrl(trimmed);
 
+  if (!parsed) return trimmed;
+
+  // 域名重写：使用 domainRewriteMap
+  const rewritten = applyDomainRewrite(trimmed, options?.domainRewriteMap);
+  if (rewritten) {
+    // 重写后重新解析
+    const rewrittenParsed = parseAbsoluteUrl(rewritten);
+    if (rewrittenParsed?.detectedSubPath && rewrittenParsed.fileSubPath) {
+      const effectiveSubPath =
+        options?.subPath ?? rewrittenParsed.detectedSubPath;
+      return buildCdnUrl(
+        effectiveSubPath,
+        rewrittenParsed.fileSubPath,
+        options?.baseUrl ?? rewrittenParsed.baseUrl,
+        options?.size ??
+          normalizeCdnSize(rewrittenParsed.existingSize ?? undefined) ??
+          undefined
+      );
+    }
+    return rewritten;
+  }
+
+  // 有 CDN 路径信息，重构 URL
+  const effectiveSubPath = options?.subPath ?? parsed.detectedSubPath;
+  if (effectiveSubPath && parsed.fileSubPath) {
+    const resolvedSize =
+      normalizeCdnSize(options?.size) ??
+      normalizeCdnSize(parsed.existingSize ?? undefined);
+    const finalBase = options?.baseUrl
+      ? normalizeBaseUrl(options.baseUrl)
+      : parsed.baseUrl;
+    return buildCdnUrl(
+      effectiveSubPath,
+      parsed.fileSubPath,
+      finalBase,
+      resolvedSize ?? undefined
+    );
+  }
+
+  // 无需重构，原样返回
+  return trimmed;
+}
+
+// ─── 内部：从对象提取 URL 字符串 ──────────────────────────────────────────────
+
+function extractUrlFromImage(
+  image: StrapiImageLike | StrapiImage,
+  preferredFormat?: ResolveImageUrlOptions['format']
+): string | null {
   let url: string | undefined;
 
   if (preferredFormat === 'original') {
-    url = image.url;
+    url = image.url ?? undefined;
   } else if (preferredFormat && image.formats?.[preferredFormat]) {
-    url = image.formats[preferredFormat].url;
+    const fmt = image.formats[preferredFormat];
+    url = fmt?.url ?? undefined;
   }
+
   if (!url) {
-    // 指定格式不存在或未指定时，按优先级回退
+    // 回退：large → medium → small → original
     url =
-      image.formats?.large?.url ||
-      image.formats?.medium?.url ||
-      image.formats?.small?.url ||
-      image.url;
+      image.formats?.large?.url ??
+      image.formats?.medium?.url ??
+      image.formats?.small?.url ??
+      image.formats?.thumbnail?.url ??
+      image.url ??
+      undefined;
   }
 
   return url || null;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// 公开 API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * 统一的图片 URL 处理入口
+ *
+ * 纯函数，零环境依赖。baseUrl 和 domainRewriteMap 由调用方显式传入。
+ *
+ * 输入可以是：
+ * - URL 字符串（完整/相对）
+ * - StrapiImage / StrapiImageLike 对象
+ * - null / undefined
+ *
+ * 自动处理：
+ * - 商品图 → CDN /media/{size}/catalog/product/{path}
+ * - 评论图 → CDN /media/{size}/amasty/review/{path}（需传 subPath）
+ * - 页面图 → CDN /media/{size}/pages/{path}
+ * - 域名重写 → 通过 domainRewriteMap 配置
+ * - 相对路径 → 拼接 baseUrl（若提供）
+ * - StrapiImage 对象 → 自动按 format 提取 URL
+ * - 外部域名 → 原样返回
+ *
+ * @example
+ * // 商品图 + 尺寸
+ * resolveImageUrl('/media/catalog/product/j/d/jd-123.jpg', { size: 350, baseUrl: 'https://cdn.example.com' })
+ *
+ * // Strapi 图片对象
+ * resolveImageUrl(article.featuredImage, { format: 'large' })
+ *
+ * // 评论图
+ * resolveImageUrl('/uploads/review.jpg', { subPath: 'amasty/review', size: 800, baseUrl: 'https://cdn.example.com' })
+ */
+export function resolveImageUrl(
+  source: string | StrapiImage | StrapiImageLike | null | undefined,
+  options?: ResolveImageUrlOptions
+): string | null {
+  if (!source) return null;
+
+  if (typeof source === 'object') {
+    const rawUrl = extractUrlFromImage(source, options?.format);
+    if (!rawUrl) return null;
+    return resolveRawUrl(rawUrl, options);
+  }
+
+  return resolveRawUrl(source, options);
+}
+
+function resolveRawUrl(
+  rawUrl: string,
+  options?: ResolveImageUrlOptions
+): string | null {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return resolveAbsoluteUrl(trimmed, options);
+  }
+
+  return resolveRelativePath(trimmed, options);
+}
+
+/**
+ * 根据显示宽度自动选择最优 CDN 尺寸
+ * 按 retina 屏计算所需像素，选最接近的 CDN 尺寸
+ *
+ * @example
+ * getOptimalCdnSize(350)  // 卡片宽 350px → 350*2=700 → CDN 800
+ * getOptimalCdnSize(80)   // 缩略图 80px → 80*2=160 → CDN 150
+ * getOptimalCdnSize(48)   // 图标 48px → 48*2=96 → CDN 100
+ */
+export function getOptimalCdnSize(
+  maxDisplayWidth: number,
+  pixelRatio = 2
+): ProductImageSize {
+  const requiredPx = maxDisplayWidth * pixelRatio;
+
+  // 从小到大遍历 CDN 尺寸，找到第一个大于等于所需像素的
+  for (const size of CDN_IMAGE_SIZES) {
+    if (size >= requiredPx) return size;
+  }
+
+  // 超过最大尺寸，返回最大值
+  return CDN_IMAGE_SIZES[CDN_IMAGE_SIZES.length - 1];
+}
+
+/** StrapiImage 对象 URL 提取，内部使用。外部优先用 resolveImageUrl() */
+export function extractImageUrl(
+  image: StrapiImage | null | undefined,
+  preferredFormat?: 'large' | 'medium' | 'small' | 'thumbnail' | 'original'
+): string | null {
+  if (!image) return null;
+  return extractUrlFromImage(image, preferredFormat);
+}
+
 /**
  * 判断图片是否需要禁用优化（用于 Next.js Image 组件的 unoptimized 属性）
+ * - 外部 CDN 域名 → true（CDN 已做优化）
+ * - 本地地址（localhost / 127.0.0.1 / 192.168.x.x）→ false（走 Next.js 优化）
  */
 export function shouldDisableImageOptimization(url: string | null): boolean {
   if (!url) return false;
-
   return !isPrivateImageHost(url);
 }

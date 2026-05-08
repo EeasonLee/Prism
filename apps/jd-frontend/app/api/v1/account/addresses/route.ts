@@ -1,5 +1,5 @@
-import { withAccountService } from '@/lib/api/bff/account/http';
-import type { AddressInput } from '@/lib/api/bff/account/types';
+import { withAccountService } from '@/features/account/http.api';
+import type { AddressInput } from '@/features/account/types';
 
 export const dynamic = 'force-dynamic';
 

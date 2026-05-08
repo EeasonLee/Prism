@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { categoryService } from '@/lib/services/category.service';
-import { mapBreadcrumbs } from '@/lib/mappers/category.mapper';
+import { categoryService } from '@/features/category';
+import { mapBreadcrumbs } from '@/features/category';
 
 export async function GET(
   _request: Request,

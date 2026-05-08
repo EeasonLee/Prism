@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
-import { getRecipeBySlug } from '../../../../lib/api/recipes';
+import { getRecipeBySlug } from '@/features/recipe';
 import {
   buildBreadcrumbSchema,
   buildRecipeMetadata,
   buildRecipeSchema,
-} from '../../../../lib/seo';
-import { RecipeDetail } from '../../components/RecipeDetail';
+} from '@/shared/utils/seo';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { PageContainer } from '@prism/ui';
+import { RecipeDetail } from '@/features/recipe';
 
 type RecipeDetailPageProps = {
   params: Promise<{
@@ -65,6 +67,18 @@ export default async function RecipeDetailPage({
     }
 
     const canonicalCategory = actualCategorySlug ?? category;
+    const breadcrumbItems: BreadcrumbItem[] = [
+      { label: 'Recipes', href: '/recipes' },
+      ...(primaryCategory
+        ? [
+            {
+              label: primaryCategory.name,
+              href: `/recipes/${primaryCategory.slug}`,
+            },
+          ]
+        : []),
+      { label: recipe.title },
+    ];
     const breadcrumbSchema = buildBreadcrumbSchema([
       { name: 'Recipes', path: '/recipes' },
       ...(primaryCategory
@@ -87,6 +101,9 @@ export default async function RecipeDetailPage({
             __html: JSON.stringify([breadcrumbSchema, recipeSchema]),
           }}
         />
+        <PageContainer className="py-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </PageContainer>
         <RecipeDetail recipe={recipe} />
       </>
     );

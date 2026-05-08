@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AccountScaffold } from '../../components/AccountScaffold';
 import { AccountSkeleton } from '../../components/AccountSkeleton';
-import { formatPrice } from '@/lib/format-price';
-import { useAuth } from '@/lib/auth/context';
-import { useAccount } from '@/lib/account/useAccount';
-import type { OrderDetail } from '@/lib/api/bff/account/types';
+import { formatPrice } from '@prism/shared';
+import { useAuth } from '@/features/auth';
+import { useAccount } from '@/features/account/use-account';
+import type { OrderDetail } from '@/features/account/types';
 
 interface ErrorPayload {
   error?: {

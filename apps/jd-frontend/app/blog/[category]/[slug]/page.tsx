@@ -1,14 +1,14 @@
-import { fetchArticleBySlug } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
+import { fetchArticleBySlug } from '@/features/blog/api';
 import {
   buildArticleMetadata,
   buildArticleSchema,
   buildBreadcrumbSchema,
-} from '@/lib/seo';
+} from '@/shared/utils/seo';
 import type { Metadata } from 'next';
 import { cache } from 'react';
-import { ArticleDetail } from '@prism/blog/components/ArticleDetail';
-import { ArticleSidebar } from '@prism/blog/components/ArticleSidebar';
-import { Breadcrumb } from '@prism/blog/components/Breadcrumb';
+import { ArticleDetail } from '@/features/blog/components/ArticleDetail';
+import { ArticleSidebar } from '@/features/blog/components/ArticleSidebar';
+import { Breadcrumb } from '@/app/_ui/Breadcrumb';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { notFound, redirect } from 'next/navigation';
 
@@ -105,7 +105,7 @@ export default async function ArticleDetailPage({
     ];
     const breadcrumbItems = breadcrumbSource.map((item, index) => ({
       label: item.name,
-      href: index === breadcrumbSource.length - 1 ? '#' : item.path,
+      ...(index < breadcrumbSource.length - 1 ? { href: item.path } : {}),
     }));
     const breadcrumbSchema = buildBreadcrumbSchema(breadcrumbSource);
     const articleSchema = buildArticleSchema(article, canonicalCategory);

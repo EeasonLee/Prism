@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UnifiedProductQueryResult } from '../lib/domain/product/query';
+import type { UnifiedProductQueryResult } from '@/features/product';
 
 const {
   searchProductsFromMeilisearchMock,
@@ -13,13 +13,13 @@ const {
   resolveMagentoCategoryIdFromStrapiCategorySlugMock: vi.fn(),
 }));
 
-vi.mock('../lib/infrastructure/product/meilisearch-product-repo', () => ({
+vi.mock('@/features/product/meilisearch.repo', () => ({
   searchProductsFromMeilisearch: searchProductsFromMeilisearchMock,
   searchProductBySkuFromMeilisearch: searchProductBySkuFromMeilisearchMock,
   searchProductsBySkusFromMeilisearch: vi.fn(),
 }));
 
-vi.mock('../lib/infrastructure/product/strapi-category-repo', () => ({
+vi.mock('@/features/category', () => ({
   resolveMagentoCategoryIdFromStrapiCategoryId:
     resolveMagentoCategoryIdFromStrapiCategoryIdMock,
   resolveMagentoCategoryIdFromStrapiCategorySlug:
@@ -41,7 +41,7 @@ describe('ProductQueryFacade', () => {
     resolveMagentoCategoryIdFromStrapiCategoryIdMock.mockResolvedValueOnce(88);
     searchProductsFromMeilisearchMock.mockResolvedValueOnce(emptyResult);
     const { productQueryFacade } = await import(
-      '../lib/application/product/product-query-facade'
+      '@/features/product/query-facade'
     );
 
     await productQueryFacade.queryProducts({
@@ -78,7 +78,7 @@ describe('ProductQueryFacade', () => {
       ratingPercentage: 0,
     });
     const { productQueryFacade } = await import(
-      '../lib/application/product/product-query-facade'
+      '@/features/product/query-facade'
     );
 
     const result = await productQueryFacade.queryProducts({ sku: 'JD-001' });
@@ -94,7 +94,7 @@ describe('ProductQueryFacade', () => {
     );
     searchProductsFromMeilisearchMock.mockResolvedValueOnce(emptyResult);
     const { productQueryFacade } = await import(
-      '../lib/application/product/product-query-facade'
+      '@/features/product/query-facade'
     );
 
     await productQueryFacade.queryProducts({

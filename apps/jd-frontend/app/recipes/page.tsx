@@ -1,12 +1,12 @@
-import type { HeroSlide } from '@/app/components/HeroCarousel';
-import { buildStaticMetadata } from '@/lib/seo';
+import type { HeroSlide } from '@/app/_ui/HeroCarousel';
+import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
-import { processImageUrl } from '@prism/shared';
-import type { CarouselItemResponse } from '../../lib/api/carousel';
-import { getCarouselItems } from '../../lib/api/carousel';
-import { getFilterTypes, searchRecipes } from '../../lib/api/recipes';
-import { RecipesClient } from './RecipesClient';
-import type { SelectedFilters } from './types';
+import { resolveImageUrl } from '@prism/shared';
+import type { CarouselItemResponse } from '@/features/cms-page';
+import { getCarouselItems } from '@/features/cms-page';
+import { getFilterTypes, searchRecipes } from '@/features/recipe';
+import { RecipesClient } from '@/features/recipe';
+import type { SelectedFilters } from '@/features/recipe/types';
 
 // Numeric literal required by Next.js segment config; sync with REVALIDATE_SECONDS_CMS_ASSOCIATION in cache-policy.ts
 export const revalidate = 3600; // ISR 兜底，主要依赖 On-Demand
@@ -42,7 +42,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       (item.slides ?? [])
         .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url ?? '') ?? '',
+          image: resolveImageUrl(slide.image?.url ?? '') ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

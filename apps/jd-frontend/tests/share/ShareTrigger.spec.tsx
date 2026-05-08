@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ShareTrigger } from '../../app/components/share/ShareTrigger';
+import { ShareTrigger } from '@/app/_ui/share';
 import { ProductDetailContent } from '../../app/products/[slug]/ProductDetailContent';
 import type { MagentoProduct } from '../../lib/api/magento/types';
-import type { UnifiedProductImage } from '../../lib/api/unified-product';
+import type { UnifiedProductImage } from '@/features/product';
 
 const copyLinkMock = vi.fn().mockResolvedValue(true);
 const shareNativelyMock = vi.fn().mockResolvedValue(true);
@@ -18,7 +18,7 @@ vi.mock('../../app/products/[slug]/ProductDetailClient', () => ({
   ProductDetailClient: () => <div data-testid="product-detail-client" />,
 }));
 
-vi.mock('../../app/components/share/useShareActions', () => ({
+vi.mock('@/app/_ui/share', () => ({
   useShareActions: () => ({
     copied: copiedState,
     nativeShareSupported: true,

@@ -10,8 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchProducts } from '../../../../lib/api/magento/catalog';
-import type { MagentoProduct } from '../../../../lib/api/magento/types';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { fetchProducts } from '@/features/product';
+import type { MagentoProduct } from '@/features/product';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;
 
@@ -197,13 +198,7 @@ export async function GET(request: NextRequest) {
       analysis,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch products',
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      { status: 502 }
-    );
+    return handleApiError(error);
   }
 }
 

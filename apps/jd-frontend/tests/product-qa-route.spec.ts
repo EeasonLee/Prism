@@ -4,18 +4,15 @@
 /* eslint-disable import/first -- vi.mock must run before imports under test */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { ApiError } from '@prism/shared';
+import { ApiError } from '@/infrastructure/api/errors';
 
 // Mock the product-qa API client before importing routes
-vi.mock('../lib/api/strapi/product-qa', () => ({
+vi.mock('@/features/product/qa.api', () => ({
   fetchProductQaBySku: vi.fn(),
   submitProductQuestion: vi.fn(),
 }));
 
-import {
-  fetchProductQaBySku,
-  submitProductQuestion,
-} from '../lib/api/strapi/product-qa';
+import { fetchProductQaBySku, submitProductQuestion } from '@/features/product';
 import { GET as getQaBySku } from '../app/api/product-qa/by-sku/[sku]/route';
 import { POST as postQuestion } from '../app/api/product-qa/questions/route';
 

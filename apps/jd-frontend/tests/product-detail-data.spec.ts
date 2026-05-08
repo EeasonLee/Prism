@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildPdpSectionNav } from '../app/products/[slug]/pdp-section-nav';
-import type { UnifiedProduct } from '../lib/api/unified-product';
-import type { ProductSpecificationGroup } from '../lib/api/strapi/product-enrichment';
+import type { UnifiedProduct } from '@/features/product';
+import type { ProductSpecificationGroup } from '@/features/product';
 
 const baseProduct: UnifiedProduct = {
   id: 1,

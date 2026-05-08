@@ -1,8 +1,8 @@
-import { getPageContentLayoutClass } from '@/lib/api/cms-page-layout';
-import { getPageBySlug } from '@/lib/api/cms-pages';
-import { CategoryTemplate } from '../components/templates/CategoryTemplate';
-import { CmsPageRichContent } from '../components/CmsPageRichContent';
-import { renderSections } from '../components/sections/blockMap';
+import { getPageContentLayoutClass } from '@/features/cms-page';
+import { getPageBySlug } from '@/features/cms-page';
+import { CategoryTemplate } from '@/features/cms-page';
+import { CmsPageRichContent } from '@/features/cms-page';
+import { renderSections } from '@/features/cms-page';
 import { notFound } from 'next/navigation';
 
 // Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.

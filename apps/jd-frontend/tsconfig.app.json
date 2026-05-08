@@ -9,6 +9,7 @@
     "paths": {
       // 应用层别名（仅限 apps/jd-frontend 内部使用）
       "@/app/*": ["./app/*"],
+      "@/infrastructure/*": ["./infrastructure/*"],
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./lib/*"],
       // 兼容旧代码（逐步迁移）
@@ -17,9 +18,7 @@
       "@prism/shared": ["../../libs/shared/src/index.ts"],
       "@prism/shared/*": ["../../libs/shared/*"],
       "@prism/ui": ["../../libs/ui/src/index.ts"],
-      "@prism/ui/*": ["../../libs/ui/src/*"],
-      "@prism/blog": ["../../libs/blog/src/index.ts"],
-      "@prism/blog/*": ["../../libs/blog/src/*"]
+      "@prism/ui/*": ["../../libs/ui/src/*"]
     },
     "types": [
       "node",
@@ -57,9 +56,6 @@
   "references": [
     {
       "path": "../../libs/shared/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/blog/tsconfig.lib.json"
     },
     {
       "path": "../../libs/tokens/tsconfig.lib.json"

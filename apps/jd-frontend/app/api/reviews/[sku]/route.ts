@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiError } from '@prism/shared';
-import {
-  fetchReviewsBySku,
-  submitReview,
-} from '../../../../lib/api/strapi/reviews';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '../../../../lib/validation/email';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { fetchReviewsBySku, submitReview } from '@/features/product';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitReviewRequestBody {
   authorName?: unknown;
@@ -91,9 +85,7 @@ export async function GET(
     );
     return NextResponse.json(reviews);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to fetch reviews';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 
@@ -184,29 +176,7 @@ export async function POST(
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ApiError) {
-      const data =
-        typeof error.data === 'object' && error.data !== null
-          ? (error.data as Record<string, unknown>)
-          : undefined;
-      const message =
-        typeof data?.error === 'string'
-          ? data.error
-          : typeof data?.message === 'string'
-          ? data.message
-          : error.message;
-      return NextResponse.json(
-        {
-          error: message,
-          detail: data,
-        },
-        { status: error.status }
-      );
-    }
-
-    const message =
-      error instanceof Error ? error.message : 'Failed to submit review';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

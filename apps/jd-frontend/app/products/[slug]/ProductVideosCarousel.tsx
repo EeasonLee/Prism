@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@prism/shared';
-import type { ProductVideoCard } from './product-page-types';
+import type { ProductVideoCard } from '@/features/product';
 
 interface ProductVideosCarouselProps {
   videos: ProductVideoCard[];
@@ -115,11 +115,10 @@ function HoverVideoCard({ video }: HoverVideoCardProps) {
             aria-label={video.title}
           />
         ) : video.thumbnailUrl ? (
-          <Image
+          <OptimizedImage
             src={video.thumbnailUrl}
             alt={video.title}
             fill
-            unoptimized
             sizes="(max-width: 640px) 42vw, 220px"
             className="object-cover transition duration-300 group-hover:scale-[1.03]"
           />

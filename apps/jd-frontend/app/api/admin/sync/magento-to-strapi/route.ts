@@ -17,15 +17,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  fetchProducts,
-  fetchCategoryTree,
-} from '../../../../../lib/api/magento/catalog';
-import type {
-  MagentoProduct,
-  MagentoCategoryTree,
-} from '../../../../../lib/api/magento/types';
-import { apiClient } from '../../../../../lib/api/client';
+import { fetchProducts, fetchCategoryTree } from '@/features/product';
+import type { MagentoProduct } from '@/features/product';
+import type { MagentoCategoryTree } from '@/features/category/types';
+import { strapiClient } from '@/infrastructure/api/clients/strapi';
 
 const adminSecret = process.env.ADMIN_SECRET ?? process.env.REVALIDATE_SECRET;
 
@@ -168,7 +163,7 @@ async function findExistingByField(
       .join('&');
 
     try {
-      const data = await apiClient.get<StrapiListResponse<StrapiRecord>>(
+      const data = await strapiClient.get<StrapiListResponse<StrapiRecord>>(
         `${endpoint}?${filterParams}&fields[0]=id&fields[1]=documentId&fields[2]=${fieldName}&pagination[pageSize]=100`
       );
       for (const item of data.data) {
@@ -251,10 +246,12 @@ async function syncProducts(params: {
 
   // 创建任务
   const createTasks = toCreate.map(product => async () => {
-    await apiClient.post(STRAPI_PRODUCTS_ENDPOINT, {
-      data: {
-        ...mapProductToStrapi(product, mode),
-        publishedAt: new Date().toISOString(),
+    await strapiClient.post(STRAPI_PRODUCTS_ENDPOINT, {
+      body: {
+        data: {
+          ...mapProductToStrapi(product, mode),
+          publishedAt: new Date().toISOString(),
+        },
       },
     });
     report.created++;
@@ -264,8 +261,10 @@ async function syncProducts(params: {
   const updateTasks = toUpdate.map(product => async () => {
     const documentId = existingMap.get(product.sku);
     if (!documentId) return;
-    await apiClient.put(`${STRAPI_PRODUCTS_ENDPOINT}/${documentId}`, {
-      data: mapProductToStrapi(product, mode),
+    await strapiClient.put(`${STRAPI_PRODUCTS_ENDPOINT}/${documentId}`, {
+      body: {
+        data: mapProductToStrapi(product, mode),
+      },
     });
     report.updated++;
   });
@@ -350,10 +349,12 @@ async function syncCategories(params: { dryRun: boolean }) {
   if (dryRun) return report;
 
   const createTasks = toCreate.map(category => async () => {
-    await apiClient.post(STRAPI_CATEGORIES_ENDPOINT, {
-      data: {
-        ...mapCategoryToStrapi(category),
-        publishedAt: new Date().toISOString(),
+    await strapiClient.post(STRAPI_CATEGORIES_ENDPOINT, {
+      body: {
+        data: {
+          ...mapCategoryToStrapi(category),
+          publishedAt: new Date().toISOString(),
+        },
       },
     });
     report.created++;
@@ -363,8 +364,10 @@ async function syncCategories(params: { dryRun: boolean }) {
     const slug = category.url_key ?? toSlug(category.name);
     const documentId = existingMap.get(slug);
     if (!documentId) return;
-    await apiClient.put(`${STRAPI_CATEGORIES_ENDPOINT}/${documentId}`, {
-      data: mapCategoryToStrapi(category),
+    await strapiClient.put(`${STRAPI_CATEGORIES_ENDPOINT}/${documentId}`, {
+      body: {
+        data: mapCategoryToStrapi(category),
+      },
     });
     report.updated++;
   });

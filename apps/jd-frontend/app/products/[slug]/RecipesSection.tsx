@@ -1,10 +1,10 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Clock } from 'lucide-react';
-import type { Recipe } from './product-page-types';
+import type { PdpRecipeCard } from '@/features/product';
 
 interface RecipesSectionProps {
-  recipes: Recipe[];
+  recipes: PdpRecipeCard[];
 }
 
 export function RecipesSection({ recipes }: RecipesSectionProps) {
@@ -34,11 +34,10 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
             <>
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface">
                 {recipe.image ? (
-                  <Image
+                  <OptimizedImage
                     src={recipe.image}
                     alt={recipe.title}
                     fill
-                    unoptimized
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover transition group-hover:scale-105"
                   />

@@ -151,6 +151,20 @@ const nextConfig = {
         },
       }
     : {}),
+  async redirects() {
+    return [
+      {
+        source: '/shop',
+        destination: '/categories',
+        permanent: true,
+      },
+      {
+        source: '/shop/:slug',
+        destination: '/categories/:slug',
+        permanent: true,
+      },
+    ];
+  },
   nx: {
     svgr: false,
   },

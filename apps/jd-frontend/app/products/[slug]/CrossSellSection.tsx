@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import { useState } from 'react';
 import { Plus, Check, Tag } from 'lucide-react';
-import { formatPrice } from '@/lib/format-price';
-import type { CrossSellAddon, BundleDeal } from './product-page-types';
+import { formatPrice } from '@prism/shared';
+import type { CrossSellAddon, BundleDeal } from '@/features/product';
 
 // ─── 超值加购（Add-on accessories at discount） ───────────────────────────────
 
@@ -85,11 +85,10 @@ export function CrossSellAddons({
 
               {/* Image */}
               <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-background">
-                <Image
+                <OptimizedImage
                   src={addon.image}
                   alt={addon.name}
                   fill
-                  unoptimized
                   sizes="48px"
                   className="object-cover"
                 />
@@ -200,11 +199,10 @@ export function BundleDeals({
           {/* 主商品 */}
           <div className="flex flex-col items-center gap-1">
             <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-background">
-              <Image
+              <OptimizedImage
                 src={mainProduct.image}
                 alt={mainProduct.name}
                 fill
-                unoptimized
                 sizes="64px"
                 className="object-contain p-1"
               />
@@ -220,11 +218,10 @@ export function BundleDeals({
               <Plus className="h-5 w-5 shrink-0 text-ink-muted" />
               <div className="flex flex-col items-center gap-1">
                 <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-background">
-                  <Image
+                  <OptimizedImage
                     src={partner.image}
                     alt={partner.name}
                     fill
-                    unoptimized
                     sizes="64px"
                     className="object-contain p-1"
                   />

@@ -9,20 +9,17 @@ import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '@/lib/env';
+import { env } from '@/infrastructure/config/env';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
   ProductReview,
   ProductReviewPagination,
   ProductReviewSummary,
-} from '../../../lib/api/strapi/reviews';
-import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
+} from '@/features/product';
+import type { ProductQaListResult } from '@/features/product';
 import { ProductQA } from './ProductQA';
-import type {
-  UnifiedProduct,
-  UnifiedProductImage,
-} from '../../../lib/api/unified-product';
-import type { ProductVideoCard, Recipe } from './product-page-types';
+import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
+import type { ProductVideoCard, PdpRecipeCard } from '@/features/product';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -37,7 +34,7 @@ interface ProductDetailReviewShellProps {
   initialProductQa: ProductQaListResult;
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
-  recipes?: Recipe[];
+  recipes?: PdpRecipeCard[];
 }
 
 export function ProductDetailReviewShell({

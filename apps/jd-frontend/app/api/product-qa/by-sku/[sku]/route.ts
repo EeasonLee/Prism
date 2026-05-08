@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchProductQaBySku } from '@/lib/api/strapi/product-qa';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { fetchProductQaBySku } from '@/features/product';
 
 export async function GET(
   request: NextRequest,
@@ -28,11 +29,7 @@ export async function GET(
     );
     return NextResponse.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'Failed to fetch product questions';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

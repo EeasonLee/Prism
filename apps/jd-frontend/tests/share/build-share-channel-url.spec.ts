@@ -11,8 +11,8 @@ import {
   buildSmsShareUrl,
   buildWhatsAppShareUrl,
   buildXShareUrl,
-} from '../../app/components/share/build-share-channel-url';
-import type { ShareTarget } from '../../app/components/share/types';
+} from '@/app/_ui/share';
+import type { ShareTarget } from '@/app/_ui/share';
 
 describe('buildEmailShareUrl', () => {
   it('should build a mailto URL with encoded subject and body', () => {

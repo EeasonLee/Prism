@@ -1,6 +1,5 @@
 'use client';
 
-import { setApiClient } from '@prism/blog';
 import {
   createContext,
   PropsWithChildren,
@@ -8,12 +7,12 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { SignupPromoController } from './components/SignupPromoController';
-import { apiClient } from '../lib/api/client';
-import { AuthProvider } from '../lib/auth/context';
-import { AuthModalProvider } from '../lib/auth-modal/context';
-import { CartProvider } from '../lib/cart/context';
-import { logger } from '../lib/observability/logger';
+import { SignupPromoController } from '@/app/_ui/SignupPromoController';
+import { AuthProvider } from '@/features/auth';
+import { AuthModalProvider } from '@/features/auth';
+import { CartProvider } from '@/features/cart';
+import { logger } from '@/infrastructure/observability/logger';
+import { ImageConfigContext } from '@prism/ui';
 
 type AppConfig = {
   appName: string;
@@ -25,13 +24,25 @@ export function useAppConfig() {
   return useContext(AppConfigContext);
 }
 
+function ImageConfigProvider({ children }: PropsWithChildren) {
+  const value = useMemo(
+    () => ({
+      baseUrl: process.env['NEXT_PUBLIC_IMAGE_BASE_URL'] || '',
+    }),
+    []
+  );
+
+  return (
+    <ImageConfigContext.Provider value={value}>
+      {children}
+    </ImageConfigContext.Provider>
+  );
+}
+
 function AppConfigProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppConfig>(() => ({ appName: 'Prism' }), []);
 
   useEffect(() => {
-    // 在客户端初始化 Blog API Client
-    setApiClient(apiClient);
-
     logger.info('AppProviders mounted', {
       logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL ?? 'info',
     });
@@ -50,8 +61,10 @@ export function AppProviders({ children }: PropsWithChildren) {
       <AuthModalProvider>
         <CartProvider>
           <AppConfigProvider>
-            <SignupPromoController />
-            {children}
+            <ImageConfigProvider>
+              <SignupPromoController />
+              {children}
+            </ImageConfigProvider>
           </AppConfigProvider>
         </CartProvider>
       </AuthModalProvider>

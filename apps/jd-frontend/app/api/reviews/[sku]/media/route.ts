@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchReviewMediaBySku } from '../../../../../lib/api/strapi/reviews';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { fetchReviewMediaBySku } from '@/features/product';
 
 export async function GET(
   request: NextRequest,
@@ -27,9 +28,7 @@ export async function GET(
     );
     return NextResponse.json(media);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to fetch review media';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

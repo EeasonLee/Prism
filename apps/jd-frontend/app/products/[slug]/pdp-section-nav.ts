@@ -1,6 +1,6 @@
-import type { UnifiedProduct } from '../../../lib/api/unified-product';
-import type { ProductReviewSummary } from '../../../lib/api/strapi/reviews';
-import type { ProductPageCms } from './product-page-types';
+import type { UnifiedProduct } from '@/features/product';
+import type { ProductReviewSummary } from '@/features/product';
+import type { ProductPageCms } from '@/features/product';
 import { PDP_FEATURES } from './pdp-features';
 
 export type ProductDetailCms = Partial<ProductPageCms>;

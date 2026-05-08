@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { magentoRestFetch } from '@/lib/api/bff/magento-rest-client';
-import { isMagentoApiError } from '@/lib/api/magento/client';
-import { env } from '@/lib/env';
-
-const isDev = env.NODE_ENV === 'development';
+import { forgotPassword } from '@/features/auth';
 
 export async function POST(request: Request) {
   try {
@@ -22,37 +18,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (isDev) {
-      console.log(
-        '[forgot-password] Requesting Magento PUT customers/password for:',
-        email
-      );
-    }
-
-    // Note: Do NOT include websiteId - Magento will auto-detect it
-    const result = await magentoRestFetch<boolean>('customers/password', {
-      method: 'PUT',
-      body: JSON.stringify({
-        email,
-        template: 'email_reset',
-      }),
-    });
-
-    if (isDev) {
-      console.log('[forgot-password] Magento responded:', result);
-    }
+    await forgotPassword(email);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (isDev) {
-      console.error('[forgot-password] Magento request failed:', {
-        isMagentoApiError: isMagentoApiError(error),
-        status: (error as { status?: number })?.status,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
+    const status = (error as { status?: number })?.status;
 
-    if (isMagentoApiError(error) && error.status === 404) {
+    // Don't leak whether email exists
+    if (status === 404) {
       return NextResponse.json(
         {
           error: {
@@ -66,11 +39,11 @@ export async function POST(request: Request) {
 
     const message =
       error instanceof Error ? error.message : 'Failed to send reset email';
-    const status = (error as { status?: number })?.status ?? 500;
+    const resolvedStatus = status ?? 500;
 
     return NextResponse.json(
       { error: { message, code: 'RESET_EMAIL_FAILED' } },
-      { status }
+      { status: resolvedStatus }
     );
   }
 }

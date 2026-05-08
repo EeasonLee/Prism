@@ -1,16 +1,16 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { formatPrice } from '@/lib/format-price';
-import type { UnifiedLinkedProduct } from '../../../lib/api/unified-product';
+import { formatPrice } from '@prism/shared';
+import type { UnifiedLinkedProduct } from '@/features/product';
 import { PageContainer } from '@prism/ui';
-import { getProductDetailAggregate } from '../../../lib/api/bff/product/detail';
+import { getProductDetailAggregate } from '@/features/product';
 import type {
   ProductReviewListResult,
   ProductReviewSummary,
-} from '../../../lib/api/strapi/reviews';
-import type { ProductQaListResult } from '../../../lib/api/strapi/product-qa';
+} from '@/features/product';
+import type { ProductQaListResult } from '@/features/product';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
@@ -18,15 +18,14 @@ import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { BlogSection } from './BlogSection';
 import { ProductSpecifications } from './ProductSpecifications';
-import type { ProductSpecificationGroup } from '../../../lib/api/strapi/product-enrichment';
+import type { ProductSpecificationGroup } from '@/features/product';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
-import { AddToCartButton } from '../../components/AddToCartButton';
-import {
-  processProductImageUrl,
-  shouldDisableImageOptimization,
-} from '@prism/shared';
+import { AddToCartButton } from '@/features/product';
+import { resolveImageUrl } from '@prism/shared';
+import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
+import { buildBreadcrumbSchema } from '@/shared/utils/seo';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -85,7 +84,7 @@ async function DeferredRelatedProductsSection({
             const hasDiscount =
               item.special_price != null && item.special_price < item.price;
             const cardImageUrl =
-              processProductImageUrl(item.unified_thumbnail, 350) ??
+              resolveImageUrl(item.unified_thumbnail, { size: 350 }) ??
               item.unified_thumbnail;
 
             return (
@@ -96,13 +95,11 @@ async function DeferredRelatedProductsSection({
                 <Link href={`/products/${item.url_key ?? item.sku}`}>
                   <div className="relative aspect-square bg-surface-muted">
                     {cardImageUrl ? (
-                      <Image
+                      <OptimizedImage
                         src={cardImageUrl}
                         alt={item.display_name}
                         fill
-                        unoptimized={shouldDisableImageOptimization(
-                          cardImageUrl
-                        )}
+                        maxDisplayWidth={350}
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
@@ -247,29 +244,45 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const specificationGroups = getSpecificationGroups(product);
 
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Home', href: '/' },
+    { label: 'Categories', href: '/categories' },
+    ...(product.categories?.[0]
+      ? [
+          {
+            label: product.categories[0].name,
+            href: `/categories/${
+              product.categories[0].url_key ?? product.categories[0].id
+            }`,
+          },
+        ]
+      : []),
+    { label: product.display_name },
+  ];
+
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' },
+    ...(product.categories?.[0]
+      ? [
+          {
+            name: product.categories[0].name,
+            path: `/categories/${
+              product.categories[0].url_key ?? product.categories[0].id
+            }`,
+          },
+        ]
+      : []),
+    { name: product.display_name, path: `/products/${product.sku ?? slug}` },
+  ]);
+
   return (
     <PageContainer className="py-6">
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-5 flex items-center gap-2 text-sm text-ink-muted"
-      >
-        <Link href="/shop" className="transition hover:text-ink">
-          Shop
-        </Link>
-        <span aria-hidden="true">/</span>
-        {product.categories?.[0] && (
-          <>
-            <Link
-              href={`/categories/${product.categories[0].url_key}`}
-              className="transition hover:text-ink"
-            >
-              {product.categories[0].name}
-            </Link>
-            <span aria-hidden="true">/</span>
-          </>
-        )}
-        <span className="text-ink">{product.display_name}</span>
-      </nav>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <Breadcrumb items={breadcrumbItems} className="mb-5" />
       {sectionNavItems.length > 0 && (
         <ProductSectionNav sections={sectionNavItems} />
       )}

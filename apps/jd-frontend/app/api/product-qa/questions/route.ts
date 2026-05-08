@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiError } from '@prism/shared';
-import { submitProductQuestion } from '@/lib/api/strapi/product-qa';
-import { getAccessToken } from '@/lib/api/bff/cookies';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '@/lib/validation/email';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { submitProductQuestion } from '@/features/product';
+import { getAccessToken } from '@/features/auth/services/cookies';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitQuestionRequestBody {
   productId?: unknown;
@@ -71,26 +68,7 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ApiError) {
-      const data =
-        typeof error.data === 'object' && error.data !== null
-          ? (error.data as Record<string, unknown>)
-          : undefined;
-      const message =
-        typeof data?.error === 'string'
-          ? data.error
-          : typeof data?.message === 'string'
-          ? data.message
-          : error.message;
-      return NextResponse.json(
-        { error: message, detail: data },
-        { status: error.status }
-      );
-    }
-
-    const message =
-      error instanceof Error ? error.message : 'Failed to submit question';
-    return NextResponse.json({ error: message }, { status: 502 });
+    return handleApiError(error);
   }
 }
 

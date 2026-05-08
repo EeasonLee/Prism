@@ -1,7 +1,7 @@
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
-import type { BlogPost } from './product-page-types';
+import type { BlogPost } from '@/features/product';
 
 interface BlogSectionProps {
   posts: BlogPost[];
@@ -36,11 +36,10 @@ export function BlogSection({ posts }: BlogSectionProps) {
               className="relative block aspect-[16/9] overflow-hidden bg-surface"
             >
               {post.image ? (
-                <Image
+                <OptimizedImage
                   src={post.image}
                   alt={post.title}
                   fill
-                  unoptimized
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition group-hover:scale-105"
                 />

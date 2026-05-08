@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { logger } from '../lib/observability/logger';
+import { logger } from '@/infrastructure/observability/logger';
 
 export default function GlobalError({
   error,

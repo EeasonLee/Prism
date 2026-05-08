@@ -1,16 +1,15 @@
-import type { HeroSlide } from '@/app/components/HeroCarousel';
-import { HeroCarousel } from '@/app/components/HeroCarousel';
-import { fetchCategoryByType } from '@/lib/api/articles'; // 使用应用层的导出，确保 API Client 已初始化
-import { buildStaticMetadata } from '@/lib/seo';
+import type { HeroSlide } from '@/app/_ui/HeroCarousel';
+import { HeroCarousel } from '@/app/_ui/HeroCarousel';
+import { fetchCategoryByType, type CategoryDetail } from '@/features/blog/api';
+import { buildStaticMetadata } from '@/shared/utils/seo';
 import type { Metadata } from 'next';
-import type { CategoryDetail } from '@prism/blog'; // 导入类型定义
-import { ArticleSearchBox } from '@prism/blog/components/ArticleSearchBox';
-import { ProductCategories } from '@prism/blog/components/ProductCategories';
-import { ThemeCategories } from '@prism/blog/components/ThemeCategories';
-import { processImageUrl } from '@prism/shared';
+import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
+import { ProductCategories } from '@/features/blog/components/ProductCategories';
+import { ThemeCategories } from '@/features/blog/components/ThemeCategories';
+import { resolveImageUrl } from '@prism/shared';
 import { PageContainer } from '@prism/ui/components/PageContainer';
-import type { CarouselItemResponse } from '../../lib/api/carousel';
-import { getCarouselItems } from '../../lib/api/carousel';
+import type { CarouselItemResponse } from '@/features/cms-page';
+import { getCarouselItems } from '@/features/cms-page';
 
 /**
  * 将 API 返回的数据转换为 HeroSlide 格式
@@ -25,7 +24,7 @@ function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
       (item.slides ?? [])
         .filter(slide => slide.enabled && slide.image)
         .map(slide => ({
-          image: processImageUrl(slide.image?.url) ?? '',
+          image: resolveImageUrl(slide.image?.url) ?? '',
           alt: slide.image?.alternativeText || item.title,
           link: slide.linkUrl || undefined,
         }))

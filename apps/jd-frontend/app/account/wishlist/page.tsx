@@ -1,17 +1,16 @@
 'use client';
 
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Heart, Trash2, Loader2 } from 'lucide-react';
-import { processProductImageUrl } from '@prism/shared';
+import { formatPrice, resolveImageUrl } from '@prism/shared';
 import { AccountScaffold } from '../components/AccountScaffold';
 import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/lib/auth/context';
-import { useAccount } from '@/lib/account/useAccount';
-import type { WishlistItem } from '@/lib/api/bff/account/types';
-import { formatPrice } from '@/lib/format-price';
+import { useAuth } from '@/features/auth';
+import { useAccount } from '@/features/account/use-account';
+import type { WishlistItem } from '@/features/account/types';
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -100,7 +99,7 @@ export default function WishlistPage() {
             Save items you love and view them here.
           </p>
           <Link
-            href="/shop"
+            href="/categories"
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90"
           >
             Browse products
@@ -119,14 +118,13 @@ export default function WishlistPage() {
               >
                 <div className="relative aspect-square overflow-hidden rounded-2xl bg-background">
                   {item.thumbnail ? (
-                    <Image
+                    <OptimizedImage
                       src={
-                        processProductImageUrl(item.thumbnail, 400) ??
+                        resolveImageUrl(item.thumbnail, { size: 400 }) ??
                         item.thumbnail
                       }
                       alt={item.name}
                       fill
-                      unoptimized
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />

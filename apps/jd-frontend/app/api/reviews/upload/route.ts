@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '../../../../lib/env';
+import { handleApiError } from '@/infrastructure/api/route-helpers';
+import { env } from '@/infrastructure/config/env';
 import {
   getStrapiBaseUrl,
   getStrapiServerBaseUrl,
-} from '../../../../lib/api/config';
+} from '@/infrastructure/config/api-config';
 
 interface StrapiUploadItem {
   id: number;
@@ -109,15 +110,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ items: items.map(normalizeUploadItem) });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload review media',
-      },
-      { status: 502 }
-    );
+    return handleApiError(error);
   }
 }
 

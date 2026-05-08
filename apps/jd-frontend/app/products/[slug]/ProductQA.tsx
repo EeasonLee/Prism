@@ -2,16 +2,10 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { LoaderCircle, Plus, X } from 'lucide-react';
-import { useAuth } from '../../../lib/auth/context';
-import { useAuthModal } from '../../../lib/auth-modal/context';
-import type {
-  ProductQaListResult,
-  ProductQuestion,
-} from '../../../lib/api/strapi/product-qa';
-import {
-  guestAuthorLabelFromEmail,
-  isReasonableEmail,
-} from '../../../lib/validation/email';
+import { useAuth } from '@/features/auth';
+import { useAuthModal } from '@/features/auth';
+import type { ProductQaListResult, ProductQuestion } from '@/features/product';
+import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
   if (!user) return '';
@@ -65,9 +59,12 @@ export function ProductQA({
         );
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as {
-            error?: string;
+            success?: boolean;
+            error?: string | { message?: string };
           };
-          throw new Error(body.error ?? 'Failed to load questions');
+          const msg =
+            typeof body.error === 'string' ? body.error : body.error?.message;
+          throw new Error(msg ?? 'Failed to load questions');
         }
         const data = (await res.json()) as ProductQaListResult;
         setResult(data);
@@ -139,11 +136,13 @@ export function ProductQA({
       const body = (await res.json()) as {
         success?: boolean;
         message?: string;
-        error?: string;
+        error?: string | { message?: string };
       };
 
       if (!res.ok) {
-        throw new Error(body.error ?? 'Submission failed');
+        const msg =
+          typeof body.error === 'string' ? body.error : body.error?.message;
+        throw new Error(msg ?? 'Submission failed');
       }
 
       setSuccessMessage(

@@ -6,7 +6,7 @@ import type {
   ProductReview,
   ProductReviewPagination,
   ProductReviewSummary,
-} from '../lib/api/strapi/reviews';
+} from '@/features/product';
 
 vi.mock('next/image', () => ({
   default: ({
