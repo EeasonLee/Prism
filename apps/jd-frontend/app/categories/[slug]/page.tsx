@@ -20,13 +20,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    { label: 'Categories', href: '/categories' },
     { label: category.name },
   ];
 
   const breadcrumbSchema = buildBreadcrumbSchema([
     { name: 'Home', path: '/' },
-    { name: 'Categories', path: '/categories' },
     { name: category.name, path: `/categories/${slug}` },
   ]);
 

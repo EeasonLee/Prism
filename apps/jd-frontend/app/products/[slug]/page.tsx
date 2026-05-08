@@ -246,7 +246,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    { label: 'Categories', href: '/categories' },
     ...(product.categories?.[0]
       ? [
           {
@@ -262,7 +261,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const breadcrumbSchema = buildBreadcrumbSchema([
     { name: 'Home', path: '/' },
-    { name: 'Categories', path: '/categories' },
     ...(product.categories?.[0]
       ? [
           {
