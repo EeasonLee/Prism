@@ -26,6 +26,14 @@ export function useShareActions({
     []
   );
 
+  const isTouchDevice = useMemo(
+    () =>
+      typeof navigator !== 'undefined' &&
+      (navigator.maxTouchPoints > 0 ||
+        (typeof window !== 'undefined' && 'ontouchstart' in window)),
+    []
+  );
+
   const copyLink = useCallback(async () => {
     if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
       return false;
@@ -71,6 +79,7 @@ export function useShareActions({
   return {
     copied,
     nativeShareSupported,
+    isTouchDevice,
     copyLink,
     shareNatively,
     openChannel,

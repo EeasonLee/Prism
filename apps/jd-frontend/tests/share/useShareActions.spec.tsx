@@ -171,6 +171,54 @@ describe('useShareActions', () => {
     expect(result.current.copied).toBe(false);
   });
 
+  it('detects touch device when maxTouchPoints > 0', () => {
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 5,
+    });
+
+    const { result } = renderHook(() =>
+      useShareActions({
+        target: {
+          type: 'product',
+          title: 'Test Product',
+          url: 'https://example.com/products/test',
+        },
+      })
+    );
+
+    expect(result.current.isTouchDevice).toBe(true);
+  });
+
+  it('returns false for non-touch device', () => {
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 0,
+    });
+
+    // Remove touch event detection as well
+    const originalOntouchstart = (window as Record<string, unknown>)
+      .ontouchstart;
+    delete (window as Record<string, unknown>).ontouchstart;
+
+    const { result } = renderHook(() =>
+      useShareActions({
+        target: {
+          type: 'product',
+          title: 'Test Product',
+          url: 'https://example.com/products/test',
+        },
+      })
+    );
+
+    expect(result.current.isTouchDevice).toBe(false);
+
+    // Restore
+    if (originalOntouchstart !== undefined) {
+      (window as Record<string, unknown>).ontouchstart = originalOntouchstart;
+    }
+  });
+
   it('returns false when clipboard write is rejected', async () => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,

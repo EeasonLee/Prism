@@ -22,6 +22,7 @@ export type ShareChannel =
 export interface ShareActionState {
   copied: boolean;
   nativeShareSupported: boolean;
+  isTouchDevice: boolean;
 }
 
 export interface ShareActionHandlers {

@@ -4,7 +4,6 @@ import { CheckCircle2, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { buildShareChannelUrl } from './build-share-channel-url';
 import { ShareMenu } from './ShareMenu';
-import { ShareSheet } from './ShareSheet';
 import { useShareActions } from './useShareActions';
 import type { ShareChannel, ShareTarget } from './types';
 
@@ -16,7 +15,9 @@ interface ShareTriggerProps {
 export function ShareTrigger({ target, className }: ShareTriggerProps) {
   const [open, setOpen] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
-  const { copied, copyLink, shareNatively } = useShareActions({ target });
+  const { copied, isTouchDevice, copyLink, shareNatively } = useShareActions({
+    target,
+  });
 
   const copyLinkLegacy = () => {
     const input = document.createElement('textarea');
@@ -81,10 +82,14 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       return;
     }
 
-    const shared = await shareNatively();
-    if (!shared) {
-      setOpen(true);
+    if (isTouchDevice) {
+      // 移动端：仅使用原生分享，不显示弹窗
+      await shareNatively();
+      return;
     }
+
+    // 桌面端：直接显示分享弹窗
+    setOpen(true);
   };
 
   const getChannelHref = (channel: ShareChannel) =>
@@ -119,21 +124,13 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       </button>
 
       {open && (
-        <>
-          <div className="hidden sm:block">
-            <ShareMenu
-              copied={copied}
-              onCopyLink={() => void handleCopyLink()}
-              getChannelHref={getChannelHref}
-            />
-          </div>
-          <ShareSheet
+        <div className="hidden sm:block">
+          <ShareMenu
             copied={copied}
-            onClose={() => setOpen(false)}
             onCopyLink={() => void handleCopyLink()}
             getChannelHref={getChannelHref}
           />
-        </>
+        </div>
       )}
 
       {showCopyToast && (
