@@ -109,12 +109,7 @@ function getIndexCandidates(): string[] {
 
   const prefix = (env.MEILISEARCH_INDEX_PREFIX ?? '').trim();
   const store = (env.MAGENTO_STORE_CODE ?? '').trim();
-  const primary = `${prefix}_${store}`;
-  const fallback =
-    prefix.endsWith('_product') || !prefix
-      ? primary
-      : `${prefix}_product_${store}`;
-  return fallback === primary ? [primary] : [primary, fallback];
+  return [`${prefix}_product_${store}`];
 }
 
 function buildFilter(
