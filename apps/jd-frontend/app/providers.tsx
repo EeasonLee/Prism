@@ -7,7 +7,7 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { SignupPromoController } from '@/app/_ui/SignupPromoController';
+// import { SignupPromoController } from '@/app/_ui/SignupPromoController';
 import { AuthProvider } from '@/features/auth';
 import { AuthModalProvider } from '@/features/auth';
 import { CartProvider } from '@/features/cart';
@@ -62,7 +62,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <CartProvider>
           <AppConfigProvider>
             <ImageConfigProvider>
-              <SignupPromoController />
+              {/* <SignupPromoController /> */}
               {children}
             </ImageConfigProvider>
           </AppConfigProvider>

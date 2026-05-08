@@ -64,10 +64,12 @@ interface GraphQLResponseBody<T> {
   errors?: Array<{ message: string; extensions?: Record<string, unknown> }>;
 }
 
-function unwrapGraphQLResponse<T>(raw: unknown): T {
-  if (raw && typeof raw === 'object' && 'data' in raw) {
+export function unwrapGraphQLResponse<T>(raw: unknown): T {
+  if (raw && typeof raw === 'object') {
     const resp = raw as GraphQLResponseBody<T>;
+
     // Handle GraphQL errors in 200 responses (errorOverrides only runs on non-OK status)
+    // GraphQL 规范允许只返回 errors 不含 data，因此 errors 检查必须在 'data' in raw 之前
     if (Array.isArray(resp.errors) && resp.errors.length > 0) {
       const authError = resp.errors.find(e => {
         const category = e.extensions?.category;
@@ -81,7 +83,10 @@ function unwrapGraphQLResponse<T>(raw: unknown): T {
       }
       throw new MagentoGraphQLError(resp.errors[0].message, resp.errors);
     }
-    return resp.data as T;
+
+    if ('data' in raw) {
+      return resp.data as T;
+    }
   }
   return raw as T;
 }

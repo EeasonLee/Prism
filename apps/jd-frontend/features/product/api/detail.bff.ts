@@ -5,7 +5,10 @@ import {
   type UnifiedLinkedProduct,
   type UnifiedProduct,
 } from './unified.api';
-import { fetchProductDetailByUrlKeyGQL } from './product-graphql.service';
+import {
+  fetchProductDetailBySkuGQL,
+  fetchProductDetailByUrlKeyGQL,
+} from './product-graphql.service';
 import { getRelatedProductsBFF } from './related.bff';
 import type { ProductStockResponse } from './stock.bff';
 import type { RelatedProductItem } from '@/features/search';
@@ -16,7 +19,6 @@ import {
   type ProductReviewPagination,
   type ProductReviewSummary,
 } from './reviews.api';
-import { fetchProductQaBySku, type ProductQaListResult } from './qa.api';
 import {
   fetchPdpArticlesBySku,
   fetchPdpProductVideosBySku,
@@ -58,7 +60,6 @@ interface ProductDetailDeferred {
   related: Promise<UnifiedLinkedProduct[]>;
   upsell: Promise<UnifiedLinkedProduct[]>;
   reviews: Promise<ProductReviewsData>;
-  productQa: Promise<ProductQaListResult>;
   cms: Promise<ProductDetailCms | null>;
 }
 
@@ -74,7 +75,6 @@ export interface ProductDetailApiResponse {
   related: UnifiedLinkedProduct[];
   upsell: UnifiedLinkedProduct[];
   reviews: ProductReviewsData;
-  productQa: ProductQaListResult;
   cms: ProductDetailCms | null;
 }
 
@@ -139,15 +139,6 @@ function emptyReviewPagination(): ProductReviewPagination {
   };
 }
 
-function emptyProductQa(product: UnifiedProduct): ProductQaListResult {
-  return {
-    productId: product.id,
-    sku: product.sku,
-    items: [],
-    pagination: emptyReviewPagination(),
-  };
-}
-
 async function getProductReviewsBFF(sku: string): Promise<ProductReviewsData> {
   const [summary, list] = await Promise.all([
     fetchReviewSummaryBySku(sku).catch(() => emptyReviewSummary(sku)),
@@ -182,10 +173,30 @@ async function getProductCmsBFF(sku: string): Promise<ProductDetailCms | null> {
   return { recipes, blog_posts, product_videos };
 }
 
+/**
+ * 按 url_key 查询，但 Magento 的 url_rewrite 机制可能将子商品的 url_key
+ * 重定向到父可配置商品。此处检测重定向：若返回商品的 url_key 与请求不匹配，
+ * 则从 variants 中查找真正匹配的子商品，改用其 SKU 绕过 rewrite 重新查询。
+ */
+async function resolveProductByUrlKeyOrSku(slug: string) {
+  const raw = await fetchProductDetailByUrlKeyGQL(slug);
+
+  if (raw.url_key === slug || !raw.variants?.length) {
+    return raw;
+  }
+
+  const matchedVariant = raw.variants.find(v => v.product.url_key === slug);
+  if (!matchedVariant) {
+    return raw;
+  }
+
+  return fetchProductDetailBySkuGQL(matchedVariant.product.sku);
+}
+
 export async function getProductDetailAggregate(
   slugOrSku: string
 ): Promise<ProductDetailAggregate> {
-  const rawProductPromise = fetchProductDetailByUrlKeyGQL(slugOrSku);
+  const rawProductPromise = resolveProductByUrlKeyOrSku(slugOrSku);
 
   const productPromise = rawProductPromise.then(raw =>
     mergeProduct(mapGQLProduct(raw))
@@ -216,11 +227,6 @@ export async function getProductDetailAggregate(
   const reviewsPromise = productPromise.then(product =>
     getProductReviewsBFF(product.sku)
   );
-  const productQaPromise = productPromise.then(product =>
-    fetchProductQaBySku(product.id, product.sku, 1, 10).catch(() =>
-      emptyProductQa(product)
-    )
-  );
   const cmsPromise = productPromise.then(product =>
     getProductCmsBFF(product.sku)
   );
@@ -237,7 +243,6 @@ export async function getProductDetailAggregate(
       related: relatedPromise,
       upsell: upsellPromise,
       reviews: reviewsPromise,
-      productQa: productQaPromise,
       cms: cmsPromise,
     },
   };
@@ -246,11 +251,10 @@ export async function getProductDetailAggregate(
 export async function resolveProductDetailAggregate(
   aggregate: ProductDetailAggregate
 ): Promise<ProductDetailApiResponse> {
-  const [related, upsell, reviews, productQa, cms] = await Promise.all([
+  const [related, upsell, reviews, cms] = await Promise.all([
     aggregate.deferred.related,
     aggregate.deferred.upsell,
     aggregate.deferred.reviews,
-    aggregate.deferred.productQa,
     aggregate.deferred.cms,
   ]);
 
@@ -261,7 +265,6 @@ export async function resolveProductDetailAggregate(
     related,
     upsell,
     reviews,
-    productQa,
     cms,
   };
 }

@@ -13,6 +13,8 @@ import { ShareTrigger } from '@/app/_ui/share';
 import { normalizeCpPrice } from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
+import { ExpandableHtmlSections } from './ExpandableHtmlSections';
+import { parseHtmlIntoSections } from './parse-html-sections';
 
 interface ProductDetailContentProps {
   product: UnifiedProduct;
@@ -23,63 +25,6 @@ interface ProductDetailContentProps {
   onSelectionChange: (selection: ProductDetailSelection) => void;
   onWriteReview: () => void;
   shareTarget?: ShareTarget;
-}
-
-interface SpecificationSection {
-  title: string;
-  contentHtml: string;
-}
-
-const SPEC_TITLE_PATTERN = /<h1\b[^>]*>([\s\S]*?)<\/h1>/gi;
-
-function stripTags(value: string): string {
-  return value.replace(/<[^>]+>/g, '');
-}
-
-function decodeCommonEntities(value: string): string {
-  return value
-    .replaceAll('&nbsp;', ' ')
-    .replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'");
-}
-
-function normalizeText(value: string): string {
-  return decodeCommonEntities(stripTags(value)).replace(/\s+/g, ' ').trim();
-}
-
-function parseSpecificationSections(
-  specifications: unknown
-): SpecificationSection[] {
-  if (typeof specifications !== 'string') return [];
-  const source = specifications.trim();
-  if (!source) return [];
-
-  const headings = Array.from(source.matchAll(SPEC_TITLE_PATTERN));
-  if (headings.length === 0) return [];
-
-  return headings
-    .map((heading, index) => {
-      const headingMarkup = heading[1] ?? '';
-      const title = normalizeText(headingMarkup);
-      if (!title) return null;
-
-      const start = (heading.index ?? 0) + heading[0].length;
-      const end =
-        index + 1 < headings.length
-          ? headings[index + 1].index ?? source.length
-          : source.length;
-      const contentHtml = source.slice(start, end).trim();
-      const contentText = normalizeText(contentHtml);
-
-      return {
-        title,
-        contentHtml: contentText ? contentHtml : '<p></p>',
-      };
-    })
-    .filter((section): section is SpecificationSection => section != null);
 }
 
 const STAR_PATH =
@@ -295,15 +240,9 @@ export function ProductDetailContent({
     }
   }, [isAuthenticated, pendingWishlist]);
   const specificationSections = useMemo(
-    () => parseSpecificationSections(product.specifications),
+    () => parseHtmlIntoSections(product.specifications),
     [product.specifications]
   );
-  const [expandedSpecificationIndexes, setExpandedSpecificationIndexes] =
-    useState<number[]>([]);
-
-  useEffect(() => {
-    setExpandedSpecificationIndexes([]);
-  }, [specificationSections]);
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -723,66 +662,10 @@ export function ProductDetailContent({
             }}
           />
         ) : null}
-        {specificationSections.length > 0 && (
-          <section
-            aria-label="Product specifications sections"
-            className="mt-6 border-t border-border"
-          >
-            {specificationSections.map((section, index) => {
-              const isExpanded = expandedSpecificationIndexes.includes(index);
-
-              return (
-                <article
-                  key={`${section.title}-${index}`}
-                  className="border-b border-border"
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-4 py-5 text-left"
-                    onClick={() =>
-                      setExpandedSpecificationIndexes(prev =>
-                        prev.includes(index)
-                          ? prev.filter(item => item !== index)
-                          : [...prev, index]
-                      )
-                    }
-                    aria-expanded={isExpanded}
-                  >
-                    <span className="text-2xl font-semibold text-ink">
-                      {section.title}
-                    </span>
-                    <svg
-                      className={`h-6 w-6 shrink-0 text-ink transition-transform ${
-                        isExpanded ? 'rotate-45' : ''
-                      }`}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 5v14" />
-                      <path d="M5 12h14" />
-                    </svg>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="pb-5">
-                      <div
-                        className="prose prose-sm max-w-none text-ink-muted [&_a]:text-ink [&_a]:underline hover:[&_a]:text-brand [&_strong]:font-semibold [&_strong]:text-ink"
-                        dangerouslySetInnerHTML={{
-                          __html: section.contentHtml,
-                        }}
-                      />
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </section>
-        )}
+        <ExpandableHtmlSections
+          sections={specificationSections}
+          ariaLabel="Product specifications sections"
+        />
       </div>
     </div>
   );

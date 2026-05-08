@@ -16,10 +16,10 @@ import type {
   ProductReviewPagination,
   ProductReviewSummary,
 } from '@/features/product';
-import type { ProductQaListResult } from '@/features/product';
-import { ProductQA } from './ProductQA';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
 import type { ProductVideoCard, PdpRecipeCard } from '@/features/product';
+import { ExpandableHtmlSections } from './ExpandableHtmlSections';
+import { parseHtmlIntoSections } from './parse-html-sections';
 
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
@@ -31,7 +31,6 @@ interface ProductDetailReviewShellProps {
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
   allowSubmit?: boolean;
-  initialProductQa: ProductQaListResult;
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
   recipes?: PdpRecipeCard[];
@@ -47,7 +46,6 @@ export function ProductDetailReviewShell({
   initialReviews,
   initialPagination,
   allowSubmit = true,
-  initialProductQa,
   beforeVideos,
   videos = [],
   recipes = [],
@@ -84,6 +82,11 @@ export function ProductDetailReviewShell({
         product.type_id === 'configurable' ? !selection.allSelected : false,
     };
   }, [product, selection]);
+
+  const faqSections = useMemo(
+    () => parseHtmlIntoSections(product.faqs),
+    [product.faqs]
+  );
 
   const hasReviewData =
     (summary?.total ?? 0) > 0 ||
@@ -136,14 +139,26 @@ export function ProductDetailReviewShell({
         </div>
       )}
 
-      <div id="section-product-qa">
-        <ProductQA
-          productId={product.id}
-          sku={reviewSku}
-          initialResult={initialProductQa}
-          allowSubmit={allowSubmit}
-        />
-      </div>
+      {faqSections.length > 0 && (
+        <section
+          id="section-product-faqs"
+          aria-labelledby="product-faqs-heading"
+          className="py-12 lg:py-16"
+        >
+          <h2
+            id="product-faqs-heading"
+            className="heading-3 mb-6 text-center text-ink"
+          >
+            Questions and answers
+          </h2>
+          <ExpandableHtmlSections
+            sections={faqSections}
+            ariaLabel="Product FAQ sections"
+          />
+        </section>
+      )}
+
+      <ProductBackToTopButton />
 
       <ProductBackToTopButton />
     </>

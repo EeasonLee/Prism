@@ -23,11 +23,11 @@ export const useBreadcrumbStore = create<BreadcrumbStoreState>((set, get) => ({
 }));
 
 /**
- * 以「最长公共前缀」策略合并新旧面包屑路径。
+ * 合并当前页 items 到导航历史。
  *
- * 公共前缀命中 → 保留历史的 href（已在历史中的链接不覆盖，防止丢失筛选参数）。
- * 超出公共前缀的历史项 → 丢弃（用户通过面包屑跳回或导航到不同分支）。
- * 当前页（最后一项）→ 使用 currentUrl 作为 href（含 search params，供后续页面的 resolveItems 回填）。
+ * 策略：按位置对齐——history 和 items 重叠的祖先位置保留 history（反映实际导航路径），
+ * items 多出的部分追加。最后一项始终用 currentUrl。
+ * 同名 label 的 href 优先用 history 的（保留筛选参数）。
  */
 function mergeHistory(
   history: BreadcrumbItem[],
@@ -36,34 +36,24 @@ function mergeHistory(
 ): BreadcrumbItem[] {
   if (items.length === 0) return history;
   if (history.length === 0) {
-    // 首访：把 currentUrl 赋给最后一项（当前页），以便后续页面复用
     return items.map((item, i) =>
       i === items.length - 1 ? { ...item, href: currentUrl } : item
     );
   }
 
-  // 最长公共前缀
-  let commonLen = 0;
-  while (
-    commonLen < history.length &&
-    commonLen < items.length &&
-    history[commonLen].label === items[commonLen].label
-  ) {
-    commonLen++;
+  const result: BreadcrumbItem[] = [];
+
+  // 重叠的祖先位置：优先保留 history（反映用户实际导航路径）
+  const overlapEnd = Math.min(history.length, items.length - 1);
+  for (let i = 0; i < overlapEnd; i++) {
+    result.push({ ...history[i] });
   }
 
-  // 公共前缀保持历史项（保留已存储的 href），但排除最后一项以确保最后一项始终使用 currentUrl
-  const prefixEnd = Math.min(commonLen, items.length - 1);
-  const result: BreadcrumbItem[] = history
-    .slice(0, prefixEnd)
-    .map(h => ({ ...h }));
-
-  // 新项追加（含最后一项，始终使用 currentUrl）
-  for (let i = prefixEnd; i < items.length; i++) {
-    const isLast = i === items.length - 1;
+  // 新 items 多出的部分追加
+  for (let i = overlapEnd; i < items.length; i++) {
     result.push({
       label: items[i].label,
-      href: isLast ? currentUrl : items[i].href,
+      href: i === items.length - 1 ? currentUrl : items[i].href,
     });
   }
 

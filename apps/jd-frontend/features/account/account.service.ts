@@ -5,7 +5,10 @@ import {
   extractWrappedMagentoAccessToken,
   validateRefreshToken,
 } from '@/features/auth';
-import { magentoGraphQLClient } from '@/infrastructure/api/clients/magento-graphql';
+import {
+  magentoGraphQLClient,
+  unwrapGraphQLResponse,
+} from '@/infrastructure/api/clients/magento-graphql';
 import { magentoClient } from '@/infrastructure/api/clients/magento';
 import {
   getCountriesList,
@@ -681,10 +684,11 @@ export class MagentoAccountService implements AccountService {
     query: string,
     variables?: Record<string, unknown>
   ): Promise<T> {
-    return magentoGraphQLClient.post<T>('', {
+    const raw = await magentoGraphQLClient.post<T>('', {
       body: { query, variables },
       headers: { Authorization: `Bearer ${this.accessToken}` },
     });
+    return unwrapGraphQLResponse<T>(raw);
   }
 
   private getMeRaw(): Promise<MagentoCustomer> {
@@ -746,13 +750,7 @@ export class MagentoAccountService implements AccountService {
         `;
 
         const graphqlResponse =
-          await magentoGraphQLClient.post<MagentoCustomerOrdersGraphQLResponse>(
-            '',
-            {
-              body: { query },
-              headers: { Authorization: `Bearer ${this.accessToken}` },
-            }
-          );
+          await this.graphql<MagentoCustomerOrdersGraphQLResponse>(query);
         const items = graphqlResponse.customer.orders?.items ?? [];
         return items.map(toOrderFromGraphQL);
       }

@@ -26,6 +26,7 @@ interface GQLConfigurableOption {
 interface GQLVariantProduct {
   id: number;
   sku: string;
+  url_key: string | null;
   name: string;
   cp_label: string | null;
   cp_code: string | null;
@@ -105,7 +106,6 @@ interface GQLProduct {
   url_key: string | null;
   name: string;
   // 自定义属性
-  long_title: string | null;
   cp_label: string | null;
   cp_code: string | null;
   cp_date: string | null;
@@ -114,6 +114,7 @@ interface GQLProduct {
   meta_title: string | null;
   meta_description: string | null;
   specifications?: string | null;
+  faqs?: string | null;
   description: { html: string } | null;
   short_description: { html: string } | null;
   price_range: {
@@ -158,7 +159,7 @@ const PRODUCT_DETAIL_QUERY = `
         sku
         url_key
         name
-        long_title
+
         cp_label
         cp_code
         cp_date
@@ -166,6 +167,7 @@ const PRODUCT_DETAIL_QUERY = `
         meta_title
         meta_description
         specifications
+        faqs
         description { html }
         short_description { html }
         price_range {
@@ -251,6 +253,7 @@ const PRODUCT_DETAIL_QUERY = `
             product {
               id
               sku
+              url_key
               name
               cp_label
               cp_code
@@ -282,7 +285,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         sku
         url_key
         name
-        long_title
+
         cp_label
         cp_code
         cp_date
@@ -290,6 +293,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
         meta_title
         meta_description
         specifications
+        faqs
         description { html }
         short_description { html }
         price_range {
@@ -375,6 +379,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
             product {
               id
               sku
+              url_key
               name
               cp_label
               cp_code

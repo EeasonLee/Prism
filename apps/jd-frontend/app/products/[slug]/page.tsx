@@ -10,7 +10,6 @@ import type {
   ProductReviewListResult,
   ProductReviewSummary,
 } from '@/features/product';
-import type { ProductQaListResult } from '@/features/product';
 import { ProductDetailReviewShell } from './ProductDetailReviewShell';
 import { ProductSectionNav } from './ProductSectionNav';
 import { UpsellProductsSection } from './UpsellProductsSection';
@@ -170,18 +169,6 @@ export default async function ProductDetailPage({ params }: Props) {
     },
   };
 
-  let initialProductQa: ProductQaListResult = {
-    productId: 0,
-    sku: decodedSku,
-    items: [],
-    pagination: {
-      page: 1,
-      pageSize: 10,
-      pageCount: 0,
-      total: 0,
-    },
-  };
-
   let deferredRelated: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
   let deferredUpsell: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
 
@@ -193,9 +180,8 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const fetchedProduct = aggregate.core.product;
 
-  const [fetchedReviewsData, fetchedProductQa, fetchedCms] = await Promise.all([
+  const [fetchedReviewsData, fetchedCms] = await Promise.all([
     aggregate.deferred.reviews,
-    aggregate.deferred.productQa,
     aggregate.deferred.cms,
   ]);
 
@@ -208,7 +194,6 @@ export default async function ProductDetailPage({ params }: Props) {
     items: fetchedReviewsData.items,
     pagination: fetchedReviewsData.pagination,
   };
-  initialProductQa = fetchedProductQa;
   deferredRelated = aggregate.deferred.related;
   deferredUpsell = aggregate.deferred.upsell;
 
@@ -246,7 +231,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    { label: 'Categories', href: '/categories' },
     ...(product.categories?.[0]
       ? [
           {
@@ -262,7 +246,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const breadcrumbSchema = buildBreadcrumbSchema([
     { name: 'Home', path: '/' },
-    { name: 'Categories', path: '/categories' },
     ...(product.categories?.[0]
       ? [
           {
@@ -296,7 +279,6 @@ export default async function ProductDetailPage({ params }: Props) {
         initialReviews={reviewList.items}
         initialPagination={reviewList.pagination}
         allowSubmit
-        initialProductQa={initialProductQa}
         beforeVideos={
           <Suspense fallback={null}>
             <DeferredUpsellProductsSection promise={deferredUpsell} />
