@@ -26,6 +26,7 @@ interface GQLConfigurableOption {
 interface GQLVariantProduct {
   id: number;
   sku: string;
+  url_key: string | null;
   name: string;
   cp_label: string | null;
   cp_code: string | null;
@@ -251,6 +252,7 @@ const PRODUCT_DETAIL_QUERY = `
             product {
               id
               sku
+              url_key
               name
               cp_label
               cp_code
@@ -375,6 +377,7 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
             product {
               id
               sku
+              url_key
               name
               cp_label
               cp_code
