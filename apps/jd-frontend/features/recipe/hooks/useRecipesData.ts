@@ -52,6 +52,13 @@ function parseFiltersFromSearchParams(
   };
 }
 
+const defaultPagination: PaginationInfo = {
+  page: 1,
+  pageSize: 12,
+  pageCount: 0,
+  total: 0,
+};
+
 export function useRecipesData(
   initialRecipes: Recipe[],
   initialFacets: Facets | null,
@@ -160,7 +167,7 @@ export function useRecipesData(
 
           setRecipes(response.data.map(mapSearchItemToRecipe));
           setFacets(null);
-          setPagination(response.meta.pagination);
+          setPagination(response.meta?.pagination ?? defaultPagination);
         } else {
           const params: RecipeSearchParams = {
             page,
@@ -172,8 +179,8 @@ export function useRecipesData(
           const response = await searchRecipes(params);
 
           setRecipes(response.data);
-          setFacets(response.meta.facets || null);
-          setPagination(response.meta.pagination);
+          setFacets(response.meta?.facets ?? null);
+          setPagination(response.meta?.pagination ?? defaultPagination);
         }
 
         // 更新 URL 但不触发整页刷新

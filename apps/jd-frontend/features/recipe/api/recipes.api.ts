@@ -131,6 +131,17 @@ async function fetchBffJson<T>(relativePath: string): Promise<T> {
     throw new ApiError(message, response.status, undefined, data);
   }
 
+  // 拆解 BFF 统一响应信封 { success, data, error }
+  if (
+    data &&
+    typeof data === 'object' &&
+    'success' in data &&
+    (data as Record<string, unknown>).success === true &&
+    'data' in data
+  ) {
+    return (data as { data: T }).data;
+  }
+
   return data as T;
 }
 

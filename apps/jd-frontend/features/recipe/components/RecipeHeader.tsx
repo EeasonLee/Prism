@@ -17,7 +17,8 @@ interface RecipeHeaderProps {
 }
 
 // 格式化数字，使用固定 locale 避免 hydration 不匹配
-function formatNumber(num: number): string {
+function formatNumber(num?: number): string {
+  if (num == null) return '0';
   return num.toLocaleString('en-US');
 }
 
