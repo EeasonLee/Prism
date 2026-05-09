@@ -8,6 +8,7 @@ import {
   type StrapiImage,
   type ProductImageSize,
 } from '@prism/shared';
+import { cn } from '@prism/shared';
 import Image from 'next/image';
 import {
   type ComponentProps,
@@ -64,7 +65,12 @@ export interface OptimizedImageProps
   cdnSize?: ProductImageSize;
   /** 设备像素比，默认 2（retina） */
   pixelRatio?: number;
+  /** 禁用 blur-up 渐进加载（极少数场景使用） */
+  disableBlurUp?: boolean;
 }
+
+/** 图片加载状态 */
+type ImageLoadState = 'loading' | 'loaded' | 'error';
 
 /**
  * 默认占位符组件
@@ -91,8 +97,63 @@ function DefaultPlaceholder() {
 }
 
 /**
+ * 生成 blur-up 缩略图 URL
+ *
+ * 策略：
+ * 1. Strapi 对象 → 优先用 formats.thumbnail（已在 API 响应中，零额外请求）
+ * 2. CDN URL   → 生成 80px 缩略图
+ * 3. 非 CDN / 本地图 → null（退化为纯 fade-in）
+ */
+function resolveBlurSrc(
+  src: StrapiImage | string | null | undefined,
+  baseUrl?: string
+): string | null {
+  if (!src) return null;
+
+  // Strapi 对象：优先取 thumbnail（API 已返回，零额外请求）
+  if (typeof src === 'object') {
+    const thumbUrl = src.formats?.thumbnail?.url;
+    if (thumbUrl) return thumbUrl;
+    const smallUrl = src.formats?.small?.url;
+    if (smallUrl) return smallUrl;
+  }
+
+  // 字符串：尝试生成 80px CDN 缩略图
+  let rawUrl: string;
+  if (typeof src === 'string') {
+    rawUrl = src.trim();
+  } else {
+    rawUrl = src.url?.trim() ?? '';
+  }
+  if (!rawUrl) return null;
+
+  // SVG 不能 blur
+  if (/\.svg(\?.*)?$/i.test(rawUrl)) return null;
+
+  // 本地静态图 /images/、/_next/ 跳过
+  if (
+    rawUrl.startsWith('/images/') ||
+    rawUrl.startsWith('/_next/') ||
+    rawUrl === '/favicon.ico'
+  ) {
+    return null;
+  }
+
+  // 用 resolveImageUrl + size: 80 生成缩略图 URL
+  // 内部会自动处理 CDN 路径识别、相对路径、域名重写等
+  const blurUrl = resolveImageUrl(rawUrl, { size: 80, baseUrl });
+  if (!blurUrl) return null;
+
+  // 如果 80px URL 与原图 URL 相同 → CDN 未生效 → 跳过
+  const originalUrl = resolveImageUrl(rawUrl, { baseUrl });
+  if (blurUrl === originalUrl) return null;
+
+  return blurUrl;
+}
+
+/**
  * 统一的图片组件
- * 封装了 Next.js Image 组件的使用，统一处理图片 URL、优化、错误处理等
+ * 封装了 Next.js Image 组件的使用，统一处理图片 URL、优化、错误处理、blur-up 等
  */
 export function OptimizedImage({
   src,
@@ -105,10 +166,13 @@ export function OptimizedImage({
   maxDisplayWidth,
   cdnSize,
   pixelRatio,
+  disableBlurUp = false,
   ...imageProps
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
   const [useOriginalAbsoluteUrl, setUseOriginalAbsoluteUrl] = useState(false);
+  const [imageState, setImageState] = useState<ImageLoadState>('loading');
+  const [blurSrc, setBlurSrc] = useState<string | null>(null);
   const { baseUrl } = useImageConfig();
 
   // 从 Strapi 图片对象或字符串中提取原始 URL（用于重试回退比较）
@@ -144,9 +208,20 @@ export function OptimizedImage({
       ? rawUrl
       : imageUrl;
 
+  // 计算 blur 缩略图 URL
+  useEffect(() => {
+    if (disableBlurUp) {
+      setBlurSrc(null);
+      return;
+    }
+    setBlurSrc(resolveBlurSrc(src, baseUrl));
+  }, [src, baseUrl, disableBlurUp]);
+
+  // src 变化时重置状态
   useEffect(() => {
     setHasError(false);
     setUseOriginalAbsoluteUrl(false);
+    setImageState('loading');
   }, [rawUrl, imageUrl]);
 
   // 如果图片不存在，显示占位符
@@ -168,19 +243,79 @@ export function OptimizedImage({
       return;
     }
 
+    setImageState('error');
     setHasError(true);
     if (onImageError) {
       onImageError(new Error(`Failed to load image: ${resolvedImageUrl}`));
     }
   };
 
+  const isLoading = imageState === 'loading';
+  const isFill = imageProps.fill;
+
+  // blur 占位图元素（复用）
+  const blurLayer =
+    isLoading && blurSrc ? (
+      <img
+        src={blurSrc}
+        alt=""
+        aria-hidden="true"
+        className={cn(
+          'absolute inset-0 h-full w-full',
+          'scale-110 blur-[20px]',
+          'object-cover',
+          'transition-opacity duration-300'
+        )}
+        onError={() => setBlurSrc(null)}
+      />
+    ) : null;
+
+  // 主图的 className（合并 transition）
+  // relative z-[1] 确保主图在 blur 层之上（非 fill 模式下需要）
+  const mainClassName = cn(
+    imageProps.className,
+    'relative z-[1] transition-opacity duration-400 ease-in',
+    imageState === 'loaded' ? 'opacity-100' : 'opacity-0'
+  );
+
+  // fill 模式：不包裹 div，blur 层和 Image 作为兄弟元素
+  // 父容器提供 position: relative（fill 的正常使用方式）
+  if (isFill) {
+    return (
+      <>
+        {blurLayer}
+        <Image
+          src={resolvedImageUrl}
+          alt={alt}
+          unoptimized={unoptimized}
+          className={mainClassName}
+          onLoad={() => setImageState('loaded')}
+          onError={handleError}
+          {...imageProps}
+        />
+      </>
+    );
+  }
+
+  // 非 fill 模式：用一个 relative 容器包裹，控制尺寸
   return (
-    <Image
-      src={resolvedImageUrl}
-      alt={alt}
-      unoptimized={unoptimized}
-      onError={handleError}
-      {...imageProps}
-    />
+    <div
+      className="relative inline-block max-w-full overflow-hidden"
+      style={{
+        width: imageProps.width,
+        height: imageProps.height,
+      }}
+    >
+      {blurLayer}
+      <Image
+        src={resolvedImageUrl}
+        alt={alt}
+        unoptimized={unoptimized}
+        className={mainClassName}
+        onLoad={() => setImageState('loaded')}
+        onError={handleError}
+        {...imageProps}
+      />
+    </div>
   );
 }
