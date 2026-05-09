@@ -2,19 +2,13 @@
 
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Heart, Trash2, Loader2 } from 'lucide-react';
 import { formatPrice, resolveImageUrl } from '@prism/shared';
-import { AccountScaffold } from '../components/AccountScaffold';
-import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 import type { WishlistItem } from '@/features/account/types';
 
 export default function WishlistPage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { getWishlist, removeFromWishlist } = useAccount({
     loadUser: false,
     loadOrders: false,
@@ -24,12 +18,6 @@ export default function WishlistPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account/wishlist');
-    }
-  }, [authLoading, isAuthenticated, router]);
 
   const loadWishlist = useCallback(async () => {
     setIsLoading(true);
@@ -45,10 +33,8 @@ export default function WishlistPage() {
   }, [getWishlist]);
 
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      void loadWishlist();
-    }
-  }, [isAuthenticated, authLoading, loadWishlist]);
+    void loadWishlist();
+  }, [loadWishlist]);
 
   const handleRemove = async (id: number) => {
     setRemovingId(id);
@@ -63,23 +49,31 @@ export default function WishlistPage() {
     }
   };
 
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <h1 className="heading-2 text-ink">My Wishlist</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Products you have saved for later.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square animate-pulse rounded-xl bg-surface"
+            />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <AccountScaffold
-      title="My Wishlist"
-      description="Products you have saved for later."
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">My Wishlist</h1>
+      <p className="mt-2 text-sm text-ink-muted">
+        Products you have saved for later.
+      </p>
       {error && (
         <p
           role="alert"
@@ -185,6 +179,6 @@ export default function WishlistPage() {
           ))}
         </ul>
       )}
-    </AccountScaffold>
+    </div>
   );
 }

@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AccountScaffold } from '../components/AccountScaffold';
-import { AccountSkeleton } from '../components/AccountSkeleton';
 import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 
 export default function AccountProfilePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
+  const { refreshSession } = useAuth();
   const {
     user,
     isLoading,
@@ -17,7 +15,6 @@ export default function AccountProfilePage() {
     updateProfile,
     changePassword,
     deleteAccount,
-    logout,
   } = useAccount({
     loadUser: true,
     loadOrders: false,
@@ -29,7 +26,6 @@ export default function AccountProfilePage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [logoutLoading, setLogoutLoading] = useState(false);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -43,12 +39,6 @@ export default function AccountProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account/profile');
-    }
-  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (user) {
@@ -76,17 +66,6 @@ export default function AccountProfilePage() {
     },
     [updateProfile, firstname, lastname, email]
   );
-
-  const handleLogout = useCallback(async () => {
-    setLogoutLoading(true);
-    try {
-      await logout();
-      await refreshSession();
-      router.replace('/login');
-    } finally {
-      setLogoutLoading(false);
-    }
-  }, [logout, refreshSession, router]);
 
   const handlePasswordSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,25 +116,28 @@ export default function AccountProfilePage() {
     }
   }, [deleteAccount, deleteConfirmText, refreshSession, router]);
 
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <h1 className="heading-2 text-ink">Profile</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Update your account details.
+        </p>
+        <div className="mt-6 space-y-4">
+          <div className="h-10 w-full animate-pulse rounded-lg bg-surface" />
+          <div className="h-10 w-full animate-pulse rounded-lg bg-surface" />
+          <div className="h-10 w-full animate-pulse rounded-lg bg-surface" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <AccountScaffold
-      title="Profile"
-      description="Update your account details."
-      onLogout={handleLogout}
-      logoutLoading={logoutLoading}
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">Profile</h1>
+      <p className="mt-2 text-sm text-ink-muted">
+        Update your account details.
+      </p>
       {(error || message) && (
         <p
           role="status"
@@ -347,6 +329,6 @@ export default function AccountProfilePage() {
           </div>
         </div>
       )}
-    </AccountScaffold>
+    </div>
   );
 }

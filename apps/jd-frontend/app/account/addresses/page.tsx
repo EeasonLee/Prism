@@ -1,11 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, MapPin, Home, CreditCard } from 'lucide-react';
-import { AccountScaffold } from '../components/AccountScaffold';
-import { AccountSkeleton } from '../components/AccountSkeleton';
-import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 import type { Address, AddressInput } from '@/features/account/types';
 import { Button } from '@prism/ui/components/button';
@@ -228,13 +224,10 @@ const SUPPORTED_COUNTRIES = (
   .filter(Boolean);
 
 export default function AccountAddressesPage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
   const {
     addresses,
     isLoading,
     error,
-    logout,
     addAddress,
     updateAddress,
     deleteAddress,
@@ -247,7 +240,6 @@ export default function AccountAddressesPage() {
     loadOrders: false,
     loadAddresses: true,
   });
-  const [logoutLoading, setLogoutLoading] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
@@ -283,20 +275,12 @@ export default function AccountAddressesPage() {
   };
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account/addresses');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      setDefaultAddressesLoading(true);
-      getDefaultAddresses()
-        .then(data => setDefaultAddresses(data))
-        .catch(() => setDefaultAddresses({ billing: null, shipping: null }))
-        .finally(() => setDefaultAddressesLoading(false));
-    }
-  }, [isAuthenticated, authLoading, getDefaultAddresses]);
+    setDefaultAddressesLoading(true);
+    getDefaultAddresses()
+      .then(data => setDefaultAddresses(data))
+      .catch(() => setDefaultAddresses({ billing: null, shipping: null }))
+      .finally(() => setDefaultAddressesLoading(false));
+  }, [getDefaultAddresses]);
 
   const loadRegions = useCallback(
     async (countryCode: string) => {
@@ -456,36 +440,24 @@ export default function AccountAddressesPage() {
     [deleteAddress, refresh]
   );
 
-  const handleLogout = useCallback(async () => {
-    setLogoutLoading(true);
-    try {
-      await logout();
-      await refreshSession();
-      router.replace('/login');
-    } finally {
-      setLogoutLoading(false);
-    }
-  }, [logout, refreshSession, router]);
-
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <h1 className="heading-2 text-ink">Addresses</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Manage your saved shipping and billing addresses.
+        </p>
+        <div className="mt-6 h-64 animate-pulse rounded-lg bg-surface" />
+      </div>
     );
   }
 
   return (
-    <AccountScaffold
-      title="Addresses"
-      description="Manage your saved shipping and billing addresses."
-      onLogout={handleLogout}
-      logoutLoading={logoutLoading}
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">Addresses</h1>
+      <p className="mt-2 text-sm text-ink-muted">
+        Manage your saved shipping and billing addresses.
+      </p>
       {error && (
         <p
           role="alert"
@@ -1021,6 +993,6 @@ export default function AccountAddressesPage() {
           </div>
         </div>
       </Sheet>
-    </AccountScaffold>
+    </div>
   );
 }
