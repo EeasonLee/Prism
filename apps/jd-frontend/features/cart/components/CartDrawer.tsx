@@ -1,10 +1,10 @@
 'use client';
 
 import { env } from '@/infrastructure/config/env';
-import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { CreditCard, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OptimizedImage } from '@prism/ui';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { formatPrice } from '@prism/shared';
 import {
   applyCoupon,
@@ -22,6 +22,7 @@ interface CartEnrichmentData {
   sku: string;
   name: string;
   image: string | null;
+  url_key: string | null;
   configurable_options: Array<{
     attribute_id: string;
     attribute_code: string;
@@ -150,7 +151,6 @@ function findVariantImage(
 }
 
 export function CartDrawer() {
-  const router = useRouter();
   const {
     items,
     isCartOpen,
@@ -163,7 +163,6 @@ export function CartDrawer() {
   } = useCart();
   const { hasSession, isGuest } = useAuth();
   const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
-  const [viewCartLoading, setViewCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
@@ -243,17 +242,6 @@ export function CartDrawer() {
       cancelled = true;
     };
   }, [items]);
-
-  const handleViewCart = useCallback(async () => {
-    if (!hasSession) return;
-    setViewCartLoading(true);
-    try {
-      closeCart();
-      router.push('/cart');
-    } finally {
-      setViewCartLoading(false);
-    }
-  }, [closeCart, hasSession, router]);
 
   const handleCheckout = useCallback(async () => {
     if (!hasSession) return;
@@ -473,6 +461,10 @@ export function CartDrawer() {
                 // For configurable products, show variant label + base name
                 const displayName = item.name;
 
+                const productUrl = enrich?.url_key
+                  ? `/products/${enrich.url_key}`
+                  : `/products/${item.sku}`;
+
                 return (
                   <li
                     key={item.item_id}
@@ -480,7 +472,11 @@ export function CartDrawer() {
                   >
                     {/* Product image */}
                     {imageUrl ? (
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface">
+                      <Link
+                        href={productUrl}
+                        onClick={closeCart}
+                        className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface"
+                      >
                         <OptimizedImage
                           src={imageUrl}
                           alt={displayName}
@@ -488,17 +484,25 @@ export function CartDrawer() {
                           height={64}
                           className="h-full w-full object-cover"
                         />
-                      </div>
+                      </Link>
                     ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-surface">
+                      <Link
+                        href={productUrl}
+                        onClick={closeCart}
+                        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-surface"
+                      >
                         <ShoppingCart className="h-5 w-5 text-ink-muted/30" />
-                      </div>
+                      </Link>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">
+                      <Link
+                        href={productUrl}
+                        onClick={closeCart}
+                        className="block text-sm font-medium leading-snug text-ink transition hover:text-brand"
+                      >
                         {displayName}
-                      </p>
+                      </Link>
                       <p className="mt-0.5 text-xs text-ink-muted">
                         SKU: {item.sku}
                       </p>
@@ -568,7 +572,7 @@ export function CartDrawer() {
                           })}
                         </ul>
                       )}
-                      <div className="mt-2 flex items-center gap-1">
+                      <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-border bg-surface">
                         <button
                           type="button"
                           aria-label="Decrease quantity"
@@ -578,11 +582,11 @@ export function CartDrawer() {
                           disabled={
                             mutatingItemId === item.item_id || item.qty <= 1
                           }
-                          className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-6 text-center text-sm text-ink">
+                        <span className="flex h-8 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-2 text-sm font-semibold text-ink">
                           {item.qty}
                         </span>
                         <button
@@ -592,9 +596,9 @@ export function CartDrawer() {
                             handleUpdateQty(item.item_id, item.qty + 1)
                           }
                           disabled={mutatingItemId === item.item_id}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -618,6 +622,17 @@ export function CartDrawer() {
             </ul>
           )}
 
+          {hasItems && items.length > 2 && (
+            <button
+              type="button"
+              onClick={handleClearCart}
+              disabled={clearLoading}
+              className="mt-3 w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
+            >
+              {clearLoading ? 'Clearing…' : 'Clear cart'}
+            </button>
+          )}
+
           {serviceError && (
             <p role="alert" className="mt-4 text-center text-xs text-red-500">
               {serviceError}
@@ -630,49 +645,56 @@ export function CartDrawer() {
             {/* Coupon code */}
             <div className="space-y-2">
               {cartTotals?.coupon_code ? (
-                <div className="flex items-center justify-between rounded-lg bg-surface px-3 py-2">
-                  <span className="text-sm text-ink">
-                    Coupon:{' '}
-                    <span className="font-semibold">
-                      {cartTotals.coupon_code}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg bg-surface px-3 py-2">
+                    <span className="text-sm text-ink">
+                      Coupon:{' '}
+                      <span className="font-semibold">
+                        {cartTotals.coupon_code}
+                      </span>
                     </span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleRemoveCoupon}
-                    disabled={couponLoading}
-                    className="text-sm text-red-500 transition hover:text-red-600 disabled:opacity-50"
-                  >
-                    {couponLoading ? 'Removing…' : 'Remove'}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      disabled={couponLoading}
+                      className="text-sm text-red-500 transition hover:text-red-600 disabled:opacity-50"
+                    >
+                      {couponLoading ? 'Removing…' : 'Remove'}
+                    </button>
+                  </div>
+                  <div className="border-t border-border/70" />
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        void handleApplyCoupon();
-                      }
-                    }}
-                    placeholder="Enter coupon code"
-                    className="min-h-touch flex-1 rounded-xl border border-border/70 bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand"
-                    disabled={couponLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleApplyCoupon()}
-                    disabled={couponLoading || !couponCode.trim()}
-                    className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {couponLoading ? '…' : 'Apply'}
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={e => setCouponCode(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          void handleApplyCoupon();
+                        }
+                      }}
+                      placeholder="Enter coupon code"
+                      className="min-h-touch flex-1 rounded-xl border border-border/70 bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand"
+                      disabled={couponLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyCoupon()}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {couponLoading ? '…' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <div className="rounded-lg bg-red-50 px-3 py-2">
+                      <p className="text-sm text-red-600">{couponError}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {couponError && (
-                <p className="text-xs text-red-500">{couponError}</p>
               )}
             </div>
 
@@ -685,53 +707,36 @@ export function CartDrawer() {
               </span>
             </div>
             {cartTotals?.discount && cartTotals.discount.value !== 0 && (
-              <div className="flex items-center justify-between text-xs text-ink-muted">
-                <span>
-                  {(cartTotals.discount_reason ?? 'Discount') +
-                    (cartTotals.coupon_code
-                      ? ` (${cartTotals.coupon_code})`
-                      : '')}
-                </span>
-                <span className="font-semibold text-ink">
-                  {formatCartMoney(cartTotals.discount)}
-                </span>
-              </div>
+              <>
+                <div className="flex items-center justify-between text-sm text-ink">
+                  <span>
+                    {cartTotals.coupon_code
+                      ? `Discount (${cartTotals.coupon_code})`
+                      : cartTotals.discount_reason ?? 'Discount'}
+                  </span>
+                  <span className="font-semibold text-ink">
+                    {formatCartMoney(cartTotals.discount)}
+                  </span>
+                </div>
+                <div className="border-t border-border/70" />
+              </>
             )}
             {cartTotals?.grand_total && (
-              <div className="flex items-center justify-between text-xs text-ink-muted">
+              <div className="flex items-center justify-between text-base font-bold text-ink">
                 <span>Estimated total</span>
-                <span className="font-semibold text-ink">
-                  {formatCartMoney(cartTotals.grand_total)}
-                </span>
+                <span>{formatCartMoney(cartTotals.grand_total)}</span>
               </div>
             )}
 
             <button
               type="button"
-              onClick={handleClearCart}
-              disabled={clearLoading}
-              className="w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="btn-primary flex w-full items-center justify-center gap-2 rounded-xl py-4 text-base font-bold disabled:opacity-60"
             >
-              {clearLoading ? 'Clearing…' : 'Clear cart'}
+              <CreditCard className="h-5 w-5" />
+              {checkoutLoading ? 'Redirecting…' : 'Checkout'}
             </button>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleViewCart}
-                disabled={viewCartLoading || checkoutLoading}
-                className="flex-1 rounded-full border border-border bg-transparent py-3 text-sm font-semibold text-ink transition hover:bg-surface disabled:opacity-60"
-              >
-                {viewCartLoading ? 'Redirecting…' : 'View cart'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={checkoutLoading || viewCartLoading}
-                className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-60"
-              >
-                {checkoutLoading ? 'Redirecting…' : 'Checkout'}
-              </button>
-            </div>
           </div>
         )}
       </aside>
