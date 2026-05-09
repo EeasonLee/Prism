@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { formatPrice } from '@prism/shared';
 import type { UnifiedLinkedProduct } from '@/features/product';
 import { PageContainer } from '@prism/ui';
-import { getProductDetailAggregate } from '@/features/product';
+import { getProductDetailAggregate, buildProductUrl } from '@/features/product';
 import type {
   ProductReviewListResult,
   ProductReviewSummary,
@@ -91,7 +91,13 @@ async function DeferredRelatedProductsSection({
                 key={item.sku}
                 className="group overflow-hidden rounded-xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-card"
               >
-                <Link href={`/products/${item.url_key ?? item.sku}`}>
+                <Link
+                  href={buildProductUrl({
+                    url_key: item.url_key,
+                    sku: item.sku,
+                    cp_code: null,
+                  })}
+                >
                   <div className="relative aspect-square bg-surface-muted">
                     {cardImageUrl ? (
                       <OptimizedImage
@@ -107,7 +113,11 @@ async function DeferredRelatedProductsSection({
                 </Link>
                 <div className="space-y-2 p-4">
                   <Link
-                    href={`/products/${item.url_key ?? item.sku}`}
+                    href={buildProductUrl({
+                      url_key: item.url_key,
+                      sku: item.sku,
+                      cp_code: null,
+                    })}
                     className="block"
                   >
                     <h3 className="line-clamp-2 text-sm font-semibold text-ink">
@@ -256,7 +266,14 @@ export default async function ProductDetailPage({ params }: Props) {
           },
         ]
       : []),
-    { name: product.display_name, path: `/products/${product.sku ?? slug}` },
+    {
+      name: product.display_name,
+      path: buildProductUrl({
+        url_key: null,
+        sku: product.sku ?? slug,
+        cp_code: null,
+      }),
+    },
   ]);
 
   return (

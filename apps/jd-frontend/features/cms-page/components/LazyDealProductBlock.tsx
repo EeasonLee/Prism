@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import type { ProductCardItem } from '@/features/product';
+import {
+  ProductCard,
+  mapCardItemToDisplay,
+  type ProductCardItem,
+} from '@/features/product';
 import type { DealProductBlockItem } from '../types';
-import { DealProductCard } from './DealProductCard';
 
 interface LazyDealProductBlockProps {
   block: DealProductBlockItem;
@@ -119,7 +122,11 @@ export function LazyDealProductBlock({ block }: LazyDealProductBlockProps) {
       {!loading && products.length > 0 && (
         <div className={`grid gap-4 ${LAYOUT_CLASSES[block.layout]}`}>
           {products.map(product => (
-            <DealProductCard key={product.sku} product={product} />
+            <ProductCard
+              key={product.sku}
+              product={mapCardItemToDisplay(product)}
+              variant="deal"
+            />
           ))}
         </div>
       )}

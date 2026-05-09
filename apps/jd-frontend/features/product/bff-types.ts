@@ -19,8 +19,20 @@ export interface ProductCardItem {
   cpLabel: string | null;
   /** 标签背景色：通常为 #RRGGBB（Meilisearch cp_label_color） */
   cpLabelColor: string | null;
+  /** 优惠券码（Meilisearch cp_code），卡片端加购自动用券 */
+  cpCode?: string | null;
+  /** 优惠券抵扣金额（Meilisearch cp_price），已归一化为数字 */
+  cpPrice?: number | null;
+  /** 优惠券起始时间（ISO 8601 字符串） */
+  cpStartsAt?: string | null;
+  /** 优惠券截止时间（ISO 8601 字符串） */
+  cpExpiresAt?: string | null;
+  /** 促销标签颜色 #RRGGBB（Meilisearch 暂未提供，预留字段） */
+  bestColor?: string | null;
   reviewCount: number;
   ratingPercentage: number;
+  /** 1-5 星评分分布（评分 API 提供，卡片列表不包含此数据） */
+  ratingDistribution?: Record<1 | 2 | 3 | 4 | 5, number> | null;
   createdAt?: number;
   /**
    * 可配置商品变体与选项数据（来自 catalog-sync-service Redis 缓存）。

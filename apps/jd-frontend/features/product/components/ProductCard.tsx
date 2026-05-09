@@ -3,52 +3,40 @@
 import type { Route } from 'next';
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { formatPrice } from '@prism/shared';
 import { resolveImageUrl } from '@prism/shared';
-import type { ProductCardItem } from '../bff-types';
+import type { UnifiedProductDisplay } from '../types';
 import { useCart } from '@/features/cart';
 import { useAddToCartAction } from '@/features/cart';
+import { buildProductUrl } from '../services/product-navigation';
+import { computeDiscountPercent } from '../services/display-mapper';
+import { stripHtml } from '../services/html-utils';
 import { QuickAddModal } from './QuickAddModal';
+import { ProductLabel } from './ProductLabel';
+import { ProductPrice } from './ProductPrice';
+import { AddToCartButton } from './AddToCartButton';
+
+// ─── 类型 ──────────────────────────────────────────────────────────────────────
+
+export type ProductCardVariant =
+  | 'default'
+  | 'compact'
+  | 'deal'
+  | 'category'
+  | 'featured';
 
 interface ProductCardProps {
-  product: ProductCardItem;
+  product: UnifiedProductDisplay;
+  variant?: ProductCardVariant;
 }
+
+// ─── 星标组件 ──────────────────────────────────────────────────────────────────
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
 
 let starIdCounter = 0;
-
-/**
- * 根据 Meilisearch 返回的背景色计算文字颜色（避免固定 token，因背景为运营配置）。
- * 使用 CSS 颜色关键字以通过 lint；非 #RRGGBB 时回退为白字。
- */
-function contrastForegroundForBackground(
-  background: string
-): 'black' | 'white' {
-  const raw = background.trim().replace('#', '');
-  const expanded =
-    raw.length === 3
-      ? raw
-          .split('')
-          .map(c => c + c)
-          .join('')
-      : raw;
-  const match = /^([0-9a-fA-F]{6})$/.exec(expanded);
-  if (!match) return 'white';
-  const n = parseInt(match[1], 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  const [rs, gs, bs] = [r, g, b].map(c => {
-    const x = c / 255;
-    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-  });
-  const luminance = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-  return luminance > 0.45 ? 'black' : 'white';
-}
 
 function StarRating({ percentage }: { percentage: number }) {
   const score = (percentage / 100) * 5;
@@ -95,7 +83,718 @@ function StarRating({ percentage }: { percentage: number }) {
   );
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+// ─── 通用子组件 ────────────────────────────────────────────────────────────────
+
+/** 图片容器（所有变体共用） */
+function CardImage({
+  imageUrl,
+  alt,
+  isOutOfStock,
+  imageLoadFailed,
+  onError,
+  maxDisplayWidth = 350,
+  sizes = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw',
+}: {
+  imageUrl: string | null;
+  alt: string;
+  isOutOfStock: boolean;
+  imageLoadFailed: boolean;
+  onError: () => void;
+  maxDisplayWidth?: number;
+  sizes?: string;
+}) {
+  if (imageUrl && !imageLoadFailed) {
+    return (
+      <OptimizedImage
+        src={imageUrl}
+        alt={alt}
+        fill
+        className={`object-cover ${isOutOfStock ? 'opacity-60 grayscale' : ''}`}
+        maxDisplayWidth={maxDisplayWidth}
+        sizes={sizes}
+        loading="lazy"
+        onError={onError}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full items-center justify-center text-ink-muted/30">
+      <svg
+        className="h-12 w-12"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1}
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
+      </svg>
+    </div>
+  );
+}
+
+// ─── Default 变体 ─────────────────────────────────────────────────────────────
+
+function ProductCardDefault({
+  product,
+  imageUrl,
+  imageLoadFailed,
+  setImageLoadFailed,
+  isOutOfStock,
+  discountPercent,
+  cartQty,
+  isAdding,
+  qtyBusy,
+  addError,
+  handlePrimaryAction,
+  handleQtyDelta,
+  showStepper,
+  productHref,
+  hasRating,
+  ratingScore,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  imageLoadFailed: boolean;
+  setImageLoadFailed: (v: boolean) => void;
+  isOutOfStock: boolean;
+  discountPercent: number | null;
+  cartQty: number;
+  isAdding: boolean;
+  qtyBusy: boolean;
+  addError: string | null;
+  handlePrimaryAction: (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => Promise<void>;
+  handleQtyDelta: (
+    e: React.MouseEvent<HTMLButtonElement>,
+    delta: number
+  ) => Promise<void>;
+  showStepper: boolean;
+  productHref: Route;
+  hasRating: boolean;
+  ratingScore: number;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  const typeKey = product.type_id;
+  const isConfigurable = typeKey === 'configurable';
+
+  return (
+    <article className="flex flex-col rounded-2xl bg-background p-2">
+      <Link href={productHref} className="flex min-h-0 flex-1 flex-col">
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
+          <CardImage
+            imageUrl={imageUrl}
+            alt={product.short_name ?? product.name}
+            isOutOfStock={isOutOfStock}
+            imageLoadFailed={imageLoadFailed}
+            onError={() => setImageLoadFailed(true)}
+          />
+
+          <ProductLabel
+            {...labelProps}
+            className="pointer-events-none absolute left-2 top-2 max-w-[calc(100%-1rem)]"
+          />
+        </div>
+
+        <div className="flex flex-1 flex-col px-2 pb-3 pt-3">
+          <p className="mb-2 line-clamp-2 text-sm font-semibold text-ink leading-snug">
+            {product.short_name ?? product.name}
+          </p>
+
+          {hasRating ? (
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <StarRating percentage={product.rating_summary ?? 0} />
+              <span className="text-xs font-medium text-ink">
+                {ratingScore.toFixed(1)}
+              </span>
+              <span className="text-xs text-ink-muted">
+                ({product.review_count})
+              </span>
+            </div>
+          ) : (
+            <div className="mb-2 h-4" />
+          )}
+
+          <div className="mt-auto">
+            {product.final_price > 0 ? (
+              <ProductPrice
+                price={product.price}
+                finalPrice={product.final_price}
+                discountPercent={discountPercent}
+                currency={product.currency ?? 'USD'}
+                size="md"
+              />
+            ) : (
+              <span className="text-sm font-medium text-ink-muted">
+                Price unavailable
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+
+      <div className="flex flex-col gap-2 px-2 pb-2">
+        {showStepper && (
+          <div className="flex items-center justify-center gap-3 rounded-full bg-surface-muted/80 px-2 py-2">
+            <button
+              type="button"
+              onClick={e => void handleQtyDelta(e, -1)}
+              disabled={qtyBusy || isAdding}
+              aria-label="Decrease quantity"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
+            >
+              <Minus className="h-4 w-4" aria-hidden />
+            </button>
+            <span
+              className="min-w-[2rem] text-center text-sm font-semibold tabular-nums text-ink"
+              aria-live="polite"
+            >
+              {cartQty}
+            </span>
+            <button
+              type="button"
+              onClick={e => void handleQtyDelta(e, 1)}
+              disabled={qtyBusy || isAdding}
+              aria-label="Increase quantity"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        )}
+
+        {!showStepper && (
+          <button
+            type="button"
+            onClick={e => void handlePrimaryAction(e)}
+            disabled={isOutOfStock || isAdding}
+            aria-label={
+              isConfigurable
+                ? 'Select options'
+                : isOutOfStock
+                ? 'Sold out'
+                : 'Add to cart'
+            }
+            className={`relative w-full rounded-full py-3 text-center text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 ${
+              isOutOfStock
+                ? 'bg-surface-muted text-ink-muted'
+                : 'bg-brand text-brand-foreground'
+            }`}
+          >
+            {isOutOfStock
+              ? 'Sold out'
+              : isConfigurable
+              ? `Select options${cartQty > 0 ? ` (${cartQty})` : ''}`
+              : isAdding
+              ? 'Adding…'
+              : 'Add to cart'}
+          </button>
+        )}
+
+        {addError && (
+          <p className="text-center text-xs text-red-600">{addError}</p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ─── Compact 变体（原 ProductCardCompact）─────────────────────────────────────
+
+function ProductCardCompactVariant({
+  product,
+  imageUrl,
+  imageLoadFailed,
+  setImageLoadFailed,
+  isOutOfStock,
+  discountPercent,
+  productHref,
+  isAdding,
+  handleAddToCart,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  imageLoadFailed: boolean;
+  setImageLoadFailed: (v: boolean) => void;
+  isOutOfStock: boolean;
+  discountPercent: number | null;
+  productHref: Route;
+  isAdding: boolean;
+  handleAddToCart: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  return (
+    <Link
+      href={productHref}
+      className="group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card"
+    >
+      <div className="relative aspect-[3/4] overflow-hidden bg-surface">
+        {imageUrl && !imageLoadFailed ? (
+          <OptimizedImage
+            src={imageUrl}
+            alt={product.short_name ?? product.name}
+            fill
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+              isOutOfStock ? 'opacity-60 grayscale' : ''
+            }`}
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+            onError={() => setImageLoadFailed(true)}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-ink-muted/30">
+            <svg
+              className="h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+        <ProductLabel
+          {...labelProps}
+          className="pointer-events-none absolute left-2.5 top-2.5"
+        />
+
+        {!isOutOfStock && (
+          <button
+            type="button"
+            className="absolute right-2.5 top-2.5 flex h-8 w-8 -translate-y-1 items-center justify-center rounded-full bg-white/90 text-ink opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-brand hover:text-white disabled:pointer-events-none"
+            aria-label="Add to cart"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+          >
+            {isAdding ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <ShoppingCart className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-white">
+            {product.short_name ?? product.name}
+          </h3>
+          <div className="mt-1.5">
+            {product.final_price > 0 ? (
+              <ProductPrice
+                price={product.price}
+                finalPrice={product.final_price}
+                discountPercent={discountPercent}
+                currency={product.currency ?? 'USD'}
+                size="sm"
+                className="[&_.selling-price]:text-white [&_.original-price]:text-white/50"
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Deal 变体（原 DealProductCard）───────────────────────────────────────────
+
+function ProductCardDealVariant({
+  product,
+  imageUrl,
+  imageLoadFailed,
+  setImageLoadFailed,
+  isOutOfStock,
+  discountPercent,
+  productHref,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  imageLoadFailed: boolean;
+  setImageLoadFailed: (v: boolean) => void;
+  isOutOfStock: boolean;
+  discountPercent: number | null;
+  productHref: Route;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  const isDirectAddSupported =
+    product.type_id === 'simple' || product.type_id === 'virtual';
+  const addDisabled = isOutOfStock || !isDirectAddSupported;
+  const disabledLabel = isOutOfStock ? 'Out of Stock' : 'Select Options';
+
+  return (
+    <article className="group overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card">
+      <Link href={productHref} className="block">
+        <div className="relative aspect-square overflow-hidden bg-surface">
+          {imageUrl && !imageLoadFailed ? (
+            <OptimizedImage
+              src={imageUrl}
+              alt={product.short_name ?? product.name}
+              fill
+              className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+                isOutOfStock ? 'opacity-60 grayscale' : ''
+              }`}
+              maxDisplayWidth={350}
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              loading="lazy"
+              onError={() => setImageLoadFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <span className="text-xs text-ink-muted">No image</span>
+            </div>
+          )}
+
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-white">
+                Out of Stock
+              </span>
+            </div>
+          )}
+
+          <ProductLabel
+            {...labelProps}
+            className="pointer-events-none absolute left-2 top-2"
+          />
+        </div>
+
+        <div className="p-3 pb-2">
+          <h3 className="line-clamp-2 text-sm font-medium text-ink group-hover:text-brand">
+            {product.short_name ?? product.name}
+          </h3>
+          <div className="mt-1.5">
+            {product.final_price > 0 ? (
+              <ProductPrice
+                price={product.price}
+                finalPrice={product.final_price}
+                discountPercent={discountPercent}
+                currency={product.currency ?? 'USD'}
+                size="sm"
+              />
+            ) : (
+              <span className="text-xs text-ink-muted">Price unavailable</span>
+            )}
+          </div>
+        </div>
+      </Link>
+
+      <div className="px-3 pb-3">
+        <AddToCartButton
+          sku={product.sku}
+          qty={1}
+          disabled={addDisabled}
+          disabledLabel={disabledLabel}
+          className="btn-primary flex h-9 w-full items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+        />
+      </div>
+    </article>
+  );
+}
+
+// ─── Category 变体（原 CategoryProductCard）───────────────────────────────────
+
+function ProductCardCategoryVariant({
+  product,
+  imageUrl,
+  imageLoadFailed,
+  setImageLoadFailed,
+  discountPercent,
+  productHref,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  imageLoadFailed: boolean;
+  setImageLoadFailed: (v: boolean) => void;
+  discountPercent: number | null;
+  productHref: Route;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  const hasRating = (product.rating_summary ?? 0) > 0;
+
+  return (
+    <article className="overflow-hidden rounded-xl bg-white">
+      <Link
+        href={productHref}
+        className="block outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+      >
+        <div className="group/image relative aspect-square overflow-hidden rounded-xl bg-white">
+          {imageUrl && !imageLoadFailed ? (
+            <OptimizedImage
+              src={imageUrl}
+              alt={product.short_name ?? product.name}
+              fill
+              className="object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
+              maxDisplayWidth={350}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              loading="lazy"
+              onError={() => setImageLoadFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <span className="micro-text normal-case tracking-normal text-ink-muted">
+                No image
+              </span>
+            </div>
+          )}
+
+          <ProductLabel
+            {...labelProps}
+            className="pointer-events-none absolute left-2 top-2"
+          />
+        </div>
+
+        <div className="px-1 pb-1 pt-3">
+          <h3 className="line-clamp-2 min-h-12 text-base font-medium leading-6 text-ink">
+            {product.short_name ?? product.name}
+          </h3>
+
+          {hasRating && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <StarRating percentage={product.rating_summary ?? 0} />
+              <span className="text-sm font-medium text-ink">
+                {((product.rating_summary ?? 0) / 20).toFixed(1)}
+              </span>
+              <span className="text-xs text-ink-muted">
+                ({product.review_count})
+              </span>
+            </div>
+          )}
+
+          <div className="mt-2">
+            {product.final_price > 0 ? (
+              <ProductPrice
+                price={product.price}
+                finalPrice={product.final_price}
+                discountPercent={discountPercent}
+                currency={product.currency ?? 'USD'}
+                size="lg"
+              />
+            ) : (
+              <span className="text-base font-medium text-ink-muted">
+                Price unavailable
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    </article>
+  );
+}
+
+// ─── Featured 变体（原 FeaturedProductCard）───────────────────────────────────
+
+function ProductCardFeaturedVariant({
+  product,
+  imageUrl,
+  setImageLoadFailed,
+  discountPercent,
+  productHref,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  setImageLoadFailed: (v: boolean) => void;
+  discountPercent: number | null;
+  productHref: Route;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  // 从 short_description HTML 提取卖点；longtitle 可能含 HTML，统一做 strip
+  const cleanLongTitle = useMemo(
+    () => stripHtml(product.longtitle) || null,
+    [product.longtitle]
+  );
+  const sellingPoints = useMemo(() => {
+    if (!product.short_description) return [];
+    const liMatches = [
+      ...product.short_description.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi),
+    ];
+    return liMatches
+      .map(match => stripHtml(match[1]))
+      .filter(Boolean)
+      .slice(0, 3);
+  }, [product.short_description]);
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md">
+      <Link
+        href={productHref}
+        className="absolute inset-0 z-[1]"
+        aria-label={product.short_name ?? product.name}
+      />
+
+      <div className="grid grid-cols-1 items-start md:grid-cols-[1fr,2fr] md:items-stretch">
+        <div className="relative w-full shrink-0 overflow-hidden aspect-square">
+          {imageUrl ? (
+            <OptimizedImage
+              src={imageUrl}
+              alt={product.short_name ?? product.name}
+              fill
+              className="object-contain transition-transform duration-500 group-hover:scale-105"
+              maxDisplayWidth={280}
+              sizes="(max-width: 640px) 100vw, 280px"
+              onError={() => setImageLoadFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-surface">
+              <svg
+                className="h-12 w-12 text-ink-muted/30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          )}
+
+          <ProductLabel
+            {...labelProps}
+            className="pointer-events-none absolute left-3 top-3"
+          />
+        </div>
+
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-between p-5 lg:p-6">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <h3
+              className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-ink lg:text-xl"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            >
+              {product.short_name ?? product.name}
+            </h3>
+            {cleanLongTitle && (
+              <p className="mb-3 line-clamp-2 text-sm text-ink-muted">
+                {cleanLongTitle}
+              </p>
+            )}
+            {sellingPoints.length > 0 && (
+              <ul className="mb-5 min-w-0 space-y-1.5 overflow-hidden text-xs text-ink-muted lg:text-sm">
+                {sellingPoints.map(point => (
+                  <li
+                    key={`${product.sku}-${point}`}
+                    className="relative min-w-0 pl-4 before:absolute before:left-0 before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-brand/35"
+                  >
+                    <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                      {point}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            {product.final_price > 0 && (
+              <div className="mb-4">
+                <ProductPrice
+                  price={product.price}
+                  finalPrice={product.final_price}
+                  discountPercent={discountPercent}
+                  currency={product.currency ?? 'USD'}
+                  size="lg"
+                  showSaveBadge
+                  sellingPriceClassName="text-brand"
+                />
+              </div>
+            )}
+
+            <span className="relative z-10" onClick={e => e.stopPropagation()}>
+              <AddToCartButton
+                sku={product.sku}
+                className="btn-primary flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 统一 ProductCard ─────────────────────────────────────────────────────────
+
+export function ProductCard({
+  product,
+  variant = 'default',
+}: ProductCardProps) {
   const { items, getQtyBySku, updateItemQty, removeFromCart } = useCart();
   const {
     addItemToCart,
@@ -103,30 +802,16 @@ export function ProductCard({ product }: ProductCardProps) {
     error: addError,
     clearError,
   } = useAddToCartAction();
-  const priceValue = product.price.value;
-  const currencyCode = product.price.currency;
-  const originalPrice = product.originalPrice;
-  const hasDiscount =
-    priceValue != null && originalPrice != null && originalPrice > priceValue;
-  const typeKey = product.type ?? 'simple';
-  const hasRating = product.ratingPercentage > 0;
-  const ratingScore = (product.ratingPercentage / 100) * 5;
-  const isOutOfStock = product.inStock === false;
-  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-  const [quickViewData, setQuickViewData] = useState<
-    Parameters<typeof QuickAddModal>[0]['variantData'] | null
-  >(null);
-  const [quickViewLoading, setQuickViewLoading] = useState(false);
-  const [quickViewError, setQuickViewError] = useState<string | null>(null);
-  const [qtyBusy, setQtyBusy] = useState(false);
-
+  const isOutOfStock = !product.is_in_stock;
+  const typeKey = product.type_id;
   const supportsDirectQuantity = typeKey === 'simple' || typeKey === 'virtual';
 
+  // ── 图片解析 ──
   const rawImage = product.image?.trim() ?? null;
   const imageUrl = rawImage
     ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
       ? rawImage
-      : resolveImageUrl(rawImage) ?? resolveImageUrl(rawImage) ?? rawImage
+      : resolveImageUrl(rawImage) ?? rawImage
     : null;
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
@@ -134,11 +819,34 @@ export function ProductCard({ product }: ProductCardProps) {
     setImageLoadFailed(false);
   }, [imageUrl]);
 
+  // ── 折扣 ──
+  const discountPercent =
+    product.discount_percent ??
+    computeDiscountPercent(product.price, product.final_price);
+
+  // ── 标签公共 props（各变体 ProductLabel 共用）──
+  const labelProps = useMemo(
+    () => ({
+      isInStock: product.is_in_stock,
+      discountPercent,
+      bestText: product.best_text,
+      bestColor: product.best_color,
+      cpLabel: product.cp_label,
+      cpLabelColor: product.cp_label_color,
+      cpPrice: product.cp_price,
+      cpStartsAt: product.cp_starts_at,
+      cpExpiresAt: product.cp_expires_at,
+      currency: product.currency ?? 'USD',
+    }),
+    [product, discountPercent]
+  );
+
+  // ── 购物车数量 ──
   const cartQty = useMemo(() => {
-    if (typeKey === 'configurable' && quickViewData) {
+    if (typeKey === 'configurable' && product.variant_data) {
       const variantSkuSet = new Set([
         product.sku,
-        ...quickViewData.variants.map(variant => variant.sku),
+        ...product.variant_data.variants.map(v => v.sku),
       ]);
       return items.reduce((sum, item) => {
         if (!variantSkuSet.has(item.sku)) return sum;
@@ -146,24 +854,28 @@ export function ProductCard({ product }: ProductCardProps) {
       }, 0);
     }
     return getQtyBySku(product.sku);
-  }, [typeKey, quickViewData, product.sku, items, getQtyBySku]);
+  }, [typeKey, product.variant_data, product.sku, items, getQtyBySku]);
 
   const cartLineForSku = useMemo(
     () => items.find(item => item.sku === product.sku),
     [items, product.sku]
   );
 
-  const cpLabel = product.cpLabel;
-  const cpLabelColor = product.cpLabelColor;
-
+  // ── 操作 ──
   const addSimpleProduct = async () => {
     await addItemToCart(
       { sku: product.sku, qty: 1 },
-      {
-        openCartOnSuccess: true,
-      }
+      { openCartOnSuccess: true }
     );
   };
+
+  const [qtyBusy, setQtyBusy] = useState(false);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [quickViewData, setQuickViewData] = useState<
+    Parameters<typeof QuickAddModal>[0]['variantData'] | null
+  >(null);
+  const [quickViewLoading, setQuickViewLoading] = useState(false);
+  const [quickViewError, setQuickViewError] = useState<string | null>(null);
 
   const fetchConfigurableVariants = async () => {
     if (quickViewLoading) return;
@@ -267,34 +979,21 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const productHref = `/products/${encodeURIComponent(
-    product.urlKey ?? product.sku
-  )}` as Route;
+  const handleCompactAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isAdding || isOutOfStock) return;
+    void addItemToCart(
+      { sku: product.sku, qty: 1 },
+      { openCartOnSuccess: true }
+    );
+  };
 
-  const promotionBadge =
-    cpLabel && cpLabelColor ? (
-      <span
-        className="max-w-[85%] truncate rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-        style={{
-          backgroundColor: cpLabelColor,
-          color: contrastForegroundForBackground(cpLabelColor),
-        }}
-      >
-        {cpLabel}
-      </span>
-    ) : cpLabel ? (
-      <span className="rounded-md bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink">
-        {cpLabel}
-      </span>
-    ) : product.promotionLabel ? (
-      <span className="rounded-md bg-brand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-foreground">
-        {product.promotionLabel}
-      </span>
-    ) : hasDiscount ? (
-      <span className="rounded-md bg-brand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-foreground">
-        Sale
-      </span>
-    ) : null;
+  const productHref = buildProductUrl({
+    url_key: product.url_key,
+    sku: product.sku,
+    cp_code: null,
+  }) as Route;
 
   const showStepper =
     supportsDirectQuantity &&
@@ -302,175 +1001,125 @@ export function ProductCard({ product }: ProductCardProps) {
     cartQty > 0 &&
     typeKey !== 'configurable';
 
-  return (
-    <>
-      <article className="flex flex-col rounded-2xl bg-background p-2">
-        <Link href={productHref} className="flex min-h-0 flex-1 flex-col">
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
-            {imageUrl && !imageLoadFailed ? (
-              <OptimizedImage
-                src={imageUrl}
-                alt={product.displayName}
-                fill
-                className={`object-cover ${
-                  isOutOfStock ? 'opacity-60 grayscale' : ''
-                }`}
-                maxDisplayWidth={350}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                loading="lazy"
-                onError={() => setImageLoadFailed(true)}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-ink-muted/30">
-                <svg
-                  className="h-12 w-12"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-            )}
+  const hasRating = (product.rating_summary ?? 0) > 0;
+  const ratingScore = ((product.rating_summary ?? 0) / 100) * 5;
 
-            <div className="pointer-events-none absolute left-2 top-2 flex max-w-[calc(100%-1rem)] flex-col gap-1">
-              {isOutOfStock ? (
-                <span className="rounded-md bg-ink px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                  Sold out
-                </span>
-              ) : (
-                promotionBadge
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col px-2 pb-3 pt-3">
-            <p className="mb-2 line-clamp-2 text-sm font-semibold text-ink leading-snug">
-              {product.displayName}
-            </p>
-
-            {hasRating ? (
-              <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                <StarRating percentage={product.ratingPercentage ?? 0} />
-                <span className="text-xs font-medium text-ink">
-                  {ratingScore.toFixed(1)}
-                </span>
-                <span className="text-xs text-ink-muted">
-                  ({product.reviewCount})
-                </span>
-              </div>
-            ) : (
-              <div className="mb-2 h-4" />
-            )}
-
-            <div className="mt-auto flex flex-wrap items-baseline gap-2">
-              {priceValue != null ? (
-                <>
-                  {hasDiscount && (
-                    <span className="text-xs font-medium text-ink-muted line-through">
-                      {formatPrice(originalPrice ?? 0, currencyCode)}
-                    </span>
-                  )}
-                  <span className="text-base font-bold text-ink">
-                    {formatPrice(priceValue, currencyCode)}
-                  </span>
-                </>
-              ) : (
-                <span className="text-sm font-medium text-ink-muted">
-                  Price unavailable
-                </span>
-              )}
-            </div>
-          </div>
-        </Link>
-
-        <div className="flex flex-col gap-2 px-2 pb-2">
-          {showStepper && (
-            <div className="flex items-center justify-center gap-3 rounded-full bg-surface-muted/80 px-2 py-2">
-              <button
-                type="button"
-                onClick={e => void handleQtyDelta(e, -1)}
-                disabled={qtyBusy || isAdding}
-                aria-label="Decrease quantity"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
-              >
-                <Minus className="h-4 w-4" aria-hidden />
-              </button>
-              <span
-                className="min-w-[2rem] text-center text-sm font-semibold tabular-nums text-ink"
-                aria-live="polite"
-              >
-                {cartQty}
-              </span>
-              <button
-                type="button"
-                onClick={e => void handleQtyDelta(e, 1)}
-                disabled={qtyBusy || isAdding}
-                aria-label="Increase quantity"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-          )}
-
-          {!showStepper && (
-            <button
-              type="button"
-              onClick={e => void handlePrimaryAction(e)}
-              disabled={isOutOfStock || isAdding || quickViewLoading}
-              aria-busy={isAdding || quickViewLoading}
-              aria-label={
-                typeKey === 'configurable'
-                  ? 'Select options'
-                  : isOutOfStock
-                  ? 'Sold out'
-                  : 'Add to cart'
-              }
-              className={`relative w-full rounded-full py-3 text-center text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 ${
-                isOutOfStock
-                  ? 'bg-surface-muted text-ink-muted'
-                  : 'bg-brand text-brand-foreground'
-              }`}
-            >
-              {isOutOfStock
-                ? 'Sold out'
-                : typeKey === 'configurable'
-                ? quickViewLoading
-                  ? 'Loading…'
-                  : `Select options${cartQty > 0 ? ` (${cartQty})` : ''}`
-                : isAdding
-                ? 'Adding…'
-                : 'Add to cart'}
-            </button>
-          )}
-
-          {addError && (
-            <p className="text-center text-xs text-red-600">{addError}</p>
-          )}
-        </div>
-      </article>
-
-      {isQuickViewOpen && (
-        <QuickAddModal
+  // ── 变体分发 ──
+  switch (variant) {
+    case 'compact':
+      return (
+        <ProductCardCompactVariant
           product={product}
-          variantData={
-            quickViewData ?? {
-              options: [],
-              customizable_options: [],
-              variants: [],
-            }
-          }
-          error={quickViewError}
-          onClose={() => setIsQuickViewOpen(false)}
+          imageUrl={imageUrl}
+          imageLoadFailed={imageLoadFailed}
+          setImageLoadFailed={setImageLoadFailed}
+          isOutOfStock={isOutOfStock}
+          discountPercent={discountPercent}
+          productHref={productHref}
+          isAdding={isAdding}
+          handleAddToCart={handleCompactAdd}
+          labelProps={labelProps}
         />
-      )}
-    </>
-  );
+      );
+
+    case 'deal':
+      return (
+        <ProductCardDealVariant
+          product={product}
+          imageUrl={imageUrl}
+          imageLoadFailed={imageLoadFailed}
+          setImageLoadFailed={setImageLoadFailed}
+          isOutOfStock={isOutOfStock}
+          discountPercent={discountPercent}
+          productHref={productHref}
+          labelProps={labelProps}
+        />
+      );
+
+    case 'category':
+      return (
+        <ProductCardCategoryVariant
+          product={product}
+          imageUrl={imageUrl}
+          imageLoadFailed={imageLoadFailed}
+          setImageLoadFailed={setImageLoadFailed}
+          discountPercent={discountPercent}
+          productHref={productHref}
+          labelProps={labelProps}
+        />
+      );
+
+    case 'featured':
+      return (
+        <ProductCardFeaturedVariant
+          product={product}
+          imageUrl={imageUrl}
+          setImageLoadFailed={setImageLoadFailed}
+          discountPercent={discountPercent}
+          productHref={productHref}
+          labelProps={labelProps}
+        />
+      );
+
+    default:
+      return (
+        <>
+          <ProductCardDefault
+            product={product}
+            imageUrl={imageUrl}
+            imageLoadFailed={imageLoadFailed}
+            setImageLoadFailed={setImageLoadFailed}
+            isOutOfStock={isOutOfStock}
+            discountPercent={discountPercent}
+            cartQty={cartQty}
+            isAdding={isAdding}
+            qtyBusy={qtyBusy}
+            addError={addError}
+            handlePrimaryAction={handlePrimaryAction}
+            handleQtyDelta={handleQtyDelta}
+            showStepper={showStepper}
+            productHref={productHref}
+            hasRating={hasRating}
+            ratingScore={ratingScore}
+            labelProps={labelProps}
+          />
+
+          {isQuickViewOpen && (
+            <QuickAddModal
+              product={{
+                sku: product.sku,
+                displayName: product.short_name ?? product.name,
+                name: product.name,
+                image: product.image,
+                price: {
+                  value: product.final_price,
+                  currency: product.currency ?? 'USD',
+                },
+                originalPrice: product.price,
+                urlKey: product.url_key,
+                type: product.type_id as 'simple' | 'configurable' | 'virtual',
+                inStock: product.is_in_stock,
+                shortName: product.short_name,
+                longTitle: product.longtitle,
+                shortDescription: product.short_description,
+                ratingPercentage: product.rating_summary ?? 0,
+                reviewCount: product.review_count,
+                promotionLabel: product.best_text,
+                cpLabel: product.cp_label,
+                cpLabelColor: product.cp_label_color,
+              }}
+              variantData={
+                quickViewData ?? {
+                  options: [],
+                  customizable_options: [],
+                  variants: [],
+                }
+              }
+              error={quickViewError}
+              onClose={() => setIsQuickViewOpen(false)}
+            />
+          )}
+        </>
+      );
+  }
 }

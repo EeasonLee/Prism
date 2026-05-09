@@ -2,7 +2,7 @@
 
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { AddToCartButton } from '@/features/product';
+import { AddToCartButton, buildProductUrl } from '@/features/product';
 import { formatPrice } from '@prism/shared';
 import type { UnifiedLinkedProduct } from '@/features/product';
 
@@ -45,7 +45,11 @@ export function UpsellProductsSection({
                 className="group flex h-full min-h-[156px] overflow-hidden rounded-2xl border border-border bg-card"
               >
                 <Link
-                  href={`/products/${item.url_key ?? item.sku}`}
+                  href={buildProductUrl({
+                    url_key: item.url_key,
+                    sku: item.sku,
+                    cp_code: null,
+                  })}
                   className="relative block w-[132px] shrink-0 bg-surface-muted sm:w-[140px]"
                 >
                   {item.unified_thumbnail ? (
@@ -62,7 +66,11 @@ export function UpsellProductsSection({
                 <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">
                   <div className="space-y-2">
                     <Link
-                      href={`/products/${item.url_key ?? item.sku}`}
+                      href={buildProductUrl({
+                        url_key: item.url_key,
+                        sku: item.sku,
+                        cp_code: null,
+                      })}
                       className="block"
                     >
                       <h3 className="line-clamp-2 text-sm font-semibold text-ink">

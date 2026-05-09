@@ -7,6 +7,7 @@ import { Heart, Trash2, Loader2 } from 'lucide-react';
 import { formatPrice, resolveImageUrl } from '@prism/shared';
 import { useAccount } from '@/features/account/use-account';
 import type { WishlistItem } from '@/features/account/types';
+import { buildProductUrl } from '@/features/product';
 
 export default function WishlistPage() {
   const { getWishlist, removeFromWishlist } = useAccount({
@@ -107,7 +108,11 @@ export default function WishlistPage() {
               className="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:shadow-card"
             >
               <Link
-                href={`/products/${item.urlKey ?? item.sku}`}
+                href={buildProductUrl({
+                  url_key: item.urlKey,
+                  sku: item.sku,
+                  cp_code: null,
+                })}
                 className="block"
               >
                 <div className="relative aspect-square overflow-hidden rounded-2xl bg-background">
@@ -144,7 +149,11 @@ export default function WishlistPage() {
               </Link>
               <div className="p-4">
                 <Link
-                  href={`/products/${item.urlKey ?? item.sku}`}
+                  href={buildProductUrl({
+                    url_key: item.urlKey,
+                    sku: item.sku,
+                    cp_code: null,
+                  })}
                   className="block"
                 >
                   <h3 className="line-clamp-2 text-sm font-semibold text-ink">

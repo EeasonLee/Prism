@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CategoryGridProps } from '../types';
 import type { ProductCardItem } from '@/features/product';
-import { formatPrice } from '@prism/shared';
-import { CategoryProductCard } from './CategoryProductCard';
+import { ProductCard, mapCardItemToDisplay } from '@/features/product';
 
 interface CategoryGridClientProps extends CategoryGridProps {
   /** 服务端预取的首屏商品（首屏不闪 loading） */
@@ -194,38 +193,13 @@ export function CategoryGridClient({
 
           {!loading && products.length > 0 && (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {products.map(product => {
-                const priceValue = product.price.value;
-                const originalPrice = product.originalPrice;
-                const hasDiscount =
-                  priceValue != null &&
-                  originalPrice != null &&
-                  originalPrice > priceValue;
-
-                return (
-                  <CategoryProductCard
-                    key={product.sku}
-                    href={
-                      product.urlKey
-                        ? `/products/${product.urlKey}`
-                        : `/products/${product.sku}`
-                    }
-                    name={product.displayName}
-                    image={product.image}
-                    price={priceValue}
-                    currency={product.price.currency}
-                    badge={hasDiscount ? 'Sale' : product.promotionLabel}
-                    badgeStyle={hasDiscount ? 'brand' : 'dark'}
-                    tagline={
-                      hasDiscount && originalPrice != null
-                        ? formatPrice(originalPrice, product.price.currency)
-                        : null
-                    }
-                    ratingSummary={product.ratingPercentage}
-                    reviewCount={product.reviewCount}
-                  />
-                );
-              })}
+              {products.map(product => (
+                <ProductCard
+                  key={product.sku}
+                  product={mapCardItemToDisplay(product)}
+                  variant="category"
+                />
+              ))}
             </div>
           )}
 

@@ -1,3 +1,14 @@
+// ――― Unified display types ――――――――――――――――――――――――――――――――――――――――――――――
+export type {
+  UnifiedProductDisplay,
+  VariantData,
+  VariantOption,
+  VariantOptionValue,
+  ProductVariant,
+  CustomizableOption,
+  CustomizableOptionValue,
+} from './types';
+
 // ――― Core types ―――――――――――――――――――――――――――――――――――――――――――――――――――――
 export type {
   ProductCardItem,
@@ -119,8 +130,24 @@ export {
   mapProductVariants,
 } from './services/product.mapper';
 
+// ――― Display mapper ―――――――――――――――――――――――――――――――――――――――――――――――――――
+export {
+  computeDiscountPercent,
+  mapCardItemToDisplay,
+  mapUnifiedToDisplay,
+  mapMagentoProductToDisplay,
+} from './services/display-mapper';
+
 // ――― Utilities ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { normalizeCpPrice } from './services/unified-utils';
+export { stripHtml } from './services/html-utils';
+
+// ――― Navigation ―――――――――――――――――――――――――――――――――――――――――――――――――――――――
+export {
+  buildProductUrl,
+  shouldOpenInNewTab,
+} from './services/product-navigation';
+export type { ProductNavigationOptions } from './services/product-navigation';
 
 // ――― Components ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { ProductCard } from './components/ProductCard';
@@ -128,4 +155,7 @@ export { ProductCardSkeleton } from './components/ProductCardSkeleton';
 export { AddToCartButton } from './components/AddToCartButton';
 export { QuickAddModal } from './components/QuickAddModal';
 export { CustomizableOptionsSection } from './components/CustomizableOptionsSection';
-export { ProductCardCompact } from './components/ProductCardSection';
+export { ProductLabel } from './components/ProductLabel';
+export { ProductPrice } from './components/ProductPrice';
+export { CouponBanner } from './components/CouponBanner';
+export type { ProductCardVariant } from './components/ProductCard';

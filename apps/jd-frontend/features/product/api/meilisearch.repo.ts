@@ -31,6 +31,10 @@ interface MeilisearchHit {
   promotion_label?: string | null;
   cp_label?: string | null;
   cp_label_color?: string | null;
+  cp_code?: string | null;
+  cp_price?: string | number | null;
+  cp_starts_at?: string | null;
+  cp_expires_at?: string | null;
   review_count?: number;
   rating_summary?: number;
   rating_percentage?: number;
@@ -177,6 +181,10 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     promotionLabel: hit.promotion_label ?? null,
     cpLabel: hit.cp_label?.trim() ? hit.cp_label.trim() : null,
     cpLabelColor: hit.cp_label_color?.trim() ? hit.cp_label_color.trim() : null,
+    cpCode: hit.cp_code?.trim() ? hit.cp_code.trim() : null,
+    cpPrice: hit.cp_price != null ? Number(hit.cp_price) : null,
+    cpStartsAt: hit.cp_starts_at?.trim() || null,
+    cpExpiresAt: hit.cp_expires_at?.trim() || null,
     reviewCount: hit.review_count ?? 0,
     ratingPercentage: hit.rating_summary ?? hit.rating_percentage ?? 0,
   };

@@ -1,32 +1,9 @@
 import type { FeaturedProductsProps } from '../types';
-import { productQueryFacade } from '@/features/product';
-import { FeaturedProductCard } from './FeaturedProductCard';
-
-function stripHtml(value: string | null | undefined): string {
-  if (!value) return '';
-  return value
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function extractTopSellingPoints(
-  richText: string | null | undefined,
-  maxItems = 3
-): string[] {
-  if (!richText) return [];
-  const liMatches = [...richText.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
-  return liMatches
-    .map(match => stripHtml(match[1] ?? ''))
-    .filter(Boolean)
-    .slice(0, maxItems);
-}
+import {
+  productQueryFacade,
+  ProductCard,
+  mapCardItemToDisplay,
+} from '@/features/product';
 
 export async function FeaturedProducts({
   title,
@@ -69,45 +46,13 @@ export async function FeaturedProducts({
         </div>
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          {validProducts.map(product => {
-            const price = product.price.value;
-            const originalPrice = product.originalPrice;
-            const currency = product.price.currency ?? 'USD';
-            const displayName =
-              product.shortName ??
-              product.displayName ??
-              product.name ??
-              product.sku;
-            const longTitle = stripHtml(product.longTitle);
-            const sellingPoints = extractTopSellingPoints(
-              product.shortDescription
-            );
-            const discount =
-              price && originalPrice && originalPrice > price
-                ? Math.round(((originalPrice - price) / originalPrice) * 100)
-                : null;
-            const imageUrl =
-              product.image ?? '/images/product_soymilk_card.jpg';
-
-            return (
-              <FeaturedProductCard
-                key={product.sku}
-                product={{
-                  sku: product.sku,
-                  urlKey: product.urlKey,
-                  imageUrl,
-                  displayName,
-                  promotionLabel: product.promotionLabel,
-                  longTitle,
-                  sellingPoints,
-                  price,
-                  originalPrice,
-                  currency,
-                  discount,
-                }}
-              />
-            );
-          })}
+          {validProducts.map(product => (
+            <ProductCard
+              key={product.sku}
+              product={mapCardItemToDisplay(product)}
+              variant="featured"
+            />
+          ))}
         </div>
       </div>
     </section>

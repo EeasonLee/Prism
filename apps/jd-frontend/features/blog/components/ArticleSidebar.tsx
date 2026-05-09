@@ -2,6 +2,7 @@ import { OptimizedImage } from '@prism/ui';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ArticleDetail } from '../api/types';
+import { buildProductUrl } from '@/features/product';
 
 interface ArticleSidebarProps {
   article: ArticleDetail;
@@ -50,7 +51,13 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
               // 优先使用外部链接，否则使用内部链接
               const productUrl =
                 product.url ||
-                (product.slug ? `/products/${product.slug}` : '#');
+                (product.sku
+                  ? buildProductUrl({
+                      url_key: product.slug ?? null,
+                      sku: product.sku,
+                      cp_code: null,
+                    })
+                  : '#');
               const isExternalLink = !!product.url;
               const productImage = product.image || '';
 

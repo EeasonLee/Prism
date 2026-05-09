@@ -10,7 +10,11 @@ import {
 } from './ProductDetailClient';
 import { ProductImageGallery } from './ProductImageGallery';
 import { ShareTrigger } from '@/app/_ui/share';
-import { normalizeCpPrice } from '@/features/product';
+import {
+  normalizeCpPrice,
+  computeDiscountPercent,
+  CouponBanner,
+} from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
@@ -29,35 +33,6 @@ interface ProductDetailContentProps {
 
 const STAR_PATH =
   'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z';
-
-function FireworksIcon() {
-  return (
-    <svg
-      className="h-full w-full text-white/90"
-      viewBox="0 0 200 200"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="6"
-        opacity="0.85"
-      >
-        <path d="M100 20 L100 55" />
-        <path d="M100 145 L100 180" />
-        <path d="M20 100 L55 100" />
-        <path d="M145 100 L180 100" />
-        <path d="M35 35 L60 60" />
-        <path d="M140 140 L165 165" />
-        <path d="M165 35 L140 60" />
-        <path d="M60 140 L35 165" />
-        <circle cx="100" cy="100" r="9" fill="currentColor" />
-      </g>
-    </svg>
-  );
-}
 
 function StarRating({
   percentage,
@@ -136,7 +111,6 @@ export function ProductDetailContent({
 }: ProductDetailContentProps) {
   const { isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
-  const [showCouponToast, setShowCouponToast] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [wishlistAdded, setWishlistAdded] = useState(false);
@@ -296,9 +270,7 @@ export function ProductDetailContent({
       ? selectedVariant?.price ?? product.price
       : product.price;
     const baseSpecialPrice = hasCompleteVariantSelection
-      ? selectedVariant
-        ? selectedVariant.special_price ?? null
-        : null
+      ? selectedVariant?.special_price ?? product.special_price
       : product.special_price;
 
     const imageAltFallback = displayTitle;
@@ -372,13 +344,6 @@ export function ProductDetailContent({
       ? displayProduct.specialPrice
       : displayProduct.price;
 
-  const couponOffAmount =
-    showCouponBanner && parsedCpPrice != null && parsedCpPrice > 0
-      ? Math.min(parsedCpPrice, priceBeforeCoupon)
-      : 0;
-
-  const priceAfterCoupon = Math.max(0, priceBeforeCoupon - couponOffAmount);
-
   const currencyCode = useMemo(() => {
     const code = product.currency?.trim().toUpperCase();
     return code && code.length === 3 ? code : 'USD';
@@ -413,26 +378,6 @@ export function ProductDetailContent({
     reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleClaimCoupon = async () => {
-    if (!cpCode) return;
-    if (typeof navigator === 'undefined') return;
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(cpCode);
-      } else {
-        window.prompt('Copy coupon code', cpCode);
-      }
-    } catch {
-      window.prompt('Copy coupon code', cpCode);
-    }
-
-    setShowCouponToast(true);
-    window.setTimeout(() => {
-      setShowCouponToast(false);
-    }, 1500);
-  };
-
   return (
     <div
       id="product-main"
@@ -461,7 +406,7 @@ export function ProductDetailContent({
                 {parsedCpPrice ?? 'null'}
               </span>
             )}
-            {displayPromotionLabel && (
+            {displayPromotionLabel && !showCouponBanner && (
               <span className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
                 {displayPromotionLabel}
               </span>
@@ -549,89 +494,29 @@ export function ProductDetailContent({
           )}
           {hasDiscount && (
             <span className="inline-flex items-center rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold leading-none text-brand">
-              Save{' '}
-              {formatPrice(
-                displayProduct.price - (displayProduct.specialPrice ?? 0)
+              Save -
+              {computeDiscountPercent(
+                displayProduct.price,
+                displayProduct.specialPrice ?? 0
               )}
+              %
             </span>
           )}
         </div>
         {showCouponBanner && (
-          <div className="mb-4 relative overflow-hidden rounded-2xl bg-destructive px-5 py-4 text-white">
-            <div className="pointer-events-none absolute inset-0 opacity-20">
-              <div className="absolute -right-10 top-0 h-full w-44">
-                <FireworksIcon />
-              </div>
-            </div>
-
-            <div className="relative flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-sm font-semibold text-white/90">
-                    {displayPromotionLabel ?? 'Limited time coupon'}
-                  </span>
-                  {couponOffAmount > 0 ? (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold leading-none">
-                        {formatPrice(priceAfterCoupon)}
-                      </span>
-                      <span className="text-sm font-semibold text-white/70 line-through">
-                        {formatPrice(priceBeforeCoupon)}
-                      </span>
-                    </div>
-                  ) : hasDiscount && displayProduct.specialPrice != null ? (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold leading-none">
-                        {formatPrice(displayProduct.specialPrice)}
-                      </span>
-                      <span className="text-sm font-semibold text-white/70 line-through">
-                        {formatPrice(displayProduct.price)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-sm font-semibold text-white/90">
-                      Current price {formatPrice(priceBeforeCoupon)}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  {couponOffAmount > 0 ? (
-                    <span className="font-medium">
-                      Use coupon for {formatPrice(couponOffAmount)} off
-                    </span>
-                  ) : (
-                    <span className="font-medium">
-                      Use coupon code for savings
-                    </span>
-                  )}
-                  <span className="font-semibold">Discount code: {cpCode}</span>
-                  {validUntilText && (
-                    <span className="text-white/85">
-                      Valid until {validUntilText}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Claim coupon"
-                onClick={() => void handleClaimCoupon()}
-                className="inline-flex items-center justify-center rounded-full bg-background px-5 py-2 text-sm font-semibold text-destructive shadow-sm transition hover:bg-background/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                Claim coupon
-              </button>
-            </div>
-
-            {showCouponToast && (
-              <div className="pointer-events-none absolute bottom-3 right-3 z-10">
-                <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-4 py-2 text-sm font-medium text-ink shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-                  Coupon code copied
-                </div>
-              </div>
-            )}
-          </div>
+          <CouponBanner
+            cpCode={cpCode}
+            cpLabel={displayPromotionLabel}
+            cpPrice={parsedCpPrice}
+            priceBeforeCoupon={priceBeforeCoupon}
+            currency={currencyCode}
+            hasDiscount={hasDiscount}
+            specialPrice={displayProduct.specialPrice}
+            originalPrice={displayProduct.price}
+            validUntil={validUntilText}
+            variant="pdp"
+            className="mb-4"
+          />
         )}
         {displayPromotionLabel && !showCouponBanner && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">

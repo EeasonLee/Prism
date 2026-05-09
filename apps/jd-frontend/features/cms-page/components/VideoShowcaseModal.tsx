@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { OptimizedImage, Skeleton, useBodyScrollLock } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import type { ProductCardItem } from '@/features/product';
+import { buildProductUrl } from '@/features/product';
 import type { VideoItem } from '../types';
 
 interface VideoShowcaseModalProps {
@@ -196,7 +197,11 @@ export function VideoShowcaseModal({
 
 /** Modal 内使用的紧凑商品卡片 */
 function VideoProductCard({ product }: { product: ProductCardItem }) {
-  const href = `/products/${product.urlKey ?? product.sku}`;
+  const href = buildProductUrl({
+    url_key: product.urlKey,
+    sku: product.sku,
+    cp_code: null,
+  });
   const hasDiscount =
     product.originalPrice != null &&
     product.price.value != null &&

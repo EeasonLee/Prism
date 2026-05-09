@@ -2,6 +2,7 @@ import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { formatPrice } from '@prism/shared';
 import type { RecommendedProduct } from '@/features/product';
+import { buildProductUrl } from '@/features/product';
 
 interface RecommendedProductsProps {
   products: RecommendedProduct[];
@@ -31,9 +32,11 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
             return (
               <Link
                 key={product.id}
-                href={`/products/${encodeURIComponent(
-                  product.url_key ?? product.sku
-                )}`}
+                href={buildProductUrl({
+                  url_key: null,
+                  sku: product.sku,
+                  cp_code: null,
+                })}
                 className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:border-brand/30 hover:shadow-md sm:w-52"
               >
                 {/* 图片 */}
