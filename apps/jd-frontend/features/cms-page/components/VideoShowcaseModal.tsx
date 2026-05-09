@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { OptimizedImage, Skeleton } from '@prism/ui';
+import { OptimizedImage, Skeleton, useBodyScrollLock } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import type { ProductCardItem } from '@/features/product';
 import type { VideoItem } from '../types';
@@ -34,13 +34,10 @@ export function VideoShowcaseModal({
       return;
     }
     const frame = requestAnimationFrame(() => setEntered(true));
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      cancelAnimationFrame(frame);
-      document.body.style.overflow = prev;
-    };
+    return () => cancelAnimationFrame(frame);
   }, [open]);
+
+  useBodyScrollLock(open);
 
   // Esc 关闭
   useEffect(() => {

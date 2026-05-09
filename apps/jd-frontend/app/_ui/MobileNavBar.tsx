@@ -1,6 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, useBodyScrollLock } from '@prism/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -76,16 +76,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
     };
   }, [isMenuOpen]);
 
-  useEffect(() => {
-    if (!isMenuOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMenuOpen]);
+  useBodyScrollLock(isMenuOpen);
 
   const toggleSection = (title: string) => {
     setExpandedSections(prev => ({

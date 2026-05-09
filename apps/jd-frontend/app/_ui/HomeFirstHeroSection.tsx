@@ -171,12 +171,7 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-            {mainCard.badge ? (
-              <span className="absolute left-8 top-8 z-10 inline-flex h-9 items-center rounded-full bg-brand px-4 py-0 text-xs font-bold uppercase tracking-wide text-white md:left-10 md:top-10">
-                {mainCard.badge}
-              </span>
-            ) : null}
-
+            {/* 整卡点击覆盖层 */}
             <Link
               href={mainCard.cta.link}
               target={isExternalLink(mainCard.cta.link) ? '_blank' : undefined}
@@ -185,11 +180,15 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
                   ? 'noopener noreferrer'
                   : undefined
               }
-              className="group/link absolute right-8 top-8 z-10 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/25 px-4 text-xs font-normal text-white backdrop-blur-sm transition-colors hover:bg-black/35 hover:text-brand md:right-10 md:top-10"
-            >
-              {mainCard.cta.text}
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
-            </Link>
+              className="absolute inset-0 z-[1]"
+              aria-label={mainCard.title}
+            />
+
+            {mainCard.badge ? (
+              <span className="absolute left-8 top-8 z-10 inline-flex h-9 items-center rounded-full bg-brand px-4 py-0 text-xs font-bold uppercase tracking-wide text-white md:left-10 md:top-10">
+                {mainCard.badge}
+              </span>
+            ) : null}
 
             <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-10">
               <div className="mb-6">
@@ -216,14 +215,20 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
                   ) : null}
                 </div>
 
-                <AddToCartButton
-                  sku={mainCard.productSku ?? ''}
-                  qty={1}
-                  label={mainCard.addToCartText}
-                  disabled={!mainCard.productSku}
-                  disabledLabel="Unavailable"
-                  className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                />
+                {/* z-10 + stopPropagation 防止点击按钮时触发整卡跳转 */}
+                <span
+                  className="relative z-10"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <AddToCartButton
+                    sku={mainCard.productSku ?? ''}
+                    qty={1}
+                    label={mainCard.addToCartText}
+                    disabled={!mainCard.productSku}
+                    disabledLabel="Unavailable"
+                    className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </span>
               </div>
             </div>
           </div>
