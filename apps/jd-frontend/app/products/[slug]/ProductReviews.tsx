@@ -962,26 +962,28 @@ export function ProductReviews({
           aria-label="Write a review"
           onClick={closeReviewForm}
         >
-          <div
-            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-background shadow-2xl"
-            onClick={event => event.stopPropagation()}
-          >
+          <div className="relative w-full max-w-4xl">
             <button
               type="button"
               onClick={closeReviewForm}
               aria-label="Close review form"
-              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+              className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
             >
               <X className="h-4 w-4" />
             </button>
-            <ReviewForm
-              sku={sku}
-              target={target}
-              onSubmitted={() => {
-                closeReviewForm();
-                void loadPage(1, sort, reviewFilters);
-              }}
-            />
+            <div
+              className="max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-background shadow-2xl"
+              onClick={event => event.stopPropagation()}
+            >
+              <ReviewForm
+                sku={sku}
+                target={target}
+                onSubmitted={() => {
+                  closeReviewForm();
+                  void loadPage(1, sort, reviewFilters);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -105,230 +105,231 @@ export function LoginModal({
       aria-modal="true"
       aria-label={tab === 'signin' ? 'Sign in' : 'Create account'}
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-background p-8 shadow-2xl">
+      <div className="relative w-full max-w-md">
         <button
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+          className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
         >
           <X className="h-4 w-4" />
         </button>
+        <div className="w-full rounded-2xl bg-background p-8 shadow-2xl">
+          {/* Tabs */}
+          <div className="mb-6 flex rounded-xl bg-surface p-1">
+            <button
+              type="button"
+              onClick={() => setTab('signin')}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
+                tab === 'signin'
+                  ? 'bg-background text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('register')}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
+                tab === 'register'
+                  ? 'bg-background text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex rounded-xl bg-surface p-1">
-          <button
-            type="button"
-            onClick={() => setTab('signin')}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'signin'
-                ? 'bg-background text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('register')}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'register'
-                ? 'bg-background text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
+          {/* Sign In */}
+          {tab === 'signin' && (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className={labelClass}>
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={inputClass}
+                />
+              </div>
 
-        {/* Sign In */}
-        {tab === 'signin' && (
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className={labelClass}>
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                required
-                value={loginEmail}
-                onChange={e => setLoginEmail(e.target.value)}
-                placeholder="you@example.com"
-                className={inputClass}
-              />
-            </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label
+                    htmlFor="login-password"
+                    className="text-sm font-medium text-ink"
+                  >
+                    Password
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-medium text-brand hover:underline"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+                <input
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={inputClass}
+                />
+              </div>
 
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label
-                  htmlFor="login-password"
-                  className="text-sm font-medium text-ink"
+              {loginError && (
+                <p role="alert" className="text-sm text-red-500">
+                  {loginError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
+              >
+                {loginLoading ? 'Signing in…' : 'Sign in'}
+              </button>
+
+              <p className="text-center text-sm text-ink-muted">
+                Don&apos;t have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setTab('register')}
+                  className="font-medium text-brand hover:underline"
                 >
+                  Create one
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* Create Account */}
+          {tab === 'register' && (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="reg-firstname" className={labelClass}>
+                    First Name
+                  </label>
+                  <input
+                    id="reg-firstname"
+                    type="text"
+                    autoComplete="given-name"
+                    value={regFirstName}
+                    onChange={e => setRegFirstName(e.target.value)}
+                    placeholder="Jane"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg-lastname" className={labelClass}>
+                    Last Name
+                  </label>
+                  <input
+                    id="reg-lastname"
+                    type="text"
+                    autoComplete="family-name"
+                    value={regLastName}
+                    onChange={e => setRegLastName(e.target.value)}
+                    placeholder="Doe"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reg-email" className={labelClass}>
+                  Email
+                </label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={regEmail}
+                  onChange={e => setRegEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="reg-password" className={labelClass}>
                   Password
                 </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-brand hover:underline"
+                <input
+                  id="reg-password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={regPassword}
+                  onChange={e => setRegPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={inputClass}
+                />
+                <p className="mt-1.5 text-xs text-ink-muted">
+                  At least 8 characters with uppercase, lowercase, a number, and
+                  a special character.
+                </p>
+              </div>
+
+              {process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
+                <div ref={turnstileRef} className="flex justify-center">
+                  <Turnstile
+                    siteKey={
+                      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+                    }
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                </div>
+              )}
+
+              {regError && (
+                <p role="alert" className="text-sm text-red-500">
+                  {regError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={
+                  regLoading ||
+                  (process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+                    ? !turnstileToken
+                    : false)
+                }
+                className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
+              >
+                {regLoading ? 'Creating account…' : 'Create account'}
+              </button>
+
+              <p className="text-center text-sm text-ink-muted">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setTab('signin')}
+                  className="font-medium text-brand hover:underline"
                 >
-                  Forgot Password?
-                </Link>
-              </div>
-              <input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
-                placeholder="••••••••"
-                className={inputClass}
-              />
-            </div>
-
-            {loginError && (
-              <p role="alert" className="text-sm text-red-500">
-                {loginError}
+                  Sign in
+                </button>
               </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
-            >
-              {loginLoading ? 'Signing in…' : 'Sign in'}
-            </button>
-
-            <p className="text-center text-sm text-ink-muted">
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                onClick={() => setTab('register')}
-                className="font-medium text-brand hover:underline"
-              >
-                Create one
-              </button>
-            </p>
-          </form>
-        )}
-
-        {/* Create Account */}
-        {tab === 'register' && (
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="reg-firstname" className={labelClass}>
-                  First Name
-                </label>
-                <input
-                  id="reg-firstname"
-                  type="text"
-                  autoComplete="given-name"
-                  value={regFirstName}
-                  onChange={e => setRegFirstName(e.target.value)}
-                  placeholder="Jane"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="reg-lastname" className={labelClass}>
-                  Last Name
-                </label>
-                <input
-                  id="reg-lastname"
-                  type="text"
-                  autoComplete="family-name"
-                  value={regLastName}
-                  onChange={e => setRegLastName(e.target.value)}
-                  placeholder="Doe"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="reg-email" className={labelClass}>
-                Email
-              </label>
-              <input
-                id="reg-email"
-                type="email"
-                autoComplete="email"
-                required
-                value={regEmail}
-                onChange={e => setRegEmail(e.target.value)}
-                placeholder="you@example.com"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="reg-password" className={labelClass}>
-                Password
-              </label>
-              <input
-                id="reg-password"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                value={regPassword}
-                onChange={e => setRegPassword(e.target.value)}
-                placeholder="••••••••"
-                className={inputClass}
-              />
-              <p className="mt-1.5 text-xs text-ink-muted">
-                At least 8 characters with uppercase, lowercase, a number, and a
-                special character.
-              </p>
-            </div>
-
-            {process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
-              <div ref={turnstileRef} className="flex justify-center">
-                <Turnstile
-                  siteKey={
-                    process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
-                  }
-                  onSuccess={setTurnstileToken}
-                  onError={() => setTurnstileToken(null)}
-                  onExpire={() => setTurnstileToken(null)}
-                />
-              </div>
-            )}
-
-            {regError && (
-              <p role="alert" className="text-sm text-red-500">
-                {regError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={
-                regLoading ||
-                (process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
-                  ? !turnstileToken
-                  : false)
-              }
-              className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-60"
-            >
-              {regLoading ? 'Creating account…' : 'Create account'}
-            </button>
-
-            <p className="text-center text-sm text-ink-muted">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => setTab('signin')}
-                className="font-medium text-brand hover:underline"
-              >
-                Sign in
-              </button>
-            </p>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

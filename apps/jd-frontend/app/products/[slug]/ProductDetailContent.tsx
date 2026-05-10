@@ -422,15 +422,23 @@ export function ProductDetailContent({
                   ? 'Remove from wishlist'
                   : 'Add to wishlist'
               }
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-surface/80 px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-surface-muted disabled:opacity-50"
             >
-              <Heart
-                className={`h-4 w-4 ${
+              <span
+                className={`flex h-4 w-4 items-center justify-center transition ${
                   wishlistItemId != null || wishlistAdded
-                    ? 'fill-red-500 text-red-500'
-                    : ''
+                    ? 'text-red-500'
+                    : 'text-ink-muted group-hover:text-ink'
                 }`}
-              />
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 ${
+                    wishlistItemId != null || wishlistAdded
+                      ? 'fill-red-500'
+                      : ''
+                  }`}
+                />
+              </span>
               {wishlistItemId != null
                 ? 'Saved'
                 : wishlistAdded

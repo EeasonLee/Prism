@@ -295,130 +295,132 @@ export function ProductQA({
             aria-label="Ask a question"
             onClick={() => setIsAskModalOpen(false)}
           >
-            <div
-              className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-background shadow-2xl"
-              onClick={event => event.stopPropagation()}
-            >
+            <div className="relative w-full max-w-2xl">
               <button
                 type="button"
                 onClick={() => setIsAskModalOpen(false)}
                 aria-label="Close ask a question form"
-                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+                className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
-
-              <div className="p-5 sm:p-6">
-                <h3 className="text-base font-semibold text-ink">
-                  Ask a question
-                </h3>
-                <p className="mt-1 text-sm text-ink-muted">
-                  Ask about this product. We typically respond within a few
-                  business days. Guests: enter your email only (not shown
-                  publicly); your public label uses the part before @ in that
-                  address.
-                </p>
-                {!isAuthenticated && (
-                  <p className="mt-2 text-sm text-ink-muted">
-                    <button
-                      type="button"
-                      onClick={() => openLogin('signin')}
-                      className="font-medium text-brand underline-offset-2 hover:underline"
-                    >
-                      Sign in
-                    </button>{' '}
-                    to use your account details automatically.
+              <div
+                className="max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-background shadow-2xl"
+                onClick={event => event.stopPropagation()}
+              >
+                <div className="p-5 sm:p-6">
+                  <h3 className="text-base font-semibold text-ink">
+                    Ask a question
+                  </h3>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Ask about this product. We typically respond within a few
+                    business days. Guests: enter your email only (not shown
+                    publicly); your public label uses the part before @ in that
+                    address.
                   </p>
-                )}
-
-                <form
-                  className="mt-4 space-y-4"
-                  onSubmit={e => void handleSubmit(e)}
-                >
-                  <div>
-                    <label
-                      htmlFor="product-qa-question"
-                      className="mb-2 block text-sm font-medium text-ink"
-                    >
-                      Your question
-                    </label>
-                    <textarea
-                      id="product-qa-question"
-                      value={questionText}
-                      onChange={e => setQuestionText(e.target.value)}
-                      rows={4}
-                      maxLength={500}
-                      className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
-                      placeholder="Ask something other customers may want to know…"
-                      aria-invalid={!!clientError}
-                      aria-describedby={
-                        clientError ? 'product-qa-client-error' : undefined
-                      }
-                    />
-                    <p className="mt-1 text-xs text-ink-muted">
-                      {questionText.trim().length} / 500 characters (minimum 10)
-                    </p>
-                    {clientError && (
-                      <p
-                        id="product-qa-client-error"
-                        role="alert"
-                        className="mt-2 text-sm text-destructive"
-                      >
-                        {clientError}
-                      </p>
-                    )}
-                  </div>
-
                   {!isAuthenticated && (
+                    <p className="mt-2 text-sm text-ink-muted">
+                      <button
+                        type="button"
+                        onClick={() => openLogin('signin')}
+                        className="font-medium text-brand underline-offset-2 hover:underline"
+                      >
+                        Sign in
+                      </button>{' '}
+                      to use your account details automatically.
+                    </p>
+                  )}
+
+                  <form
+                    className="mt-4 space-y-4"
+                    onSubmit={e => void handleSubmit(e)}
+                  >
                     <div>
                       <label
-                        htmlFor="product-qa-guest-email"
+                        htmlFor="product-qa-question"
                         className="mb-2 block text-sm font-medium text-ink"
                       >
-                        Email
+                        Your question
                       </label>
-                      <input
-                        id="product-qa-guest-email"
-                        type="email"
-                        autoComplete="email"
-                        maxLength={254}
-                        value={guestEmail}
-                        onChange={e => setGuestEmail(e.target.value)}
-                        placeholder="you@example.com"
+                      <textarea
+                        id="product-qa-question"
+                        value={questionText}
+                        onChange={e => setQuestionText(e.target.value)}
+                        rows={4}
+                        maxLength={500}
                         className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
+                        placeholder="Ask something other customers may want to know…"
+                        aria-invalid={!!clientError}
+                        aria-describedby={
+                          clientError ? 'product-qa-client-error' : undefined
+                        }
                       />
+                      <p className="mt-1 text-xs text-ink-muted">
+                        {questionText.trim().length} / 500 characters (minimum
+                        10)
+                      </p>
+                      {clientError && (
+                        <p
+                          id="product-qa-client-error"
+                          role="alert"
+                          className="mt-2 text-sm text-destructive"
+                        >
+                          {clientError}
+                        </p>
+                      )}
                     </div>
-                  )}
 
-                  {submitError && (
-                    <p role="alert" className="text-sm text-destructive">
-                      {submitError}
-                    </p>
-                  )}
-                  {successMessage && (
-                    <p role="status" className="text-sm text-brand">
-                      {successMessage}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <LoaderCircle
-                          className="mr-2 h-4 w-4 animate-spin"
-                          aria-hidden
+                    {!isAuthenticated && (
+                      <div>
+                        <label
+                          htmlFor="product-qa-guest-email"
+                          className="mb-2 block text-sm font-medium text-ink"
+                        >
+                          Email
+                        </label>
+                        <input
+                          id="product-qa-guest-email"
+                          type="email"
+                          autoComplete="email"
+                          maxLength={254}
+                          value={guestEmail}
+                          onChange={e => setGuestEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand"
                         />
-                        Submitting…
-                      </>
-                    ) : (
-                      'Submit question'
+                      </div>
                     )}
-                  </button>
-                </form>
+
+                    {submitError && (
+                      <p role="alert" className="text-sm text-destructive">
+                        {submitError}
+                      </p>
+                    )}
+                    {successMessage && (
+                      <p role="status" className="text-sm text-brand">
+                        {successMessage}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <LoaderCircle
+                            className="mr-2 h-4 w-4 animate-spin"
+                            aria-hidden
+                          />
+                          Submitting…
+                        </>
+                      ) : (
+                        'Submit question'
+                      )}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>

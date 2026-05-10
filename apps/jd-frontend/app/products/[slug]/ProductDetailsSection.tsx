@@ -62,7 +62,7 @@ export function ProductDetailsSection({
           <div
             id="product-details-content"
             ref={contentRef}
-            className={`prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4 [&_strong]:font-semibold transition-[max-height] duration-300 ${
+            className={`prose prose-sm max-w-none text-ink [&_li]:my-0.5 [&_ul]:pl-4 [&_strong]:font-semibold [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:max-w-full transition-[max-height] duration-300 ${
               !isExpanded && canExpand ? 'max-h-[800px] overflow-hidden' : ''
             }`}
             dangerouslySetInnerHTML={{ __html: detailsHtml }}

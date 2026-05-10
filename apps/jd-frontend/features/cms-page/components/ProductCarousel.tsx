@@ -71,7 +71,7 @@ export async function ProductCarousel({
             <ProductCard
               key={product.sku}
               product={mapCardItemToDisplay(product)}
-              variant="compact"
+              variant="grid"
             />
           ))}
         </div>

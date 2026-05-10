@@ -16,8 +16,6 @@ import { UpsellProductsSection } from './UpsellProductsSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { BlogSection } from './BlogSection';
-import { ProductSpecifications } from './ProductSpecifications';
-import type { ProductSpecificationGroup } from '@/features/product';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
@@ -28,13 +26,6 @@ import { buildBreadcrumbSchema } from '@/shared/utils/seo';
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-function getSpecificationGroups(product: {
-  specifications: unknown;
-}): ProductSpecificationGroup[] {
-  const raw = product.specifications;
-  return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
 }
 
 function emptyReviewSummary(sku: string): ProductReviewSummary {
@@ -237,8 +228,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const ratingCount =
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
-  const specificationGroups = getSpecificationGroups(product);
-
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
     ...(product.categories?.[0]
@@ -319,11 +308,6 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
         )}
-      {specificationGroups.length > 0 && (
-        <div id="section-specifications">
-          <ProductSpecifications groups={specificationGroups} />
-        </div>
-      )}
       {PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <BlogSection posts={cms?.blog_posts ?? []} />

@@ -64,9 +64,5 @@ export function buildPdpSectionNav(
     sections.push({ id: 'section-features', label: 'Features' });
   }
 
-  if (parseHtmlIntoSections(product.specifications).length > 0) {
-    sections.push({ id: 'section-specifications', label: 'Specifications' });
-  }
-
   return sections;
 }

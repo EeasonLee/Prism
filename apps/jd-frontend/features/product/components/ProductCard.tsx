@@ -5,7 +5,7 @@ import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { resolveImageUrl } from '@prism/shared';
+import { cn, resolveImageUrl } from '@prism/shared';
 import type { UnifiedProductDisplay } from '../types';
 import { useCart } from '@/features/cart';
 import { useAddToCartAction } from '@/features/cart';
@@ -22,6 +22,7 @@ import { AddToCartButton } from './AddToCartButton';
 export type ProductCardVariant =
   | 'default'
   | 'compact'
+  | 'grid'
   | 'deal'
   | 'category'
   | 'featured';
@@ -29,6 +30,8 @@ export type ProductCardVariant =
 interface ProductCardProps {
   product: UnifiedProductDisplay;
   variant?: ProductCardVariant;
+  /** 外层容器 className，用于调用方覆盖特定样式 */
+  className?: string;
 }
 
 // ─── 星标组件 ──────────────────────────────────────────────────────────────────
@@ -330,6 +333,7 @@ function ProductCardCompactVariant({
   isAdding,
   handleAddToCart,
   labelProps,
+  className,
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
@@ -352,11 +356,15 @@ function ProductCardCompactVariant({
     cpExpiresAt: string | null;
     currency: string;
   };
+  className?: string;
 }) {
   return (
     <Link
       href={productHref}
-      className="group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card"
+      className={cn(
+        'group isolate cursor-pointer overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-card',
+        className
+      )}
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
         {imageUrl && !imageLoadFailed ? (
@@ -431,6 +439,124 @@ function ProductCardCompactVariant({
         </div>
       </div>
     </Link>
+  );
+}
+
+// ─── Grid 变体（轮播/网格布局专用）────────────────────────────────────────────
+
+function ProductCardGridVariant({
+  product,
+  imageUrl,
+  imageLoadFailed,
+  setImageLoadFailed,
+  isOutOfStock,
+  discountPercent,
+  productHref,
+  isAdding,
+  handleAddToCart,
+  labelProps,
+}: {
+  product: UnifiedProductDisplay;
+  imageUrl: string | null;
+  imageLoadFailed: boolean;
+  setImageLoadFailed: (v: boolean) => void;
+  isOutOfStock: boolean;
+  discountPercent: number | null;
+  productHref: Route;
+  isAdding: boolean;
+  handleAddToCart: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  labelProps: {
+    isInStock: boolean;
+    discountPercent: number | null;
+    bestText: string | null;
+    bestColor: string | null;
+    cpLabel: string | null;
+    cpLabelColor: string | null;
+    cpPrice: number | null;
+    cpStartsAt: string | null;
+    cpExpiresAt: string | null;
+    currency: string;
+  };
+}) {
+  return (
+    <article className="overflow-hidden bg-white">
+      <Link href={productHref} className="block">
+        {/* 图片即板块 — 独立圆角 + 浅灰底色 */}
+        <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-surface-muted">
+          {imageUrl && !imageLoadFailed ? (
+            <OptimizedImage
+              src={imageUrl}
+              alt={product.short_name ?? product.name}
+              fill
+              className={`object-cover ${
+                isOutOfStock ? 'opacity-60 grayscale' : ''
+              }`}
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              onError={() => setImageLoadFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-ink-muted/30">
+              <svg
+                className="h-12 w-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          )}
+
+          <ProductLabel
+            {...labelProps}
+            className="pointer-events-none absolute left-2 top-2"
+          />
+
+          {/* 右下角浮动加购图标 */}
+          {!isOutOfStock && (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              aria-label="Add to cart"
+              className="absolute right-2 bottom-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow-md transition hover:bg-brand hover:text-white disabled:pointer-events-none"
+            >
+              {isAdding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* 纯色背景文案区 */}
+        <div className="pt-2 pb-3">
+          <h3 className="line-clamp-2 text-sm font-medium text-ink">
+            {product.short_name ?? product.name}
+          </h3>
+          <div className="mt-1">
+            {product.final_price > 0 ? (
+              <ProductPrice
+                price={product.price}
+                finalPrice={product.final_price}
+                discountPercent={discountPercent}
+                currency={product.currency ?? 'USD'}
+                size="sm"
+              />
+            ) : (
+              <span className="text-xs text-ink-muted">Price unavailable</span>
+            )}
+          </div>
+        </div>
+      </Link>
+    </article>
   );
 }
 
@@ -794,6 +920,7 @@ function ProductCardFeaturedVariant({
 export function ProductCard({
   product,
   variant = 'default',
+  className,
 }: ProductCardProps) {
   const { items, getQtyBySku, updateItemQty, removeFromCart } = useCart();
   const {
@@ -1009,6 +1136,23 @@ export function ProductCard({
     case 'compact':
       return (
         <ProductCardCompactVariant
+          product={product}
+          imageUrl={imageUrl}
+          imageLoadFailed={imageLoadFailed}
+          setImageLoadFailed={setImageLoadFailed}
+          isOutOfStock={isOutOfStock}
+          discountPercent={discountPercent}
+          productHref={productHref}
+          isAdding={isAdding}
+          handleAddToCart={handleCompactAdd}
+          labelProps={labelProps}
+          className={className}
+        />
+      );
+
+    case 'grid':
+      return (
+        <ProductCardGridVariant
           product={product}
           imageUrl={imageUrl}
           imageLoadFailed={imageLoadFailed}
