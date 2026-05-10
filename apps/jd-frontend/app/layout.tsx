@@ -6,7 +6,7 @@ import { MobileTabbar } from '@/app/_ui/MobileTabbar';
 // import { PromoBar } from '@/app/_ui/PromoBar';
 import './globals.css';
 import { AppProviders } from './providers';
-import { DevtoolsPanel } from '@/infrastructure/api/devtools/panel';
+// import { DevtoolsPanel } from '@/infrastructure/api/devtools/panel';
 
 export const metadata: Metadata = {
   title: 'Joydeem Kitchen Appliances - Dough Makers, Rice Cookers & More',
@@ -33,7 +33,7 @@ export default function RootLayout({
           <MobileTabbar />
           <Footer />
         </AppProviders>
-        {process.env.NODE_ENV === 'development' && <DevtoolsPanel />}
+        {/* {process.env.NODE_ENV === 'development' && <DevtoolsPanel />} */}
       </body>
     </html>
   );

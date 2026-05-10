@@ -59,8 +59,9 @@ export function ProductSectionNav({ sections }: ProductSectionNavProps) {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    // 考虑 header(73px) + section nav(45px) 的高度偏移
-    const offset = 73 + 45 + 8;
+    // 考虑 header + section nav 的高度偏移（移动端 52px header，桌面端 73px）
+    const headerHeight = window.innerWidth < 1024 ? 52 : 73;
+    const offset = headerHeight + 45 + 8;
     const top = el.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top, behavior: 'smooth' });
   };
@@ -72,13 +73,13 @@ export function ProductSectionNav({ sections }: ProductSectionNavProps) {
 
       <nav
         aria-label="Product sections"
-        className={`sticky top-[73px] z-20 -mx-4 border-b border-border bg-background/95 backdrop-blur-md transition-all duration-300 sm:-mx-6 lg:-mx-[50px] ${
+        className={`sticky top-[52px] lg:top-[73px] z-20 -mx-4 overflow-x-hidden border-b border-border bg-background/95 backdrop-blur-md transition-all duration-300 sm:-mx-6 lg:-mx-[50px] ${
           visible
             ? 'translate-y-0 opacity-100'
             : '-translate-y-2 opacity-0 pointer-events-none'
         }`}
       >
-        <div className="flex overflow-x-auto px-4 sm:px-6 lg:px-[50px] [&::-webkit-scrollbar]:hidden">
+        <div className="no-scrollbar flex overflow-x-auto px-4 sm:px-6 lg:px-[50px]">
           {sections.map(section => (
             <button
               key={section.id}

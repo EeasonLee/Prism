@@ -381,7 +381,7 @@ export function ProductDetailContent({
   return (
     <div
       id="product-main"
-      className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12"
+      className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start lg:gap-12"
     >
       <div className="lg:sticky lg:top-24 lg:self-start">
         <ProductImageGallery
@@ -542,14 +542,14 @@ export function ProductDetailContent({
         />
         {product.short_description_html ? (
           <div
-            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none break-words text-ink-muted [&_img]:max-w-full [&_img]:h-auto [&_strong]:font-semibold [&_strong]:text-ink [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto"
             dangerouslySetInnerHTML={{
               __html: product.short_description_html,
             }}
           />
         ) : product.short_description ? (
           <div
-            className="prose prose-sm mt-4 max-w-none text-ink-muted [&_strong]:font-semibold [&_strong]:text-ink"
+            className="prose prose-sm mt-4 max-w-none break-words text-ink-muted [&_img]:max-w-full [&_img]:h-auto [&_strong]:font-semibold [&_strong]:text-ink [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto"
             dangerouslySetInnerHTML={{
               __html: product.short_description,
             }}

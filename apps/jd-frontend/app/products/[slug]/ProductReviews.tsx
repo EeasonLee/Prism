@@ -322,9 +322,9 @@ function ReviewCard({
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <article className="rounded-[26px] border border-border bg-card p-5 sm:p-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,250px)] lg:items-start">
-        <aside className="space-y-3 lg:pr-2">
+    <article className="overflow-x-hidden rounded-[26px] border border-border bg-card p-5 sm:p-6">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,250px)] lg:items-start">
+        <aside className="min-w-0 space-y-3 lg:pr-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
               {getInitials(review.authorName)}
@@ -365,7 +365,7 @@ function ReviewCard({
           </dl>
         </aside>
 
-        <div className="lg:pr-2">
+        <div className="min-w-0 lg:pr-2">
           <div className="flex flex-wrap items-center gap-2">
             <StarRow rating={review.rating} size="sm" />
             <span className="text-sm font-medium text-ink-muted">
@@ -373,10 +373,10 @@ function ReviewCard({
             </span>
           </div>
 
-          <h4 className="mt-2 text-2xl font-bold leading-tight text-ink">
+          <h4 className="mt-2 break-words text-2xl font-bold leading-tight text-ink">
             {review.title}
           </h4>
-          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+          <p className="mt-3 break-words text-sm leading-relaxed text-ink-muted">
             {review.content}
           </p>
 
@@ -417,7 +417,7 @@ function ReviewCard({
         </div>
 
         {reviewDimensionRatings.length > 0 && (
-          <aside className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+          <aside className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
             <p className="text-sm font-semibold text-ink">
               Ratings by Attribute
             </p>
@@ -723,8 +723,11 @@ export function ProductReviews({
 
       <div className="mt-8 space-y-8">
         <div className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-            <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+            <div
+              data-testid="reviews-summary"
+              className="rounded-xl border border-border bg-card p-5 sm:p-6"
+            >
               <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-8">
                 <div className="flex shrink-0 flex-col items-center">
                   <p className="text-5xl font-black tracking-tight text-ink">
@@ -905,7 +908,7 @@ export function ProductReviews({
 
           {reviews.length > 0 ? (
             <>
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {reviews.map(review => (
                   <ReviewCard
                     key={review.id}
@@ -917,14 +920,6 @@ export function ProductReviews({
               </div>
               {pagination.pageCount > 1 && (
                 <div className="mt-6">
-                  <p className="mb-3 text-sm text-ink-muted">
-                    Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
-                    {Math.min(
-                      pagination.page * pagination.pageSize,
-                      pagination.total
-                    )}{' '}
-                    of {pagination.total} reviews
-                  </p>
                   <Pagination
                     pagination={pagination}
                     onPageChange={page =>
