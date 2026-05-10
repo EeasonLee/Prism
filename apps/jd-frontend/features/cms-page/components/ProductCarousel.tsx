@@ -4,10 +4,10 @@ import type { ProductCarouselProps } from '../types';
 import { productQueryFacade } from '@/features/product';
 import { ProductCard, mapCardItemToDisplay } from '@/features/product';
 
-const LAYOUT_CLASSES = {
-  'grid-2': 'grid-cols-2',
-  'grid-3': 'grid-cols-2 md:grid-cols-3',
-  'grid-6': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
+const DESKTOP_GRID = {
+  'grid-2': 'md:grid-cols-2',
+  'grid-3': 'md:grid-cols-3',
+  'grid-6': 'md:grid-cols-3 lg:grid-cols-6',
 };
 
 export async function ProductCarousel({
@@ -66,13 +66,19 @@ export async function ProductCarousel({
           )}
         </div>
 
-        <div className={`grid gap-3 lg:gap-4 ${LAYOUT_CLASSES[layout]}`}>
+        <div
+          className={`flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar md:grid md:gap-4 ${DESKTOP_GRID[layout]}`}
+        >
           {validProducts.map(product => (
-            <ProductCard
+            <div
               key={product.sku}
-              product={mapCardItemToDisplay(product)}
-              variant="grid"
-            />
+              className="w-[75vw] shrink-0 snap-start md:w-auto"
+            >
+              <ProductCard
+                product={mapCardItemToDisplay(product)}
+                variant="grid"
+              />
+            </div>
           ))}
         </div>
       </div>

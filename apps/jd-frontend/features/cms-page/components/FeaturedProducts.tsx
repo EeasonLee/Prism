@@ -45,13 +45,17 @@ export async function FeaturedProducts({
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory no-scrollbar lg:grid lg:grid-cols-2">
           {validProducts.map(product => (
-            <ProductCard
+            <div
               key={product.sku}
-              product={mapCardItemToDisplay(product)}
-              variant="featured"
-            />
+              className="w-[85vw] shrink-0 snap-start lg:w-auto"
+            >
+              <ProductCard
+                product={mapCardItemToDisplay(product)}
+                variant="featured"
+              />
+            </div>
           ))}
         </div>
       </div>
