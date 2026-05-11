@@ -6,7 +6,7 @@ import { extractLocalAccessTokenPayload } from '@/features/auth/services/session
 export async function POST(request: Request) {
   return authenticatedCartRequest(
     request,
-    async (magentoAccessToken, _cartId, isGuest) => {
+    async (magentoAccessToken, cartId, isGuest) => {
       const accessToken = request.headers
         .get('cookie')
         ?.match(/access_token=([^;]+)/)?.[1];
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
         customerEmail,
         magentoAccessToken,
         sessionAccessToken: accessToken,
+        cartId,
       });
 
       const redirectUrl = `${

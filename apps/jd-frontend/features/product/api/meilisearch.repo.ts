@@ -459,6 +459,12 @@ export interface CartProductEnrichment {
       sort_order: number;
     }>;
   }> | null;
+  /** Real-time inventory from catalog-sync-service (populated client-side) */
+  inventory?: {
+    salable_qty: number;
+    is_salable: boolean;
+    stock_status: string;
+  } | null;
 }
 
 function hitToCartEnrichment(hit: MeilisearchHit): CartProductEnrichment {

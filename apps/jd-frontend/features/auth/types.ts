@@ -79,6 +79,8 @@ export interface CheckoutRedirectTokenPayload {
   customerEmail?: string;
   magentoAccessToken?: string;
   sessionAccessToken?: string;
+  /** Cart ID to ensure checkout uses the same cart as the drawer */
+  cartId?: string;
   exp: number;
   iat: number;
 }

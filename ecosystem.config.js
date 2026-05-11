@@ -33,12 +33,12 @@ if (fs.existsSync(envFile)) {
 module.exports = {
   apps: [
     {
-      name: 'joydeem-nextjs',
+      name: 'jd-frontend',
       cwd: deployDir,
 
       // 直接运行 next start
       script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3002',
+      args: 'start -p 3092',
       interpreter: 'node',
 
       env: envVars,
@@ -65,15 +65,16 @@ module.exports = {
       shutdown_with_message: true,
     },
     {
+      // 仓库根目录跑 Nx production server（等同 next start，需先 pnpm run build）
       name: 'jd-frontend-dev',
       cwd: __dirname,
 
       script: 'pnpm',
-      args: 'run dev',
+      args: 'run start -- --port=3090 --hostname=0.0.0.0',
       interpreter: 'none',
 
       env: {
-        NODE_ENV: 'development',
+        ...envVars,
         PORT: '3090',
       },
 
@@ -86,13 +87,13 @@ module.exports = {
       merge_logs: true,
 
       autorestart: true,
-      max_memory_restart: '2G',
+      max_memory_restart: '1G',
       min_uptime: '10s',
       max_restarts: 10,
       restart_delay: 4000,
 
-      kill_timeout: 10000,
-      listen_timeout: 120000,
+      kill_timeout: 5000,
+      listen_timeout: 10000,
       shutdown_with_message: true,
     },
   ],
