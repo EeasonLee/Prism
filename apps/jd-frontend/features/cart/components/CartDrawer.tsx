@@ -224,11 +224,14 @@ export function CartDrawer() {
     const fetchInventoryBatch = async (skus: string[]) => {
       if (skus.length === 0) return;
       try {
-        const res = await fetch('https://sync.joydeem.com/v1/inventory/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ skus }),
-        });
+        const res = await fetch(
+          `${env.NEXT_PUBLIC_CATALOG_SYNC_URL}/v1/inventory/bulk`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ skus }),
+          }
+        );
         if (!res.ok) return;
         const json = (await res.json()) as {
           items?: Record<
