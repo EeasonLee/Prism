@@ -84,14 +84,13 @@ export function ContentCarousel({
                   href={item.link || '/recipes'}
                   className="group block w-[80vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card sm:w-auto"
                 >
-                  <div className="aspect-[4/3] overflow-hidden">
+                  <div className="relative aspect-[4/3] overflow-hidden">
                     <OptimizedImage
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
-                      width={400}
-                      height={300}
-                      maxDisplayWidth={400}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-5">
@@ -135,14 +134,13 @@ export function ContentCarousel({
                   href={item.link || '/blog'}
                   className="group block w-[85vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card lg:w-auto"
                 >
-                  <div className="aspect-[16/10] overflow-hidden">
+                  <div className="relative aspect-[16/10] overflow-hidden">
                     <OptimizedImage
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
-                      width={400}
-                      height={250}
-                      maxDisplayWidth={400}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 1024px) 85vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-5">

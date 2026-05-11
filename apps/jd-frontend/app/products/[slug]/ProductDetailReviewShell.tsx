@@ -159,8 +159,6 @@ export function ProductDetailReviewShell({
       )}
 
       <ProductBackToTopButton />
-
-      <ProductBackToTopButton />
     </>
   );
 }

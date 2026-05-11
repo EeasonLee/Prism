@@ -230,7 +230,7 @@ function buildProductUrl(
 
 ### 6.5 禁止事项
 
-- **禁止**在各处手写 `` `/products/${xxx}` `` 拼接 URL
+- **禁止**在各处手写 `/products/${xxx}` 拼接 URL
 - **禁止**手写 `encodeURIComponent` 处理 sku/url_key
 - **禁止**在组件中自行处理优惠券 URL 参数
 
