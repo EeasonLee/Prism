@@ -113,12 +113,7 @@ function getIndexCandidates(): string[] {
 
   const prefix = (env.MEILISEARCH_INDEX_PREFIX ?? '').trim();
   const store = (env.MAGENTO_STORE_CODE ?? '').trim();
-  const primary = `${prefix}_${store}`;
-  const fallback =
-    prefix.endsWith('_product') || !prefix
-      ? primary
-      : `${prefix}_product_${store}`;
-  return fallback === primary ? [primary] : [primary, fallback];
+  return [`${prefix}_product_${store}`];
 }
 
 function buildFilter(
@@ -464,6 +459,12 @@ export interface CartProductEnrichment {
       sort_order: number;
     }>;
   }> | null;
+  /** Real-time inventory from catalog-sync-service (populated client-side) */
+  inventory?: {
+    salable_qty: number;
+    is_salable: boolean;
+    stock_status: string;
+  } | null;
 }
 
 function hitToCartEnrichment(hit: MeilisearchHit): CartProductEnrichment {

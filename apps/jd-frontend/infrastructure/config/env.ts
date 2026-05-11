@@ -53,6 +53,11 @@ const clientSchema = z.object({
   NEXT_PUBLIC_MAGENTO_API_URL: z.string().url().optional(),
   // Magento GraphQL 端点（直接访问 Magento GraphQL，不经过 SSO 代理）
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: z.string().url().optional(),
+  // Catalog-sync-service 基础地址（用于库存查询等）
+  NEXT_PUBLIC_CATALOG_SYNC_URL: z
+    .string()
+    .url()
+    .default('https://sync.joydeem.com'),
   // 支持的国家代码列表，逗号分隔，用于地址表单（默认 US）
   NEXT_PUBLIC_SUPPORTED_COUNTRIES: z.string().optional(),
   // Cloudflare Turnstile 验证码
@@ -75,6 +80,7 @@ const parsedEnv = mergedSchema.parse({
   REQUIRE_LOGIN_FOR_CHECKOUT: process.env.REQUIRE_LOGIN_FOR_CHECKOUT,
   NEXT_PUBLIC_MAGENTO_API_URL: process.env.NEXT_PUBLIC_MAGENTO_API_URL,
   NEXT_PUBLIC_MAGENTO_GRAPHQL_URL: process.env.NEXT_PUBLIC_MAGENTO_GRAPHQL_URL,
+  NEXT_PUBLIC_CATALOG_SYNC_URL: process.env.NEXT_PUBLIC_CATALOG_SYNC_URL,
   NEXT_PUBLIC_SUPPORTED_COUNTRIES: process.env.NEXT_PUBLIC_SUPPORTED_COUNTRIES,
   NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY:
     process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY,

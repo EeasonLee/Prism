@@ -38,8 +38,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // 优先从 cookie 读取 cart ID
-    let cartId = getCartIdCookie(request) ?? undefined;
+    // 优先从 token payload 读取 cart ID（确保和购物车一致）
+    // 其次从 cookie 读取，最后按用户类型兜底创建/获取
+    let cartId = payload.cartId ?? getCartIdCookie(request) ?? undefined;
 
     // 没有 cart_id 时按用户类型兜底创建/获取
     if (!cartId && payload.mode === 'guest') {

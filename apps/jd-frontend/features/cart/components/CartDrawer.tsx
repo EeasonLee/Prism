@@ -1,7 +1,15 @@
 'use client';
 
 import { env } from '@/infrastructure/config/env';
-import { CreditCard, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import {
+  CreditCard,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Trash2,
+  X,
+  AlertTriangle,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
@@ -74,6 +82,12 @@ interface CartEnrichmentData {
     image_url: string | null;
     option_values: Record<string, string>;
   }>;
+  /** Real-time inventory from catalog-sync-service */
+  inventory?: {
+    salable_qty: number;
+    is_salable: boolean;
+    stock_status: string;
+  } | null;
 }
 
 function normalizeCartSku(sku: string): string {
@@ -205,9 +219,78 @@ export function CartDrawer() {
     }
     setEnrichment(cachedMap);
 
-    if (uncached.length === 0) return;
-
     let cancelled = false;
+
+    const fetchInventoryBatch = async (skus: string[]) => {
+      if (skus.length === 0) return;
+      try {
+        const res = await fetch(
+          `${env.NEXT_PUBLIC_CATALOG_SYNC_URL}/v1/inventory/bulk`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ skus }),
+          }
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          items?: Record<
+            string,
+            {
+              sku: string;
+              salable_qty: number;
+              is_salable: boolean;
+              stock_status: string;
+            }
+          >;
+          not_found?: string[];
+        };
+
+        const inventoryMap = json.items ?? {};
+        const notFound = new Set(json.not_found ?? []);
+
+        // Update enrichment with inventory data
+        setEnrichment(prev => {
+          const next: Record<string, CartEnrichmentData | null> = { ...prev };
+          for (const [raw, normalized] of rawToNormalized) {
+            const existing = next[raw];
+            if (!existing) continue;
+
+            if (inventoryMap[normalized]) {
+              next[raw] = {
+                ...existing,
+                inventory: {
+                  salable_qty: inventoryMap[normalized].salable_qty,
+                  is_salable: inventoryMap[normalized].is_salable,
+                  stock_status: inventoryMap[normalized].stock_status,
+                },
+              };
+            } else if (notFound.has(normalized)) {
+              // SKU not found in inventory system = treat as out of stock
+              next[raw] = {
+                ...existing,
+                inventory: {
+                  salable_qty: 0,
+                  is_salable: false,
+                  stock_status: 'out_of_stock',
+                },
+              };
+            }
+          }
+          return next;
+        });
+      } catch {
+        // Inventory fetch is best-effort; don't block cart rendering
+      }
+    };
+
+    if (uncached.length === 0) {
+      // All cached — still run inventory check in case stock changed
+      void fetchInventoryBatch([...normalizedSet]);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const fetchAll = async () => {
       try {
@@ -233,6 +316,10 @@ export function CartDrawer() {
           merged[raw] = cacheRef.current[normalized] ?? null;
         }
         setEnrichment(merged);
+
+        // After enrichment, fetch real-time inventory for all SKUs
+        const allNormalized = [...normalizedSet];
+        await fetchInventoryBatch(allNormalized);
       } catch {
         // Serve from cache on error — already set above
       }
@@ -444,185 +531,231 @@ export function CartDrawer() {
 
           {hasItems && (
             <ul className="space-y-3">
-              {items.map(item => {
-                const enrich = enrichment[item.sku];
-                const optionLabelMap = buildOptionLabelMap(enrich ?? undefined);
-                const customOptionLabelMap = buildCustomOptionLabelMap(
-                  enrich ?? undefined
-                );
+              {items
+                .slice()
+                .sort((a, b) => {
+                  // Sort out-of-stock / over-qty items to the top
+                  const aEnrich = enrichment[a.sku];
+                  const bEnrich = enrichment[b.sku];
+                  const aStock = aEnrich?.inventory;
+                  const bStock = bEnrich?.inventory;
+                  const aBad =
+                    aStock &&
+                    (!aStock.is_salable ||
+                      (aStock.salable_qty > 0 && a.qty > aStock.salable_qty));
+                  const bBad =
+                    bStock &&
+                    (!bStock.is_salable ||
+                      (bStock.salable_qty > 0 && b.qty > bStock.salable_qty));
+                  if (aBad && !bBad) return -1;
+                  if (!aBad && bBad) return 1;
+                  return 0;
+                })
+                .map(item => {
+                  const enrich = enrichment[item.sku];
+                  const optionLabelMap = buildOptionLabelMap(
+                    enrich ?? undefined
+                  );
+                  const customOptionLabelMap = buildCustomOptionLabelMap(
+                    enrich ?? undefined
+                  );
 
-                // Variant image: try to match cart options against variant option_values
-                const variantImage = findVariantImage(
-                  enrich ?? undefined,
-                  item.options
-                );
-                const imageUrl =
-                  variantImage ?? enrich?.image ?? item.thumbnail ?? null;
+                  // Variant image: try to match cart options against variant option_values
+                  const variantImage = findVariantImage(
+                    enrich ?? undefined,
+                    item.options
+                  );
+                  const imageUrl =
+                    variantImage ?? enrich?.image ?? item.thumbnail ?? null;
 
-                // For configurable products, show variant label + base name
-                const displayName = item.name;
+                  // For configurable products, show variant label + base name
+                  const displayName = item.name;
 
-                const productUrl = buildProductUrl({
-                  url_key: enrich?.url_key ?? null,
-                  sku: item.sku,
-                  cp_code: null,
-                });
+                  const productUrl = buildProductUrl({
+                    url_key: enrich?.url_key ?? null,
+                    sku: item.sku,
+                    cp_code: null,
+                  });
 
-                return (
-                  <li
-                    key={item.item_id}
-                    className="flex items-start gap-3 rounded-lg border border-border p-3"
-                  >
-                    {/* Product image */}
-                    {imageUrl ? (
-                      <Link
-                        href={productUrl}
-                        onClick={closeCart}
-                        className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface"
-                      >
-                        <OptimizedImage
-                          src={imageUrl}
-                          alt={displayName}
-                          width={64}
-                          height={64}
-                          maxDisplayWidth={64}
-                          className="h-full w-full object-cover"
-                        />
-                      </Link>
-                    ) : (
-                      <Link
-                        href={productUrl}
-                        onClick={closeCart}
-                        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-surface"
-                      >
-                        <ShoppingCart className="h-5 w-5 text-ink-muted/30" />
-                      </Link>
-                    )}
+                  // Real-time stock check
+                  const stock = enrich?.inventory;
+                  const isOutOfStock = stock && !stock.is_salable;
+                  const isOverQty =
+                    stock &&
+                    stock.salable_qty > 0 &&
+                    item.qty > stock.salable_qty;
+                  const stockWarning = isOutOfStock
+                    ? 'The requested qty is not available'
+                    : isOverQty
+                    ? `The requested qty is not available (max ${stock.salable_qty})`
+                    : null;
 
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={productUrl}
-                        onClick={closeCart}
-                        className="block text-sm font-medium leading-snug text-ink transition hover:text-brand"
-                      >
-                        {displayName}
-                      </Link>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        SKU: {item.sku}
-                      </p>
-                      {item.options && item.options.length > 0 && (
-                        <ul className="mt-1.5 space-y-0.5 text-[11px] text-ink-muted">
-                          {item.options.map((opt, idx) => {
-                            // Check if this is a configurable option
-                            // (numeric label = option_id, or "Configurable {id}" from REST)
-                            const isConfigurable =
-                              /^\d+$/.test(opt.label) ||
-                              opt.label.startsWith('Configurable ');
-                            // Check if this is a custom option
-                            const isCustom = opt.label.startsWith('Custom ');
-
-                            let resolvedLabel = opt.label;
-                            let resolvedValue = opt.value;
-
-                            if (isConfigurable && optionLabelMap) {
-                              resolvedValue =
-                                optionLabelMap[opt.value] ?? opt.value;
-                              // Extract attribute ID from label
-                              const attrId = opt.label
-                                .replace('Configurable ', '')
-                                .trim();
-                              const allConfigurableOpts = [
-                                ...(enrich?.configurable_options ?? []),
-                                ...(enrich?.parent_configurable_options ?? []),
-                              ];
-                              const configOpt = allConfigurableOpts.find(
-                                co =>
-                                  co.attribute_id === attrId ||
-                                  co.attribute_code === attrId
-                              );
-                              if (configOpt) {
-                                resolvedLabel = configOpt.label;
-                              }
-                            }
-
-                            if (isCustom && customOptionLabelMap) {
-                              const customOptId = opt.label.replace(
-                                'Custom ',
-                                ''
-                              );
-                              const customOpt =
-                                customOptionLabelMap[customOptId];
-                              if (customOpt) {
-                                resolvedLabel = customOpt.title;
-                                // custom option values can be comma-separated option_type_ids
-                                const valueIds = opt.value
-                                  .split(',')
-                                  .map(v => v.trim());
-                                const resolvedValues = valueIds
-                                  .map(vid => customOpt.values[vid] ?? vid)
-                                  .filter(Boolean);
-                                resolvedValue = resolvedValues.join(', ');
-                              }
-                            }
-
-                            return (
-                              <li key={`${item.item_id}-opt-${idx}`}>
-                                <span className="text-ink-faint">
-                                  {resolvedLabel}:
-                                </span>{' '}
-                                {resolvedValue}
-                              </li>
-                            );
-                          })}
-                        </ul>
+                  return (
+                    <li
+                      key={item.item_id}
+                      className={`flex items-start gap-3 rounded-lg border p-3 ${
+                        stockWarning
+                          ? 'border-red-300 bg-red-50/60'
+                          : 'border-border'
+                      }`}
+                    >
+                      {/* Product image */}
+                      {imageUrl ? (
+                        <Link
+                          href={productUrl}
+                          onClick={closeCart}
+                          className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-surface"
+                        >
+                          <OptimizedImage
+                            src={imageUrl}
+                            alt={displayName}
+                            width={64}
+                            height={64}
+                            maxDisplayWidth={64}
+                            className="h-full w-full object-cover"
+                          />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={productUrl}
+                          onClick={closeCart}
+                          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-surface"
+                        >
+                          <ShoppingCart className="h-5 w-5 text-ink-muted/30" />
+                        </Link>
                       )}
-                      <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-border bg-surface">
-                        <button
-                          type="button"
-                          aria-label="Decrease quantity"
-                          onClick={() =>
-                            handleUpdateQty(item.item_id, item.qty - 1)
-                          }
-                          disabled={
-                            mutatingItemId === item.item_id || item.qty <= 1
-                          }
-                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
+
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={productUrl}
+                          onClick={closeCart}
+                          className="block text-sm font-medium leading-snug text-ink transition hover:text-brand"
                         >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="flex h-8 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-2 text-sm font-semibold text-ink">
-                          {item.qty}
-                        </span>
+                          {displayName}
+                        </Link>
+                        {stockWarning && (
+                          <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-red-600">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            {stockWarning}
+                          </p>
+                        )}
+                        <p className="mt-0.5 text-xs text-ink-muted">
+                          SKU: {item.sku}
+                        </p>
+                        {item.options && item.options.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5 text-[11px] text-ink-muted">
+                            {item.options.map((opt, idx) => {
+                              // Check if this is a configurable option
+                              // (numeric label = option_id, or "Configurable {id}" from REST)
+                              const isConfigurable =
+                                /^\d+$/.test(opt.label) ||
+                                opt.label.startsWith('Configurable ');
+                              // Check if this is a custom option
+                              const isCustom = opt.label.startsWith('Custom ');
+
+                              let resolvedLabel = opt.label;
+                              let resolvedValue = opt.value;
+
+                              if (isConfigurable && optionLabelMap) {
+                                resolvedValue =
+                                  optionLabelMap[opt.value] ?? opt.value;
+                                // Extract attribute ID from label
+                                const attrId = opt.label
+                                  .replace('Configurable ', '')
+                                  .trim();
+                                const allConfigurableOpts = [
+                                  ...(enrich?.configurable_options ?? []),
+                                  ...(enrich?.parent_configurable_options ??
+                                    []),
+                                ];
+                                const configOpt = allConfigurableOpts.find(
+                                  co =>
+                                    co.attribute_id === attrId ||
+                                    co.attribute_code === attrId
+                                );
+                                if (configOpt) {
+                                  resolvedLabel = configOpt.label;
+                                }
+                              }
+
+                              if (isCustom && customOptionLabelMap) {
+                                const customOptId = opt.label.replace(
+                                  'Custom ',
+                                  ''
+                                );
+                                const customOpt =
+                                  customOptionLabelMap[customOptId];
+                                if (customOpt) {
+                                  resolvedLabel = customOpt.title;
+                                  // custom option values can be comma-separated option_type_ids
+                                  const valueIds = opt.value
+                                    .split(',')
+                                    .map(v => v.trim());
+                                  const resolvedValues = valueIds
+                                    .map(vid => customOpt.values[vid] ?? vid)
+                                    .filter(Boolean);
+                                  resolvedValue = resolvedValues.join(', ');
+                                }
+                              }
+
+                              return (
+                                <li key={`${item.item_id}-opt-${idx}`}>
+                                  <span className="text-ink-faint">
+                                    {resolvedLabel}:
+                                  </span>{' '}
+                                  {resolvedValue}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-border bg-surface">
+                          <button
+                            type="button"
+                            aria-label="Decrease quantity"
+                            onClick={() =>
+                              handleUpdateQty(item.item_id, item.qty - 1)
+                            }
+                            disabled={
+                              mutatingItemId === item.item_id || item.qty <= 1
+                            }
+                            className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="flex h-8 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-2 text-sm font-semibold text-ink">
+                            {item.qty}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Increase quantity"
+                            onClick={() =>
+                              handleUpdateQty(item.item_id, item.qty + 1)
+                            }
+                            disabled={mutatingItemId === item.item_id}
+                            className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <p className="text-sm font-semibold text-ink">
+                          {formatCartLineTotal(item)}
+                        </p>
                         <button
                           type="button"
-                          aria-label="Increase quantity"
-                          onClick={() =>
-                            handleUpdateQty(item.item_id, item.qty + 1)
-                          }
+                          aria-label={`Remove ${item.name} from cart`}
+                          onClick={() => handleRemoveItem(item.item_id)}
                           disabled={mutatingItemId === item.item_id}
-                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
+                          className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <p className="text-sm font-semibold text-ink">
-                        {formatCartLineTotal(item)}
-                      </p>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${item.name} from cart`}
-                        onClick={() => handleRemoveItem(item.item_id)}
-                        disabled={mutatingItemId === item.item_id}
-                        className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
+                    </li>
+                  );
+                })}
             </ul>
           )}
 
