@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { OptimizedImage } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
-import { productQueryFacade } from '@/features/product';
+import { productQueryFacade, buildProductUrl } from '@/features/product';
 
 interface Props {
   searchParams: Promise<{
@@ -66,9 +66,11 @@ export default async function SearchPage({ searchParams }: Props) {
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {items.map(item => {
               const displayName = item.displayName ?? item.name ?? item.sku;
-              const href = `/products/${encodeURIComponent(
-                item.urlKey ?? item.sku
-              )}`;
+              const href = buildProductUrl({
+                url_key: item.urlKey,
+                sku: item.sku,
+                cp_code: null,
+              });
               return (
                 <li key={item.sku}>
                   <Link

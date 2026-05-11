@@ -125,8 +125,8 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             </ol>
           ) : (
             /* 折叠态：首项 / ... / 当前项 */
-            <ol className="flex items-center gap-2">
-              <li>
+            <ol className="flex min-w-0 items-center gap-2">
+              <li className="shrink-0">
                 <Link
                   href={resolvedItems[0].href as Route}
                   className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -134,12 +134,12 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                   {resolvedItems[0].label}
                 </Link>
               </li>
-              <li>
+              <li className="shrink-0">
                 <span className="text-ink-faint" aria-hidden="true">
                   /
                 </span>
               </li>
-              <li>
+              <li className="shrink-0">
                 <button
                   type="button"
                   onClick={() => setExpanded(true)}
@@ -149,13 +149,16 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                   …
                 </button>
               </li>
-              <li>
+              <li className="shrink-0">
                 <span className="text-ink-faint" aria-hidden="true">
                   /
                 </span>
               </li>
-              <li>
-                <span className="text-ink font-medium" aria-current="page">
+              <li className="min-w-0">
+                <span
+                  className="block truncate text-ink font-medium"
+                  aria-current="page"
+                >
                   {resolvedItems[resolvedItems.length - 1].label}
                 </span>
               </li>

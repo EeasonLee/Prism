@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ProductCard } from '@/features/product';
+import { ProductCard, mapCardItemToDisplay } from '@/features/product';
 import { ProductCardSkeleton } from '@/features/product';
 import type { ProductCardItem } from '@/features/product';
 import type { ShopAvailableFilter, ShopSortOption } from '@/features/search';
@@ -119,7 +119,7 @@ export function CategoryProductGrid({
       <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         {products.map(product => (
           <li key={product.sku}>
-            <ProductCard product={product} />
+            <ProductCard product={mapCardItemToDisplay(product)} />
           </li>
         ))}
         {loading &&

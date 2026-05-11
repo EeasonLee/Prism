@@ -1,13 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { AccountScaffold } from '../../components/AccountScaffold';
-import { AccountSkeleton } from '../../components/AccountSkeleton';
+import { useEffect, useState } from 'react';
 import { formatPrice } from '@prism/shared';
-import { useAuth } from '@/features/auth';
-import { useAccount } from '@/features/account/use-account';
 import type { OrderDetail } from '@/features/account/types';
 
 interface ErrorPayload {
@@ -31,18 +26,10 @@ export default function AccountOrderDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
-  const { logout } = useAccount({
-    loadUser: false,
-    loadOrders: false,
-    loadAddresses: false,
-  });
   const [orderId, setOrderId] = useState<number | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     void params.then(p => {
@@ -52,13 +39,7 @@ export default function AccountOrderDetailPage({
   }, [params]);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account/orders');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (authLoading || !isAuthenticated || orderId === null) {
+    if (orderId === null) {
       return;
     }
 
@@ -94,46 +75,30 @@ export default function AccountOrderDetailPage({
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, orderId]);
+  }, [orderId]);
 
-  const handleLogout = useCallback(async () => {
-    setLogoutLoading(true);
-    try {
-      await logout();
-      await refreshSession();
-      router.replace('/login');
-    } finally {
-      setLogoutLoading(false);
-    }
-  }, [logout, refreshSession, router]);
-
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-surface" />
+        <div className="mt-2 h-4 w-64 animate-pulse rounded-lg bg-surface" />
+        <div className="mt-6 h-64 animate-pulse rounded-lg bg-surface" />
+      </div>
     );
   }
 
   if (orderId === null) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
         <p className="text-sm text-red-600">Invalid order ID.</p>
-      </main>
+      </div>
     );
   }
 
   return (
-    <AccountScaffold
-      title={`Order #${order?.number ?? orderId}`}
-      description="Review your order details."
-      onLogout={handleLogout}
-      logoutLoading={logoutLoading}
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">Order #{order?.number ?? orderId}</h1>
+      <p className="mt-2 text-sm text-ink-muted">Review your order details.</p>
       {error && (
         <p
           role="alert"
@@ -316,6 +281,6 @@ export default function AccountOrderDetailPage({
           </div>
         </div>
       )}
-    </AccountScaffold>
+    </div>
   );
 }

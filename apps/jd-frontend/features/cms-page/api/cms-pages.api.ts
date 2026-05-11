@@ -16,7 +16,7 @@ import {
 } from '@/infrastructure/config/cache-policy';
 import { getStrapiBaseUrl } from '@/infrastructure/config/api-config';
 import { resolveImageUrl } from '@/infrastructure/config/image';
-import { productQueryFacade } from '@/features/product';
+import { productQueryFacade, buildProductUrl } from '@/features/product';
 import {
   normalizePageLayoutPreset,
   normalizePageTemplate,
@@ -543,7 +543,11 @@ async function enrichImageTextBlockConfig(
     const product = products[0];
     if (!product) return config;
 
-    const productLink = `/products/${product.urlKey ?? product.sku}`;
+    const productLink = buildProductUrl({
+      url_key: product.urlKey,
+      sku: product.sku,
+      cp_code: null,
+    });
     const resolvedImageUrl = config.main?.image?.url ?? product.image;
     const autoCurrentPrice = product.price.value ?? undefined;
     const autoOriginalPrice = product.originalPrice ?? undefined;

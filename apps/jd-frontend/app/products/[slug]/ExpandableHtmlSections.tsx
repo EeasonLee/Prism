@@ -61,7 +61,7 @@ export function ExpandableHtmlSections({
             {isExpanded && (
               <div className="pb-5">
                 <div
-                  className="prose prose-sm max-w-none text-ink-muted [&_a]:text-ink [&_a]:underline hover:[&_a]:text-brand [&_strong]:font-semibold [&_strong]:text-ink"
+                  className="prose prose-sm max-w-none break-words text-ink-muted [&_a]:text-ink [&_a]:underline hover:[&_a]:text-brand [&_img]:max-w-full [&_img]:h-auto [&_strong]:font-semibold [&_strong]:text-ink [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto"
                   dangerouslySetInnerHTML={{ __html: section.contentHtml }}
                 />
               </div>

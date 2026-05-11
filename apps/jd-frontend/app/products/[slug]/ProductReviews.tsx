@@ -19,7 +19,6 @@ import type {
   ProductReviewSummary,
   ProductReviewTag,
 } from '@/features/product';
-import { cn } from '@prism/shared';
 import { Pagination } from '@/features/recipe';
 import { getReviewVisitorKey } from './review-visitor-key';
 import { ReviewForm } from './ReviewForm';
@@ -229,7 +228,7 @@ function CustomerMediaGallery({
   ];
 
   return (
-    <section className="mt-8 rounded-[28px] border border-border bg-card p-5 sm:p-6">
+    <section className="rounded-[28px] border border-border bg-card p-5 sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h3 className="heading-4 text-ink">Customer Photos &amp; Videos</h3>
         <div className="flex items-center gap-2">
@@ -323,9 +322,9 @@ function ReviewCard({
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <article className="rounded-[26px] border border-border bg-card p-5 sm:p-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,250px)] lg:items-start">
-        <aside className="space-y-3 lg:pr-2">
+    <article className="overflow-x-hidden rounded-[26px] border border-border bg-card p-5 sm:p-6">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,250px)] lg:items-start">
+        <aside className="min-w-0 space-y-3 lg:pr-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
               {getInitials(review.authorName)}
@@ -366,7 +365,7 @@ function ReviewCard({
           </dl>
         </aside>
 
-        <div className="lg:pr-2">
+        <div className="min-w-0 lg:pr-2">
           <div className="flex flex-wrap items-center gap-2">
             <StarRow rating={review.rating} size="sm" />
             <span className="text-sm font-medium text-ink-muted">
@@ -374,10 +373,10 @@ function ReviewCard({
             </span>
           </div>
 
-          <h4 className="mt-2 text-2xl font-bold leading-tight text-ink">
+          <h4 className="mt-2 break-words text-2xl font-bold leading-tight text-ink">
             {review.title}
           </h4>
-          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+          <p className="mt-3 break-words text-sm leading-relaxed text-ink-muted">
             {review.content}
           </p>
 
@@ -418,7 +417,7 @@ function ReviewCard({
         </div>
 
         {reviewDimensionRatings.length > 0 && (
-          <aside className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+          <aside className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
             <p className="text-sm font-semibold text-ink">
               Ratings by Attribute
             </p>
@@ -723,96 +722,95 @@ export function ProductReviews({
       </div>
 
       <div className="mt-8 space-y-8">
-        <div>
-          <div
-            data-testid="reviews-summary"
-            className={cn(
-              'grid gap-4',
-              showDimensionBreakdown
-                ? 'lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)_minmax(0,260px)]'
-                : 'lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]'
-            )}
-          >
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card px-5 py-6 text-center sm:px-6">
-              <p className="text-5xl font-black tracking-tight text-ink">
-                {(effectiveSummary?.average ?? 0).toFixed(1)}
-              </p>
-              <div className="mt-2">
-                <StarRow rating={effectiveSummary?.average ?? 0} size="lg" />
-              </div>
-              <p className="mt-2 text-sm text-ink-muted">
-                {totalReviews.toLocaleString('en-US')}{' '}
-                {totalReviews === 1 ? 'review' : 'reviews'}
-              </p>
-            </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+            <div
+              data-testid="reviews-summary"
+              className="rounded-xl border border-border bg-card p-5 sm:p-6"
+            >
+              <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-8">
+                <div className="flex shrink-0 flex-col items-center">
+                  <p className="text-5xl font-black tracking-tight text-ink">
+                    {(effectiveSummary?.average ?? 0).toFixed(1)}
+                  </p>
+                  <div className="mt-2">
+                    <StarRow
+                      rating={effectiveSummary?.average ?? 0}
+                      size="lg"
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-ink-muted">
+                    {totalReviews.toLocaleString('en-US')}{' '}
+                    {totalReviews === 1 ? 'review' : 'reviews'}
+                  </p>
+                </div>
 
-            <div className="rounded-xl border border-border bg-card p-5 sm:p-6 lg:min-w-0">
-              <div className="space-y-2.5">
-                {DISTRIBUTION_KEYS.map(key => (
-                  <DistributionRow
-                    key={key}
-                    stars={key}
-                    count={summaryDistribution[key]}
-                    total={totalReviews}
-                  />
-                ))}
-              </div>
-            </div>
+                <div className="w-px self-stretch bg-border hidden sm:block" />
 
-            {showDimensionBreakdown && (
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 lg:min-w-0">
-                <h3 className="mb-4 text-sm font-semibold text-ink">
-                  Ratings by Attribute
-                </h3>
-                <div className="space-y-3">
-                  {dimensionSummary.map(item => (
-                    <div
-                      key={item.slug}
-                      className="flex items-center gap-2 sm:gap-3"
-                    >
-                      <span
-                        className="max-w-[42%] shrink-0 truncate text-sm text-ink-muted sm:max-w-[38%]"
-                        title={item.name}
-                      >
-                        {item.name}
-                      </span>
-                      <div
-                        className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-muted"
-                        aria-label={`${item.name}, ${item.average.toFixed(
-                          1
-                        )} out of ${item.scaleMax}`}
-                      >
-                        <div
-                          className="absolute inset-y-0 left-0 rounded-full bg-brand"
-                          style={{
-                            width: `${Math.max(
-                              0,
-                              Math.min(
-                                100,
-                                (item.average / item.scaleMax) * 100
-                              )
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-ink sm:w-10">
-                        {item.average.toFixed(1)}
-                      </span>
-                    </div>
+                <div className="w-full min-w-0 flex-1 space-y-2.5">
+                  {DISTRIBUTION_KEYS.map(key => (
+                    <DistributionRow
+                      key={key}
+                      stars={key}
+                      count={summaryDistribution[key]}
+                      total={totalReviews}
+                    />
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <CustomerMediaGallery
-          media={customerMedia.filter(item =>
-            mediaTab === 'all' ? true : item.kind === mediaTab
+            <CustomerMediaGallery
+              media={customerMedia.filter(item =>
+                mediaTab === 'all' ? true : item.kind === mediaTab
+              )}
+              activeTab={mediaTab}
+              onTabChange={setMediaTab}
+            />
+          </div>
+
+          {showDimensionBreakdown && (
+            <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+              <h3 className="mb-4 text-sm font-semibold text-ink">
+                Ratings by Attribute
+              </h3>
+              <div className="space-y-3">
+                {dimensionSummary.map(item => (
+                  <div
+                    key={item.slug}
+                    className="flex items-center gap-2 sm:gap-3"
+                  >
+                    <span
+                      className="max-w-[42%] shrink-0 truncate text-sm text-ink-muted sm:max-w-[38%]"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </span>
+                    <div
+                      className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-muted"
+                      aria-label={`${item.name}, ${item.average.toFixed(
+                        1
+                      )} out of ${item.scaleMax}`}
+                    >
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full bg-brand"
+                        style={{
+                          width: `${Math.max(
+                            0,
+                            Math.min(100, (item.average / item.scaleMax) * 100)
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-ink sm:w-10">
+                      {item.average.toFixed(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-          activeTab={mediaTab}
-          onTabChange={setMediaTab}
-        />
+        </div>
 
         <div>
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -910,7 +908,7 @@ export function ProductReviews({
 
           {reviews.length > 0 ? (
             <>
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {reviews.map(review => (
                   <ReviewCard
                     key={review.id}
@@ -922,14 +920,6 @@ export function ProductReviews({
               </div>
               {pagination.pageCount > 1 && (
                 <div className="mt-6">
-                  <p className="mb-3 text-sm text-ink-muted">
-                    Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
-                    {Math.min(
-                      pagination.page * pagination.pageSize,
-                      pagination.total
-                    )}{' '}
-                    of {pagination.total} reviews
-                  </p>
                   <Pagination
                     pagination={pagination}
                     onPageChange={page =>
@@ -956,32 +946,34 @@ export function ProductReviews({
 
       {allowSubmit && effectiveIsReviewFormOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Write a review"
           onClick={closeReviewForm}
         >
-          <div
-            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-background shadow-2xl"
-            onClick={event => event.stopPropagation()}
-          >
+          <div className="relative flex w-full max-w-4xl flex-col">
             <button
               type="button"
               onClick={closeReviewForm}
               aria-label="Close review form"
-              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition hover:bg-surface hover:text-ink"
+              className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
             >
               <X className="h-4 w-4" />
             </button>
-            <ReviewForm
-              sku={sku}
-              target={target}
-              onSubmitted={() => {
-                closeReviewForm();
-                void loadPage(1, sort, reviewFilters);
-              }}
-            />
+            <div
+              className="flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-2xl bg-background shadow-2xl sm:max-h-[90dvh]"
+              onClick={event => event.stopPropagation()}
+            >
+              <ReviewForm
+                sku={sku}
+                target={target}
+                onSubmitted={() => {
+                  closeReviewForm();
+                  void loadPage(1, sort, reviewFilters);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

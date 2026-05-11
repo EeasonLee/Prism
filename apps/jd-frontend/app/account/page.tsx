@@ -1,17 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Home, CreditCard } from 'lucide-react';
-import { AccountScaffold } from './components/AccountScaffold';
-import { AccountSkeleton } from './components/AccountSkeleton';
-import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
 
 export default function AccountOverviewPage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
   const {
     user,
     orders,
@@ -19,63 +13,38 @@ export default function AccountOverviewPage() {
     wishlist,
     isLoading,
     error,
-    logout,
     getDefaultAddresses,
   } = useAccount();
-  const [logoutLoading, setLogoutLoading] = useState(false);
   const [defaultAddresses, setDefaultAddresses] = useState<{
     billing: (typeof addresses)[number] | null;
     shipping: (typeof addresses)[number] | null;
   }>({ billing: null, shipping: null });
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      getDefaultAddresses()
-        .then(data => setDefaultAddresses(data))
-        .catch(() => setDefaultAddresses({ billing: null, shipping: null }));
-    }
-  }, [isAuthenticated, authLoading, getDefaultAddresses]);
-
-  const handleLogout = useCallback(async () => {
-    setLogoutLoading(true);
-    try {
-      await logout();
-      await refreshSession();
-      router.replace('/login');
-    } finally {
-      setLogoutLoading(false);
-    }
-  }, [logout, refreshSession, router]);
-
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
-    );
-  }
+    getDefaultAddresses()
+      .then(data => setDefaultAddresses(data))
+      .catch(() => setDefaultAddresses({ billing: null, shipping: null }));
+  }, [getDefaultAddresses]);
 
   return (
-    <AccountScaffold
-      title="My Account"
-      description="Manage your profile, orders, and saved addresses."
-      onLogout={handleLogout}
-      logoutLoading={logoutLoading}
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">My Account</h1>
+      <p className="mt-2 text-sm text-ink-muted">
+        Manage your profile, orders, and saved addresses.
+      </p>
+
+      {isLoading && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-32 animate-pulse rounded-xl bg-surface" />
+          ))}
+        </div>
+      )}
+
       {error && (
         <p
           role="alert"
-          className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+          className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
         >
           {error}
         </p>
@@ -196,6 +165,6 @@ export default function AccountOverviewPage() {
           {user?.email ?? 'Unknown user'}
         </p>
       </div>
-    </AccountScaffold>
+    </div>
   );
 }

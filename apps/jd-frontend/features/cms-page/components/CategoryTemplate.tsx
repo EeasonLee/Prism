@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { resolveImageUrl } from '@prism/shared';
 import type { PageSection } from '../types';
 import { categoryService } from '@/features/category';
-import { ProductCard, productQueryFacade } from '@/features/product';
+import {
+  ProductCard,
+  productQueryFacade,
+  mapCardItemToDisplay,
+} from '@/features/product';
 
 const PRODUCTS_PER_SECTION = 8;
 
@@ -272,7 +276,7 @@ export async function CategoryTemplate({
               <ul className="grid grid-cols-2 gap-4 md:grid-cols-5">
                 {section.products.map(product => (
                   <li key={`${section.id}-${product.sku}`}>
-                    <ProductCard product={product} />
+                    <ProductCard product={mapCardItemToDisplay(product)} />
                   </li>
                 ))}
               </ul>

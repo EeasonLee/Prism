@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { formatPrice } from '@prism/shared';
 import type { UnifiedLinkedProduct } from '@/features/product';
 import { PageContainer } from '@prism/ui';
-import { getProductDetailAggregate } from '@/features/product';
+import { getProductDetailAggregate, buildProductUrl } from '@/features/product';
 import type {
   ProductReviewListResult,
   ProductReviewSummary,
@@ -16,8 +16,6 @@ import { UpsellProductsSection } from './UpsellProductsSection';
 import { SellingPoints } from './SellingPoints';
 import { ProductGuarantees } from './ProductGuarantees';
 import { BlogSection } from './BlogSection';
-import { ProductSpecifications } from './ProductSpecifications';
-import type { ProductSpecificationGroup } from '@/features/product';
 import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
@@ -28,13 +26,6 @@ import { buildBreadcrumbSchema } from '@/shared/utils/seo';
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-function getSpecificationGroups(product: {
-  specifications: unknown;
-}): ProductSpecificationGroup[] {
-  const raw = product.specifications;
-  return Array.isArray(raw) ? (raw as ProductSpecificationGroup[]) : [];
 }
 
 function emptyReviewSummary(sku: string): ProductReviewSummary {
@@ -91,7 +82,13 @@ async function DeferredRelatedProductsSection({
                 key={item.sku}
                 className="group overflow-hidden rounded-xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-card"
               >
-                <Link href={`/products/${item.url_key ?? item.sku}`}>
+                <Link
+                  href={buildProductUrl({
+                    url_key: item.url_key,
+                    sku: item.sku,
+                    cp_code: null,
+                  })}
+                >
                   <div className="relative aspect-square bg-surface-muted">
                     {cardImageUrl ? (
                       <OptimizedImage
@@ -107,7 +104,11 @@ async function DeferredRelatedProductsSection({
                 </Link>
                 <div className="space-y-2 p-4">
                   <Link
-                    href={`/products/${item.url_key ?? item.sku}`}
+                    href={buildProductUrl({
+                      url_key: item.url_key,
+                      sku: item.sku,
+                      cp_code: null,
+                    })}
                     className="block"
                   >
                     <h3 className="line-clamp-2 text-sm font-semibold text-ink">
@@ -227,8 +228,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const ratingCount =
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
-  const specificationGroups = getSpecificationGroups(product);
-
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
     ...(product.categories?.[0]
@@ -256,7 +255,14 @@ export default async function ProductDetailPage({ params }: Props) {
           },
         ]
       : []),
-    { name: product.display_name, path: `/products/${product.sku ?? slug}` },
+    {
+      name: product.display_name,
+      path: buildProductUrl({
+        url_key: null,
+        sku: product.sku ?? slug,
+        cp_code: null,
+      }),
+    },
   ]);
 
   return (
@@ -302,11 +308,6 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
         )}
-      {specificationGroups.length > 0 && (
-        <div id="section-specifications">
-          <ProductSpecifications groups={specificationGroups} />
-        </div>
-      )}
       {PDP_FEATURES.fromBlog && (cms?.blog_posts?.length ?? 0) > 0 && (
         <div id="section-blog">
           <BlogSection posts={cms?.blog_posts ?? []} />

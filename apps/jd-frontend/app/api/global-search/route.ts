@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { productQueryFacade } from '@/features/product';
+import { productQueryFacade, buildProductUrl } from '@/features/product';
 import { searchArticles } from '@/features/blog/api';
 import { fetchRecipeKeywordSearchStrapi } from '@/features/recipe';
 import { handleApiError } from '@/infrastructure/api/route-helpers';
@@ -34,7 +34,11 @@ export async function GET(request: Request) {
         ? {
             items: productsResult.value.items.map(item => ({
               ...item,
-              href: `/products/${item.urlKey ?? item.sku}`,
+              href: buildProductUrl({
+                url_key: item.urlKey,
+                sku: item.sku,
+                cp_code: null,
+              }),
             })),
             total: productsResult.value.pagination.total,
           }

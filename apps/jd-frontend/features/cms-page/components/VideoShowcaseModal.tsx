@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { OptimizedImage, Skeleton } from '@prism/ui';
+import { OptimizedImage, Skeleton, useBodyScrollLock } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import type { ProductCardItem } from '@/features/product';
+import { buildProductUrl } from '@/features/product';
 import type { VideoItem } from '../types';
 
 interface VideoShowcaseModalProps {
@@ -26,6 +27,19 @@ export function VideoShowcaseModal({
   const [error, setError] = useState<string | null>(null);
   const [entered, setEntered] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 打开时自动播放，关闭时暂停（视频元素保持挂载以复用加载进度）
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (open) {
+      videoRef.current.play().catch(() => {
+        // 浏览器可能阻止自动播放，用户需手动点击播放
+      });
+    } else {
+      videoRef.current.pause();
+    }
+  }, [open]);
 
   // 入场动画 + body 滚动锁定
   useEffect(() => {
@@ -34,13 +48,10 @@ export function VideoShowcaseModal({
       return;
     }
     const frame = requestAnimationFrame(() => setEntered(true));
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      cancelAnimationFrame(frame);
-      document.body.style.overflow = prev;
-    };
+    return () => cancelAnimationFrame(frame);
   }, [open]);
+
+  useBodyScrollLock(open);
 
   // Esc 关闭
   useEffect(() => {
@@ -109,87 +120,87 @@ export function VideoShowcaseModal({
     [onClose]
   );
 
-  if (!open) return null;
-
   return createPortal(
     <div
       ref={overlayRef}
       role="dialog"
       aria-modal="true"
       aria-label={video.title}
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 transition-opacity duration-300 ${
-        entered ? 'opacity-100' : 'opacity-0'
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/85 p-4 transition-all duration-300 ${
+        open && entered
+          ? 'opacity-100'
+          : 'pointer-events-none invisible opacity-0'
       }`}
       onClick={handleOverlayClick}
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl lg:flex-row">
-        {/* 关闭按钮 */}
+      <div className="relative w-full max-w-4xl">
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="absolute right-3 top-3 z-10 rounded-full bg-ink/20 p-1.5 text-white transition hover:bg-ink/40"
+          className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
+        <div className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl lg:flex-row">
+          {/* 视频区域 */}
+          <div className="relative flex-shrink-0 bg-black lg:w-[300px]">
+            <video
+              ref={videoRef}
+              src={video.videoUrl}
+              poster={video.thumbnail?.url}
+              controls
+              autoPlay
+              muted
+              playsInline
+              className="aspect-[9/16] w-full object-contain"
+              aria-label={video.title}
+            />
+          </div>
 
-        {/* 视频区域 */}
-        <div className="relative flex-shrink-0 bg-black lg:w-[42%]">
-          <video
-            src={video.videoUrl}
-            poster={video.thumbnail?.url}
-            controls
-            muted
-            playsInline
-            className="aspect-[9/16] max-h-[40vh] w-full object-contain lg:aspect-video lg:max-h-[70vh]"
-            aria-label={video.title}
-          />
-          {video.caption && (
-            <p className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 caption text-white">
-              {video.caption}
-            </p>
-          )}
-        </div>
+          {/* 商品列表区域 */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5">
+            <h3 className="heading-4 text-ink">{video.title}</h3>
+            {video.caption && (
+              <p className="mt-2 caption text-ink-muted">{video.caption}</p>
+            )}
 
-        {/* 商品列表区域 */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 lg:w-[58%]">
-          <h3 className="heading-4 text-ink">{video.title}</h3>
-
-          {/* 加载态 */}
-          {isLoading && (
-            <div className="mt-4 space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-[72px] w-[72px] flex-shrink-0 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-4 w-1/3" />
+            {/* 加载态 */}
+            {isLoading && (
+              <div className="mt-4 space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-[72px] w-[72px] flex-shrink-0 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* 错误态 */}
-          {!isLoading && error && (
-            <p className="mt-4 body-text text-ink-muted">{error}</p>
-          )}
+            {/* 错误态 */}
+            {!isLoading && error && (
+              <p className="mt-4 body-text text-ink-muted">{error}</p>
+            )}
 
-          {/* 空商品 */}
-          {!isLoading && !error && products.length === 0 && (
-            <p className="mt-4 body-text text-ink-muted">
-              No products available for this video
-            </p>
-          )}
+            {/* 空商品 */}
+            {!isLoading && !error && products.length === 0 && (
+              <p className="mt-4 body-text text-ink-muted">
+                No products available for this video
+              </p>
+            )}
 
-          {/* 商品列表 */}
-          {!isLoading && products.length > 0 && (
-            <div className="mt-4 space-y-3">
-              {products.map(product => (
-                <VideoProductCard key={product.sku} product={product} />
-              ))}
-            </div>
-          )}
+            {/* 商品列表 */}
+            {!isLoading && products.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {products.map(product => (
+                  <VideoProductCard key={product.sku} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>,
@@ -199,7 +210,11 @@ export function VideoShowcaseModal({
 
 /** Modal 内使用的紧凑商品卡片 */
 function VideoProductCard({ product }: { product: ProductCardItem }) {
-  const href = `/products/${product.urlKey ?? product.sku}`;
+  const href = buildProductUrl({
+    url_key: product.urlKey,
+    sku: product.sku,
+    cp_code: null,
+  });
   const hasDiscount =
     product.originalPrice != null &&
     product.price.value != null &&
@@ -232,9 +247,9 @@ function VideoProductCard({ product }: { product: ProductCardItem }) {
         <h4 className="body-text line-clamp-2 font-medium text-ink">
           {product.displayName}
         </h4>
-        {product.shortDescription && (
+        {product.longTitle && (
           <p className="mt-0.5 line-clamp-1 caption text-ink-muted">
-            {product.shortDescription}
+            {product.longTitle}
           </p>
         )}
         <div className="mt-1.5 flex items-baseline gap-2">

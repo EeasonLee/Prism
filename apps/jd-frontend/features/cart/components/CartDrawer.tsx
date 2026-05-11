@@ -17,6 +17,7 @@ import type { CartTotals } from '../types';
 import { useAuth } from '@/features/auth';
 import { useCart } from './cart.context';
 import { LoginModal } from '@/features/auth';
+import { buildProductUrl } from '@/features/product';
 
 interface CartEnrichmentData {
   sku: string;
@@ -461,9 +462,11 @@ export function CartDrawer() {
                 // For configurable products, show variant label + base name
                 const displayName = item.name;
 
-                const productUrl = enrich?.url_key
-                  ? `/products/${enrich.url_key}`
-                  : `/products/${item.sku}`;
+                const productUrl = buildProductUrl({
+                  url_key: enrich?.url_key ?? null,
+                  sku: item.sku,
+                  cp_code: null,
+                });
 
                 return (
                   <li

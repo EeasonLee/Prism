@@ -161,11 +161,11 @@ export function ProductImageGallery({
   }
 
   return (
-    <div className="lg:grid lg:grid-cols-[5rem_minmax(0,1fr)] lg:items-stretch lg:gap-3">
+    <div className="flex flex-col lg:grid lg:grid-cols-[5rem_minmax(0,1fr)] lg:items-stretch lg:gap-3">
       {/* 缩略图走廊：桌面端放左侧，移动端放底部 */}
       {mediaItems.length > 1 && (
         <div
-          className="order-2 mt-3 flex gap-2 lg:order-1 lg:mt-0 lg:w-20 lg:flex-col lg:items-stretch"
+          className="order-2 mt-3 flex w-full gap-2 lg:order-1 lg:mt-0 lg:w-20 lg:flex-col lg:items-stretch"
           style={
             thumbnailColumnHeight != null
               ? { height: `${thumbnailColumnHeight}px` }

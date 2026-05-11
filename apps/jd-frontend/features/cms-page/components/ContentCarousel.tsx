@@ -77,12 +77,12 @@ export function ContentCarousel({
 
         <div>
           {activeTab === 'recipe' ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4">
               {filteredItems.map(item => (
                 <Link
                   key={item.id}
                   href={item.link || '/recipes'}
-                  className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
+                  className="group block w-[80vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card sm:w-auto"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     <OptimizedImage
@@ -128,12 +128,12 @@ export function ContentCarousel({
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar lg:grid lg:grid-cols-3">
               {filteredItems.map(item => (
                 <Link
                   key={item.id}
                   href={item.link || '/blog'}
-                  className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card"
+                  className="group block w-[85vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card lg:w-auto"
                 >
                   <div className="aspect-[16/10] overflow-hidden">
                     <OptimizedImage

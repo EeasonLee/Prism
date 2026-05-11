@@ -1,6 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, useBodyScrollLock } from '@prism/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -141,16 +141,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   }, [open]);
 
   // Lock body scroll on mobile when open
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  useBodyScrollLock(
+    open,
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
 
   // Click outside to close (desktop dropdown only)
   useEffect(() => {

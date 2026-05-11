@@ -445,8 +445,8 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
   };
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-border bg-surface">
-      <div className="border-b border-border bg-background/60 px-5 py-5 sm:px-6">
+    <section className="flex min-h-0 flex-col">
+      <div className="shrink-0 border-b border-border bg-background/60 px-5 py-5 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="heading-4 text-ink">Write a review</h3>
@@ -467,279 +467,288 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
         </div>
       </div>
 
-      <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
-        <div className="rounded-2xl border border-border bg-background px-4 py-4">
-          <p className="micro-text uppercase tracking-[0.18em] text-ink-faint">
-            Review target
-          </p>
-          <div className="mt-2 space-y-1">
-            <p className="text-sm font-semibold text-ink">
-              Product SKU: {target.sku}
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+          <div className="rounded-2xl border border-border bg-background px-4 py-4">
+            <p className="micro-text uppercase tracking-[0.18em] text-ink-faint">
+              Review target
             </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm font-semibold text-ink">
+                Product SKU: {target.sku}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {!isAuthenticated && (
+          <form id="review-form" onSubmit={handleSubmit} className="space-y-5">
+            {!isAuthenticated && (
+              <div>
+                <label
+                  htmlFor="review-guest-email"
+                  className="mb-2 block text-sm font-medium text-ink"
+                >
+                  Email
+                </label>
+                <input
+                  id="review-guest-email"
+                  type="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  required
+                  value={guestEmail}
+                  onChange={event => setGuestEmail(event.target.value)}
+                  placeholder="For moderation only; display name uses the part before @"
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+            )}
+
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-ink">Rating</span>
+                <span className="text-sm font-semibold text-brand">
+                  {rating.toFixed(1)} / 5
+                </span>
+              </div>
+              <RatingControl rating={rating} onChange={setRating} />
+            </div>
+
             <div>
               <label
-                htmlFor="review-guest-email"
+                htmlFor="review-title"
                 className="mb-2 block text-sm font-medium text-ink"
               >
-                Email
+                Title
               </label>
               <input
-                id="review-guest-email"
-                type="email"
-                autoComplete="email"
-                maxLength={254}
+                id="review-title"
+                type="text"
+                maxLength={150}
+                minLength={3}
                 required
-                value={guestEmail}
-                onChange={event => setGuestEmail(event.target.value)}
-                placeholder="For moderation only; display name uses the part before @"
+                value={title}
+                onChange={event => setTitle(event.target.value)}
+                placeholder="Summarize your experience"
                 className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
               />
             </div>
-          )}
 
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-ink">Rating</span>
-              <span className="text-sm font-semibold text-brand">
-                {rating.toFixed(1)} / 5
-              </span>
-            </div>
-            <RatingControl rating={rating} onChange={setRating} />
-          </div>
-
-          <div>
-            <label
-              htmlFor="review-title"
-              className="mb-2 block text-sm font-medium text-ink"
-            >
-              Title
-            </label>
-            <input
-              id="review-title"
-              type="text"
-              maxLength={150}
-              minLength={3}
-              required
-              value={title}
-              onChange={event => setTitle(event.target.value)}
-              placeholder="Summarize your experience"
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="review-content"
-              className="mb-2 block text-sm font-medium text-ink"
-            >
-              Review
-            </label>
-            <textarea
-              id="review-content"
-              rows={5}
-              maxLength={2000}
-              minLength={10}
-              required
-              value={content}
-              onChange={event => setContent(event.target.value)}
-              placeholder="What worked well, what did not, and how did this variant compare to your expectations?"
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-            />
-          </div>
-
-          <div>
-            {availableTags.length > 0 && (
-              <div className="space-y-4">
-                {nonScoredTags.length > 0 && (
-                  <div>
-                    <p className="mb-2 block text-sm font-medium text-ink">
-                      Tags
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {nonScoredTags.map(tag => {
-                        const isSelected = selectedTagSlugs.includes(tag.slug);
-                        return (
-                          <button
-                            key={tag.slug}
-                            type="button"
-                            onClick={() => {
-                              setSelectedTagSlugs(current => {
-                                if (current.includes(tag.slug)) {
-                                  const next = current.filter(
-                                    slug => slug !== tag.slug
-                                  );
-                                  return next;
-                                }
-                                return [...current, tag.slug];
-                              });
-                            }}
-                            className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                              isSelected
-                                ? 'border-brand bg-brand/10 text-brand'
-                                : 'border-border text-ink hover:border-brand hover:text-brand'
-                            }`}
-                          >
-                            {tag.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {scoredTags.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-ink">
-                      Rate dimensions (0-5)
-                    </p>
-                    {scoredTags.map(tag => (
-                      <label
-                        key={tag.slug}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background px-3 py-2"
-                      >
-                        <span className="text-sm text-ink">{tag.name}</span>
-                        <select
-                          value={String(
-                            Number.isInteger(dimensionScores[tag.slug])
-                              ? dimensionScores[tag.slug]
-                              : 5
-                          )}
-                          onChange={event => {
-                            const score = Number(event.target.value);
-                            setDimensionScores(current => ({
-                              ...current,
-                              [tag.slug]: Number.isInteger(score) ? score : 5,
-                            }));
-                          }}
-                          className="rounded-full border border-border bg-background px-3 py-1.5 text-sm text-ink focus:border-brand focus:outline-none"
-                        >
-                          {[0, 1, 2, 3, 4, 5].map(value => (
-                            <option key={value} value={value}>
-                              {value}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-sm font-medium text-ink">
-                Photos and video
+            <div>
+              <label
+                htmlFor="review-content"
+                className="mb-2 block text-sm font-medium text-ink"
+              >
+                Review
               </label>
-              <span className="text-xs text-ink-muted">
-                Up to 6 files, 1 video max
-              </span>
+              <textarea
+                id="review-content"
+                rows={5}
+                maxLength={2000}
+                minLength={10}
+                required
+                value={content}
+                onChange={event => setContent(event.target.value)}
+                placeholder="What worked well, what did not, and how did this variant compare to your expectations?"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+              />
             </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={event => {
-                void handleFileSelection(event);
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploads.length >= MAX_ATTACHMENTS || hasUploadingMedia}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-background px-4 py-4 text-sm font-medium text-ink transition hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Upload className="h-4 w-4" />
-              Add photos or video
-            </button>
-            <p className="mt-2 text-xs text-ink-muted">
-              Images up to 5 MB each. One video up to 20 MB.
-            </p>
 
-            {uploads.length > 0 && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {uploads.map(upload => (
-                  <div
-                    key={upload.localId}
-                    className="rounded-2xl border border-border bg-background p-3"
-                  >
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-ink">
-                          {upload.fileName}
-                        </p>
-                        <p className="mt-1 text-xs text-ink-muted">
-                          {upload.kind === 'video' ? 'Video' : 'Image'}
-                          {upload.status === 'uploading' ? ' · Uploading' : ''}
-                          {upload.status === 'uploaded' ? ' · Ready' : ''}
-                          {upload.status === 'failed' ? ' · Failed' : ''}
-                        </p>
+            <div>
+              {availableTags.length > 0 && (
+                <div className="space-y-4">
+                  {nonScoredTags.length > 0 && (
+                    <div>
+                      <p className="mb-2 block text-sm font-medium text-ink">
+                        Tags
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {nonScoredTags.map(tag => {
+                          const isSelected = selectedTagSlugs.includes(
+                            tag.slug
+                          );
+                          return (
+                            <button
+                              key={tag.slug}
+                              type="button"
+                              onClick={() => {
+                                setSelectedTagSlugs(current => {
+                                  if (current.includes(tag.slug)) {
+                                    const next = current.filter(
+                                      slug => slug !== tag.slug
+                                    );
+                                    return next;
+                                  }
+                                  return [...current, tag.slug];
+                                });
+                              }}
+                              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                                isSelected
+                                  ? 'border-brand bg-brand/10 text-brand'
+                                  : 'border-border text-ink hover:border-brand hover:text-brand'
+                              }`}
+                            >
+                              {tag.name}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeUpload(upload.localId)}
-                        className="rounded-full p-1 text-ink-muted transition hover:bg-surface hover:text-ink"
-                        aria-label={`Remove ${upload.fileName}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
                     </div>
+                  )}
 
-                    <div className="flex h-28 items-center justify-center overflow-hidden rounded-2xl bg-surface-muted">
-                      {upload.status === 'uploading' && (
-                        <LoaderCircle className="h-6 w-6 animate-spin text-brand" />
-                      )}
-                      {upload.status === 'failed' && (
-                        <p className="px-3 text-center text-xs text-red-500">
-                          {upload.error ?? 'Upload failed'}
-                        </p>
-                      )}
-                      {upload.status === 'uploaded' && upload.media && (
-                        <ReviewImagePreview
-                          media={[upload.media]}
-                          altFallback={upload.fileName}
-                          thumbnailClassName="h-full w-full object-cover"
-                          buttonClassName="h-full w-full cursor-pointer"
-                          previewLabel={`Preview media ${upload.fileName}`}
-                        />
-                      )}
+                  {scoredTags.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-ink">
+                        Rate dimensions (0-5)
+                      </p>
+                      {scoredTags.map(tag => (
+                        <label
+                          key={tag.slug}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background px-3 py-2"
+                        >
+                          <span className="text-sm text-ink">{tag.name}</span>
+                          <select
+                            value={String(
+                              Number.isInteger(dimensionScores[tag.slug])
+                                ? dimensionScores[tag.slug]
+                                : 5
+                            )}
+                            onChange={event => {
+                              const score = Number(event.target.value);
+                              setDimensionScores(current => ({
+                                ...current,
+                                [tag.slug]: Number.isInteger(score) ? score : 5,
+                              }));
+                            }}
+                            className="rounded-full border border-border bg-background px-3 py-1.5 text-sm text-ink focus:border-brand focus:outline-none"
+                          >
+                            {[0, 1, 2, 3, 4, 5].map(value => (
+                              <option key={value} value={value}>
+                                {value}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="text-sm font-medium text-ink">
+                  Photos and video
+                </label>
+                <span className="text-xs text-ink-muted">
+                  Up to 6 files, 1 video max
+                </span>
               </div>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={event => {
+                  void handleFileSelection(event);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={
+                  uploads.length >= MAX_ATTACHMENTS || hasUploadingMedia
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-background px-4 py-4 text-sm font-medium text-ink transition hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Upload className="h-4 w-4" />
+                Add photos or video
+              </button>
+              <p className="mt-2 text-xs text-ink-muted">
+                Images up to 5 MB each. One video up to 20 MB.
+              </p>
+
+              {uploads.length > 0 && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {uploads.map(upload => (
+                    <div
+                      key={upload.localId}
+                      className="rounded-2xl border border-border bg-background p-3"
+                    >
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-ink">
+                            {upload.fileName}
+                          </p>
+                          <p className="mt-1 text-xs text-ink-muted">
+                            {upload.kind === 'video' ? 'Video' : 'Image'}
+                            {upload.status === 'uploading'
+                              ? ' · Uploading'
+                              : ''}
+                            {upload.status === 'uploaded' ? ' · Ready' : ''}
+                            {upload.status === 'failed' ? ' · Failed' : ''}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeUpload(upload.localId)}
+                          className="rounded-full p-1 text-ink-muted transition hover:bg-surface hover:text-ink"
+                          aria-label={`Remove ${upload.fileName}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex h-28 items-center justify-center overflow-hidden rounded-2xl bg-surface-muted">
+                        {upload.status === 'uploading' && (
+                          <LoaderCircle className="h-6 w-6 animate-spin text-brand" />
+                        )}
+                        {upload.status === 'failed' && (
+                          <p className="px-3 text-center text-xs text-red-500">
+                            {upload.error ?? 'Upload failed'}
+                          </p>
+                        )}
+                        {upload.status === 'uploaded' && upload.media && (
+                          <ReviewImagePreview
+                            media={[upload.media]}
+                            altFallback={upload.fileName}
+                            thumbnailClassName="h-full w-full object-cover"
+                            buttonClassName="h-full w-full cursor-pointer"
+                            previewLabel={`Preview media ${upload.fileName}`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <p role="alert" className="text-sm text-red-500">
+                {error}
+              </p>
             )}
-          </div>
+            {success && <p className="text-sm text-emerald-600">{success}</p>}
+          </form>
+        </div>
+      </div>
 
-          {error && (
-            <p role="alert" className="text-sm text-red-500">
-              {error}
-            </p>
-          )}
-          {success && <p className="text-sm text-emerald-600">{success}</p>}
-
-          <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-ink-muted">
-              Helpful votes use a device visitor key. Reviews stay pending until
-              approval. Guests only need an email (not shown publicly); your
-              public display name comes from the part before @ in that address.
-            </p>
-            <button
-              type="submit"
-              disabled={isSubmitDisabled}
-              className="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Submitting…' : 'Submit review'}
-            </button>
-          </div>
-        </form>
+      <div className="shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-ink-muted">
+            Reviews stay pending until approval. Guests only need an email.
+          </p>
+          <button
+            type="submit"
+            form="review-form"
+            disabled={isSubmitDisabled}
+            className="btn-primary shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? 'Submitting…' : 'Submit review'}
+          </button>
+        </div>
       </div>
     </section>
   );

@@ -1,60 +1,34 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { AccountScaffold } from '../components/AccountScaffold';
-import { AccountSkeleton } from '../components/AccountSkeleton';
-import { formatPrice } from '@prism/shared';
-import { useAuth } from '@/features/auth';
 import { useAccount } from '@/features/account/use-account';
+import { formatPrice } from '@prism/shared';
 
 export default function AccountOrdersPage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, refreshSession } = useAuth();
-  const { orders, isLoading, error, logout } = useAccount({
+  const { orders, isLoading, error } = useAccount({
     loadUser: false,
     loadOrders: true,
     loadAddresses: false,
   });
-  const [logoutLoading, setLogoutLoading] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/login?next=/account/orders');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  const handleLogout = useCallback(async () => {
-    setLogoutLoading(true);
-    try {
-      await logout();
-      await refreshSession();
-      router.replace('/login');
-    } finally {
-      setLogoutLoading(false);
-    }
-  }, [logout, refreshSession, router]);
-
-  if (authLoading || isLoading) {
-    return <AccountSkeleton />;
-  }
-
-  if (!isAuthenticated) {
+  if (isLoading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
-      </main>
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <h1 className="heading-2 text-ink">Orders</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Review your recent order history.
+        </p>
+        <div className="mt-6 h-64 animate-pulse rounded-lg bg-surface" />
+      </div>
     );
   }
 
   return (
-    <AccountScaffold
-      title="Orders"
-      description="Review your recent order history."
-      onLogout={handleLogout}
-      logoutLoading={logoutLoading}
-    >
+    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <h1 className="heading-2 text-ink">Orders</h1>
+      <p className="mt-2 text-sm text-ink-muted">
+        Review your recent order history.
+      </p>
       {error && (
         <p
           role="alert"
@@ -101,6 +75,6 @@ export default function AccountOrdersPage() {
           </table>
         </div>
       )}
-    </AccountScaffold>
+    </div>
   );
 }

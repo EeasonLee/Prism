@@ -39,7 +39,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
-      const shouldPlay = isInView && i === currentPlayingIndex;
+      const shouldPlay = isInView && i === currentPlayingIndex && !modalVideo;
       if (shouldPlay) {
         const nextVersion = (playRequestVersionRef.current[i] ?? 0) + 1;
         playRequestVersionRef.current[i] = nextVersion;
