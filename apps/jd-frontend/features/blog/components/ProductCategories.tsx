@@ -135,6 +135,7 @@ export function ProductCategories({
                         src={category.icon || null}
                         alt={category.name}
                         fill
+                        maxDisplayWidth={180}
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 640px) 160px, 180px"
                         preferredFormat="medium"

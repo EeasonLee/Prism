@@ -119,6 +119,7 @@ function HoverVideoCard({ video }: HoverVideoCardProps) {
             src={video.thumbnailUrl}
             alt={video.title}
             fill
+            maxDisplayWidth={220}
             sizes="(max-width: 640px) 42vw, 220px"
             className="object-cover transition duration-300 group-hover:scale-[1.03]"
           />

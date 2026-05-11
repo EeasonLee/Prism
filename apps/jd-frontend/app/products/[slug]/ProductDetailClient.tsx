@@ -305,6 +305,7 @@ function StickyAddToCartBar({
                 alt={productName}
                 width={44}
                 height={44}
+                maxDisplayWidth={44}
                 className="h-11 w-11 shrink-0 rounded object-contain"
               />
             ) : (
@@ -835,6 +836,7 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
                   alt={item.name}
                   width={48}
                   height={48}
+                  maxDisplayWidth={48}
                   className="h-12 w-12 shrink-0 rounded-md object-contain"
                 />
               )}

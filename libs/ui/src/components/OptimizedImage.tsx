@@ -13,6 +13,7 @@ import Image from 'next/image';
 import {
   type ComponentProps,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -172,7 +173,7 @@ export function OptimizedImage({
   const [hasError, setHasError] = useState(false);
   const [useOriginalAbsoluteUrl, setUseOriginalAbsoluteUrl] = useState(false);
   const [imageState, setImageState] = useState<ImageLoadState>('loading');
-  const [blurSrc, setBlurSrc] = useState<string | null>(null);
+
   const { baseUrl } = useImageConfig();
 
   // 从 Strapi 图片对象或字符串中提取原始 URL（用于重试回退比较）
@@ -183,8 +184,8 @@ export function OptimizedImage({
     rawUrl = extractImageUrl(src, preferredFormat);
   }
 
-  // CDN 尺寸推导：maxDisplayWidth 优先，其次 cdnSize，都没有时默认取最大 CDN 尺寸
-  // CDN 尺寸只有 80/100/150/350/800 五档，任何 > 175px 的卡片在 retina 下都会命中 800
+  // CDN 尺寸推导：maxDisplayWidth 优先，其次 cdnSize，都没有时默认取最大 CDN 尺寸（1200）
+  // 现在 CDN 有 9 档（80/100/150/300/350/500/650/800/1200），retina 下卡片匹配更精准
   const derivedCdnSize = useMemo(() => {
     if (maxDisplayWidth) {
       return getOptimalCdnSize(maxDisplayWidth, pixelRatio ?? 2);
@@ -210,18 +211,13 @@ export function OptimizedImage({
       ? rawUrl
       : imageUrl;
 
-  // 计算 blur 缩略图 URL
+  // 计算 blur 缩略图 URL（useMemo 确保首次渲染即存在，消除"黑一块"）
   // Strapi 对象自带 formats.thumbnail（零额外请求），始终启用
-  // 纯 URL 字符串需额外请求 80px 缩略图，仅 LCP（priority）时值得
-  useEffect(() => {
-    const skipBlur =
-      disableBlurUp || (typeof src === 'string' && !imageProps.priority);
-    if (skipBlur) {
-      setBlurSrc(null);
-      return;
-    }
-    setBlurSrc(resolveBlurSrc(src, baseUrl));
-  }, [src, baseUrl, disableBlurUp, imageProps.priority]);
+  // CDN URL 字符串生成 80px 缩略图，全站启用 blur-up
+  const blurSrc = useMemo(
+    () => (disableBlurUp ? null : resolveBlurSrc(src, baseUrl)),
+    [src, baseUrl, disableBlurUp]
+  );
 
   // src 变化时重置状态
   useEffect(() => {
@@ -229,6 +225,22 @@ export function OptimizedImage({
     setUseOriginalAbsoluteUrl(false);
     setImageState('loading');
   }, [rawUrl, imageUrl]);
+
+  // 图片加载完成回调——等像素完全解码后再渐显，避免"从上往下扫"的分界线
+  const handleLoad = useCallback(
+    async (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.target as HTMLImageElement;
+      try {
+        if (img.decode) {
+          await img.decode();
+        }
+      } catch {
+        // decode() 在图片损坏时 reject，静默处理
+      }
+      setImageState('loaded');
+    },
+    []
+  );
 
   // 如果图片不存在，显示占位符
   if (!resolvedImageUrl || hasError) {
@@ -268,11 +280,10 @@ export function OptimizedImage({
         aria-hidden="true"
         className={cn(
           'absolute inset-0 h-full w-full',
-          'scale-110 blur-[20px]',
+          'scale-105 blur-[8px]',
           'object-cover',
           'transition-opacity duration-300'
         )}
-        onError={() => setBlurSrc(null)}
       />
     ) : null;
 
@@ -295,7 +306,7 @@ export function OptimizedImage({
           alt={alt}
           unoptimized={unoptimized}
           className={mainClassName}
-          onLoad={() => setImageState('loaded')}
+          onLoad={handleLoad}
           onError={handleError}
           {...imageProps}
         />
@@ -318,7 +329,7 @@ export function OptimizedImage({
         alt={alt}
         unoptimized={unoptimized}
         className={mainClassName}
-        onLoad={() => setImageState('loaded')}
+        onLoad={handleLoad}
         onError={handleError}
         {...imageProps}
       />

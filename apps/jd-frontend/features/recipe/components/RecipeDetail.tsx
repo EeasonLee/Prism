@@ -97,6 +97,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                               src={product.image}
                               alt={product.name}
                               fill
+                              maxDisplayWidth={66}
                               className="object-cover"
                               sizes="66px"
                             />
@@ -194,6 +195,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 src={recipe.featuredImage}
                 alt={imageAlt}
                 fill
+                maxDisplayWidth={520}
                 className="object-cover"
                 priority
                 sizes="(max-width: 768px) 100vw, 520px"
@@ -267,6 +269,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                                 `Step ${index + 1}`
                               }
                               fill
+                              maxDisplayWidth={600}
                               className="object-cover"
                               sizes="(max-width: 768px) 100vw, 600px"
                               preferredFormat="original"

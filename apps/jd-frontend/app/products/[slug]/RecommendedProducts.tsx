@@ -45,6 +45,7 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
                     src={product.image}
                     alt={product.name}
                     fill
+                    maxDisplayWidth={208}
                     sizes="208px"
                     className="object-contain p-4 transition group-hover:scale-105"
                   />

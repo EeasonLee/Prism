@@ -57,6 +57,7 @@ export function UpsellProductsSection({
                       src={item.unified_thumbnail}
                       alt={item.display_name}
                       fill
+                      maxDisplayWidth={140}
                       className="object-cover"
                       sizes="(max-width: 640px) 132px, 140px"
                     />

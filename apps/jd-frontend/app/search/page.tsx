@@ -83,6 +83,7 @@ export default async function SearchPage({ searchParams }: Props) {
                           src={item.image}
                           alt={displayName}
                           fill
+                          maxDisplayWidth={360}
                           sizes="(max-width: 640px) 50vw, 25vw"
                           className="object-contain p-4 transition duration-300 group-hover:scale-105"
                         />

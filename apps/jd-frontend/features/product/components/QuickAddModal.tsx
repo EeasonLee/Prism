@@ -213,6 +213,7 @@ export function QuickAddModal({
                   src={imageUrl}
                   alt={product.displayName}
                   fill
+                  maxDisplayWidth={180}
                   className="object-contain p-3"
                   sizes="180px"
                 />

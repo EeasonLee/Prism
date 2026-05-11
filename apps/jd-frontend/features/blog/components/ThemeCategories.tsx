@@ -23,6 +23,7 @@ function ArticleCard({
       {/* Image container */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <OptimizedImage
+          maxDisplayWidth={480}
           src={
             article.featuredImage
               ? {

@@ -35,6 +35,7 @@ export function RichDetailSections({ sections }: RichDetailSectionsProps) {
                   src={section.image}
                   alt={section.imageAlt}
                   fill
+                  maxDisplayWidth={720}
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />

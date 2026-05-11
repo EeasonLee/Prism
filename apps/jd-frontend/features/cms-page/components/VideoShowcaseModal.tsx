@@ -232,6 +232,7 @@ function VideoProductCard({ product }: { product: ProductCardItem }) {
             src={product.image}
             alt={product.displayName}
             fill
+            maxDisplayWidth={72}
             sizes="72px"
             className="object-cover"
           />

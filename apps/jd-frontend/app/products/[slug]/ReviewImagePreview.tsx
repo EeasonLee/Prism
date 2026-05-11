@@ -34,6 +34,7 @@ function ReviewMediaThumbnail({
           src={item.url}
           alt={getMediaAlt(item, altFallback)}
           fill
+          maxDisplayWidth={80}
           sizes="80px"
           className={className}
         />
@@ -48,6 +49,7 @@ function ReviewMediaThumbnail({
           src={item.posterUrl}
           alt={getMediaAlt(item, altFallback)}
           fill
+          maxDisplayWidth={80}
           sizes="80px"
           className={className}
         />
@@ -208,6 +210,7 @@ export function ReviewImagePreview({
                   src={activeMedia.url}
                   alt={getMediaAlt(activeMedia, altFallback)}
                   fill
+                  maxDisplayWidth={1152}
                   sizes="(max-width: 1024px) 100vw, 80vw"
                   className="object-contain"
                 />
