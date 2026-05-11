@@ -371,6 +371,7 @@ function ProductCardCompactVariant({
             src={imageUrl}
             alt={product.short_name ?? product.name}
             fill
+            maxDisplayWidth={230}
             className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
               isOutOfStock ? 'opacity-60 grayscale' : ''
             }`}
@@ -487,6 +488,7 @@ function ProductCardGridVariant({
               src={imageUrl}
               alt={product.short_name ?? product.name}
               fill
+              maxDisplayWidth={360}
               className={`object-cover ${
                 isOutOfStock ? 'opacity-60 grayscale' : ''
               }`}

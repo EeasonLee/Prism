@@ -38,6 +38,7 @@ export function RecipesSection({ recipes }: RecipesSectionProps) {
                     src={recipe.image}
                     alt={recipe.title}
                     fill
+                    maxDisplayWidth={480}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover transition group-hover:scale-105"
                   />

@@ -485,6 +485,7 @@ export function CartDrawer() {
                           alt={displayName}
                           width={64}
                           height={64}
+                          maxDisplayWidth={64}
                           className="h-full w-full object-cover"
                         />
                       </Link>

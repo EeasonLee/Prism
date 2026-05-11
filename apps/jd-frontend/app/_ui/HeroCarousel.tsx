@@ -95,6 +95,7 @@ export function HeroCarousel({
                     src={slide.image}
                     alt={slide.alt}
                     fill
+                    maxDisplayWidth={1920}
                     className="object-cover"
                     forceUnoptimized
                     priority={index === 0}

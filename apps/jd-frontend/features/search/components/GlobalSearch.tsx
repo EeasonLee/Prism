@@ -311,6 +311,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                                   src={item.thumbnail}
                                   alt={item.name}
                                   fill
+                                  maxDisplayWidth={48}
                                   sizes="48px"
                                   className="object-contain p-1"
                                 />
@@ -418,6 +419,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                                   src={item.thumbnail}
                                   alt={item.title}
                                   fill
+                                  maxDisplayWidth={48}
                                   sizes="48px"
                                   className="object-cover"
                                 />
@@ -593,6 +595,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                                     src={item.thumbnail}
                                     alt={item.name}
                                     fill
+                                    maxDisplayWidth={40}
                                     sizes="40px"
                                     className="object-contain p-1"
                                   />
@@ -702,6 +705,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                                     src={item.thumbnail}
                                     alt={item.title}
                                     fill
+                                    maxDisplayWidth={40}
                                     sizes="40px"
                                     className="object-cover"
                                   />

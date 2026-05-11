@@ -55,6 +55,7 @@ export function SignupPromoModal({
               src={MOCK_CONTENT.imageUrl}
               alt=""
               fill
+              maxDisplayWidth={720}
               className="object-cover"
               sizes="(max-width: 640px) 100vw, 50vw"
             />

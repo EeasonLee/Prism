@@ -89,6 +89,7 @@ export function ContentCarousel({
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
                       fill
+                      maxDisplayWidth={360}
                       sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 25vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -139,6 +140,7 @@ export function ContentCarousel({
                       src={item.image.url}
                       alt={item.image.alternativeText || item.title}
                       fill
+                      maxDisplayWidth={480}
                       sizes="(max-width: 1024px) 85vw, 33vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />

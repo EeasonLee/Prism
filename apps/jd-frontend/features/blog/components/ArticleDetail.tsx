@@ -52,6 +52,7 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
             src={article.featuredImage}
             alt={imageAlt}
             fill
+            maxDisplayWidth={896}
             className="object-cover"
             priority
             sizes="(max-width: 768px) 100vw, 896px"

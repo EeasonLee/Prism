@@ -13,12 +13,12 @@
 
 // ─── 尺寸常量 ──────────────────────────────────────────────────────────────────
 
-const CDN_IMAGE_SIZES = [80, 100, 150, 350, 800] as const;
+const CDN_IMAGE_SIZES = [80, 100, 150, 300, 350, 500, 650, 800, 1200] as const;
 
 export type ProductImageSize = (typeof CDN_IMAGE_SIZES)[number];
 
 const CDN_IMAGE_SIZE_SET = new Set<number>(CDN_IMAGE_SIZES);
-const MAX_CDN_IMAGE_SIZE = 800;
+const MAX_CDN_IMAGE_SIZE = 1200;
 
 // ─── 类型 ──────────────────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ export type ImageCdnSubPath = 'catalog/product' | 'amasty/review' | 'pages';
 
 export interface ResolveImageUrlOptions {
   /**
-   * CDN 图片尺寸：80 / 100 / 150 / 350 / 800
+   * CDN 图片尺寸：80 / 100 / 150 / 300 / 350 / 500 / 650 / 800 / 1200
    * - 未传入时保持原尺寸（若 URL 已有尺寸）或原始路径
    * - 超出 800 时取最接近的合法尺寸
    */
@@ -494,13 +494,14 @@ function resolveRawUrl(
  * 根据显示宽度自动选择最优 CDN 尺寸
  * 按 retina 屏计算所需像素，选最接近的 CDN 尺寸
  *
- * 阈值规则：maxDisplayWidth ≤ 800 → 匹配 CDN 尺寸；> 800 → 返回 null 使用原图（全屏 banner）
+ * 阈值规则：maxDisplayWidth ≤ 1200 → 匹配 CDN 尺寸；> 1200 → 返回 null 使用原图（全屏 banner）
  *
  * @example
+ * getOptimalCdnSize(280)  // 卡片宽 280px → 280*2=560 → CDN 650
  * getOptimalCdnSize(350)  // 卡片宽 350px → 350*2=700 → CDN 800
  * getOptimalCdnSize(80)   // 缩略图 80px → 80*2=160 → CDN 150
  * getOptimalCdnSize(48)   // 图标 48px → 48*2=96 → CDN 100
- * getOptimalCdnSize(1080) // 1080 > 800 → null（全屏 banner，使用原图）
+ * getOptimalCdnSize(1500) // 1500 > 1200 → null（全屏 banner，使用原图）
  */
 export function getOptimalCdnSize(
   maxDisplayWidth: number,

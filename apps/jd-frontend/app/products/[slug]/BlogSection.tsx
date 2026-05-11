@@ -40,6 +40,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
                   src={post.image}
                   alt={post.title}
                   fill
+                  maxDisplayWidth={480}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition group-hover:scale-105"
                 />

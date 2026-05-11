@@ -89,6 +89,7 @@ export function CrossSellAddons({
                   src={addon.image}
                   alt={addon.name}
                   fill
+                  maxDisplayWidth={48}
                   sizes="48px"
                   className="object-cover"
                 />
@@ -203,6 +204,7 @@ export function BundleDeals({
                 src={mainProduct.image}
                 alt={mainProduct.name}
                 fill
+                maxDisplayWidth={64}
                 sizes="64px"
                 className="object-contain p-1"
               />
@@ -222,6 +224,7 @@ export function BundleDeals({
                     src={partner.image}
                     alt={partner.name}
                     fill
+                    maxDisplayWidth={64}
                     sizes="64px"
                     className="object-contain p-1"
                   />

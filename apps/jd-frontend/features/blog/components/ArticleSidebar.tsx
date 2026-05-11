@@ -77,6 +77,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                           src={productImage}
                           alt={product.name}
                           fill
+                          maxDisplayWidth={80}
                           className="object-cover"
                           sizes="80px"
                         />
@@ -161,6 +162,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                             src={articleImage}
                             alt={relatedArticle.title}
                             fill
+                            maxDisplayWidth={64}
                             className="object-cover"
                             sizes="64px"
                           />
