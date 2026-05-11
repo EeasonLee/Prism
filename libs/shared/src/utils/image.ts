@@ -13,7 +13,7 @@
 
 // ─── 尺寸常量 ──────────────────────────────────────────────────────────────────
 
-const CDN_IMAGE_SIZES = [80, 100, 150, 350, 600, 800] as const;
+const CDN_IMAGE_SIZES = [80, 100, 150, 350, 800] as const;
 
 export type ProductImageSize = (typeof CDN_IMAGE_SIZES)[number];
 
@@ -78,7 +78,7 @@ export type ImageCdnSubPath = 'catalog/product' | 'amasty/review' | 'pages';
 
 export interface ResolveImageUrlOptions {
   /**
-   * CDN 图片尺寸：80 / 100 / 150 / 350 / 600 / 800
+   * CDN 图片尺寸：80 / 100 / 150 / 350 / 800
    * - 未传入时保持原尺寸（若 URL 已有尺寸）或原始路径
    * - 超出 800 时取最接近的合法尺寸
    */
@@ -236,6 +236,19 @@ function detectPathInfo(pathname: string): PathInfo | null {
 
 // ─── 内部：构建 CDN URL ────────────────────────────────────────────────────────
 
+/** CDN 支持格式转换的位图扩展名 */
+const WEBP_CONVERTIBLE = /\.(jpe?g|png|tiff?|bmp)(\?.*)?$/i;
+
+/** 已是现代格式或不宜转换的扩展名 */
+const WEBP_SKIP = /\.(webp|avif|svg|gif)(\?.*)?$/i;
+
+/** 对位图文件追加 .webp 后缀，利用 CDN 格式转换 */
+function appendWebp(filename: string): string {
+  if (WEBP_SKIP.test(filename)) return filename;
+  if (WEBP_CONVERTIBLE.test(filename)) return `${filename}.webp`;
+  return filename;
+}
+
 function buildCdnUrl(
   subPath: ImageCdnSubPath,
   fileSubPath: string,
@@ -245,12 +258,13 @@ function buildCdnUrl(
   const normalizedBase = normalizeBaseUrl(baseUrl);
   const resolvedSize = normalizeCdnSize(size);
   const normalizedFile = fileSubPath.replace(/^\/+/, '');
+  const webpFile = appendWebp(normalizedFile);
 
   // 只有显式传入合法 size 时才插入 /media/{size}/ 层级
   if (resolvedSize !== null) {
-    return `${normalizedBase}/media/${resolvedSize}/${subPath}/${normalizedFile}`;
+    return `${normalizedBase}/media/${resolvedSize}/${subPath}/${webpFile}`;
   }
-  return `${normalizedBase}/media/${subPath}/${normalizedFile}`;
+  return `${normalizedBase}/media/${subPath}/${webpFile}`;
 }
 
 // ─── 内部：应用域名重写 ────────────────────────────────────────────────────────
@@ -480,15 +494,21 @@ function resolveRawUrl(
  * 根据显示宽度自动选择最优 CDN 尺寸
  * 按 retina 屏计算所需像素，选最接近的 CDN 尺寸
  *
+ * 阈值规则：maxDisplayWidth ≤ 800 → 匹配 CDN 尺寸；> 800 → 返回 null 使用原图（全屏 banner）
+ *
  * @example
  * getOptimalCdnSize(350)  // 卡片宽 350px → 350*2=700 → CDN 800
  * getOptimalCdnSize(80)   // 缩略图 80px → 80*2=160 → CDN 150
  * getOptimalCdnSize(48)   // 图标 48px → 48*2=96 → CDN 100
+ * getOptimalCdnSize(1080) // 1080 > 800 → null（全屏 banner，使用原图）
  */
 export function getOptimalCdnSize(
   maxDisplayWidth: number,
   pixelRatio = 2
-): ProductImageSize {
+): ProductImageSize | null {
+  // 超过 CDN 最大尺寸 → 原图
+  if (maxDisplayWidth > MAX_CDN_IMAGE_SIZE) return null;
+
   const requiredPx = maxDisplayWidth * pixelRatio;
 
   // 从小到大遍历 CDN 尺寸，找到第一个大于等于所需像素的
@@ -496,8 +516,8 @@ export function getOptimalCdnSize(
     if (size >= requiredPx) return size;
   }
 
-  // 超过最大尺寸，返回最大值
-  return CDN_IMAGE_SIZES[CDN_IMAGE_SIZES.length - 1];
+  // 所需超过 CDN 最大值，返回最大值
+  return MAX_CDN_IMAGE_SIZE;
 }
 
 /** StrapiImage 对象 URL 提取，内部使用。外部优先用 resolveImageUrl() */

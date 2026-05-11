@@ -183,18 +183,20 @@ export function OptimizedImage({
     rawUrl = extractImageUrl(src, preferredFormat);
   }
 
-  // CDN 尺寸推导：maxDisplayWidth 优先，其次 cdnSize
+  // CDN 尺寸推导：maxDisplayWidth 优先，其次 cdnSize，都没有时默认取最大 CDN 尺寸
+  // CDN 尺寸只有 80/100/150/350/800 五档，任何 > 175px 的卡片在 retina 下都会命中 800
   const derivedCdnSize = useMemo(() => {
     if (maxDisplayWidth) {
       return getOptimalCdnSize(maxDisplayWidth, pixelRatio ?? 2);
     }
-    return cdnSize;
+    if (cdnSize !== undefined) return cdnSize;
+    return 800 as ProductImageSize;
   }, [maxDisplayWidth, cdnSize, pixelRatio]);
 
   // 统一的图片 URL 处理
   const imageUrl = resolveImageUrl(src, {
     format: preferredFormat,
-    size: derivedCdnSize,
+    size: derivedCdnSize ?? undefined,
     baseUrl,
   });
 
@@ -209,13 +211,17 @@ export function OptimizedImage({
       : imageUrl;
 
   // 计算 blur 缩略图 URL
+  // Strapi 对象自带 formats.thumbnail（零额外请求），始终启用
+  // 纯 URL 字符串需额外请求 80px 缩略图，仅 LCP（priority）时值得
   useEffect(() => {
-    if (disableBlurUp) {
+    const skipBlur =
+      disableBlurUp || (typeof src === 'string' && !imageProps.priority);
+    if (skipBlur) {
       setBlurSrc(null);
       return;
     }
     setBlurSrc(resolveBlurSrc(src, baseUrl));
-  }, [src, baseUrl, disableBlurUp]);
+  }, [src, baseUrl, disableBlurUp, imageProps.priority]);
 
   // src 变化时重置状态
   useEffect(() => {

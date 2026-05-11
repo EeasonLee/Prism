@@ -165,6 +165,7 @@ export function HomeFirstHeroSection({ config }: ImageTextBlockProps) {
               src={mainCard.image.url}
               alt={mainCard.image.alt ?? mainCard.title}
               fill
+              priority
               className="object-cover transition-transform duration-1000 group-hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 66vw"
               maxDisplayWidth={1080}

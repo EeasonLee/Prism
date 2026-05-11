@@ -1,8 +1,8 @@
 'use client';
-/* eslint-disable @next/next/no-img-element */
 
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { OptimizedImage } from '@prism/ui';
 import type { ProductReviewMedia } from '@/features/product';
 
 interface ReviewMediaViewerProps {
@@ -29,25 +29,27 @@ function ReviewMediaThumbnail({
 }) {
   if (item.kind === 'image') {
     return (
-      <img
-        src={item.url}
-        alt={getMediaAlt(item, altFallback)}
-        className={className}
-        loading="lazy"
-        decoding="async"
-      />
+      <div className="relative h-full w-full">
+        <OptimizedImage
+          src={item.url}
+          alt={getMediaAlt(item, altFallback)}
+          fill
+          sizes="80px"
+          className={className}
+        />
+      </div>
     );
   }
 
   return (
     <div className="relative h-full w-full bg-black">
       {item.posterUrl ? (
-        <img
+        <OptimizedImage
           src={item.posterUrl}
           alt={getMediaAlt(item, altFallback)}
+          fill
+          sizes="80px"
           className={className}
-          loading="lazy"
-          decoding="async"
         />
       ) : (
         <video
@@ -202,12 +204,12 @@ export function ReviewImagePreview({
 
             <div className="relative aspect-[4/3] w-full bg-surface-muted sm:aspect-[16/10]">
               {activeMedia.kind === 'image' ? (
-                <img
+                <OptimizedImage
                   src={activeMedia.url}
                   alt={getMediaAlt(activeMedia, altFallback)}
-                  className="h-full w-full object-contain"
-                  loading="eager"
-                  decoding="async"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 80vw"
+                  className="object-contain"
                 />
               ) : (
                 <video
