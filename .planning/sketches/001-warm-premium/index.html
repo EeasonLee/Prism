@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Joydeem · Warm Premium 设计方向</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --cream: #f6f6f2;
+        --warm-white: #fdfcf8;
+        --brand: #d94f25;
+        --brand-hover: #bf3e18;
+        --brand-light: #fff0eb;
+        --ink: #1a1a1a;
+        --ink-muted: #6b6b6b;
+        --ink-faint: #999;
+        --border: #e8e6df;
+        --surface: #f0efe9;
+        --sage: #8b9d83;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        color: var(--ink);
+        background: var(--warm-white);
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.6;
+      }
+      .font-display {
+        font-family: 'Montserrat', system-ui, sans-serif;
+      }
+
+      /* Smooth scroll behavior */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* Card hover lift */
+      .card-lift {
+        transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+          box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .card-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      /* Image zoom on hover */
+      .img-zoom {
+        transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .group:hover .img-zoom {
+        transform: scale(1.05);
+      }
+
+      /* Staggered fade-in */
+      .fade-up {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: fadeUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      .fade-up:nth-child(1) {
+        animation-delay: 0.05s;
+      }
+      .fade-up:nth-child(2) {
+        animation-delay: 0.12s;
+      }
+      .fade-up:nth-child(3) {
+        animation-delay: 0.19s;
+      }
+      .fade-up:nth-child(4) {
+        animation-delay: 0.26s;
+      }
+
+      @keyframes fadeUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Button pulse */
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: white;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.01em;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        border: none;
+        font-family: 'Inter', sans-serif;
+      }
+      .btn-primary:hover {
+        background: var(--brand-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(217, 79, 37, 0.3);
+      }
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--ink);
+        font-weight: 600;
+        font-size: 15px;
+        border: 1.5px solid var(--border);
+        transition: all 0.25s ease;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+      }
+      .btn-ghost:hover {
+        border-color: var(--ink);
+        background: var(--cream);
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: var(--brand-light);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      /* Navigation */
+      .nav-link {
+        color: var(--ink-muted);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s;
+        padding: 8px 0;
+        position: relative;
+      }
+      .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--brand);
+        transition: width 0.3s ease;
+      }
+      .nav-link:hover {
+        color: var(--ink);
+      }
+      .nav-link:hover::after {
+        width: 100%;
+      }
+
+      /* Section titles */
+      .section-eyebrow {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brand);
+        margin-bottom: 12px;
+      }
+      .section-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(28px, 4vw, 40px);
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .section-subtitle {
+        font-size: 16px;
+        color: var(--ink-muted);
+        margin-top: 12px;
+        max-width: 560px;
+        line-height: 1.7;
+      }
+
+      /* Product card */
+      .product-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+      }
+      .product-card .image-wrapper {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .product-card .image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .product-card .content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .product-card .name {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      .product-card .price {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--brand);
+      }
+      .product-card .price-old {
+        font-size: 13px;
+        color: var(--ink-faint);
+        text-decoration: line-through;
+        margin-left: 8px;
+      }
+
+      /* Category card */
+      .category-card {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        aspect-ratio: 4/5;
+        background: var(--surface);
+        display: flex;
+        align-items: flex-end;
+      }
+      .category-card img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .category-card .overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.55) 0%,
+          rgba(0, 0, 0, 0.05) 50%,
+          transparent 100%
+        );
+      }
+      .category-card .label {
+        position: relative;
+        z-index: 2;
+        padding: 28px;
+        color: white;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      /* Scrolling indicator */
+      .scroll-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ink-faint);
+        font-weight: 500;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fade-up,
+        .card-lift,
+        .img-zoom {
+          animation: none;
+          transition: none;
+        }
+        .fade-up {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ====== 顶部公告栏 ====== -->
+    <div
+      style="
+        background: var(--ink);
+        color: white;
+        text-align: center;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      "
+    >
+      Free shipping on orders over $49 &nbsp;·&nbsp; 30-day hassle-free returns
+    </div>
+
+    <!-- ====== 导航 ====== -->
+    <header
+      style="
+        background: var(--warm-white);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      "
+    >
+      <div
+        style="
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 0 32px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 64px;
+        "
+      >
+        <a
+          href="#"
+          style="
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ink);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+          "
+        >
+          JOYDEEM
+        </a>
+        <nav style="display: flex; gap: 32px">
+          <a href="#" class="nav-link">Shop</a>
+          <a href="#" class="nav-link">Collections</a>
+          <a href="#" class="nav-link">Recipes</a>
+          <a href="#" class="nav-link">About</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 16px">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--ink-muted)"
+            stroke-width="2"
+            stroke-linecap="round"
+            style="cursor: pointer"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--ink-muted)"
+            stroke-width="2"
+            stroke-linecap="round"
+            style="cursor: pointer"
+          >
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+            <path d="M3 6h18" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 32px">
+      <!-- ====== Design Token 色板 ====== -->
+      <section style="margin-top: 60px">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+          "
+        >
+          <div
+            style="
+              width: 4px;
+              height: 24px;
+              background: var(--brand);
+              border-radius: 2px;
+            "
+          ></div>
+          <span class="section-eyebrow" style="margin-bottom: 0"
+            >Design Direction</span
+          >
+          <span
+            style="
+              font-size: 18px;
+              font-weight: 600;
+              font-family: 'Montserrat', sans-serif;
+            "
+            >Warm Premium</span
+          >
+        </div>
+
+        <p
+          style="
+            font-size: 16px;
+            color: var(--ink-muted);
+            max-width: 640px;
+            line-height: 1.8;
+            margin-bottom: 40px;
+          "
+        >
+          温暖、高级、可信赖。以留白建立呼吸感，用细腻的阴影与圆角营造触感。
+          文字层级清晰，图片叙事为主。适合注重品质感的中高端厨房电器品牌。
+        </p>
+
+        <!-- 色板 -->
+        <div
+          style="display: flex; gap: 12px; margin-bottom: 48px; flex-wrap: wrap"
+        >
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="
+                height: 60px;
+                border-radius: 12px;
+                background: var(--brand);
+              "
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Brand #D94F25</span
+            >
+          </div>
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="
+                height: 60px;
+                border-radius: 12px;
+                background: var(--brand-light);
+              "
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Brand Light</span
+            >
+          </div>
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="
+                height: 60px;
+                border-radius: 12px;
+                background: var(--cream);
+                border: 1px solid var(--border);
+              "
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Surface #F6F6F2</span
+            >
+          </div>
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="height: 60px; border-radius: 12px; background: var(--ink)"
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Ink #1A1A1A</span
+            >
+          </div>
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="
+                height: 60px;
+                border-radius: 12px;
+                background: var(--ink-muted);
+              "
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Muted #6B6B6B</span
+            >
+          </div>
+          <div style="flex: 1; min-width: 100px">
+            <div
+              style="height: 60px; border-radius: 12px; background: var(--sage)"
+            ></div>
+            <span
+              style="
+                font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 6px;
+                display: block;
+              "
+              >Accent Sage</span
+            >
+          </div>
+        </div>
+
+        <!-- 字体 -->
+        <div style="margin-bottom: 48px">
+          <h4
+            style="
+              font-size: 13px;
+              font-weight: 600;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              color: var(--ink-faint);
+              margin-bottom: 16px;
+            "
+          >
+            Typography
+          </h4>
+          <div
+            style="
+              font-family: 'Montserrat', sans-serif;
+              font-size: 40px;
+              font-weight: 600;
+              letter-spacing: -0.02em;
+              margin-bottom: 4px;
+            "
+          >
+            Montserrat Display
+          </div>
+          <div
+            style="
+              font-size: 14px;
+              color: var(--ink-muted);
+              margin-bottom: 24px;
+            "
+          >
+            Headings · 600 weight · Tight tracking
+          </div>
+          <div style="font-size: 18px; font-weight: 400; margin-bottom: 4px">
+            Inter — Body Text
+          </div>
+          <div style="font-size: 14px; color: var(--ink-muted)">
+            Body & UI · 400/500 weight · Comfortable reading
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====== Hero 区域 ====== -->
+    <section style="background: var(--cream)">
+      <div
+        style="
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 80px 32px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 64px;
+          align-items: center;
+        "
+      >
+        <div>
+          <span class="badge" style="margin-bottom: 20px">New Collection</span>
+          <h1
+            style="
+              font-family: 'Montserrat', sans-serif;
+              font-size: clamp(36px, 5vw, 56px);
+              font-weight: 600;
+              line-height: 1.1;
+              letter-spacing: -0.03em;
+              margin-bottom: 24px;
+            "
+          >
+            Craft meals<br /><span style="color: var(--brand)">with joy</span>
+          </h1>
+          <p
+            style="
+              font-size: 17px;
+              color: var(--ink-muted);
+              line-height: 1.8;
+              max-width: 460px;
+              margin-bottom: 36px;
+            "
+          >
+            Thoughtfully designed kitchen appliances that blend innovation with
+            warmth. From dough makers to rice cookers — every meal starts here.
+          </p>
+          <div style="display: flex; gap: 14px">
+            <button class="btn-primary">Explore Collection</button>
+            <button class="btn-ghost">Watch Demo →</button>
+          </div>
+        </div>
+        <div
+          style="
+            position: relative;
+            aspect-ratio: 4/3;
+            border-radius: 28px;
+            overflow: hidden;
+            background: white;
+            box-shadow: var(--shadow-lg);
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              inset: 0;
+              background: linear-gradient(
+                135deg,
+                var(--brand-light) 0%,
+                var(--cream) 50%,
+                #e8e3d5 100%
+              );
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            <div style="text-align: center; padding: 40px">
+              <div
+                style="
+                  width: 120px;
+                  height: 120px;
+                  border-radius: 50%;
+                  background: white;
+                  margin: 0 auto 20px;
+                  box-shadow: var(--shadow-md);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--brand)"
+                  stroke-width="1.5"
+                >
+                  <path d="M12 2v20M2 12h20" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
+              <p
+                style="
+                  font-family: 'Montserrat', sans-serif;
+                  font-size: 16px;
+                  font-weight: 600;
+                "
+              >
+                Product Hero Image
+              </p>
+              <p
+                style="
+                  font-size: 13px;
+                  color: var(--ink-faint);
+                  margin-top: 4px;
+                "
+              >
+                Dough Maker Pro · Lifestyle Shot
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 品类入口 ====== -->
+    <section style="max-width: 1280px; margin: 0 auto; padding: 80px 32px">
+      <div style="text-align: center; margin-bottom: 48px">
+        <div class="section-eyebrow">Shop by Category</div>
+        <h2 class="section-title">Find your perfect<br />kitchen companion</h2>
+        <p class="section-subtitle" style="margin: 12px auto 0">
+          Every appliance designed to simplify and inspire
+        </p>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px"
+      >
+        <div class="category-card fade-up">
+          <div class="overlay"></div>
+          <div class="label">Dough Makers</div>
+        </div>
+        <div class="category-card fade-up">
+          <div class="overlay"></div>
+          <div class="label">Rice Cookers</div>
+        </div>
+        <div class="category-card fade-up">
+          <div class="overlay"></div>
+          <div class="label">Blenders</div>
+        </div>
+        <div class="category-card fade-up">
+          <div class="overlay"></div>
+          <div class="label">Accessories</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 推荐商品 ====== -->
+    <section style="background: var(--cream)">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 80px 32px">
+        <div
+          style="
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 48px;
+          "
+        >
+          <div>
+            <div class="section-eyebrow">Bestsellers</div>
+            <h2 class="section-title">Loved by home chefs</h2>
+          </div>
+          <a
+            href="#"
+            style="
+              font-size: 15px;
+              font-weight: 600;
+              color: var(--ink);
+              text-decoration: none;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            View all <span style="font-size: 18px">→</span>
+          </a>
+        </div>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+          "
+        >
+          <!-- Product 1 -->
+          <div class="product-card card-lift fade-up">
+            <div class="image-wrapper group">
+              <div
+                class="img-zoom"
+                style="
+                  position: absolute;
+                  inset: 0;
+                  background: linear-gradient(135deg, #f5f3ed, #e8e3d5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 13px; color: var(--ink-faint)"
+                  >Product Image</span
+                >
+              </div>
+              <span
+                class="badge"
+                style="position: absolute; top: 12px; left: 12px; z-index: 2"
+                >Best Seller</span
+              >
+            </div>
+            <div class="content">
+              <div class="name">Automatic Dough Maker JD-688</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  margin-bottom: 4px;
+                "
+              >
+                <span style="color: #f5a623; font-size: 14px">★★★★★</span>
+                <span style="font-size: 12px; color: var(--ink-faint)"
+                  >(237)</span
+                >
+              </div>
+              <div
+                style="margin-top: auto; display: flex; align-items: baseline"
+              >
+                <span class="price">$129.99</span>
+                <span class="price-old">$159.99</span>
+              </div>
+            </div>
+          </div>
+          <!-- Product 2 -->
+          <div class="product-card card-lift fade-up">
+            <div class="image-wrapper group">
+              <div
+                class="img-zoom"
+                style="
+                  position: absolute;
+                  inset: 0;
+                  background: linear-gradient(135deg, #f5f3ed, #e8e3d5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 13px; color: var(--ink-faint)"
+                  >Product Image</span
+                >
+              </div>
+            </div>
+            <div class="content">
+              <div class="name">Smart Rice Cooker JD-RC10</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  margin-bottom: 4px;
+                "
+              >
+                <span style="color: #f5a623; font-size: 14px">★★★★★</span>
+                <span style="font-size: 12px; color: var(--ink-faint)"
+                  >(189)</span
+                >
+              </div>
+              <div
+                style="margin-top: auto; display: flex; align-items: baseline"
+              >
+                <span class="price">$89.99</span>
+              </div>
+            </div>
+          </div>
+          <!-- Product 3 -->
+          <div class="product-card card-lift fade-up">
+            <div class="image-wrapper group">
+              <div
+                class="img-zoom"
+                style="
+                  position: absolute;
+                  inset: 0;
+                  background: linear-gradient(135deg, #f5f3ed, #e8e3d5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 13px; color: var(--ink-faint)"
+                  >Product Image</span
+                >
+              </div>
+              <span
+                class="badge"
+                style="
+                  position: absolute;
+                  top: 12px;
+                  left: 12px;
+                  z-index: 2;
+                  background: #d94f25;
+                  color: white;
+                "
+                >-20%</span
+              >
+            </div>
+            <div class="content">
+              <div class="name">High-Speed Blender JD-BL500</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  margin-bottom: 4px;
+                "
+              >
+                <span style="color: #f5a623; font-size: 14px">★★★★☆</span>
+                <span style="font-size: 12px; color: var(--ink-faint)"
+                  >(94)</span
+                >
+              </div>
+              <div
+                style="margin-top: auto; display: flex; align-items: baseline"
+              >
+                <span class="price">$79.99</span>
+                <span class="price-old">$99.99</span>
+              </div>
+            </div>
+          </div>
+          <!-- Product 4 -->
+          <div class="product-card card-lift fade-up">
+            <div class="image-wrapper group">
+              <div
+                class="img-zoom"
+                style="
+                  position: absolute;
+                  inset: 0;
+                  background: linear-gradient(135deg, #f5f3ed, #e8e3d5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 13px; color: var(--ink-faint)"
+                  >Product Image</span
+                >
+              </div>
+              <span
+                class="badge"
+                style="position: absolute; top: 12px; left: 12px; z-index: 2"
+                >New</span
+              >
+            </div>
+            <div class="content">
+              <div class="name">Electric Kettle JD-KT200</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  margin-bottom: 4px;
+                "
+              >
+                <span style="color: #f5a623; font-size: 14px">★★★★★</span>
+                <span style="font-size: 12px; color: var(--ink-faint)"
+                  >(312)</span
+                >
+              </div>
+              <div
+                style="margin-top: auto; display: flex; align-items: baseline"
+              >
+                <span class="price">$49.99</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 品牌价值主张 ====== -->
+    <section
+      style="
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 80px 32px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 40px;
+      "
+    >
+      <div style="text-align: center">
+        <div
+          style="
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--brand-light);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--brand)"
+            stroke-width="2"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        </div>
+        <h3
+          style="
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          "
+        >
+          2-Year Warranty
+        </h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6">
+          Every product backed by our comprehensive warranty and support team.
+        </p>
+      </div>
+      <div style="text-align: center">
+        <div
+          style="
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--brand-light);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--brand)"
+            stroke-width="2"
+          >
+            <rect width="20" height="14" x="2" y="5" rx="2" />
+            <path d="M2 10h20" />
+          </svg>
+        </div>
+        <h3
+          style="
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          "
+        >
+          Free Shipping $49+
+        </h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6">
+          Fast, free delivery on qualifying orders. Tracked every step of the
+          way.
+        </p>
+      </div>
+      <div style="text-align: center">
+        <div
+          style="
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--brand-light);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--brand)"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" x2="12" y1="15" y2="3" />
+          </svg>
+        </div>
+        <h3
+          style="
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          "
+        >
+          30-Day Returns
+        </h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6">
+          Not satisfied? Return within 30 days for a full refund. No questions
+          asked.
+        </p>
+      </div>
+    </section>
+
+    <!-- ====== CTA 区域 ====== -->
+    <section style="max-width: 1280px; margin: 0 auto; padding: 40px 32px 80px">
+      <div
+        style="
+          background: var(--ink);
+          border-radius: 28px;
+          padding: 64px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        "
+      >
+        <div
+          style="
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            background: radial-gradient(
+              circle at 30% 50%,
+              var(--brand),
+              transparent 70%
+            );
+          "
+        ></div>
+        <div style="position: relative; z-index: 2">
+          <h2
+            style="
+              font-family: 'Montserrat', sans-serif;
+              font-size: clamp(28px, 4vw, 36px);
+              font-weight: 600;
+              color: white;
+              letter-spacing: -0.02em;
+              margin-bottom: 16px;
+            "
+          >
+            Ready to create with joy?
+          </h2>
+          <p
+            style="
+              font-size: 16px;
+              color: #aaa;
+              margin-bottom: 32px;
+              max-width: 480px;
+              margin-left: auto;
+              margin-right: auto;
+            "
+          >
+            Join thousands of home chefs who trust Joydeem to bring their
+            culinary ideas to life.
+          </p>
+          <button
+            class="btn-primary"
+            style="background: white; color: var(--ink)"
+          >
+            Shop Bestsellers
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 页脚 ====== -->
+    <footer
+      style="background: var(--cream); border-top: 1px solid var(--border)"
+    >
+      <div
+        style="
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 56px 32px;
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr 1fr;
+          gap: 40px;
+        "
+      >
+        <div>
+          <div
+            style="
+              font-family: 'Montserrat', sans-serif;
+              font-size: 20px;
+              font-weight: 700;
+              margin-bottom: 12px;
+            "
+          >
+            JOYDEEM
+          </div>
+          <p
+            style="
+              font-size: 13px;
+              color: var(--ink-muted);
+              line-height: 1.7;
+              max-width: 260px;
+            "
+          >
+            Kitchen appliances designed to blend innovation, simplify cooking,
+            and inspire creativity.
+          </p>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px">
+            Shop
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Dough Makers</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Rice Cookers</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Blenders</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >All Products</a
+            >
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px">
+            Support
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Contact Us</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Shipping Info</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Returns</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >FAQ</a
+            >
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 16px">
+            Company
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >About</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Blog</a
+            >
+            <a
+              href="#"
+              style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: none;
+              "
+              >Recipes</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
