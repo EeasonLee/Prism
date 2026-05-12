@@ -74,13 +74,18 @@ export interface OptimizedImageProps
 type ImageLoadState = 'loading' | 'loaded' | 'error';
 
 /**
+ * 临时全局开关：关闭图片 blur-up 加载效果（保留实现，后续可直接切回 true）
+ */
+const ENABLE_IMAGE_BLUR_UP = false;
+
+/**
  * 默认占位符组件
  */
 function DefaultPlaceholder() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-surface text-ink-muted/30">
       <svg
-        className="h-16 w-16"
+        className="h-1/2 w-1/2 min-h-4 min-w-4 max-h-16 max-w-16"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -214,9 +219,10 @@ export function OptimizedImage({
   // 计算 blur 缩略图 URL（useMemo 确保首次渲染即存在，消除"黑一块"）
   // Strapi 对象自带 formats.thumbnail（零额外请求），始终启用
   // CDN URL 字符串生成 80px 缩略图，全站启用 blur-up
+  const shouldUseBlurUp = ENABLE_IMAGE_BLUR_UP && !disableBlurUp;
   const blurSrc = useMemo(
-    () => (disableBlurUp ? null : resolveBlurSrc(src, baseUrl)),
-    [src, baseUrl, disableBlurUp]
+    () => (shouldUseBlurUp ? resolveBlurSrc(src, baseUrl) : null),
+    [src, baseUrl, shouldUseBlurUp]
   );
 
   // src 变化时重置状态
@@ -292,7 +298,7 @@ export function OptimizedImage({
   const mainClassName = cn(
     imageProps.className,
     'relative z-[1] transition-opacity duration-400 ease-in',
-    imageState === 'loaded' ? 'opacity-100' : 'opacity-0'
+    !shouldUseBlurUp || imageState === 'loaded' ? 'opacity-100' : 'opacity-0'
   );
 
   // fill 模式：不包裹 div，blur 层和 Image 作为兄弟元素

@@ -1,6 +1,30 @@
 import { OptimizedImage, PageContainer } from '@prism/ui';
+import Link from 'next/link';
 import type { Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
+import { buildProductUrl } from '@/features/product';
+
+const filterTypeQueryParamMap: Record<string, string> = {
+  'recipe-type': 'recipeTypes',
+  'main-ingredients': 'ingredients',
+  cuisine: 'cuisines',
+  'dish-type': 'dishTypes',
+  'special-diets': 'specialDiets',
+  'holidays-events': 'holidaysEvents',
+  'product-type': 'productTypes',
+};
+
+function buildRecipeFilterHref(filter: Recipe['filters'][number]): string {
+  const params = new URLSearchParams({
+    page: '1',
+    pageSize: '12',
+  });
+  const queryKey = filterTypeQueryParamMap[filter.type];
+  if (queryKey) {
+    params.set(queryKey, String(filter.id));
+  }
+  return `/recipes?${params.toString()}`;
+}
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -82,13 +106,18 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                 <h3 className="mb-4 text-1xl font-bold text-gray-900">Tools</h3>
                 <div className="flex flex-wrap gap-6">
                   {recipe.products.map(product => {
-                    const productUrl = product.url || '#';
+                    const productUrl = product.sku
+                      ? buildProductUrl({
+                          url_key: product.slug ?? null,
+                          sku: product.sku,
+                          cp_code: null,
+                        })
+                      : product.url || '#';
 
                     return (
-                      <a
+                      <Link
                         key={product.id}
                         href={productUrl}
-                        rel="noopener noreferrer"
                         className="group flex flex-col items-center transition-transform hover:scale-105"
                       >
                         <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gray-100 shadow-sm ring-1 ring-gray-200 transition-shadow group-hover:ring-gray-300">
@@ -112,7 +141,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                             {product.shortDescription}
                           </p>
                         )} */}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>
@@ -418,18 +447,19 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             )}
 
             {recipe.filters && recipe.filters.length > 0 && (
-              <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-gray-900">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h3 className="mb-3 text-sm font-semibold text-ink">
                   Categories
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {recipe.filters.map(filter => (
-                    <span
+                    <Link
                       key={filter.id}
-                      className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800"
+                      href={buildRecipeFilterHref(filter)}
+                      className="rounded-full bg-brand-light px-3 py-1 text-xs font-medium text-brand"
                     >
                       {filter.name}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               </div>

@@ -72,7 +72,7 @@ export async function ProductCarousel({
           {validProducts.map(product => (
             <div
               key={product.sku}
-              className="w-[75vw] shrink-0 snap-start md:w-auto"
+              className="w-[68%] shrink-0 snap-start md:w-auto"
             >
               <ProductCard
                 product={mapCardItemToDisplay(product)}

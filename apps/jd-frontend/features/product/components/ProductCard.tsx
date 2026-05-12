@@ -160,7 +160,7 @@ function ProductCardDefault({
         </div>
 
         <div className="flex flex-1 flex-col px-2 pb-3 pt-3">
-          <p className="mb-2 line-clamp-2 text-sm font-semibold text-ink leading-snug">
+          <p className="mb-2 min-h-[2.375rem] line-clamp-2 text-sm font-semibold leading-snug text-ink">
             {product.short_name ?? product.name}
           </p>
 
@@ -198,13 +198,13 @@ function ProductCardDefault({
 
       <div className="flex flex-col gap-2 px-2 pb-2">
         {showStepper && (
-          <div className="flex items-center justify-center gap-3 rounded-full bg-surface-muted/80 px-2 py-2">
+          <div className="flex h-10 items-center justify-center gap-2.5 rounded-full bg-surface-muted/80 px-2">
             <button
               type="button"
               onClick={e => void handleQtyDelta(e, -1)}
               disabled={qtyBusy || isAdding}
               aria-label="Decrease quantity"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
             >
               <Minus className="h-4 w-4" aria-hidden />
             </button>
@@ -219,7 +219,7 @@ function ProductCardDefault({
               onClick={e => void handleQtyDelta(e, 1)}
               disabled={qtyBusy || isAdding}
               aria-label="Increase quantity"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-ink shadow-sm transition hover:bg-surface disabled:opacity-50"
             >
               <Plus className="h-4 w-4" aria-hidden />
             </button>
@@ -678,7 +678,7 @@ function ProductCardFeaturedVariant({
   }, [product.short_description]);
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-white">
       <Link
         href={productHref}
         className="absolute inset-0 z-[1]"
@@ -686,7 +686,7 @@ function ProductCardFeaturedVariant({
       />
 
       <div className="grid grid-cols-1 items-start md:grid-cols-[1fr,2fr] md:items-stretch">
-        <div className="relative w-full shrink-0 overflow-hidden aspect-square">
+        <div className="relative aspect-square w-full shrink-0 overflow-hidden">
           <OptimizedImage
             src={imageUrl}
             alt={product.short_name ?? product.name}
@@ -702,21 +702,21 @@ function ProductCardFeaturedVariant({
           />
         </div>
 
-        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-between p-5 lg:p-6">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-between p-4 lg:p-6">
           <div className="min-w-0 flex-1 overflow-hidden">
             <h3
-              className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-ink lg:text-xl"
+              className="mb-2 line-clamp-2 text-base font-bold leading-snug text-ink lg:text-xl"
               style={{ fontFamily: 'Montserrat, sans-serif' }}
             >
               {product.short_name ?? product.name}
             </h3>
             {cleanLongTitle && (
-              <p className="mb-3 line-clamp-2 text-sm text-ink-muted">
+              <p className="mb-3 hidden line-clamp-2 text-sm text-ink-muted md:block">
                 {cleanLongTitle}
               </p>
             )}
             {sellingPoints.length > 0 && (
-              <ul className="mb-5 min-w-0 space-y-1.5 overflow-hidden text-xs text-ink-muted lg:text-sm">
+              <ul className="mb-5 hidden min-w-0 space-y-1.5 overflow-hidden text-xs text-ink-muted md:block lg:text-sm">
                 {sellingPoints.map(point => (
                   <li
                     key={`${product.sku}-${point}`}
@@ -749,7 +749,7 @@ function ProductCardFeaturedVariant({
             <span className="relative z-10" onClick={e => e.stopPropagation()}>
               <AddToCartButton
                 sku={product.sku}
-                className="btn-primary flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-primary flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 lg:px-5"
               />
             </span>
           </div>

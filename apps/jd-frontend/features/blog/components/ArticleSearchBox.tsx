@@ -150,7 +150,7 @@ export function ArticleSearchBox({
         dangerouslySetInnerHTML={{
           __html: html.replace(
             /<mark>/g,
-            '<mark class="bg-yellow-200 text-yellow-900 font-semibold px-0.5 rounded">'
+            '<mark class="rounded bg-brand-light px-0.5 font-semibold text-brand">'
           ),
         }}
       />
@@ -161,11 +161,11 @@ export function ArticleSearchBox({
     <div ref={containerRef} className={`relative ${className}`}>
       {/* 搜索输入框：移动端 py-3 text-base，桌面 py-5 text-lg */}
       <div className="group relative">
-        <div className="relative flex items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 focus-within:border-blue-500 focus-within:shadow-xl focus-within:ring-4 focus-within:ring-blue-100 md:rounded-2xl md:border-2">
+        <div className="relative flex items-center overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 focus-within:border-brand focus-within:shadow-md focus-within:ring-4 focus-within:ring-brand-light/70 md:rounded-2xl md:border-2">
           {/* 搜索图标 */}
           <div className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center pl-3 pr-1 md:pl-6 md:pr-2">
             <svg
-              className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-blue-500 md:h-6 md:w-6"
+              className="h-5 w-5 text-ink-faint transition-colors group-focus-within:text-brand md:h-6 md:w-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -192,13 +192,13 @@ export function ArticleSearchBox({
               }
             }}
             placeholder={placeholder}
-            className="min-h-[44px] flex-1 border-none bg-transparent py-3 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none md:py-5 md:pl-2 md:pr-4 md:text-lg"
+            className="min-h-[44px] flex-1 border-none bg-transparent py-3 pl-1 pr-3 text-base text-ink placeholder:text-ink-muted focus:outline-none md:py-5 md:pl-2 md:pr-4 md:text-lg"
           />
 
           {/* 加载指示器 */}
           {isLoading && (
             <div className="flex min-h-[44px] items-center justify-center pr-3 md:pr-4">
-              <Loader size="sm" className="text-gray-400" />
+              <Loader size="sm" className="text-ink-faint" />
             </div>
           )}
 
@@ -211,7 +211,7 @@ export function ArticleSearchBox({
                 setSuggestions([]);
                 setShowSuggestions(false);
               }}
-              className="mr-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 md:mr-4"
+              className="mr-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-surface hover:text-ink-muted md:mr-4"
               aria-label="Clear search"
             >
               <svg
@@ -234,32 +234,32 @@ export function ArticleSearchBox({
 
       {/* 搜索建议下拉列表：移动端 max-h-[70vh]，每项 min-h-[44px] */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 mt-3 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl md:rounded-2xl">
+        <div className="absolute z-50 mt-3 w-full overflow-hidden rounded-xl border border-border bg-card shadow-xl md:rounded-2xl">
           <div className="max-h-[70vh] overflow-y-auto md:max-h-96">
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border/70">
               {suggestions.map((item, _index) => (
                 <li key={item.id}>
                   <button
                     type="button"
                     onClick={() => handleSelectSuggestion(item)}
-                    className="flex min-h-[44px] w-full items-center text-left transition-colors hover:bg-blue-50 focus:bg-blue-50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                    className="flex min-h-[44px] w-full items-center text-left transition-colors hover:bg-brand-light/45 focus:bg-brand-light/45 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     onMouseDown={e => {
                       e.preventDefault();
                     }}
                   >
                     <div className="w-full px-4 py-3 md:px-6 md:py-4">
                       {/* 标题 */}
-                      <div className="mb-1.5 font-semibold text-gray-900">
+                      <div className="mb-1.5 font-semibold text-ink">
                         {renderHighlightedText(item.title)}
                       </div>
                       {/* 摘要 */}
                       {item.excerpt && (
-                        <p className="line-clamp-2 text-sm leading-relaxed text-gray-600">
+                        <p className="line-clamp-2 text-sm leading-relaxed text-ink-muted">
                           {renderHighlightedText(item.excerpt)}
                         </p>
                       )}
                       {/* 元信息 */}
-                      <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                      <div className="mt-2 flex items-center gap-3 text-xs text-ink-faint">
                         {item.categories && item.categories.length > 0 && (
                           <span className="flex items-center gap-1">
                             <svg
@@ -298,13 +298,13 @@ export function ArticleSearchBox({
             </ul>
           </div>
           {/* 底部提示：桌面显示，移动端隐藏以节省空间 */}
-          <div className="hidden border-t border-gray-100 bg-gray-50 px-6 py-3 text-center text-xs text-gray-500 md:block">
+          <div className="hidden border-t border-border/70 bg-surface px-6 py-3 text-center text-xs text-ink-faint md:block">
             Press{' '}
-            <kbd className="rounded bg-white px-1.5 py-0.5 font-mono shadow">
+            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-sm">
               Enter
             </kbd>{' '}
             to open the first result,{' '}
-            <kbd className="rounded bg-white px-1.5 py-0.5 font-mono shadow">
+            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono shadow-sm">
               Esc
             </kbd>{' '}
             to close
@@ -317,9 +317,9 @@ export function ArticleSearchBox({
         !isLoading &&
         suggestions.length === 0 &&
         keyword.trim() && (
-          <div className="absolute z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white p-6 text-center shadow-2xl md:rounded-2xl md:p-8">
-            <p className="text-gray-500">No matching results</p>
-            <p className="mt-2 text-sm text-gray-400">
+          <div className="absolute z-50 mt-3 w-full rounded-xl border border-border bg-card p-6 text-center shadow-xl md:rounded-2xl md:p-8">
+            <p className="text-ink-muted">No matching results</p>
+            <p className="mt-2 text-sm text-ink-faint">
               Try different keywords or search directly
             </p>
           </div>

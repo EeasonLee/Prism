@@ -98,7 +98,7 @@ export function ProductCategories({
     <section>
       <PageContainer>
         <div className="mb-4 md:mb-8">
-          <h2 className="text-center text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
+          <h2 className="text-center text-2xl font-bold text-ink md:text-3xl lg:text-4xl">
             {title}
           </h2>
         </div>
@@ -111,9 +111,9 @@ export function ProductCategories({
               onClick={handlePrev}
               disabled={!canGoPrev}
               aria-label="Previous page"
-              className="hidden min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white shadow-md transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white sm:flex"
+              className="hidden min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-all hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-card sm:flex"
             >
-              <ArrowLeft className="h-5 w-5 text-gray-700" />
+              <ArrowLeft className="h-5 w-5 text-ink" />
             </button>
           )}
 
@@ -127,10 +127,10 @@ export function ProductCategories({
                   <Link
                     key={category.id}
                     href={`/blog/${category.slug}`}
-                    className="group flex min-h-[44px] flex-col items-center overflow-hidden rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:border-gray-300 hover:shadow-md md:p-4"
+                    className="group flex min-h-[44px] flex-col items-center overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-brand/30 hover:shadow-md md:p-4"
                   >
                     {/* 图标图片：overflow-hidden + rounded-lg 防止图片遮住卡片边框 */}
-                    <div className="relative mb-2 h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-50 sm:mb-3 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
+                    <div className="relative mb-2 h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted sm:mb-3 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
                       <OptimizedImage
                         src={category.icon || null}
                         alt={category.name}
@@ -143,7 +143,7 @@ export function ProductCategories({
                     </div>
 
                     {/* 分类名称：移动端单行省略，sm 及以上最多两行 */}
-                    <h3 className="line-clamp-1 text-center text-sm font-semibold text-gray-900 transition-colors group-hover:text-blue-600 sm:line-clamp-2 sm:min-h-[2.5rem]">
+                    <h3 className="line-clamp-1 text-center text-sm font-semibold text-ink transition-colors group-hover:text-brand sm:line-clamp-2 sm:min-h-[2.5rem]">
                       {category.name}
                     </h3>
                   </Link>
@@ -162,8 +162,8 @@ export function ProductCategories({
                     aria-label={`Go to page ${index + 1}`}
                     className={`h-2 rounded-full transition-all ${
                       index === currentPage
-                        ? 'w-8 bg-gray-900'
-                        : 'w-2 bg-gray-300 hover:bg-gray-400'
+                        ? 'w-8 bg-ink'
+                        : 'w-2 bg-border hover:bg-ink-faint'
                     }`}
                   />
                 ))}
@@ -178,9 +178,9 @@ export function ProductCategories({
               onClick={handleNext}
               disabled={!canGoNext}
               aria-label="Next page"
-              className="hidden min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white shadow-md transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white sm:flex"
+              className="hidden min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-all hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-card sm:flex"
             >
-              <ArrowRight className="h-5 w-5 text-gray-700" />
+              <ArrowRight className="h-5 w-5 text-ink" />
             </button>
           )}
         </div>

@@ -18,10 +18,10 @@ function ArticleCard({
   return (
     <Link
       href={`/blog/${categorySlug}/${article.slug}`}
-      className="group relative block overflow-hidden rounded-lg bg-white shadow-md transition-all hover:shadow-lg"
+      className="group relative block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:border-brand/30 hover:shadow-md"
     >
       {/* Image container */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface-muted">
         <OptimizedImage
           maxDisplayWidth={480}
           src={
@@ -43,11 +43,11 @@ function ArticleCard({
 
       {/* Content area：移动端 p-3 */}
       <div className="p-3 md:p-4">
-        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-gray-900 transition-colors group-hover:text-blue-600">
+        <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-ink transition-colors group-hover:text-brand">
           {article.title}
         </h3>
         {article.excerpt && (
-          <p className="line-clamp-2 text-sm text-gray-600">
+          <p className="line-clamp-2 text-sm text-ink-muted">
             {article.excerpt}
           </p>
         )}
@@ -68,12 +68,12 @@ export function ThemeCategories({ category }: ThemeCategoriesProps) {
             <PageContainer>
               {/* Section Header：移动端收紧，链接触控 ≥44px */}
               <div className="mb-4 flex items-center justify-between gap-4 md:mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
+                <h2 className="text-2xl font-bold text-ink md:text-3xl lg:text-4xl">
                   {childCategory.name}
                 </h2>
                 <Link
                   href={`/blog/${childCategory.slug}`}
-                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center py-2 text-sm font-medium text-gray-600 transition-colors hover:text-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center py-2 text-sm font-medium text-ink-muted transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   Browse All →
                 </Link>

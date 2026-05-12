@@ -49,7 +49,7 @@ export async function FeaturedProducts({
           {validProducts.map(product => (
             <div
               key={product.sku}
-              className="w-[85vw] shrink-0 snap-start lg:w-auto"
+              className="w-[78%] shrink-0 snap-start lg:w-auto"
             >
               <ProductCard
                 product={mapCardItemToDisplay(product)}

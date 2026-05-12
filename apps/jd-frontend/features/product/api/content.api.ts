@@ -159,12 +159,44 @@ interface StrapiProductVideoRaw {
   video?: StrapiVideoFileLike | null;
   video_url?: string | null;
   thumbnail?: StrapiImageLike | null;
+  products?: unknown;
 }
 
 function pickUploadedVideoUrl(
   file: StrapiVideoFileLike | null | undefined
 ): string {
   return resolveImageUrl(file?.url ?? null) ?? '';
+}
+
+function unwrapRelationObject<T extends object>(value: unknown): T | null {
+  if (!value || typeof value !== 'object') return null;
+  const relation = value as { data?: unknown };
+  if ('data' in relation) {
+    if (!relation.data || typeof relation.data !== 'object') return null;
+    return relation.data as T;
+  }
+  return value as T;
+}
+
+function unwrapRelationArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return [];
+  const relation = value as { data?: unknown };
+  if (Array.isArray(relation.data)) return relation.data;
+  if (relation.data && typeof relation.data === 'object')
+    return [relation.data];
+  return [];
+}
+
+function extractVideoProductSkus(value: unknown): string[] {
+  const skus = new Set<string>();
+  const rows = unwrapRelationArray(value);
+  for (const row of rows) {
+    const product = unwrapRelationObject<{ sku?: string | null }>(row);
+    const sku = product?.sku?.trim();
+    if (sku) skus.add(sku);
+  }
+  return [...skus];
 }
 
 function mapProductVideoToCard(
@@ -185,6 +217,7 @@ function mapProductVideoToCard(
     caption: caption || title,
     thumbnailUrl: thumb,
     videoUrl,
+    productSkus: extractVideoProductSkus(raw.products),
   };
 }
 

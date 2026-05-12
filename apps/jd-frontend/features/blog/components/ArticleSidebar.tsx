@@ -42,36 +42,28 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
     <aside className="h-fit space-y-8 lg:sticky lg:top-8">
       {/* 关联产品 */}
       {hasProducts && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-gray-900">
-            Related Products
-          </h3>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-ink">Related Products</h3>
           <div className="space-y-4">
             {(article.products || []).map(product => {
-              // 优先使用外部链接，否则使用内部链接
-              const productUrl =
-                product.url ||
-                (product.sku
-                  ? buildProductUrl({
-                      url_key: product.slug ?? null,
-                      sku: product.sku,
-                      cp_code: null,
-                    })
-                  : '#');
-              const isExternalLink = !!product.url;
+              const productUrl = product.sku
+                ? buildProductUrl({
+                    url_key: product.slug ?? null,
+                    sku: product.sku,
+                    cp_code: null,
+                  })
+                : '#';
               const productImage = product.image || '';
 
               return (
-                <a
+                <Link
                   key={product.id}
-                  href={productUrl}
-                  target={isExternalLink ? '_blank' : undefined}
-                  rel={isExternalLink ? 'noopener noreferrer' : undefined}
+                  href={productUrl as Route}
                   className="group block transition-transform hover:scale-[1.02]"
                 >
-                  <div className="flex gap-4 rounded-lg border border-gray-100 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                  <div className="flex gap-4 rounded-lg border border-border/70 bg-background p-3 transition-colors hover:border-brand/30 hover:bg-surface">
                     {/* 产品图片 */}
-                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-muted">
                       {productImage ? (
                         <OptimizedImage
                           src={productImage}
@@ -82,7 +74,7 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                           sizes="80px"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gray-200 text-lg font-semibold text-gray-400">
+                        <div className="flex h-full w-full items-center justify-center bg-surface text-lg font-semibold text-ink-faint">
                           {product.name.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -90,11 +82,11 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
 
                     {/* 产品信息 */}
                     <div className="min-w-0 flex-1 space-y-1">
-                      <h4 className="line-clamp-2 text-sm font-semibold text-gray-900 group-hover:text-blue-600">
+                      <h4 className="line-clamp-2 text-sm font-semibold text-ink group-hover:text-brand">
                         {product.name}
                       </h4>
                       {(product.sku || product.shortDescription) && (
-                        <p className="line-clamp-1 text-xs text-gray-600">
+                        <p className="line-clamp-1 text-xs text-ink-muted">
                           {product.sku
                             ? `SKU: ${product.sku}`
                             : product.shortDescription}
@@ -103,14 +95,14 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         {product.price !== undefined &&
                           product.price !== null && (
-                            <span className="text-sm font-bold text-gray-900">
+                            <span className="text-sm font-bold text-ink">
                               {formatMoney(product.price)}
                             </span>
                           )}
                       </div>
                     </div>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -119,10 +111,8 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
 
       {/* 相关文章 */}
       {hasRelatedArticles && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-gray-900">
-            Related Articles
-          </h3>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-ink">Related Articles</h3>
           <div className="space-y-4">
             {(article.relatedArticles as ArticleDetail[]).map(
               relatedArticle => {
@@ -154,10 +144,10 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
                     href={articleUrl as Route}
                     className="group block transition-transform hover:scale-[1.02]"
                   >
-                    <div className="flex gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                    <div className="flex gap-3 rounded-lg border border-border/70 bg-background p-3 transition-colors hover:border-brand/30 hover:bg-surface">
                       {/* 文章缩略图 */}
                       {articleImage && (
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-surface-muted">
                           <OptimizedImage
                             src={articleImage}
                             alt={relatedArticle.title}
@@ -171,17 +161,17 @@ export function ArticleSidebar({ article }: ArticleSidebarProps) {
 
                       {/* 文章信息 */}
                       <div className="min-w-0 flex-1">
-                        <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-gray-900 group-hover:text-blue-600">
+                        <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-ink group-hover:text-brand">
                           {relatedArticle.title}
                         </h4>
                         {relatedArticle.excerpt && (
-                          <p className="mb-2 line-clamp-2 text-xs text-gray-600">
+                          <p className="mb-2 line-clamp-2 text-xs text-ink-muted">
                             {relatedArticle.excerpt}
                           </p>
                         )}
                         <time
                           dateTime={relatedArticle.publishedAt}
-                          className="text-xs text-gray-500"
+                          className="text-xs text-ink-faint"
                         >
                           {formatDate(relatedArticle.publishedAt)}
                         </time>

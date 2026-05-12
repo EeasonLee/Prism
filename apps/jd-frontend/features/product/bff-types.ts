@@ -132,6 +132,8 @@ export interface ProductVideoCard {
   caption: string;
   thumbnailUrl: string;
   videoUrl: string;
+  /** 关联商品 SKU 列表（用于视频弹窗内懒加载商品） */
+  productSkus?: string[];
 }
 
 export interface CrossSellAddon {

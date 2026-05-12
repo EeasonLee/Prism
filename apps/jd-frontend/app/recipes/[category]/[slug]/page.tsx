@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getRecipeBySlug } from '@/features/recipe';
+import { productQueryFacade } from '@/features/product';
 import {
   buildBreadcrumbSchema,
   buildRecipeMetadata,
@@ -26,13 +27,58 @@ const getRecipeDetail = cache(async (slug: string) => {
   return recipe;
 });
 
+async function hydrateRecipeProductsFromMeilisearch(
+  recipe: Awaited<ReturnType<typeof getRecipeDetail>>
+) {
+  const sourceProducts = recipe.products ?? [];
+  const skus = sourceProducts
+    .map(product => product.sku?.trim() ?? '')
+    .filter(Boolean);
+
+  if (skus.length === 0) return recipe;
+
+  try {
+    const meiliProducts = await productQueryFacade.queryBySkus(skus);
+    if (meiliProducts.length === 0) return recipe;
+
+    const meiliBySku = new Map(
+      meiliProducts.map(product => [product.sku.trim().toLowerCase(), product])
+    );
+
+    const enrichedProducts = sourceProducts.map(product => {
+      const sku = product.sku?.trim() ?? '';
+      const hit = sku ? meiliBySku.get(sku.toLowerCase()) : undefined;
+      if (!hit) return product;
+
+      return {
+        ...product,
+        name: hit.displayName || hit.name || product.name,
+        sku: hit.sku || product.sku,
+        slug: hit.urlKey ?? product.slug,
+        shortDescription: hit.longTitle ?? product.shortDescription,
+        price: hit.price.value ?? product.price,
+        image: hit.image ?? product.image,
+        url: undefined,
+      };
+    });
+
+    return {
+      ...recipe,
+      products: enrichedProducts,
+    };
+  } catch {
+    return recipe;
+  }
+}
+
 export async function generateMetadata({
   params,
 }: RecipeDetailPageProps): Promise<Metadata> {
   const { category, slug } = await params;
 
   try {
-    const recipe = await getRecipeDetail(slug);
+    const rawRecipe = await getRecipeDetail(slug);
+    const recipe = await hydrateRecipeProductsFromMeilisearch(rawRecipe);
     return buildRecipeMetadata(recipe, category);
   } catch {
     return {

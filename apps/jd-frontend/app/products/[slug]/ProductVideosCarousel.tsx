@@ -5,6 +5,7 @@ import { Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@prism/shared';
 import type { ProductVideoCard } from '@/features/product';
+import { VideoShowcaseModal } from '@/features/cms-page/components/VideoShowcaseModal';
 
 interface ProductVideosCarouselProps {
   videos: ProductVideoCard[];
@@ -36,10 +37,11 @@ function isDirectVideoSource(url: string): boolean {
 
 interface HoverVideoCardProps {
   video: ProductVideoCard;
+  onOpen: (video: ProductVideoCard) => void;
 }
 
-function HoverVideoCard({ video }: HoverVideoCardProps) {
-  const wrapRef = useRef<HTMLAnchorElement>(null);
+function HoverVideoCard({ video, onOpen }: HoverVideoCardProps) {
+  const wrapRef = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
   const [hovering, setHovering] = useState(false);
@@ -81,14 +83,21 @@ function HoverVideoCard({ video }: HoverVideoCardProps) {
 
   const showPlayDecoration = !isDirect || !mediaPlaying || !hovering;
 
+  const handleOpen = () => {
+    if (!isDirect) {
+      window.open(video.videoUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    onOpen(video);
+  };
+
   return (
-    <a
+    <button
+      type="button"
       ref={wrapRef}
-      href={video.videoUrl}
-      target="_blank"
-      rel="noopener noreferrer"
       className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-black/20 shadow-sm transition hover:border-brand/30 hover:shadow-md"
       aria-label={`Play video: ${video.title}`}
+      onClick={handleOpen}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onFocus={() => setHovering(true)}
@@ -145,7 +154,7 @@ function HoverVideoCard({ video }: HoverVideoCardProps) {
           </p>
         </div>
       </div>
-    </a>
+    </button>
   );
 }
 
@@ -153,6 +162,8 @@ export function ProductVideosCarousel({
   videos,
   className,
 }: ProductVideosCarouselProps) {
+  const [modalVideo, setModalVideo] = useState<ProductVideoCard | null>(null);
+
   if (videos.length === 0) return null;
 
   return (
@@ -162,9 +173,28 @@ export function ProductVideosCarousel({
         aria-label="Product videos"
       >
         {videos.map(v => (
-          <HoverVideoCard key={v.id} video={v} />
+          <HoverVideoCard key={v.id} video={v} onOpen={setModalVideo} />
         ))}
       </div>
+      {modalVideo && (
+        <VideoShowcaseModal
+          video={{
+            id: modalVideo.id,
+            videoUrl: modalVideo.videoUrl,
+            title: modalVideo.title,
+            caption: modalVideo.caption,
+            thumbnail: modalVideo.thumbnailUrl
+              ? {
+                  url: modalVideo.thumbnailUrl,
+                  alternativeText: modalVideo.title,
+                }
+              : null,
+            productSkus: modalVideo.productSkus ?? [],
+          }}
+          open={modalVideo !== null}
+          onClose={() => setModalVideo(null)}
+        />
+      )}
     </div>
   );
 }

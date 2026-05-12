@@ -9,6 +9,13 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@prism/ui';
 import type {
   ProductReview,
   ProductReviewDistributionKey,
@@ -128,8 +135,8 @@ function DistributionRow({
 }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 sm:gap-3">
-      <span className="w-8 text-sm font-medium tabular-nums text-ink-muted sm:w-9">
+    <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2">
+      <span className="w-7 text-sm font-medium tabular-nums text-ink-muted sm:w-8">
         {stars}★
       </span>
       <div className="relative h-2 min-h-2 min-w-0 overflow-hidden rounded-full bg-surface-muted">
@@ -138,10 +145,10 @@ function DistributionRow({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-9 text-right text-sm tabular-nums text-ink sm:w-10">
+      <span className="w-8 text-right text-sm tabular-nums text-ink sm:w-9">
         {Math.round(pct)}%
       </span>
-      <span className="w-12 text-right text-sm tabular-nums text-ink-faint sm:w-14">
+      <span className="text-left text-sm tabular-nums text-ink-faint">
         ({count.toLocaleString('en-US')})
       </span>
     </div>
@@ -731,9 +738,9 @@ export function ProductReviews({
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,420px)_minmax(0,1fr)]">
             <div
               data-testid="reviews-summary"
-              className="rounded-xl border border-border bg-card p-5 sm:p-6"
+              className="rounded-[28px] border border-border bg-card p-5 sm:p-6"
             >
-              <div className="flex w-full min-w-0 flex-col items-center gap-5 sm:flex-row sm:items-stretch sm:gap-4 md:gap-6">
+              <div className="flex w-full min-w-0 flex-col items-center gap-5 sm:grid sm:grid-cols-[minmax(104px,124px)_1px_minmax(0,1fr)] sm:items-stretch sm:gap-3 md:gap-4">
                 <div className="flex shrink-0 flex-col items-center sm:justify-center">
                   <p className="text-5xl font-black tracking-tight text-ink">
                     {(effectiveSummary?.average ?? 0).toFixed(1)}
@@ -753,7 +760,7 @@ export function ProductReviews({
                 <div className="hidden w-px shrink-0 self-stretch bg-border sm:block" />
 
                 {/* w-0 + flex-1：让中间列吃掉左侧评分与右侧之间的剩余宽度，进度条才能拉满 */}
-                <div className="w-full min-w-0 space-y-2.5 sm:w-0 sm:flex-1">
+                <div className="w-full min-w-0 space-y-2.5 sm:min-w-0">
                   {DISTRIBUTION_KEYS.map(key => (
                     <DistributionRow
                       key={key}
@@ -776,7 +783,7 @@ export function ProductReviews({
           </div>
 
           {showDimensionBreakdown && (
-            <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+            <div className="rounded-[28px] border border-border bg-card p-5 sm:p-6">
               <h3 className="mb-4 text-sm font-semibold text-ink">
                 Ratings by Attribute
               </h3>
@@ -827,13 +834,13 @@ export function ProductReviews({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-ink-muted">
+              <div className="flex items-center gap-2 text-sm text-ink-muted">
                 <span>Rating</span>
-                <select
+                <Select
                   value={ratingFilter}
-                  onChange={event => {
-                    const nextRating = event.target
-                      .value as (typeof RATING_FILTER_OPTIONS)[number]['value'];
+                  onValueChange={value => {
+                    const nextRating =
+                      value as (typeof RATING_FILTER_OPTIONS)[number]['value'];
                     setRatingFilter(nextRating);
                     const nextFilters = {
                       ratings: nextRating === 'all' ? [] : [Number(nextRating)],
@@ -841,34 +848,48 @@ export function ProductReviews({
                     };
                     void loadPage(1, sort, nextFilters);
                   }}
-                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
                 >
-                  {RATING_FILTER_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center gap-2 text-sm text-ink-muted">
+                  <SelectTrigger className="min-h-touch h-10 w-[9.25rem] rounded-full border-border bg-background px-4 text-sm text-ink">
+                    <SelectValue placeholder="All ratings" />
+                  </SelectTrigger>
+                  <SelectContent
+                    align="end"
+                    className="rounded-xl border-border"
+                  >
+                    {RATING_FILTER_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-ink-muted">
                 <span>Sort by</span>
-                <select
+                <Select
                   value={sort}
-                  onChange={event => {
-                    const nextSort = event.target
-                      .value as (typeof SORT_OPTIONS)[number]['value'];
+                  onValueChange={value => {
+                    const nextSort =
+                      value as (typeof SORT_OPTIONS)[number]['value'];
                     setSort(nextSort);
                     void loadPage(1, nextSort, reviewFilters);
                   }}
-                  className="rounded-full border border-border bg-background px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
                 >
-                  {SORT_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger className="min-h-touch h-10 w-[9.25rem] rounded-full border-border bg-background px-4 text-sm text-ink">
+                    <SelectValue placeholder="Newest" />
+                  </SelectTrigger>
+                  <SelectContent
+                    align="end"
+                    className="rounded-xl border-border"
+                  >
+                    {SORT_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -952,7 +973,7 @@ export function ProductReviews({
 
       {allowSubmit && effectiveIsReviewFormOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Write a review"
@@ -963,12 +984,12 @@ export function ProductReviews({
               type="button"
               onClick={closeReviewForm}
               aria-label="Close review form"
-              className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white shadow transition hover:bg-black/60 sm:-right-6 sm:-top-10 sm:h-8 sm:w-8 sm:bg-white sm:text-ink-muted sm:hover:bg-surface sm:hover:text-ink"
             >
               <X className="h-4 w-4" />
             </button>
             <div
-              className="flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-2xl bg-background shadow-2xl sm:max-h-[90dvh]"
+              className="flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-background shadow-2xl sm:max-h-[90dvh] sm:rounded-2xl"
               onClick={event => event.stopPropagation()}
             >
               <ReviewForm

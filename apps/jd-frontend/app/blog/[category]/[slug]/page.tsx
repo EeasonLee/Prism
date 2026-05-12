@@ -1,4 +1,5 @@
 import { fetchArticleBySlug } from '@/features/blog/api';
+import { productQueryFacade } from '@/features/product';
 import {
   buildArticleMetadata,
   buildArticleSchema,
@@ -28,6 +29,50 @@ const getArticleDetail = cache(async (slug: string, locale: string) => {
   return article;
 });
 
+async function hydrateSidebarProductsFromMeilisearch(
+  article: Awaited<ReturnType<typeof getArticleDetail>>
+) {
+  const sourceProducts = article.products ?? [];
+  const skus = sourceProducts
+    .map(product => product.sku?.trim() ?? '')
+    .filter(Boolean);
+
+  if (skus.length === 0) return article;
+
+  try {
+    const meiliProducts = await productQueryFacade.queryBySkus(skus);
+    if (meiliProducts.length === 0) return article;
+
+    const meiliBySku = new Map(
+      meiliProducts.map(product => [product.sku.trim().toLowerCase(), product])
+    );
+
+    const enrichedProducts = sourceProducts.map(product => {
+      const sku = product.sku?.trim() ?? '';
+      const hit = sku ? meiliBySku.get(sku.toLowerCase()) : undefined;
+      if (!hit) return product;
+
+      return {
+        ...product,
+        name: hit.displayName || hit.name || product.name,
+        sku: hit.sku || product.sku,
+        slug: hit.urlKey ?? product.slug,
+        shortDescription: hit.longTitle ?? product.shortDescription,
+        price: hit.price.value ?? product.price,
+        image: hit.image ?? product.image,
+        url: undefined,
+      };
+    });
+
+    return {
+      ...article,
+      products: enrichedProducts,
+    };
+  } catch {
+    return article;
+  }
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -39,7 +84,8 @@ export async function generateMetadata({
     : resolvedSearchParams.locale || 'en';
 
   try {
-    const article = await getArticleDetail(slug, locale);
+    const rawArticle = await getArticleDetail(slug, locale);
+    const article = await hydrateSidebarProductsFromMeilisearch(rawArticle);
     return buildArticleMetadata(article, category);
   } catch {
     return {

@@ -27,15 +27,15 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
       <header className="mb-6 md:mb-8">
         {category && (
           <div className="mb-3 md:mb-4">
-            <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+            <span className="inline-block rounded-full bg-brand-light px-3 py-1 text-sm font-semibold text-brand">
               {category.name}
             </span>
           </div>
         )}
-        <h1 className="mb-3 break-words text-2xl font-bold leading-tight text-gray-900 md:mb-4 md:text-4xl lg:text-5xl">
+        <h1 className="mb-3 break-words text-2xl font-bold leading-tight text-ink md:mb-4 md:text-4xl lg:text-5xl">
           {article.title}
         </h1>
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-ink-muted">
           <time dateTime={article.publishedAt}>
             {formatDate(article.publishedAt)}
           </time>
@@ -67,7 +67,7 @@ export function ArticleDetail({ article }: ArticleDetailProps) {
           {article.tags.map(tag => (
             <span
               key={tag.id}
-              className="inline-block rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700"
+              className="inline-block rounded-full bg-surface-muted px-3 py-1 text-sm text-ink-muted"
             >
               #{tag.name}
             </span>

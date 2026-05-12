@@ -2,6 +2,13 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useCallback } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@prism/ui';
 
 export type ShopSortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest';
 
@@ -45,18 +52,24 @@ export function SortPanel({
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-ink-muted">Sort:</span>
-      <select
+      <Select
         value={currentSort ?? 'featured'}
-        onChange={e => handleSort(e.target.value as ShopSortOption)}
-        className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-brand"
-        aria-label="Sort products"
+        onValueChange={value => handleSort(value as ShopSortOption)}
       >
-        {sortOptions.map(option => (
-          <option key={option} value={option}>
-            {SORT_LABELS[option]}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          className="h-9 min-h-touch w-[10.5rem] rounded-lg border-border bg-background px-3 text-sm text-ink"
+          aria-label="Sort products"
+        >
+          <SelectValue placeholder="Featured" />
+        </SelectTrigger>
+        <SelectContent align="end" className="rounded-xl border-border">
+          {sortOptions.map(option => (
+            <SelectItem key={option} value={option}>
+              {SORT_LABELS[option]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

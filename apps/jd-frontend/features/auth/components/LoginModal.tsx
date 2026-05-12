@@ -110,7 +110,7 @@ export function LoginModal({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
+          className="absolute left-1/2 top-full z-10 mt-3 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full bg-black/45 text-white shadow transition hover:bg-black/60 sm:-right-6 sm:-top-10 sm:left-auto sm:mt-0 sm:h-8 sm:w-8 sm:translate-x-0 sm:bg-white sm:text-ink-muted sm:hover:bg-surface sm:hover:text-ink"
         >
           <X className="h-4 w-4" />
         </button>

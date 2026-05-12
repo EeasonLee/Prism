@@ -24,7 +24,7 @@ export const MOBILE_TABBAR_ITEMS: MobileNavItem[] = [
   {
     key: 'categories',
     label: 'Categories',
-    href: '/categories',
+    href: '/categories/kitchen-appliances',
     icon: Grid2x2,
     match: pathname =>
       pathname === '/categories' || pathname.startsWith('/categories/'),

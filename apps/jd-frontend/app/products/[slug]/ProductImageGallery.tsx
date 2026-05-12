@@ -45,6 +45,8 @@ export function ProductImageGallery({
   const mainMediaRef = useRef<HTMLDivElement>(null);
   const thumbnailRailRef = useRef<HTMLDivElement>(null);
   const thumbnailButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
   const mediaItems: ProductGalleryMediaItem[] = [
     ...(featuredVideo
       ? [
@@ -66,6 +68,36 @@ export function ProductImageGallery({
 
   const goTo = (index: number) => {
     setActiveIndex(Math.max(0, Math.min(mediaItems.length - 1, index)));
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const startX = touchStartXRef.current;
+    const startY = touchStartYRef.current;
+    const touch = event.changedTouches[0];
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    if (startX == null || startY == null || !touch) return;
+
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
+    // 仅处理明显的横向手势，避免和纵向滚动冲突
+    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    if (deltaX < 0) {
+      goTo(activeIndex + 1);
+      return;
+    }
+    goTo(activeIndex - 1);
   };
 
   useEffect(() => {
@@ -264,6 +296,8 @@ export function ProductImageGallery({
         <div
           ref={mainMediaRef}
           className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* 预渲染所有图片，通过 CSS 控制可见性，消除切换时的加载延迟 */}
           {mediaItems.map((item, idx) => {
@@ -326,7 +360,7 @@ export function ProductImageGallery({
                 aria-label="Previous media"
                 onClick={() => goTo(activeIndex - 1)}
                 disabled={activeIndex === 0}
-                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
+                className="absolute left-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-ink shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:pointer-events-none disabled:opacity-35 lg:flex"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -335,7 +369,7 @@ export function ProductImageGallery({
                 aria-label="Next media"
                 onClick={() => goTo(activeIndex + 1)}
                 disabled={activeIndex === mediaItems.length - 1}
-                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-ink opacity-0 shadow-md backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-background disabled:pointer-events-none disabled:opacity-0"
+                className="absolute right-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-ink shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:pointer-events-none disabled:opacity-35 lg:flex"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>

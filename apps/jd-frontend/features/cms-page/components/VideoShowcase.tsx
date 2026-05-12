@@ -124,7 +124,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
           </div>
 
           <div
-            className={`-mx-6 px-6 lg:mx-0 lg:px-0 ${
+            className={`-my-3 py-3 ${
               isSingleVideo
                 ? 'overflow-visible'
                 : 'overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:overflow-visible'
@@ -150,7 +150,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
                     onMouseLeave={() => setHoveredIndex(null)}
                     onClick={() => setModalVideo(video)}
                   >
-                    <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-black/20 shadow-lg">
+                    <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-black/20 shadow-md">
                       <video
                         ref={el => {
                           videoRefs.current[index] = el;

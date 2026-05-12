@@ -73,10 +73,10 @@ export function ProductSectionNav({ sections }: ProductSectionNavProps) {
 
       <nav
         aria-label="Product sections"
-        className={`sticky top-[52px] lg:top-[73px] z-20 -mx-4 overflow-x-hidden border-b border-border bg-background/95 backdrop-blur-md transition-all duration-300 sm:-mx-6 lg:-mx-[50px] ${
+        className={`sticky top-[52px] lg:top-[73px] z-20 -mx-4 overflow-x-hidden bg-background/95 backdrop-blur-md transition-all duration-300 sm:-mx-6 lg:-mx-[50px] ${
           visible
-            ? 'translate-y-0 opacity-100'
-            : '-translate-y-2 opacity-0 pointer-events-none'
+            ? 'max-h-14 translate-y-0 border-b border-border opacity-100'
+            : 'max-h-0 -translate-y-2 border-b border-transparent opacity-0 pointer-events-none'
         }`}
       >
         <div className="no-scrollbar flex overflow-x-auto px-4 sm:px-6 lg:px-[50px]">

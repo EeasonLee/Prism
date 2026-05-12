@@ -2,7 +2,7 @@
 
 import type { Route } from 'next';
 import Link from 'next/link';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import { cn } from '@prism/shared';
 import { useBreadcrumbStore, type BreadcrumbItem } from './useBreadcrumbStore';
 
@@ -48,8 +48,6 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
   const history = useBreadcrumbStore(s => s.history);
   const track = useBreadcrumbStore(s => s.track);
-  const [expanded, setExpanded] = useState(false);
-  const scrollRef = useRef<HTMLOListElement>(null);
 
   // 快照：挂载时的 history 是上一页的导航记录，先存下来再让 track 改写
   const prevSnapshot = useRef(history).current;
@@ -65,22 +63,6 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       }
     }
   });
-
-  // 展开时自动滚动到末尾（必须在条件 return 之前，React hooks 规则）
-  const scrollToEnd = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        left: scrollRef.current.scrollWidth,
-        behavior: 'smooth',
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (expanded) {
-      scrollToEnd();
-    }
-  }, [expanded, scrollToEnd]);
 
   // 用快照（上一页的导航记录）+ props 合并出当前面包屑
   const resolvedItems = resolveItems(items, prevSnapshot);
@@ -108,62 +90,48 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       {/* ---- 移动端 ---- */}
       {isCollapsible ? (
         <div className="flex md:hidden">
-          {expanded ? (
-            /* 展开态：横向滚动完整路径 */
-            <ol
-              ref={scrollRef}
-              className="no-scrollbar flex items-center gap-2 overflow-x-auto whitespace-nowrap"
-            >
-              {resolvedItems.map((item, index) => (
-                <BreadcrumbListItem
-                  key={item.label + index}
-                  item={item}
-                  isFirst={index === 0}
-                  isLast={index === resolvedItems.length - 1}
-                />
-              ))}
-            </ol>
-          ) : (
-            /* 折叠态：首项 / ... / 当前项 */
-            <ol className="flex min-w-0 items-center gap-2">
-              <li className="shrink-0">
+          <ol className="flex min-w-0 items-center gap-2">
+            <li className="shrink-0">
+              <Link
+                href={resolvedItems[0].href as Route}
+                className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {resolvedItems[0].label}
+              </Link>
+            </li>
+            <li className="shrink-0">
+              <span className="text-ink-faint" aria-hidden="true">
+                /
+              </span>
+            </li>
+            <li className="shrink-0 max-w-[5.5rem]">
+              {resolvedItems[resolvedItems.length - 2].href ? (
                 <Link
-                  href={resolvedItems[0].href as Route}
-                  className="text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  href={resolvedItems[resolvedItems.length - 2].href as Route}
+                  className="block truncate text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  {resolvedItems[0].label}
+                  {resolvedItems[resolvedItems.length - 2].label}
                 </Link>
-              </li>
-              <li className="shrink-0">
-                <span className="text-ink-faint" aria-hidden="true">
-                  /
+              ) : (
+                <span className="block truncate text-ink-muted">
+                  {resolvedItems[resolvedItems.length - 2].label}
                 </span>
-              </li>
-              <li className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setExpanded(true)}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                  aria-label="Show full breadcrumb path"
-                >
-                  …
-                </button>
-              </li>
-              <li className="shrink-0">
-                <span className="text-ink-faint" aria-hidden="true">
-                  /
-                </span>
-              </li>
-              <li className="min-w-0">
-                <span
-                  className="block truncate text-ink font-medium"
-                  aria-current="page"
-                >
-                  {resolvedItems[resolvedItems.length - 1].label}
-                </span>
-              </li>
-            </ol>
-          )}
+              )}
+            </li>
+            <li className="shrink-0">
+              <span className="text-ink-faint" aria-hidden="true">
+                /
+              </span>
+            </li>
+            <li className="min-w-0">
+              <span
+                className="block truncate text-ink font-medium"
+                aria-current="page"
+              >
+                {resolvedItems[resolvedItems.length - 1].label}
+              </span>
+            </li>
+          </ol>
         </div>
       ) : (
         /* items ≤ 2：移动端同桌面 */

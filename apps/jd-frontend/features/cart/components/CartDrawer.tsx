@@ -18,6 +18,7 @@ import {
   applyCoupon,
   formatCartLineTotal,
   formatCartMoney,
+  getCartSnapshot,
   getCheckoutRedirectLink,
   removeCoupon,
 } from '../api/cart-bff.service';
@@ -479,6 +480,31 @@ export function CartDrawer() {
   const subtotalFallback = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const subtotalFallbackCurrency = items[0]?.currency ?? 'USD';
   const hasItems = items.length > 0;
+
+  // 购物车抽屉打开时同步 totals，确保自动用券后也能展示当前 coupon
+  useEffect(() => {
+    if (!isCartOpen || !hasItems) {
+      if (!hasItems) setCartTotals(null);
+      return;
+    }
+
+    let cancelled = false;
+    const syncTotals = async () => {
+      try {
+        const snapshot = await getCartSnapshot();
+        if (!cancelled) {
+          setCartTotals(snapshot.totals);
+        }
+      } catch {
+        // totals 同步失败时不阻塞抽屉渲染
+      }
+    };
+
+    void syncTotals();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCartOpen, hasItems, items]);
 
   return (
     <>

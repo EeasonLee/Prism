@@ -126,24 +126,24 @@ export function VideoShowcaseModal({
       role="dialog"
       aria-modal="true"
       aria-label={video.title}
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/85 p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-ink/85 p-0 transition-all duration-300 sm:items-center sm:p-4 ${
         open && entered
           ? 'opacity-100'
           : 'pointer-events-none invisible opacity-0'
       }`}
       onClick={handleOverlayClick}
     >
-      <div className="relative w-full max-w-4xl">
+      <div className="relative w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="absolute -right-6 -top-10 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-muted shadow transition hover:bg-surface hover:text-ink"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white shadow transition hover:bg-black/60 sm:-right-6 sm:-top-10 sm:h-8 sm:w-8 sm:bg-white sm:text-ink-muted sm:hover:bg-surface sm:hover:text-ink"
         >
           <X className="h-4 w-4" />
         </button>
-        <div className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl lg:flex-row">
+        <div className="flex max-h-[82dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[84vh] sm:rounded-2xl lg:flex-row">
           {/* 视频区域 */}
-          <div className="relative flex-shrink-0 bg-black lg:w-[300px]">
+          <div className="relative h-[38dvh] min-h-[240px] max-h-[380px] flex-shrink-0 bg-black sm:h-auto sm:min-h-0 sm:max-h-none lg:h-auto lg:min-h-0 lg:max-h-none lg:flex-1 lg:w-auto">
             <video
               ref={videoRef}
               src={video.videoUrl}
@@ -152,13 +152,13 @@ export function VideoShowcaseModal({
               autoPlay
               muted
               playsInline
-              className="aspect-[9/16] w-full object-contain"
+              className="h-full w-full object-contain sm:aspect-[9/16] lg:aspect-auto"
               aria-label={video.title}
             />
           </div>
 
           {/* 商品列表区域 */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 lg:w-[300px] lg:flex-none">
             <h3 className="heading-4 text-ink">{video.title}</h3>
             {video.caption && (
               <p className="mt-2 caption text-ink-muted">{video.caption}</p>

@@ -58,7 +58,7 @@ function labelStyle(bgColor: string | null): React.CSSProperties {
 /** 缺货标签 */
 function SoldOutLabel() {
   return (
-    <span className="rounded-md bg-ink px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+    <span className="inline-block w-fit max-w-[7rem] truncate rounded-[4px] bg-ink px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">
       Sold Out
     </span>
   );
@@ -67,7 +67,7 @@ function SoldOutLabel() {
 /** 折扣标签：Save -XX% */
 function DiscountLabel({ percent }: { percent: number }) {
   return (
-    <span className="rounded-md bg-brand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-foreground">
+    <span className="inline-block w-fit max-w-[7rem] truncate rounded-[4px] bg-brand px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-brand-foreground">
       Save -{percent}%
     </span>
   );
@@ -81,10 +81,15 @@ function BestTextLabel({
   text: string;
   color: string | null;
 }) {
+  const defaultBestStyle: React.CSSProperties = {
+    backgroundColor: 'hsl(var(--surface-muted))',
+    color: 'hsl(var(--ink))',
+  };
+
   return (
     <span
-      className="max-w-[85%] truncate rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-      style={color ? labelStyle(color) : undefined}
+      className="inline-block w-fit max-w-[7rem] truncate rounded-[4px] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide"
+      style={color ? labelStyle(color) : defaultBestStyle}
     >
       {text}
     </span>
@@ -105,11 +110,17 @@ function CouponLabel({
 }) {
   const display =
     cpPrice != null ? `-${formatPrice(cpPrice, currency)}` : cpLabel;
+  const defaultCouponStyle: React.CSSProperties = {
+    backgroundColor: 'hsl(var(--brand-light))',
+    color: 'hsl(var(--brand))',
+  };
+
+  if (!display) return null;
 
   return (
     <span
-      className="max-w-[85%] truncate rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-      style={cpLabelColor ? labelStyle(cpLabelColor) : undefined}
+      className="inline-block w-fit max-w-[7rem] truncate rounded-[4px] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide"
+      style={cpLabelColor ? labelStyle(cpLabelColor) : defaultCouponStyle}
     >
       {display}
     </span>
@@ -142,7 +153,7 @@ export function ProductLabel({
   // 缺货：只显示 Sold Out
   if (!isInStock) {
     return (
-      <div className={cn('flex flex-col gap-1', className)}>
+      <div className={cn('flex flex-col items-start gap-1', className)}>
         <SoldOutLabel />
       </div>
     );
@@ -175,5 +186,9 @@ export function ProductLabel({
 
   if (labels.length === 0) return null;
 
-  return <div className={cn('flex flex-col gap-1', className)}>{labels}</div>;
+  return (
+    <div className={cn('flex flex-col items-start gap-1', className)}>
+      {labels}
+    </div>
+  );
 }

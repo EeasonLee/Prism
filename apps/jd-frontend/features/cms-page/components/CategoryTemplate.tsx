@@ -1,6 +1,5 @@
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { resolveImageUrl } from '@prism/shared';
 import type { PageSection } from '../types';
 import { categoryService } from '@/features/category';
 import {
@@ -8,6 +7,7 @@ import {
   productQueryFacade,
   mapCardItemToDisplay,
 } from '@/features/product';
+import { CategoryFilterScroller } from './CategoryFilterScroller';
 
 const PRODUCTS_PER_SECTION = 8;
 
@@ -164,43 +164,6 @@ async function getMallPageData(sections: PageSection[]): Promise<MallPageData> {
   };
 }
 
-function CategoryFilterItem({ section }: { section: MallCategorySection }) {
-  const imageUrl =
-    resolveImageUrl(section.listImageUrl) ?? section.listImageUrl;
-  const content = (
-    <>
-      <div className="relative h-16 w-16 overflow-hidden rounded-full border border-line bg-bg-subtle sm:h-20 sm:w-20">
-        {imageUrl ? (
-          <OptimizedImage
-            src={imageUrl}
-            alt={section.name}
-            fill
-            maxDisplayWidth={80}
-            className="object-cover"
-            sizes="80px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-ink-muted">
-            N/A
-          </div>
-        )}
-      </div>
-      <span className="max-w-[88px] text-center text-xs font-medium text-ink sm:max-w-[108px] sm:text-sm">
-        {section.name}
-      </span>
-    </>
-  );
-
-  return (
-    <Link
-      href={`#mall-category-${section.id}`}
-      className="flex shrink-0 flex-col items-center gap-2 transition hover:opacity-85"
-    >
-      {content}
-    </Link>
-  );
-}
-
 export async function CategoryTemplate({
   sections,
 }: {
@@ -233,14 +196,16 @@ export async function CategoryTemplate({
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-5 text-lg font-semibold text-ink sm:text-xl">
+        <h2 className="mb-5 text-xl font-semibold text-ink sm:text-2xl">
           Shop by Category
         </h2>
-        <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-6">
-          {mallSections.map(section => (
-            <CategoryFilterItem key={section.id} section={section} />
-          ))}
-        </div>
+        <CategoryFilterScroller
+          sections={mallSections.map(section => ({
+            id: section.id,
+            name: section.name,
+            listImageUrl: section.listImageUrl ?? null,
+          }))}
+        />
       </section>
 
       <div className="mt-10 space-y-12">

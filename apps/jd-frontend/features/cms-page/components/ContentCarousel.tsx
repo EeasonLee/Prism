@@ -31,7 +31,7 @@ export function ContentCarousel({
     <section className="relative w-full overflow-hidden bg-surface py-12 lg:py-20">
       <div className="w-full px-6 lg:px-[8vw]">
         <div className="mb-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col items-start gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               {subtitle && (
                 <span className="micro-text mb-3 block text-brand">
@@ -47,11 +47,11 @@ export function ContentCarousel({
             </div>
 
             {isMixed && (
-              <div className="flex gap-2 rounded-full border border-border bg-card p-1">
+              <div className="flex w-full gap-2 rounded-full border border-border bg-card p-1 sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setActiveTab('recipe')}
-                  className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+                  className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all sm:flex-none sm:px-6 sm:py-2.5 ${
                     activeTab === 'recipe'
                       ? 'bg-brand text-brand-foreground'
                       : 'text-ink-muted hover:text-ink'
@@ -62,7 +62,7 @@ export function ContentCarousel({
                 <button
                   type="button"
                   onClick={() => setActiveTab('blog')}
-                  className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+                  className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all sm:flex-none sm:px-6 sm:py-2.5 ${
                     activeTab === 'blog'
                       ? 'bg-brand text-brand-foreground'
                       : 'text-ink-muted hover:text-ink'
@@ -82,7 +82,7 @@ export function ContentCarousel({
                 <Link
                   key={item.id}
                   href={item.link || '/recipes'}
-                  className="block w-[80vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card sm:w-auto"
+                  className="block w-[78%] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card sm:w-auto"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <OptimizedImage

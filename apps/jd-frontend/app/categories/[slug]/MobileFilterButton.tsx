@@ -32,7 +32,7 @@ export function MobileFilterButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg transition-transform hover:scale-105 active:scale-95 md:hidden"
+        className="fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg transition-transform hover:scale-105 active:scale-95 md:hidden"
         style={{
           bottom:
             'calc(var(--mobile-tabbar-height) + var(--mobile-safe-area-bottom) + 1rem)',

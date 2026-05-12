@@ -28,6 +28,8 @@ interface MeilisearchHit {
   stock_status?: string | null;
   is_in_stock?: boolean;
   type_id?: string | null;
+  best_text?: string | null;
+  best_color?: string | null;
   promotion_label?: string | null;
   cp_label?: string | null;
   cp_label_color?: string | null;
@@ -173,7 +175,8 @@ function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
     originalPrice,
     inStock: hit.is_in_stock ?? hit.stock_status !== 'out_of_stock',
     type: hit.type_id ?? null,
-    promotionLabel: hit.promotion_label ?? null,
+    promotionLabel: hit.best_text ?? hit.promotion_label ?? null,
+    bestColor: hit.best_color ?? null,
     cpLabel: hit.cp_label?.trim() ? hit.cp_label.trim() : null,
     cpLabelColor: hit.cp_label_color?.trim() ? hit.cp_label_color.trim() : null,
     cpCode: hit.cp_code?.trim() ? hit.cp_code.trim() : null,
