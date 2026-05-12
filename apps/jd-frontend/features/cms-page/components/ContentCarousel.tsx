@@ -82,7 +82,7 @@ export function ContentCarousel({
                 <Link
                   key={item.id}
                   href={item.link || '/recipes'}
-                  className="group block w-[80vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card sm:w-auto"
+                  className="block w-[80vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card sm:w-auto"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <OptimizedImage
@@ -91,11 +91,11 @@ export function ContentCarousel({
                       fill
                       maxDisplayWidth={360}
                       sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover"
                     />
                   </div>
                   <div className="p-5">
-                    <h3 className="mb-2 line-clamp-1 text-lg font-semibold text-ink transition-colors group-hover:text-brand">
+                    <h3 className="mb-2 line-clamp-1 text-lg font-semibold text-ink">
                       {item.title}
                     </h3>
                     {item.description && (
@@ -133,7 +133,7 @@ export function ContentCarousel({
                 <Link
                   key={item.id}
                   href={item.link || '/blog'}
-                  className="group block w-[85vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-card-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card lg:w-auto"
+                  className="block w-[85vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card lg:w-auto"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <OptimizedImage
@@ -142,7 +142,7 @@ export function ContentCarousel({
                       fill
                       maxDisplayWidth={480}
                       sizes="(max-width: 1024px) 85vw, 33vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover"
                     />
                   </div>
                   <div className="p-5">
@@ -163,7 +163,7 @@ export function ContentCarousel({
                           )}
                       </div>
                     )}
-                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-ink transition-colors group-hover:text-brand">
+                    <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-ink">
                       {item.title}
                     </h3>
                     {item.description && (

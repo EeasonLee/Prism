@@ -12,6 +12,8 @@ import { AuthProvider } from '@/features/auth';
 import { AuthModalProvider } from '@/features/auth';
 import { CartProvider } from '@/features/cart';
 import { logger } from '@/infrastructure/observability/logger';
+
+import { getDomainRewriteMap } from '@/infrastructure/config/image';
 import { ImageConfigContext } from '@prism/ui';
 
 type AppConfig = {
@@ -28,6 +30,7 @@ function ImageConfigProvider({ children }: PropsWithChildren) {
   const value = useMemo(
     () => ({
       baseUrl: process.env['NEXT_PUBLIC_IMAGE_BASE_URL'] || '',
+      domainRewriteMap: getDomainRewriteMap(),
     }),
     []
   );
