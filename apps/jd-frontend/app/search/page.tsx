@@ -78,33 +78,14 @@ export default async function SearchPage({ searchParams }: Props) {
                     className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
                   >
                     <div className="relative aspect-square overflow-hidden bg-surface">
-                      {item.image ? (
-                        <OptimizedImage
-                          src={item.image}
-                          alt={displayName}
-                          fill
-                          maxDisplayWidth={360}
-                          sizes="(max-width: 640px) 50vw, 25vw"
-                          className="object-contain p-4 transition duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-ink-muted/30">
-                          <svg
-                            className="h-12 w-12"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                      )}
+                      <OptimizedImage
+                        src={item.image}
+                        alt={displayName}
+                        fill
+                        maxDisplayWidth={360}
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                        className="object-contain p-4 transition duration-300 group-hover:scale-105"
+                      />
                       {item.promotionLabel && (
                         <span className="absolute left-2 top-2 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
                           {item.promotionLabel}

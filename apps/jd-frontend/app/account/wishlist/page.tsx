@@ -4,7 +4,7 @@ import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Heart, Trash2, Loader2 } from 'lucide-react';
-import { formatPrice, resolveImageUrl } from '@prism/shared';
+import { formatPrice } from '@prism/shared';
 import { useAccount } from '@/features/account/use-account';
 import type { WishlistItem } from '@/features/account/types';
 import { buildProductUrl } from '@/features/product';
@@ -116,36 +116,14 @@ export default function WishlistPage() {
                 className="block"
               >
                 <div className="relative aspect-square overflow-hidden rounded-2xl bg-background">
-                  {item.thumbnail ? (
-                    <OptimizedImage
-                      src={
-                        resolveImageUrl(item.thumbnail, { size: 400 }) ??
-                        item.thumbnail
-                      }
-                      alt={item.name}
-                      fill
-                      maxDisplayWidth={480}
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-ink-muted/30">
-                      <svg
-                        className="h-16 w-16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                  )}
+                  <OptimizedImage
+                    src={item.thumbnail}
+                    alt={item.name}
+                    fill
+                    maxDisplayWidth={480}
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
                 </div>
               </Link>
               <div className="p-4">

@@ -2,7 +2,7 @@
 
 import { OptimizedImage } from '@prism/ui';
 import { useEffect, useRef, useState } from 'react';
-import { resolveImageUrl } from '@prism/shared';
+import { resolveImageUrl, cn } from '@prism/shared';
 import {
   ChevronDown,
   ChevronLeft,
@@ -67,8 +67,6 @@ export function ProductImageGallery({
   const goTo = (index: number) => {
     setActiveIndex(Math.max(0, Math.min(mediaItems.length - 1, index)));
   };
-
-  const activeMedia = mediaItems[activeIndex];
 
   useEffect(() => {
     const thumbnailRail = thumbnailRailRef.current;
@@ -267,32 +265,58 @@ export function ProductImageGallery({
           ref={mainMediaRef}
           className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background"
         >
-          {activeMedia?.type === 'image' && (
-            <OptimizedImage
-              src={activeMedia.url}
-              alt={activeMedia.alt}
-              fill
-              priority
-              maxDisplayWidth={800}
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover transition-opacity duration-300"
-            />
-          )}
-          {activeMedia?.type === 'video' && (
-            <video
-              key={activeMedia.url}
-              src={activeMedia.url}
-              poster={activeMedia.poster}
-              className="h-full w-full object-cover"
-              controls
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label={`${productName} product video`}
-            />
-          )}
+          {/* 预渲染所有图片，通过 CSS 控制可见性，消除切换时的加载延迟 */}
+          {mediaItems.map((item, idx) => {
+            const isActive = idx === activeIndex;
+
+            if (item.type === 'image') {
+              return (
+                <div
+                  key={idx}
+                  aria-hidden={!isActive}
+                  className={cn(
+                    'absolute inset-0 transition-opacity duration-300',
+                    isActive
+                      ? 'z-10 opacity-100'
+                      : 'z-0 opacity-0 pointer-events-none'
+                  )}
+                >
+                  <OptimizedImage
+                    src={item.url}
+                    alt={item.alt}
+                    fill
+                    {...(idx === 0
+                      ? { priority: true }
+                      : { loading: 'eager' as const })}
+                    maxDisplayWidth={800}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
+              );
+            }
+
+            // 视频只渲染活跃的（避免多视频同时播放消耗带宽）
+            if (item.type === 'video' && isActive) {
+              return (
+                <video
+                  key={item.url}
+                  src={item.url}
+                  poster={item.poster}
+                  className="h-full w-full object-cover"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label={`${productName} product video`}
+                />
+              );
+            }
+
+            return null;
+          })}
 
           {/* 左右切换箭头 */}
           {mediaItems.length > 1 && (

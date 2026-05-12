@@ -4,7 +4,7 @@ import type { Route } from 'next';
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { cn, resolveImageUrl } from '@prism/shared';
 import type { UnifiedProductDisplay } from '../types';
 import { useCart } from '@/features/cart';
@@ -85,68 +85,11 @@ function StarRating({ percentage }: { percentage: number }) {
   );
 }
 
-// ─── 通用子组件 ────────────────────────────────────────────────────────────────
-
-/** 图片容器（所有变体共用） */
-function CardImage({
-  imageUrl,
-  alt,
-  isOutOfStock,
-  imageLoadFailed,
-  onError,
-  maxDisplayWidth = 350,
-  sizes = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw',
-}: {
-  imageUrl: string | null;
-  alt: string;
-  isOutOfStock: boolean;
-  imageLoadFailed: boolean;
-  onError: () => void;
-  maxDisplayWidth?: number;
-  sizes?: string;
-}) {
-  if (imageUrl && !imageLoadFailed) {
-    return (
-      <OptimizedImage
-        src={imageUrl}
-        alt={alt}
-        fill
-        className={`object-cover ${isOutOfStock ? 'opacity-60 grayscale' : ''}`}
-        maxDisplayWidth={maxDisplayWidth}
-        sizes={sizes}
-        loading="lazy"
-        onError={onError}
-      />
-    );
-  }
-
-  return (
-    <div className="flex h-full items-center justify-center text-ink-muted/30">
-      <svg
-        className="h-12 w-12"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1}
-          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-    </div>
-  );
-}
-
 // ─── Default 变体 ─────────────────────────────────────────────────────────────
 
 function ProductCardDefault({
   product,
   imageUrl,
-  imageLoadFailed,
-  setImageLoadFailed,
   isOutOfStock,
   discountPercent,
   cartQty,
@@ -163,8 +106,6 @@ function ProductCardDefault({
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  imageLoadFailed: boolean;
-  setImageLoadFailed: (v: boolean) => void;
   isOutOfStock: boolean;
   discountPercent: number | null;
   cartQty: number;
@@ -202,12 +143,16 @@ function ProductCardDefault({
     <article className="flex flex-col rounded-2xl bg-background p-2">
       <Link href={productHref} className="flex min-h-0 flex-1 flex-col">
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
-          <CardImage
-            imageUrl={imageUrl}
+          <OptimizedImage
+            src={imageUrl}
             alt={product.short_name ?? product.name}
-            isOutOfStock={isOutOfStock}
-            imageLoadFailed={imageLoadFailed}
-            onError={() => setImageLoadFailed(true)}
+            fill
+            className={`object-cover ${
+              isOutOfStock ? 'opacity-60 grayscale' : ''
+            }`}
+            maxDisplayWidth={350}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
           />
 
           <ProductLabel
@@ -324,8 +269,6 @@ function ProductCardDefault({
 function ProductCardCompactVariant({
   product,
   imageUrl,
-  imageLoadFailed,
-  setImageLoadFailed,
   isOutOfStock,
   discountPercent,
   productHref,
@@ -336,8 +279,6 @@ function ProductCardCompactVariant({
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  imageLoadFailed: boolean;
-  setImageLoadFailed: (v: boolean) => void;
   isOutOfStock: boolean;
   discountPercent: number | null;
   productHref: Route;
@@ -366,36 +307,16 @@ function ProductCardCompactVariant({
       )}
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
-        {imageUrl && !imageLoadFailed ? (
-          <OptimizedImage
-            src={imageUrl}
-            alt={product.short_name ?? product.name}
-            fill
-            maxDisplayWidth={230}
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              isOutOfStock ? 'opacity-60 grayscale' : ''
-            }`}
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
-            onError={() => setImageLoadFailed(true)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-ink-muted/30">
-            <svg
-              className="h-12 w-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        )}
+        <OptimizedImage
+          src={imageUrl}
+          alt={product.short_name ?? product.name}
+          fill
+          maxDisplayWidth={230}
+          className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+            isOutOfStock ? 'opacity-60 grayscale' : ''
+          }`}
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
@@ -447,8 +368,6 @@ function ProductCardCompactVariant({
 function ProductCardGridVariant({
   product,
   imageUrl,
-  imageLoadFailed,
-  setImageLoadFailed,
   isOutOfStock,
   discountPercent,
   productHref,
@@ -458,8 +377,6 @@ function ProductCardGridVariant({
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  imageLoadFailed: boolean;
-  setImageLoadFailed: (v: boolean) => void;
   isOutOfStock: boolean;
   discountPercent: number | null;
   productHref: Route;
@@ -483,36 +400,16 @@ function ProductCardGridVariant({
       <Link href={productHref} className="block">
         {/* 图片即板块 — 独立圆角 + 浅灰底色 */}
         <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-surface-muted">
-          {imageUrl && !imageLoadFailed ? (
-            <OptimizedImage
-              src={imageUrl}
-              alt={product.short_name ?? product.name}
-              fill
-              maxDisplayWidth={360}
-              className={`object-cover ${
-                isOutOfStock ? 'opacity-60 grayscale' : ''
-              }`}
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              onError={() => setImageLoadFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-ink-muted/30">
-              <svg
-                className="h-12 w-12"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          )}
+          <OptimizedImage
+            src={imageUrl}
+            alt={product.short_name ?? product.name}
+            fill
+            maxDisplayWidth={360}
+            className={`object-cover ${
+              isOutOfStock ? 'opacity-60 grayscale' : ''
+            }`}
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          />
 
           <ProductLabel
             {...labelProps}
@@ -566,8 +463,6 @@ function ProductCardGridVariant({
 function ProductCardDealVariant({
   product,
   imageUrl,
-  imageLoadFailed,
-  setImageLoadFailed,
   isOutOfStock,
   discountPercent,
   productHref,
@@ -575,8 +470,6 @@ function ProductCardDealVariant({
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  imageLoadFailed: boolean;
-  setImageLoadFailed: (v: boolean) => void;
   isOutOfStock: boolean;
   discountPercent: number | null;
   productHref: Route;
@@ -602,24 +495,17 @@ function ProductCardDealVariant({
     <article className="group overflow-hidden rounded-xl border border-border bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card">
       <Link href={productHref} className="block">
         <div className="relative aspect-square overflow-hidden bg-surface">
-          {imageUrl && !imageLoadFailed ? (
-            <OptimizedImage
-              src={imageUrl}
-              alt={product.short_name ?? product.name}
-              fill
-              className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-                isOutOfStock ? 'opacity-60 grayscale' : ''
-              }`}
-              maxDisplayWidth={350}
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              loading="lazy"
-              onError={() => setImageLoadFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-muted">
-              <span className="text-xs text-ink-muted">No image</span>
-            </div>
-          )}
+          <OptimizedImage
+            src={imageUrl}
+            alt={product.short_name ?? product.name}
+            fill
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+              isOutOfStock ? 'opacity-60 grayscale' : ''
+            }`}
+            maxDisplayWidth={350}
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
+          />
 
           {isOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -673,16 +559,12 @@ function ProductCardDealVariant({
 function ProductCardCategoryVariant({
   product,
   imageUrl,
-  imageLoadFailed,
-  setImageLoadFailed,
   discountPercent,
   productHref,
   labelProps,
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  imageLoadFailed: boolean;
-  setImageLoadFailed: (v: boolean) => void;
   discountPercent: number | null;
   productHref: Route;
   labelProps: {
@@ -707,24 +589,15 @@ function ProductCardCategoryVariant({
         className="block outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-white"
       >
         <div className="group/image relative aspect-square overflow-hidden rounded-xl bg-white">
-          {imageUrl && !imageLoadFailed ? (
-            <OptimizedImage
-              src={imageUrl}
-              alt={product.short_name ?? product.name}
-              fill
-              className="object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
-              maxDisplayWidth={350}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              loading="lazy"
-              onError={() => setImageLoadFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-muted">
-              <span className="micro-text normal-case tracking-normal text-ink-muted">
-                No image
-              </span>
-            </div>
-          )}
+          <OptimizedImage
+            src={imageUrl}
+            alt={product.short_name ?? product.name}
+            fill
+            className="object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
+            maxDisplayWidth={350}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
+          />
 
           <ProductLabel
             {...labelProps}
@@ -775,14 +648,12 @@ function ProductCardCategoryVariant({
 function ProductCardFeaturedVariant({
   product,
   imageUrl,
-  setImageLoadFailed,
   discountPercent,
   productHref,
   labelProps,
 }: {
   product: UnifiedProductDisplay;
   imageUrl: string | null;
-  setImageLoadFailed: (v: boolean) => void;
   discountPercent: number | null;
   productHref: Route;
   labelProps: {
@@ -824,34 +695,14 @@ function ProductCardFeaturedVariant({
 
       <div className="grid grid-cols-1 items-start md:grid-cols-[1fr,2fr] md:items-stretch">
         <div className="relative w-full shrink-0 overflow-hidden aspect-square">
-          {imageUrl ? (
-            <OptimizedImage
-              src={imageUrl}
-              alt={product.short_name ?? product.name}
-              fill
-              className="object-contain transition-transform duration-500 group-hover:scale-105"
-              maxDisplayWidth={280}
-              sizes="(max-width: 640px) 100vw, 280px"
-              onError={() => setImageLoadFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-surface">
-              <svg
-                className="h-12 w-12 text-ink-muted/30"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          )}
+          <OptimizedImage
+            src={imageUrl}
+            alt={product.short_name ?? product.name}
+            fill
+            className="object-contain transition-transform duration-500 group-hover:scale-105"
+            maxDisplayWidth={280}
+            sizes="(max-width: 640px) 100vw, 280px"
+          />
 
           <ProductLabel
             {...labelProps}
@@ -941,12 +792,6 @@ export function ProductCard({
       ? rawImage
       : resolveImageUrl(rawImage) ?? rawImage
     : null;
-  const [imageLoadFailed, setImageLoadFailed] = useState(false);
-
-  useEffect(() => {
-    setImageLoadFailed(false);
-  }, [imageUrl]);
-
   // ── 折扣 ──
   const discountPercent =
     product.discount_percent ??
@@ -1139,8 +984,6 @@ export function ProductCard({
         <ProductCardCompactVariant
           product={product}
           imageUrl={imageUrl}
-          imageLoadFailed={imageLoadFailed}
-          setImageLoadFailed={setImageLoadFailed}
           isOutOfStock={isOutOfStock}
           discountPercent={discountPercent}
           productHref={productHref}
@@ -1156,8 +999,6 @@ export function ProductCard({
         <ProductCardGridVariant
           product={product}
           imageUrl={imageUrl}
-          imageLoadFailed={imageLoadFailed}
-          setImageLoadFailed={setImageLoadFailed}
           isOutOfStock={isOutOfStock}
           discountPercent={discountPercent}
           productHref={productHref}
@@ -1172,8 +1013,6 @@ export function ProductCard({
         <ProductCardDealVariant
           product={product}
           imageUrl={imageUrl}
-          imageLoadFailed={imageLoadFailed}
-          setImageLoadFailed={setImageLoadFailed}
           isOutOfStock={isOutOfStock}
           discountPercent={discountPercent}
           productHref={productHref}
@@ -1186,8 +1025,6 @@ export function ProductCard({
         <ProductCardCategoryVariant
           product={product}
           imageUrl={imageUrl}
-          imageLoadFailed={imageLoadFailed}
-          setImageLoadFailed={setImageLoadFailed}
           discountPercent={discountPercent}
           productHref={productHref}
           labelProps={labelProps}
@@ -1199,7 +1036,6 @@ export function ProductCard({
         <ProductCardFeaturedVariant
           product={product}
           imageUrl={imageUrl}
-          setImageLoadFailed={setImageLoadFailed}
           discountPercent={discountPercent}
           productHref={productHref}
           labelProps={labelProps}
@@ -1212,8 +1048,6 @@ export function ProductCard({
           <ProductCardDefault
             product={product}
             imageUrl={imageUrl}
-            imageLoadFailed={imageLoadFailed}
-            setImageLoadFailed={setImageLoadFailed}
             isOutOfStock={isOutOfStock}
             discountPercent={discountPercent}
             cartQty={cartQty}
