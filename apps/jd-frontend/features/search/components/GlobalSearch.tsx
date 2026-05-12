@@ -14,12 +14,15 @@ import {
 import { debounce } from '@prism/shared';
 import { Loader2 } from 'lucide-react';
 import { formatPrice } from '@prism/shared';
-import type { ProductCardItem } from '../types';
+import type { ProductCardItem } from '@/features/product';
 import type { ArticleListItem } from '@/features/blog';
-import type { SearchRecipeItem } from '../../app/recipes/types';
+import type { SearchRecipeItem } from '@/features/recipe/types';
+
+/** global-search 路由在卡片上附加了详情页链接 */
+type GlobalSearchProductItem = ProductCardItem & { href: string };
 
 interface GlobalSearchResponse {
-  products: { items: ProductCardItem[]; total: number };
+  products: { items: GlobalSearchProductItem[]; total: number };
   articles: {
     items: Array<ArticleListItem & { title: string; excerpt: string }>;
     total: number;
@@ -307,7 +310,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                           >
                             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                               <OptimizedImage
-                                src={item.thumbnail}
+                                src={item.image ?? ''}
                                 alt={item.name}
                                 fill
                                 maxDisplayWidth={48}
@@ -319,9 +322,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                               <p className="truncate text-sm font-medium text-ink">
                                 {item.name}
                               </p>
-                              {item.price != null && (
+                              {item.price.value != null && (
                                 <p className="text-xs text-ink-muted">
-                                  {formatPrice(item.price, item.currency)}
+                                  {formatPrice(
+                                    item.price.value,
+                                    item.price.currency
+                                  )}
                                 </p>
                               )}
                             </div>
@@ -555,7 +561,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                             >
                               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-surface">
                                 <OptimizedImage
-                                  src={item.thumbnail}
+                                  src={item.image ?? ''}
                                   alt={item.name}
                                   fill
                                   maxDisplayWidth={40}
@@ -567,9 +573,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                                 <p className="truncate text-sm font-medium text-ink">
                                   {item.name}
                                 </p>
-                                {item.price != null && (
+                                {item.price.value != null && (
                                   <p className="text-xs text-ink-muted">
-                                    {formatPrice(item.price, item.currency)}
+                                    {formatPrice(
+                                      item.price.value,
+                                      item.price.currency
+                                    )}
                                   </p>
                                 )}
                               </div>
