@@ -93,6 +93,9 @@ export function ProductDetailReviewShell({
     (initialPagination?.total ?? 0) > 0 ||
     (initialReviews?.length ?? 0) > 0;
 
+  // 即使还没有评论，只要允许提交，也要挂载 ProductReviews 以提供 ReviewForm 弹窗
+  const shouldMountReviews = hasReviewData || allowSubmit;
+
   return (
     <>
       <ProductDetailContent
@@ -124,7 +127,7 @@ export function ProductDetailReviewShell({
         </div>
       )}
 
-      {hasReviewData && (
+      {shouldMountReviews && (
         <div id="section-reviews">
           <ProductReviews
             sku={reviewSku}

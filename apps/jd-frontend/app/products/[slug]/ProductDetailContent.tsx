@@ -38,64 +38,52 @@ function StarRating({
   percentage,
   count,
   onNavigateToReviews,
-  onWriteReview,
 }: {
   percentage: number;
   count: number;
   onNavigateToReviews: () => void;
-  onWriteReview: () => void;
 }) {
   const averageRating = Math.max(0, Math.min(5, percentage / 20));
   const countText = count.toLocaleString();
 
   return (
-    <div className="flex items-center gap-3 leading-none">
-      <button
-        type="button"
-        onClick={onNavigateToReviews}
-        className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        aria-label="Go to customer reviews"
-      >
-        <div className="relative flex gap-0.5" aria-hidden="true">
+    <button
+      type="button"
+      onClick={onNavigateToReviews}
+      className="inline-flex items-center gap-2 rounded-md text-sm leading-none text-ink-muted transition hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      aria-label="Go to customer reviews"
+    >
+      <div className="relative flex gap-0.5" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => (
+          <svg
+            key={i}
+            className="h-4 w-4 text-ink-muted/25"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d={STAR_PATH} />
+          </svg>
+        ))}
+        <div
+          className="absolute inset-0 flex gap-0.5 overflow-hidden"
+          style={{ width: `${percentage}%` }}
+        >
           {Array.from({ length: 5 }, (_, i) => (
             <svg
               key={i}
-              className="h-4 w-4 text-ink-muted/25"
+              className="h-4 w-4 shrink-0 text-amber-400"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
               <path d={STAR_PATH} />
             </svg>
           ))}
-          <div
-            className="absolute inset-0 flex gap-0.5 overflow-hidden"
-            style={{ width: `${percentage}%` }}
-          >
-            {Array.from({ length: 5 }, (_, i) => (
-              <svg
-                key={i}
-                className="h-4 w-4 shrink-0 text-amber-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d={STAR_PATH} />
-              </svg>
-            ))}
-          </div>
         </div>
-        <span className="text-sm leading-none text-ink-muted">
-          {averageRating.toFixed(1)} ({countText})
-        </span>
-      </button>
-
-      <button
-        type="button"
-        onClick={onWriteReview}
-        className="text-sm font-medium leading-none text-ink transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        Write a review
-      </button>
-    </div>
+      </div>
+      <span className="text-sm leading-none text-ink-muted">
+        {averageRating.toFixed(1)} ({countText})
+      </span>
+    </button>
   );
 }
 
@@ -478,9 +466,15 @@ export function ProductDetailContent({
               percentage={ratingPercentage}
               count={ratingCount}
               onNavigateToReviews={handleGoToReviews}
-              onWriteReview={onWriteReview}
             />
           )}
+          <button
+            type="button"
+            onClick={onWriteReview}
+            className="text-sm font-medium leading-none text-ink transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Write a review
+          </button>
         </div>
         {/* 主价格区：仅展示未使用 cp_code / cp_price 的售价（特价 vs 原价）；券后价只在下方优惠券横幅展示 */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
