@@ -335,6 +335,7 @@ export function ProductDetailContent({
     sku: product.sku,
     cpCode,
     isCouponValid: showCouponBanner,
+    cpExpiresAt: product.cp_expires_at,
   });
 
   // ?coupon=auto 自动领取

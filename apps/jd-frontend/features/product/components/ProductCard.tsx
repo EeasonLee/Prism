@@ -5,9 +5,10 @@ import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
-import { cn, resolveImageUrl } from '@prism/shared';
+import { cn } from '@prism/shared';
 import type { UnifiedProductDisplay } from '../types';
 import { useCart, useAddToCartAction, applyCoupon } from '@/features/cart';
+import { readClaimedCoupons } from '../hooks/use-coupon-claim';
 import { buildProductUrl } from '../services/product-navigation';
 import { computeDiscountPercent } from '../services/display-mapper';
 import { stripHtml } from '../services/html-utils';
@@ -785,13 +786,8 @@ export function ProductCard({
   const typeKey = product.type_id;
   const supportsDirectQuantity = typeKey === 'simple' || typeKey === 'virtual';
 
-  // ── 图片解析 ──
-  const rawImage = product.image?.trim() ?? null;
-  const imageUrl = rawImage
-    ? rawImage.startsWith('http://') || rawImage.startsWith('https://')
-      ? rawImage
-      : resolveImageUrl(rawImage) ?? rawImage
-    : null;
+  // ── 图片（透传原始 URL，由 OptimizedImage 统一处理）──
+  const imageUrl = product.image?.trim() ?? null;
   // ── 折扣 ──
   const discountPercent =
     product.discount_percent ??
@@ -848,15 +844,25 @@ export function ProductCard({
     return true;
   }, [product.cp_code, product.cp_starts_at, product.cp_expires_at]);
 
+  // ── 跨页面已领取优惠券 ──
+  const claimedCouponCode = useMemo(() => {
+    const claimed = readClaimedCoupons();
+    return claimed[product.sku] ?? null;
+  }, [product.sku]);
+
+  // ── 实际使用的优惠券码：已领取的优先，其次产品数据自带的 ──
+  const effectiveCouponCode =
+    claimedCouponCode ?? (isCouponValid ? product.cp_code : null) ?? null;
+
   // ── 操作 ──
   const addSimpleProduct = async () => {
     await addItemToCart(
       { sku: product.sku, qty: 1 },
       { openCartOnSuccess: true }
     );
-    if (isCouponValid && product.cp_code) {
+    if (effectiveCouponCode) {
       try {
-        await applyCoupon(product.cp_code);
+        await applyCoupon(effectiveCouponCode);
         await syncCart();
       } catch {
         // 静默忽略
@@ -961,9 +967,9 @@ export function ProductCard({
             { sku: product.sku, qty: 1 },
             { openCartOnSuccess: false }
           );
-          if (isCouponValid && product.cp_code) {
+          if (effectiveCouponCode) {
             try {
-              await applyCoupon(product.cp_code);
+              await applyCoupon(effectiveCouponCode);
               await syncCart();
             } catch {
               /* ignore */
@@ -991,9 +997,9 @@ export function ProductCard({
         { sku: product.sku, qty: 1 },
         { openCartOnSuccess: true }
       );
-      if (success && isCouponValid && product.cp_code) {
+      if (success && effectiveCouponCode) {
         try {
-          await applyCoupon(product.cp_code);
+          await applyCoupon(effectiveCouponCode);
           await syncCart();
         } catch {
           /* ignore */
@@ -1134,9 +1140,7 @@ export function ProductCard({
                   variants: [],
                 }
               }
-              couponCode={
-                isCouponValid && product.cp_code ? product.cp_code : null
-              }
+              couponCode={effectiveCouponCode}
               error={quickViewError}
               onClose={() => setIsQuickViewOpen(false)}
             />
