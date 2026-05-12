@@ -1,6 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import Link from 'next/link';
 import { AddToCartButton, buildProductUrl } from '@/features/product';
 import { formatPrice } from '@prism/shared';
@@ -30,7 +30,7 @@ export function UpsellProductsSection({
         >
           Explore Upgrades
         </h2>
-        <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:px-8 2xl:grid-cols-3">
+        <PageContainer className="grid max-w-[1400px] grid-cols-1 gap-4 sm:grid-cols-2 lg:px-8 2xl:grid-cols-3">
           {initialProducts.map((item, index) => {
             const displayPrice = item.special_price ?? item.price;
             const hasDiscount =
@@ -97,7 +97,7 @@ export function UpsellProductsSection({
               </article>
             );
           })}
-        </div>
+        </PageContainer>
       </div>
     </section>
   );

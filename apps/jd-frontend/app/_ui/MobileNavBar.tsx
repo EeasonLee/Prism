@@ -26,7 +26,7 @@ function MobileIconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-ink-muted transition hover:border-brand/30 hover:bg-brand/10 hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+      className={`relative flex min-h-touch min-w-touch items-center justify-center rounded-full border border-border bg-background text-ink-muted transition hover:border-brand/30 hover:bg-brand/10 hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
         className ?? ''
       }`}
     >
@@ -95,7 +95,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
           <MobileIconButton
             label={isMenuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setIsMenuOpen(open => !open)}
-            className="h-9 w-9 rounded-md border-none bg-transparent hover:bg-surface"
+            className="min-h-touch min-w-touch rounded-md border-none bg-transparent hover:bg-surface"
           >
             {isMenuOpen ? (
               <X className="h-5 w-5" aria-hidden="true" />
@@ -221,7 +221,7 @@ export function MobileNavBar({ menuItems }: MobileNavBarProps) {
                         aria-label={`Toggle ${item.title}`}
                         aria-expanded={isExpanded}
                         onClick={() => toggleSection(item.title)}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-muted transition hover:bg-surface"
+                        className="flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-md text-ink-muted transition hover:bg-surface"
                       >
                         <ChevronDown
                           className={`h-5 w-5 transition-transform ${

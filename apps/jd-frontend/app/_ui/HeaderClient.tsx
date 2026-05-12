@@ -1,6 +1,6 @@
 'use client';
 
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -236,7 +236,7 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
     <>
       <CartDrawer />
       <header className="sticky top-0 z-30 bg-surface-muted">
-        <div className="relative mx-auto hidden h-[73px] w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-[50px] md:flex">
+        <PageContainer className="relative hidden h-[73px] w-full items-center justify-between md:flex">
           <Link href="/" className="hidden shrink-0 items-center md:flex">
             <OptimizedImage
               src="/images/logo.png"
@@ -448,7 +448,7 @@ export function HeaderClient({ menuItems }: HeaderClientProps) {
               </svg>
             </IconButton>
           </div>
-        </div>
+        </PageContainer>
 
         <div className="md:hidden">
           <MobileNavBar menuItems={menuItems} />

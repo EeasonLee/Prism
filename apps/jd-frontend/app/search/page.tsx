@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, PageContainer } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import { productQueryFacade, buildProductUrl } from '@/features/product';
 
@@ -47,7 +47,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const total = result?.pagination.total ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1720px] px-4 py-10 sm:px-6 lg:px-[50px]">
+    <PageContainer className="py-10">
       <h1 className="mb-2 text-2xl font-bold text-ink sm:text-3xl">
         {q ? `Results for "${q}"` : 'Search'}
       </h1>
@@ -139,6 +139,6 @@ export default async function SearchPage({ searchParams }: Props) {
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

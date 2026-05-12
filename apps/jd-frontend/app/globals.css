@@ -131,6 +131,9 @@
   background-color: color-mix(in srgb, hsl(var(--brand)) 75%, black);
 }
 
+/* EXCEPTION: 移动端 tabbar 只在移动端存在，无法用 mobile-first 表达。
+   等同于 Tailwind 的 md:pb-0 和 base:pb-[tabbar]，但此处需要 calc()。
+   这是项目中唯一经过审查的 max-width 断点。 */
 @media (max-width: 767px) {
   body.mobile-tabbar-safe-padding {
     padding-bottom: calc(

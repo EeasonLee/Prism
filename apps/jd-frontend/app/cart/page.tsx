@@ -1,6 +1,7 @@
 'use client';
 
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { PageContainer } from '@prism/ui';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { env } from '@/infrastructure/config/env';
@@ -170,182 +171,189 @@ export default function CartPage() {
   const hasItems = items.length > 0;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="heading-2 text-ink">Shopping Cart</h1>
-        <Link
-          href="/categories"
-          className="text-sm font-medium text-brand underline"
-        >
-          Continue shopping
-        </Link>
-      </div>
-
-      {!hasSession && (
-        <div className="rounded-xl border border-border bg-background p-8 text-center">
-          <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
-          <p className="body-text text-ink">
-            Your cart is currently unavailable.
-          </p>
-          <p className="micro-text mt-2 text-ink-muted">
-            Please refresh the page or sign in again.
-          </p>
+    <main>
+      <PageContainer className="max-w-6xl py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="heading-2 text-ink">Shopping Cart</h1>
+          <Link
+            href="/categories"
+            className="text-sm font-medium text-brand underline"
+          >
+            Continue shopping
+          </Link>
         </div>
-      )}
 
-      {hasSession && loadingItems && (
-        <div className="space-y-3">
-          {[1, 2, 3].map(n => (
-            <div key={n} className="h-20 animate-pulse rounded-lg bg-surface" />
-          ))}
-        </div>
-      )}
+        {!hasSession && (
+          <div className="rounded-xl border border-border bg-background p-8 text-center">
+            <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
+            <p className="body-text text-ink">
+              Your cart is currently unavailable.
+            </p>
+            <p className="micro-text mt-2 text-ink-muted">
+              Please refresh the page or sign in again.
+            </p>
+          </div>
+        )}
 
-      {hasSession && !loadingItems && !hasItems && (
-        <div className="rounded-xl border border-border bg-background p-12 text-center">
-          <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
-          <p className="body-text text-ink">Your cart is empty</p>
-        </div>
-      )}
+        {hasSession && loadingItems && (
+          <div className="space-y-3">
+            {[1, 2, 3].map(n => (
+              <div
+                key={n}
+                className="h-20 animate-pulse rounded-lg bg-surface"
+              />
+            ))}
+          </div>
+        )}
 
-      {hasSession && !loadingItems && hasItems && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          <ul className="space-y-3">
-            {items.map(item => (
-              <li
-                key={item.item_id}
-                className="rounded-xl border border-border bg-background p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-ink">
-                      {item.name}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-muted">
-                      SKU: {item.sku}
-                    </p>
-                    {item.options && item.options.length > 0 && (
-                      <ul className="mt-2 space-y-0.5 text-xs text-ink-muted">
-                        {item.options.map((opt, idx) => (
-                          <li key={`${item.item_id}-opt-${idx}`}>
-                            <span className="text-ink-faint">{opt.label}:</span>{' '}
-                            {opt.value}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="mt-3 flex items-center gap-1">
+        {hasSession && !loadingItems && !hasItems && (
+          <div className="rounded-xl border border-border bg-background p-12 text-center">
+            <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
+            <p className="body-text text-ink">Your cart is empty</p>
+          </div>
+        )}
+
+        {hasSession && !loadingItems && hasItems && (
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <ul className="space-y-3">
+              {items.map(item => (
+                <li
+                  key={item.item_id}
+                  className="rounded-xl border border-border bg-background p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-ink">
+                        {item.name}
+                      </p>
+                      <p className="mt-1 text-xs text-ink-muted">
+                        SKU: {item.sku}
+                      </p>
+                      {item.options && item.options.length > 0 && (
+                        <ul className="mt-2 space-y-0.5 text-xs text-ink-muted">
+                          {item.options.map((opt, idx) => (
+                            <li key={`${item.item_id}-opt-${idx}`}>
+                              <span className="text-ink-faint">
+                                {opt.label}:
+                              </span>{' '}
+                              {opt.value}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-3 flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() =>
+                            handleUpdateQty(item.item_id, item.qty - 1)
+                          }
+                          disabled={
+                            mutatingItemId === item.item_id || item.qty <= 1
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="min-w-7 text-center text-sm text-ink">
+                          {item.qty}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() =>
+                            handleUpdateQty(item.item_id, item.qty + 1)
+                          }
+                          disabled={mutatingItemId === item.item_id}
+                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <p className="text-base font-semibold text-ink">
+                        {formatCartLineTotal(item)}
+                      </p>
                       <button
                         type="button"
-                        aria-label="Decrease quantity"
-                        onClick={() =>
-                          handleUpdateQty(item.item_id, item.qty - 1)
-                        }
-                        disabled={
-                          mutatingItemId === item.item_id || item.qty <= 1
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="min-w-7 text-center text-sm text-ink">
-                        {item.qty}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label="Increase quantity"
-                        onClick={() =>
-                          handleUpdateQty(item.item_id, item.qty + 1)
-                        }
+                        aria-label={`Remove ${item.name} from cart`}
+                        onClick={() => handleRemoveItem(item.item_id)}
                         disabled={mutatingItemId === item.item_id}
-                        className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
-                    <p className="text-base font-semibold text-ink">
-                      {formatCartLineTotal(item)}
-                    </p>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${item.name} from cart`}
-                      onClick={() => handleRemoveItem(item.item_id)}
-                      disabled={mutatingItemId === item.item_id}
-                      className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <aside className="h-fit rounded-xl border border-border bg-background p-5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-ink-muted">Subtotal</span>
+                <span className="font-semibold text-ink">
+                  {subtotalFromMagento
+                    ? formatCartMoney(subtotalFromMagento)
+                    : formatPrice(subtotalFallback, subtotalFallbackCurrency)}
+                </span>
+              </div>
+              {cartTotals?.discount && cartTotals.discount.value !== 0 && (
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-ink-muted">
+                    {(cartTotals.discount_reason ?? 'Discount') +
+                      (cartTotals.coupon_code
+                        ? ` (${cartTotals.coupon_code})`
+                        : '')}
+                  </span>
+                  <span className="font-semibold text-ink">
+                    {formatCartMoney(cartTotals.discount)}
+                  </span>
                 </div>
-              </li>
-            ))}
-          </ul>
+              )}
+              {cartTotals?.grand_total && (
+                <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                  <span className="text-ink-muted">Estimated total</span>
+                  <span className="font-semibold text-ink">
+                    {formatCartMoney(cartTotals.grand_total)}
+                  </span>
+                </div>
+              )}
 
-          <aside className="h-fit rounded-xl border border-border bg-background p-5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-muted">Subtotal</span>
-              <span className="font-semibold text-ink">
-                {subtotalFromMagento
-                  ? formatCartMoney(subtotalFromMagento)
-                  : formatPrice(subtotalFallback, subtotalFallbackCurrency)}
-              </span>
-            </div>
-            {cartTotals?.discount && cartTotals.discount.value !== 0 && (
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span className="text-ink-muted">
-                  {(cartTotals.discount_reason ?? 'Discount') +
-                    (cartTotals.coupon_code
-                      ? ` (${cartTotals.coupon_code})`
-                      : '')}
-                </span>
-                <span className="font-semibold text-ink">
-                  {formatCartMoney(cartTotals.discount)}
-                </span>
-              </div>
-            )}
-            {cartTotals?.grand_total && (
-              <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
-                <span className="text-ink-muted">Estimated total</span>
-                <span className="font-semibold text-ink">
-                  {formatCartMoney(cartTotals.grand_total)}
-                </span>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                className="btn-primary mt-4 w-full py-3 text-sm font-semibold disabled:opacity-60"
+              >
+                {checkoutLoading ? 'Redirecting…' : 'Checkout'}
+              </button>
+              <button
+                type="button"
+                onClick={handleClearCart}
+                disabled={clearLoading}
+                className="mt-3 w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
+              >
+                {clearLoading ? 'Clearing…' : 'Clear cart'}
+              </button>
+            </aside>
+          </div>
+        )}
 
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={checkoutLoading}
-              className="btn-primary mt-4 w-full py-3 text-sm font-semibold disabled:opacity-60"
-            >
-              {checkoutLoading ? 'Redirecting…' : 'Checkout'}
-            </button>
-            <button
-              type="button"
-              onClick={handleClearCart}
-              disabled={clearLoading}
-              className="mt-3 w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
-            >
-              {clearLoading ? 'Clearing…' : 'Clear cart'}
-            </button>
-          </aside>
-        </div>
-      )}
+        {serviceError && (
+          <p role="alert" className="mt-5 text-center text-sm text-red-500">
+            {serviceError}
+          </p>
+        )}
 
-      {serviceError && (
-        <p role="alert" className="mt-5 text-center text-sm text-red-500">
-          {serviceError}
-        </p>
-      )}
-
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={() => setShowLoginModal(false)}
-        defaultTab="register"
-      />
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={() => setShowLoginModal(false)}
+          defaultTab="register"
+        />
+      </PageContainer>
     </main>
   );
 }
