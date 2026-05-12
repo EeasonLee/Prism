@@ -36,7 +36,7 @@ export function SortPanel({
       } else {
         params.set('sort', sort);
       }
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
       onChange?.();
     },
     [router, pathname, searchParams, onChange]
