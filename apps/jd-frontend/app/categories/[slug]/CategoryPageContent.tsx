@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { OptimizedImage } from '@prism/ui';
+import { OptimizedImage, PageContainer, Skeleton } from '@prism/ui';
 import { Suspense } from 'react';
-import { Skeleton } from '@prism/ui';
 import { resolveImageUrl } from '@prism/shared';
 import { FilterPanel } from '@/features/search';
 import { SortPanel, type ShopSortOption } from '@/features/search';
@@ -181,7 +180,7 @@ export function CategoryPageContent({
     .catch(() => null);
 
   return (
-    <div className="mx-auto w-full max-w-[1720px] px-4 py-10 pb-[calc(var(--mobile-tabbar-height)+var(--mobile-safe-area-bottom)+6rem)] sm:px-6 lg:px-[50px] lg:pb-10">
+    <PageContainer className="py-10 pb-[calc(var(--mobile-tabbar-height)+var(--mobile-safe-area-bottom)+6rem)] lg:pb-10">
       <Breadcrumb items={breadcrumbItems} className="mb-4" />
 
       <h1 className="mb-8 text-2xl font-bold text-ink sm:text-3xl">
@@ -289,6 +288,6 @@ export function CategoryPageContent({
       <Suspense fallback={null}>
         <CategoryMobileFilters searchPromise={searchPromise} sp={sp} />
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }
