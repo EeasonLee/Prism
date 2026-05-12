@@ -5,7 +5,7 @@ import { X, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatPrice } from '@prism/shared';
 import type { ProductCardItem } from '../bff-types';
-import { useAddToCartAction } from '@/features/cart';
+import { useAddToCartAction, applyCoupon, useCart } from '@/features/cart';
 import {
   CustomizableOptionsSection,
   calculateCustomOptionPriceDelta,
@@ -40,6 +40,8 @@ interface QuickAddModalProps {
   error?: string | null;
   onClose: () => void;
   onAdded?: () => void;
+  /** 加购成功后自动应用的优惠券码 */
+  couponCode?: string | null;
 }
 
 export function QuickAddModal({
@@ -48,8 +50,10 @@ export function QuickAddModal({
   error,
   onClose,
   onAdded,
+  couponCode,
 }: QuickAddModalProps) {
   const { addItemToCart, isAdding, error: addError } = useAddToCartAction();
+  const { syncCart } = useCart();
   const priceValue = product.price.value;
   const currencyCode = product.price.currency;
   const originalPrice = product.originalPrice;
@@ -183,6 +187,14 @@ export function QuickAddModal({
     );
 
     if (added) {
+      if (couponCode) {
+        try {
+          await applyCoupon(couponCode);
+          await syncCart();
+        } catch {
+          // 优惠券应用失败不阻塞加购流程
+        }
+      }
       onClose();
     }
   };

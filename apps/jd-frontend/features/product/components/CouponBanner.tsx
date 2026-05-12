@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { cn, formatPrice } from '@prism/shared';
 
 // ─── 类型 ──────────────────────────────────────────────────────────────────────
@@ -26,6 +25,10 @@ export interface CouponBannerProps {
   validUntil: string | null;
   /** 变体 */
   variant?: 'pdp' | 'compact';
+  /** 是否已领取 */
+  isClaimed?: boolean;
+  /** 点击领取回调 */
+  onClaim?: () => void;
   /** 外层类名 */
   className?: string;
 }
@@ -82,11 +85,13 @@ function FireworksIcon() {
 // ─── 主组件 ────────────────────────────────────────────────────────────────────
 
 /**
- * 优惠券横幅组件
+ * 优惠券横幅组件（受控展示组件）
  *
  * 支持两种变体：
- * - `pdp`: 完整横幅（礼花装饰 + 券后价 + Claim 按钮 + Toast）
- * - `compact`: 紧凑展示（仅显示券信息 + 复制图标，无按钮）
+ * - `pdp`: 完整横幅（礼花装饰 + 券后价 + Claim 按钮）
+ * - `compact`: 紧凑展示（券信息 + Claim 链接）
+ *
+ * 领取状态由父组件通过 `isClaimed`/`onClaim` props 控制。
  *
  * @see docs/product-display-rules.md 第四章
  */
@@ -101,30 +106,17 @@ export function CouponBanner({
   originalPrice,
   validUntil,
   variant = 'pdp',
+  isClaimed = false,
+  onClaim,
   className,
 }: CouponBannerProps) {
-  const [showToast, setShowToast] = useState(false);
-
   const { couponOffAmount, priceAfterCoupon } = computeCouponAdjustedPrice(
     cpPrice,
     priceBeforeCoupon
   );
 
-  const handleClaim = async () => {
-    if (typeof navigator === 'undefined') return;
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(cpCode);
-      } else {
-        window.prompt('Copy coupon code', cpCode);
-      }
-    } catch {
-      window.prompt('Copy coupon code', cpCode);
-    }
-
-    setShowToast(true);
-    window.setTimeout(() => setShowToast(false), 1500);
+  const handleClaim = () => {
+    onClaim?.();
   };
 
   if (variant === 'compact') {
@@ -142,14 +134,17 @@ export function CouponBanner({
           <button
             type="button"
             onClick={handleClaim}
-            className="shrink-0 text-brand underline"
+            disabled={isClaimed}
+            className={cn(
+              'shrink-0 text-xs font-medium',
+              isClaimed
+                ? 'text-ink-muted cursor-default'
+                : 'text-brand underline'
+            )}
           >
-            {cpCode}
+            {isClaimed ? 'Claimed' : 'Claim'}
           </button>
         </div>
-        {showToast && (
-          <span className="mt-1 block text-green-600">Copied!</span>
-        )}
       </div>
     );
   }
@@ -222,22 +217,19 @@ export function CouponBanner({
         {/* Claim 按钮 */}
         <button
           type="button"
-          aria-label="Claim coupon"
+          aria-label={isClaimed ? 'Coupon claimed' : 'Claim coupon'}
           onClick={() => void handleClaim()}
-          className="inline-flex items-center justify-center rounded-full bg-background px-5 py-2 text-sm font-semibold text-destructive shadow-sm transition hover:bg-background/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          disabled={isClaimed}
+          className={cn(
+            'inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold shadow-sm transition',
+            isClaimed
+              ? 'bg-background/40 text-white/60 cursor-default'
+              : 'bg-background text-destructive hover:bg-background/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+          )}
         >
-          Claim coupon
+          {isClaimed ? 'Claimed' : 'Claim coupon'}
         </button>
       </div>
-
-      {/* Toast */}
-      {showToast && (
-        <div className="pointer-events-none absolute bottom-3 right-3 z-10">
-          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-4 py-2 text-sm font-medium text-ink shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-            Coupon code copied
-          </div>
-        </div>
-      )}
     </div>
   );
 }

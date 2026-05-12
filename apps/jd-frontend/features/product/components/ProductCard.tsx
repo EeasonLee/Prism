@@ -7,8 +7,7 @@ import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import { cn, resolveImageUrl } from '@prism/shared';
 import type { UnifiedProductDisplay } from '../types';
-import { useCart } from '@/features/cart';
-import { useAddToCartAction } from '@/features/cart';
+import { useCart, useAddToCartAction, applyCoupon } from '@/features/cart';
 import { buildProductUrl } from '../services/product-navigation';
 import { computeDiscountPercent } from '../services/display-mapper';
 import { stripHtml } from '../services/html-utils';
@@ -774,7 +773,8 @@ export function ProductCard({
   variant = 'default',
   className,
 }: ProductCardProps) {
-  const { items, getQtyBySku, updateItemQty, removeFromCart } = useCart();
+  const { items, getQtyBySku, updateItemQty, removeFromCart, syncCart } =
+    useCart();
   const {
     addItemToCart,
     isAdding,
@@ -834,12 +834,34 @@ export function ProductCard({
     [items, product.sku]
   );
 
+  const isCouponValid = useMemo(() => {
+    if (!product.cp_code) return false;
+    const now = Date.now();
+    if (product.cp_starts_at) {
+      const startMs = new Date(product.cp_starts_at).getTime();
+      if (Number.isFinite(startMs) && now < startMs) return false;
+    }
+    if (product.cp_expires_at) {
+      const endMs = new Date(product.cp_expires_at).getTime();
+      if (Number.isFinite(endMs) && now > endMs) return false;
+    }
+    return true;
+  }, [product.cp_code, product.cp_starts_at, product.cp_expires_at]);
+
   // ── 操作 ──
   const addSimpleProduct = async () => {
     await addItemToCart(
       { sku: product.sku, qty: 1 },
       { openCartOnSuccess: true }
     );
+    if (isCouponValid && product.cp_code) {
+      try {
+        await applyCoupon(product.cp_code);
+        await syncCart();
+      } catch {
+        // 静默忽略
+      }
+    }
   };
 
   const [qtyBusy, setQtyBusy] = useState(false);
@@ -939,6 +961,14 @@ export function ProductCard({
             { sku: product.sku, qty: 1 },
             { openCartOnSuccess: false }
           );
+          if (isCouponValid && product.cp_code) {
+            try {
+              await applyCoupon(product.cp_code);
+              await syncCart();
+            } catch {
+              /* ignore */
+            }
+          }
         }
       } else if (line && delta < 0) {
         if (line.qty <= 1) {
@@ -956,10 +986,20 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     if (isAdding || isOutOfStock) return;
-    void addItemToCart(
-      { sku: product.sku, qty: 1 },
-      { openCartOnSuccess: true }
-    );
+    void (async () => {
+      const success = await addItemToCart(
+        { sku: product.sku, qty: 1 },
+        { openCartOnSuccess: true }
+      );
+      if (success && isCouponValid && product.cp_code) {
+        try {
+          await applyCoupon(product.cp_code);
+          await syncCart();
+        } catch {
+          /* ignore */
+        }
+      }
+    })();
   };
 
   const productHref = buildProductUrl({
@@ -1093,6 +1133,9 @@ export function ProductCard({
                   customizable_options: [],
                   variants: [],
                 }
+              }
+              couponCode={
+                isCouponValid && product.cp_code ? product.cp_code : null
               }
               error={quickViewError}
               onClose={() => setIsQuickViewOpen(false)}

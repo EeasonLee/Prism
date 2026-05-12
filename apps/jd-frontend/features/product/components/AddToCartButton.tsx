@@ -2,7 +2,7 @@
 
 import { ShoppingCart } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
-import { useAddToCartAction } from '@/features/cart';
+import { useAddToCartAction, applyCoupon, useCart } from '@/features/cart';
 
 interface AddToCartButtonProps {
   sku: string;
@@ -16,6 +16,8 @@ interface AddToCartButtonProps {
   disabled?: boolean;
   /** 禁用时的按钮文字 */
   disabledLabel?: string;
+  /** 加购成功后自动应用的优惠券码 */
+  couponCode?: string | null;
   className?: string;
 }
 
@@ -25,12 +27,14 @@ export function AddToCartButton({
   storeId = 1,
   label = 'Add to Cart',
   productOptionsJson,
+  couponCode,
   disabled: externalDisabled = false,
   disabledLabel = 'Select Options',
   className,
 }: AddToCartButtonProps) {
   const { addItemToCart, isAdding, error, success, resetSuccess } =
     useAddToCartAction();
+  const { syncCart } = useCart();
 
   useEffect(() => {
     if (!success) return;
@@ -39,11 +43,27 @@ export function AddToCartButton({
   }, [resetSuccess, success]);
 
   const handleAddToCart = useCallback(async () => {
-    await addItemToCart(
+    const success = await addItemToCart(
       { sku, qty, storeId, productOptionsJson },
       { openCartOnSuccess: true }
     );
-  }, [addItemToCart, productOptionsJson, qty, sku, storeId]);
+    if (success && couponCode) {
+      try {
+        await applyCoupon(couponCode);
+        await syncCart();
+      } catch {
+        // 静默忽略 applyCoupon 失败
+      }
+    }
+  }, [
+    addItemToCart,
+    productOptionsJson,
+    qty,
+    sku,
+    storeId,
+    couponCode,
+    syncCart,
+  ]);
 
   const isDisabled = isAdding || externalDisabled;
 

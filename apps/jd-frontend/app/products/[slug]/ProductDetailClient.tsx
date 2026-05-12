@@ -38,6 +38,7 @@ export interface ProductDetailSelection {
 
 interface ProductDetailClientProps {
   product: MagentoProduct;
+  claimedCouponCode?: string | null;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
 }
 
@@ -281,6 +282,7 @@ interface StickyAddToCartBarProps {
   onQtyChange?: (nextQty: number) => void;
   qty: number;
   primaryAction: StickyPrimaryAction;
+  couponCode?: string | null;
 }
 
 function StickyAddToCartBar({
@@ -291,6 +293,7 @@ function StickyAddToCartBar({
   onQtyChange,
   qty,
   primaryAction,
+  couponCode,
 }: StickyAddToCartBarProps) {
   if (!visible) return null;
 
@@ -342,6 +345,7 @@ function StickyAddToCartBar({
               productOptionsJson={primaryAction.productOptionsJson}
               disabled={primaryAction.disabled}
               disabledLabel={primaryAction.disabledLabel}
+              couponCode={couponCode}
               className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
             />
           )}
@@ -356,9 +360,11 @@ function StickyAddToCartBar({
 function SimpleOptions({
   product,
   onSelectionChange,
+  claimedCouponCode,
 }: {
   product: MagentoProduct;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
+  claimedCouponCode?: string | null;
 }) {
   const [qty, setQty] = useState(1);
   const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
@@ -433,6 +439,7 @@ function SimpleOptions({
             sku={product.sku}
             qty={qty}
             productOptionsJson={productOptionsJson}
+            couponCode={claimedCouponCode}
             disabled={!allCustomRequiredSelected}
             disabledLabel="Select required options"
             className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
@@ -441,6 +448,7 @@ function SimpleOptions({
       </div>
       <PurchaseBenefitsBar />
       <StickyAddToCartBar
+        couponCode={claimedCouponCode}
         visible={showStickyBar}
         productName={product.name}
         thumbnailUrl={product.thumbnail_url ?? product.image_url}
@@ -469,9 +477,11 @@ function SimpleOptions({
 function ConfigurableOptions({
   product,
   onSelectionChange,
+  claimedCouponCode,
 }: {
   product: MagentoProduct;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
+  claimedCouponCode?: string | null;
 }) {
   const searchParams = useSearchParams();
   const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
@@ -622,6 +632,11 @@ function ConfigurableOptions({
     );
   }, [allSelected, children, selectedAttributes, findChildSku]);
 
+  const effectiveCouponCode = useMemo(() => {
+    if (allSelected && selectedChild?.cp_code) return selectedChild.cp_code;
+    return claimedCouponCode ?? null;
+  }, [allSelected, selectedChild?.cp_code, claimedCouponCode]);
+
   useEffect(() => {
     if (!allSelected) {
       return;
@@ -760,6 +775,7 @@ function ConfigurableOptions({
             sku={product.sku}
             qty={qty}
             productOptionsJson={productOptionsJson}
+            couponCode={effectiveCouponCode}
             disabled={!allSelected || !allCustomRequiredSelected}
             disabledLabel={
               !allSelected ? 'Select Options' : 'Select required options'
@@ -770,6 +786,7 @@ function ConfigurableOptions({
       </div>
       <PurchaseBenefitsBar />
       <StickyAddToCartBar
+        couponCode={effectiveCouponCode}
         visible={showStickyBar}
         productName={selectedChild?.name ?? product.name}
         thumbnailUrl={product.thumbnail_url ?? product.image_url}
@@ -1294,6 +1311,7 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
 
 export function ProductDetailClient({
   product,
+  claimedCouponCode,
   onSelectionChange,
 }: ProductDetailClientProps) {
   switch (product.type_id) {
@@ -1301,6 +1319,7 @@ export function ProductDetailClient({
       return (
         <ConfigurableOptions
           product={product}
+          claimedCouponCode={claimedCouponCode}
           onSelectionChange={onSelectionChange}
         />
       );
@@ -1315,6 +1334,7 @@ export function ProductDetailClient({
       return (
         <SimpleOptions
           product={product}
+          claimedCouponCode={claimedCouponCode}
           onSelectionChange={onSelectionChange}
         />
       );
