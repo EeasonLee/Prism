@@ -128,20 +128,20 @@ function DistributionRow({
 }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-      <span className="w-8 shrink-0 text-sm font-medium tabular-nums text-ink-muted sm:w-9">
+    <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 sm:gap-3">
+      <span className="w-8 text-sm font-medium tabular-nums text-ink-muted sm:w-9">
         {stars}★
       </span>
-      <div className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-muted">
+      <div className="relative h-2 min-h-2 min-w-0 overflow-hidden rounded-full bg-surface-muted">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-brand"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-9 shrink-0 text-right text-sm tabular-nums text-ink sm:w-10">
+      <span className="w-9 text-right text-sm tabular-nums text-ink sm:w-10">
         {Math.round(pct)}%
       </span>
-      <span className="w-12 shrink-0 text-right text-sm tabular-nums text-ink-faint sm:w-14">
+      <span className="w-12 text-right text-sm tabular-nums text-ink-faint sm:w-14">
         ({count.toLocaleString('en-US')})
       </span>
     </div>
@@ -728,13 +728,13 @@ export function ProductReviews({
 
       <div className="mt-8 space-y-8">
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,420px)_minmax(0,1fr)]">
             <div
               data-testid="reviews-summary"
               className="rounded-xl border border-border bg-card p-5 sm:p-6"
             >
-              <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-8">
-                <div className="flex shrink-0 flex-col items-center">
+              <div className="flex w-full min-w-0 flex-col items-center gap-5 sm:flex-row sm:items-stretch sm:gap-4 md:gap-6">
+                <div className="flex shrink-0 flex-col items-center sm:justify-center">
                   <p className="text-5xl font-black tracking-tight text-ink">
                     {(effectiveSummary?.average ?? 0).toFixed(1)}
                   </p>
@@ -750,9 +750,10 @@ export function ProductReviews({
                   </p>
                 </div>
 
-                <div className="w-px self-stretch bg-border hidden sm:block" />
+                <div className="hidden w-px shrink-0 self-stretch bg-border sm:block" />
 
-                <div className="w-full min-w-0 flex-1 space-y-2.5">
+                {/* w-0 + flex-1：让中间列吃掉左侧评分与右侧之间的剩余宽度，进度条才能拉满 */}
+                <div className="w-full min-w-0 space-y-2.5 sm:w-0 sm:flex-1">
                   {DISTRIBUTION_KEYS.map(key => (
                     <DistributionRow
                       key={key}
