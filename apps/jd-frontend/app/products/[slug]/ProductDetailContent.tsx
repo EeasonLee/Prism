@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { useAuthModal } from '@/features/auth';
@@ -14,6 +15,7 @@ import {
   normalizeCpPrice,
   computeDiscountPercent,
   CouponBanner,
+  useCouponClaim,
 } from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
@@ -200,7 +202,7 @@ export function ProductDetailContent({
       setPendingWishlist(false);
       void doToggleWishlist();
     }
-  }, [isAuthenticated, pendingWishlist]);
+  }, [isAuthenticated, pendingWishlist]); // eslint-disable-line react-hooks/exhaustive-deps
   const specificationSections = useMemo(
     () => parseHtmlIntoSections(product.specifications),
     [product.specifications]
@@ -326,6 +328,25 @@ export function ProductDetailContent({
 
   const showCouponBanner =
     typeof cpCode === 'string' && cpCode.trim().length > 0 && !isCouponExpired;
+
+  const searchParams = useSearchParams();
+
+  const { isClaimed, claimedCode, claim } = useCouponClaim({
+    sku: product.sku,
+    cpCode,
+    isCouponValid: showCouponBanner,
+  });
+
+  // ?coupon=auto 自动领取
+  useEffect(() => {
+    if (
+      searchParams?.get('coupon') === 'auto' &&
+      showCouponBanner &&
+      !isClaimed
+    ) {
+      claim();
+    }
+  }, [searchParams, showCouponBanner, isClaimed, claim]);
 
   const priceBeforeCoupon =
     displayProduct.specialPrice != null && hasDiscount
@@ -518,6 +539,8 @@ export function ProductDetailContent({
             validUntil={validUntilText}
             variant="pdp"
             className="mb-4"
+            isClaimed={isClaimed}
+            onClaim={claim}
           />
         )}
         {displayPromotionLabel && !showCouponBanner && (
@@ -532,6 +555,7 @@ export function ProductDetailContent({
         )}
         <ProductDetailClient
           product={product}
+          claimedCouponCode={claimedCode}
           onSelectionChange={onSelectionChange}
         />
         {product.short_description_html ? (

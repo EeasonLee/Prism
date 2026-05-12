@@ -149,6 +149,9 @@ export {
 } from './services/product-navigation';
 export type { ProductNavigationOptions } from './services/product-navigation';
 
+// ――― Hooks ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+export { useCouponClaim } from './hooks/use-coupon-claim';
+
 // ――― Components ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { ProductCard } from './components/ProductCard';
 export { ProductCardSkeleton } from './components/ProductCardSkeleton';
