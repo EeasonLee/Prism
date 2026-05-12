@@ -571,9 +571,14 @@ export function ProductReviews({
         setReviews(data.items);
         setPagination(data.pagination);
       } catch (error) {
-        setLoadError(
-          error instanceof Error ? error.message : 'Failed to load reviews'
-        );
+        const rawMessage =
+          error instanceof Error ? error.message : 'Failed to load reviews';
+        // 兜底：长错误消息或 HTML 内容显示为友好提示
+        const userMessage =
+          rawMessage.length > 200 || rawMessage.startsWith('<!DOCTYPE')
+            ? 'Failed to load reviews, please try again later'
+            : rawMessage;
+        setLoadError(userMessage);
       } finally {
         setIsLoading(false);
       }

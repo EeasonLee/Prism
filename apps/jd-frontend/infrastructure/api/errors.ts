@@ -94,8 +94,11 @@ export class MagentoApiError extends ApiError {
 }
 
 export class MagentoServiceError extends MagentoApiError {
-  constructor(message = 'Magento service temporarily unavailable') {
-    super(message, 'SERVICE_UNAVAILABLE', 502);
+  constructor(
+    message = 'Service temporarily unavailable, please try again later',
+    detail: unknown = null
+  ) {
+    super(message, 'SERVICE_UNAVAILABLE', 502, detail);
     this.name = 'MagentoServiceError';
   }
 }
@@ -191,6 +194,9 @@ export async function mapHttpError(
 
   const displayMessage = strapiMessage ?? message;
 
+  // 5xx / 502 使用用户友好消息，避免原始 HTML/nginx 错误页暴露给前端
+  const userFriendlyMessage = 'Server error, please try again later';
+
   if (process.env.NODE_ENV === 'development') {
     console.warn(`[api] HTTP ${res.status} — ${displayMessage.slice(0, 200)}`);
   }
@@ -207,9 +213,10 @@ export async function mapHttpError(
     case 422:
       throw new ValidationError(displayMessage);
     case 502:
-      throw new MagentoServiceError(displayMessage);
+      throw new MagentoServiceError(userFriendlyMessage, displayMessage);
     default:
-      if (res.status >= 500) throw new ServerError(res.status, displayMessage);
+      if (res.status >= 500)
+        throw new ServerError(res.status, userFriendlyMessage, displayMessage);
       throw new ApiError(displayMessage, res.status);
   }
 }
