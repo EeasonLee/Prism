@@ -13,7 +13,7 @@ import type { ResolveImageUrlOptions } from '@prism/shared';
 // ─── 域名重写映射 ──────────────────────────────────────────────────────────────
 
 /** 历史域名 → CDN 映射。可通过 NEXT_PUBLIC_IMAGE_DOMAIN_REWRITE_MAP 覆盖 */
-function getDomainRewriteMap(): Record<string, string> {
+export function getDomainRewriteMap(): Record<string, string> {
   try {
     const envMap = process.env['NEXT_PUBLIC_IMAGE_DOMAIN_REWRITE_MAP'];
     if (envMap) {

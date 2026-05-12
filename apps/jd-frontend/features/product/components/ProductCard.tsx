@@ -147,9 +147,7 @@ function ProductCardDefault({
             src={imageUrl}
             alt={product.short_name ?? product.name}
             fill
-            className={`object-cover ${
-              isOutOfStock ? 'opacity-60 grayscale' : ''
-            }`}
+            className="object-cover"
             maxDisplayWidth={350}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
@@ -312,9 +310,7 @@ function ProductCardCompactVariant({
           alt={product.short_name ?? product.name}
           fill
           maxDisplayWidth={230}
-          className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-            isOutOfStock ? 'opacity-60 grayscale' : ''
-          }`}
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
         />
 
@@ -405,9 +401,7 @@ function ProductCardGridVariant({
             alt={product.short_name ?? product.name}
             fill
             maxDisplayWidth={360}
-            className={`object-cover ${
-              isOutOfStock ? 'opacity-60 grayscale' : ''
-            }`}
+            className="object-cover"
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
 
@@ -499,9 +493,7 @@ function ProductCardDealVariant({
             src={imageUrl}
             alt={product.short_name ?? product.name}
             fill
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              isOutOfStock ? 'opacity-60 grayscale' : ''
-            }`}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             maxDisplayWidth={350}
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
