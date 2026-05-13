@@ -1,7 +1,7 @@
 'use client';
 
 import { OptimizedImage } from '@prism/ui';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { resolveImageUrl } from '@prism/shared';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
@@ -70,12 +70,14 @@ export function ProductImageGallery({
     })),
   ];
 
-  const goTo = useCallback(
-    (index: number) => {
-      api?.scrollTo(Math.max(0, Math.min(mediaItems.length - 1, index)));
-    },
-    [api, mediaItems.length]
-  );
+  // 变体切换时重置到第一张
+  const prevImagesRef = useRef(images);
+  useEffect(() => {
+    if (prevImagesRef.current !== images) {
+      prevImagesRef.current = images;
+      api?.scrollTo(0);
+    }
+  }, [images, api]);
 
   // 通过 Embla 事件同步 activeIndex
   useEffect(() => {
@@ -223,7 +225,7 @@ export function ProductImageGallery({
                 role="option"
                 aria-selected={idx === activeIndex}
                 aria-label={`View ${item.type} ${idx + 1}: ${item.alt}`}
-                onClick={() => goTo(idx)}
+                onClick={() => api?.scrollTo(idx)}
                 className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-surface transition-all lg:h-20 lg:w-20 ${
                   idx === activeIndex
                     ? 'border-brand shadow-sm'
