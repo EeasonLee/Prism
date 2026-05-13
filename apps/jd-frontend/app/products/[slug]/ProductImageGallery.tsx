@@ -1,7 +1,7 @@
 'use client';
 
 import { OptimizedImage } from '@prism/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { resolveImageUrl } from '@prism/shared';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
@@ -166,6 +166,20 @@ export function ProductImageGallery({
     thumbnailRail.scrollBy({ top: verticalOffset, behavior: 'smooth' });
   };
 
+  // 键盘导航：左右方向键切换主图
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        api?.scrollPrev();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        api?.scrollNext();
+      }
+    },
+    [api]
+  );
+
   if (mediaItems.length === 0) {
     return (
       <div className="flex aspect-square items-center justify-center rounded-2xl bg-surface text-ink-muted/30">
@@ -292,6 +306,8 @@ export function ProductImageGallery({
       <div className="order-1 w-full lg:order-2 lg:flex-1">
         <div
           ref={mainMediaRef}
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
           className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background"
         >
           <div ref={emblaRef} className="h-full">
