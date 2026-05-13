@@ -47,7 +47,7 @@ export function ProductImageGallery({
   const thumbnailRailRef = useRef<HTMLDivElement>(null);
   const thumbnailButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [emblaRef, api] = useEmblaCarousel({
-    loop: false,
+    loop: true,
     align: 'start',
     containScroll: 'trimSnaps',
   });
