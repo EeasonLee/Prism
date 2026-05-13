@@ -26,7 +26,11 @@ L0 Carousel 组件有固定的 `-ml-4` 间距、按钮定位在 `-left-12/-right
 
 #### 1. 主图区域 → Embla Carousel
 
-- 用 `useEmblaCarousel({ loop: false })` 替换 `useState(activeIndex)` + 手写触摸
+- 用 `useEmblaCarousel` 替换 `useState(activeIndex)` + 手写触摸
+- 配置：`{ loop: false, align: 'start', containScroll: 'trimSnaps' }`
+  - `align: 'start'`：slide 左对齐，与当前行为一致
+  - `containScroll: 'trimSnaps'`：限制滚动范围，防止过度滑动
+  - `loop: false`：商品图片不需要循环
 - Embla 内置惯性滑动、边界回弹、触摸/鼠标拖拽
 - 只渲染 Embla 管理的 slide 元素（DOM 中保留活跃 + 相邻 slide）
 
@@ -36,7 +40,15 @@ L0 Carousel 组件有固定的 `-ml-4` 间距、按钮定位在 `-left-12/-right
 - 缩略图点击调用 `api.scrollTo(index)` 跳转
 - 保持 `scrollIntoView({ block: 'nearest' })` 自动跟随
 
-#### 3. 图片加载策略
+#### 2a. 变体切换
+
+- 可配置商品切换变体时，`images` props 会变化
+- 监听 `images` 变化，调用 `api.scrollTo(0)` 重置到第一张
+- Embla 在 slide 数量变化时自动 reInit
+
+#### 3. 图片加载策略（策略变更）
+
+> **有意变更**：当前实现对非首图使用 `loading: 'eager'`（全部立即加载），改为 `loading: 'lazy'`（按需加载）。这是本次改造的性能优化点之一，减少首屏不必要的图片请求。
 
 - 第一张图：`priority: true`（next/image 预加载）
 - 其余图片：`loading="lazy"`（浏览器原生懒加载）
@@ -52,6 +64,14 @@ L0 Carousel 组件有固定的 `-ml-4` 间距、按钮定位在 `-left-12/-right
 - 桌面端：左侧缩略图竖栏（5rem） + 右侧主图
 - 移动端：上方主图 + 下方缩略图横条
 - 响应式断点：`lg:` (1024px)
+- **缩略图栏高度同步**：保留 ResizeObserver 逻辑，将缩略图栏高度同步为主图 Embla 容器高度（桌面端）。Embla 容器本身不会自动撑满父级高度，需要此逻辑。
+
+#### 5a. 键盘导航（新增）
+
+> 当前实现不支持键盘导航。本次改造顺带添加，提升无障碍访问性。
+
+- 监听 `ArrowLeft` / `ArrowRight` 键盘事件，调用 `api.scrollPrev()` / `api.scrollNext()`
+- 与 L0 Carousel 的键盘处理逻辑一致
 
 #### 6. 图片 CDN 尺寸（不变）
 
