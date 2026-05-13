@@ -1,8 +1,9 @@
 'use client';
 
 import { OptimizedImage } from '@prism/ui';
-import { useEffect, useRef, useState } from 'react';
-import { resolveImageUrl, cn } from '@prism/shared';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { resolveImageUrl } from '@prism/shared';
+import useEmblaCarousel from 'embla-carousel-react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -45,8 +46,11 @@ export function ProductImageGallery({
   const mainMediaRef = useRef<HTMLDivElement>(null);
   const thumbnailRailRef = useRef<HTMLDivElement>(null);
   const thumbnailButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const touchStartXRef = useRef<number | null>(null);
-  const touchStartYRef = useRef<number | null>(null);
+  const [emblaRef, api] = useEmblaCarousel({
+    loop: false,
+    align: 'start',
+    containScroll: 'trimSnaps',
+  });
   const mediaItems: ProductGalleryMediaItem[] = [
     ...(featuredVideo
       ? [
@@ -66,39 +70,30 @@ export function ProductImageGallery({
     })),
   ];
 
-  const goTo = (index: number) => {
-    setActiveIndex(Math.max(0, Math.min(mediaItems.length - 1, index)));
-  };
+  const goTo = useCallback(
+    (index: number) => {
+      api?.scrollTo(Math.max(0, Math.min(mediaItems.length - 1, index)));
+    },
+    [api, mediaItems.length]
+  );
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0];
-    if (!touch) return;
-    touchStartXRef.current = touch.clientX;
-    touchStartYRef.current = touch.clientY;
-  };
+  // 通过 Embla 事件同步 activeIndex
+  useEffect(() => {
+    if (!api) return;
 
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    const startX = touchStartXRef.current;
-    const startY = touchStartYRef.current;
-    const touch = event.changedTouches[0];
+    const onSelect = () => {
+      setActiveIndex(api.selectedScrollSnap());
+    };
 
-    touchStartXRef.current = null;
-    touchStartYRef.current = null;
+    onSelect();
+    api.on('select', onSelect);
+    api.on('reInit', onSelect);
 
-    if (startX == null || startY == null || !touch) return;
-
-    const deltaX = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
-
-    // 仅处理明显的横向手势，避免和纵向滚动冲突
-    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-
-    if (deltaX < 0) {
-      goTo(activeIndex + 1);
-      return;
-    }
-    goTo(activeIndex - 1);
-  };
+    return () => {
+      api.off('select', onSelect);
+      api.off('reInit', onSelect);
+    };
+  }, [api]);
 
   useEffect(() => {
     const thumbnailRail = thumbnailRailRef.current;
@@ -296,61 +291,44 @@ export function ProductImageGallery({
         <div
           ref={mainMediaRef}
           className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-background"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         >
-          {/* 预渲染所有图片，通过 CSS 控制可见性，消除切换时的加载延迟 */}
-          {mediaItems.map((item, idx) => {
-            const isActive = idx === activeIndex;
-
-            if (item.type === 'image') {
-              return (
+          <div ref={emblaRef} className="h-full">
+            <div className="flex h-full">
+              {mediaItems.map((item, idx) => (
                 <div
                   key={idx}
-                  aria-hidden={!isActive}
-                  className={cn(
-                    'absolute inset-0 transition-opacity duration-300',
-                    isActive
-                      ? 'z-10 opacity-100'
-                      : 'z-0 opacity-0 pointer-events-none'
-                  )}
+                  className="relative min-w-0 shrink-0 grow-0 basis-full"
                 >
-                  <OptimizedImage
-                    src={item.url}
-                    alt={item.alt}
-                    fill
-                    {...(idx === 0
-                      ? { priority: true }
-                      : { loading: 'eager' as const })}
-                    maxDisplayWidth={800}
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover"
-                  />
+                  {item.type === 'image' ? (
+                    <OptimizedImage
+                      src={item.url}
+                      alt={item.alt}
+                      fill
+                      {...(idx === 0
+                        ? { priority: true }
+                        : { loading: 'lazy' as const })}
+                      maxDisplayWidth={800}
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  ) : item.type === 'video' && idx === activeIndex ? (
+                    <video
+                      src={item.url}
+                      poster={item.poster}
+                      className="h-full w-full object-cover"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      aria-label={`${productName} product video`}
+                    />
+                  ) : null}
                 </div>
-              );
-            }
-
-            // 视频只渲染活跃的（避免多视频同时播放消耗带宽）
-            if (item.type === 'video' && isActive) {
-              return (
-                <video
-                  key={item.url}
-                  src={item.url}
-                  poster={item.poster}
-                  className="h-full w-full object-cover"
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  aria-label={`${productName} product video`}
-                />
-              );
-            }
-
-            return null;
-          })}
+              ))}
+            </div>
+          </div>
 
           {/* 左右切换箭头 */}
           {mediaItems.length > 1 && (
@@ -358,8 +336,8 @@ export function ProductImageGallery({
               <button
                 type="button"
                 aria-label="Previous media"
-                onClick={() => goTo(activeIndex - 1)}
-                disabled={activeIndex === 0}
+                onClick={() => api?.scrollPrev()}
+                disabled={!api?.canScrollPrev()}
                 className="absolute left-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-ink shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:pointer-events-none disabled:opacity-35 lg:flex"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -367,8 +345,8 @@ export function ProductImageGallery({
               <button
                 type="button"
                 aria-label="Next media"
-                onClick={() => goTo(activeIndex + 1)}
-                disabled={activeIndex === mediaItems.length - 1}
+                onClick={() => api?.scrollNext()}
+                disabled={!api?.canScrollNext()}
                 className="absolute right-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-ink shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:pointer-events-none disabled:opacity-35 lg:flex"
               >
                 <ChevronRight className="h-5 w-5" />
