@@ -27,6 +27,11 @@ import { useAuth } from '@/features/auth';
 import { useCart } from './cart.context';
 import { LoginModal } from '@/features/auth';
 import { buildProductUrl } from '@/features/product';
+import {
+  gtmBeginCheckout,
+  gtmRemoveFromCart,
+  mapCartItemToGtmItem,
+} from '@/shared/utils/gtm';
 
 interface CartEnrichmentData {
   sku: string;
@@ -225,30 +230,32 @@ export function CartDrawer() {
     const fetchInventoryBatch = async (skus: string[]) => {
       if (skus.length === 0) return;
       try {
-        const res = await fetch(
-          `${env.NEXT_PUBLIC_CATALOG_SYNC_URL}/v1/inventory/bulk`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ skus }),
-          }
-        );
+        const res = await fetch('/api/inventory/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skus }),
+        });
         if (!res.ok) return;
         const json = (await res.json()) as {
-          items?: Record<
-            string,
-            {
-              sku: string;
-              salable_qty: number;
-              is_salable: boolean;
-              stock_status: string;
-            }
-          >;
-          not_found?: string[];
+          success: boolean;
+          data?: {
+            items?: Record<
+              string,
+              {
+                sku: string;
+                salable_qty: number;
+                is_salable: boolean;
+                stock_status: string;
+              }
+            >;
+            not_found?: string[];
+          };
         };
 
-        const inventoryMap = json.items ?? {};
-        const notFound = new Set(json.not_found ?? []);
+        if (!json.success || !json.data) return;
+
+        const inventoryMap = json.data.items ?? {};
+        const notFound = new Set(json.data.not_found ?? []);
 
         // Update enrichment with inventory data
         setEnrichment(prev => {
@@ -343,6 +350,10 @@ export function CartDrawer() {
     setCheckoutLoading(true);
     setServiceError(null);
     try {
+      // GTM: begin_checkout event
+      const gtmItems = items.map(item => mapCartItemToGtmItem(item));
+      gtmBeginCheckout(gtmItems);
+
       const { redirect_url } = await getCheckoutRedirectLink();
       closeCart();
       window.location.assign(redirect_url);
@@ -364,14 +375,19 @@ export function CartDrawer() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [closeCart, hasSession, isGuest]);
+  }, [closeCart, hasSession, isGuest, items]);
 
   const handleRemoveItem = useCallback(
     async (itemId: string) => {
+      const item = items.find(i => i.item_id === itemId);
       setMutatingItemId(itemId);
       setServiceError(null);
       try {
         await removeFromCart(itemId);
+        // GTM: remove_from_cart event
+        if (item) {
+          gtmRemoveFromCart(mapCartItemToGtmItem(item), item.qty);
+        }
         setCartTotals(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
@@ -384,7 +400,7 @@ export function CartDrawer() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart]
+    [removeFromCart, items]
   );
 
   const handleClearCart = useCallback(async () => {
@@ -480,6 +496,18 @@ export function CartDrawer() {
   const subtotalFallback = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const subtotalFallbackCurrency = items[0]?.currency ?? 'USD';
   const hasItems = items.length > 0;
+
+  // Check if any item has stock issues — disable checkout when true
+  const hasStockIssues = useMemo(() => {
+    return items.some(item => {
+      const stock = enrichment[item.sku]?.inventory;
+      if (!stock) return false;
+      return (
+        !stock.is_salable ||
+        (stock.salable_qty > 0 && item.qty > stock.salable_qty)
+      );
+    });
+  }, [items, enrichment]);
 
   // 购物车抽屉打开时同步 totals，确保自动用券后也能展示当前 coupon
   useEffect(() => {
@@ -619,10 +647,10 @@ export function CartDrawer() {
                   return (
                     <li
                       key={item.item_id}
-                      className={`flex items-start gap-3 rounded-lg border p-3 ${
+                      className={`flex items-start gap-3 rounded-lg p-3 ${
                         stockWarning
-                          ? 'border-red-300 bg-red-50/60'
-                          : 'border-border'
+                          ? 'border-[3px] border-red-300 bg-red-50/60'
+                          : 'border border-border'
                       }`}
                     >
                       {/* Product image */}
@@ -740,7 +768,7 @@ export function CartDrawer() {
                             type="button"
                             aria-label="Decrease quantity"
                             onClick={() =>
-                              handleUpdateQty(item.item_id, item.qty - 1)
+                              void handleUpdateQty(item.item_id, item.qty - 1)
                             }
                             disabled={
                               mutatingItemId === item.item_id || item.qty <= 1
@@ -749,14 +777,35 @@ export function CartDrawer() {
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="flex h-8 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-2 text-sm font-semibold text-ink">
-                            {item.qty}
-                          </span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={
+                              stock?.salable_qty > 0
+                                ? stock.salable_qty
+                                : undefined
+                            }
+                            value={item.qty}
+                            onChange={e => {
+                              const val = parseInt(e.target.value, 10);
+                              if (!Number.isNaN(val) && val >= 1) {
+                                void handleUpdateQty(item.item_id, val);
+                              }
+                            }}
+                            onBlur={e => {
+                              const val = parseInt(e.target.value, 10);
+                              if (Number.isNaN(val) || val < 1) {
+                                void handleUpdateQty(item.item_id, 1);
+                              }
+                            }}
+                            disabled={mutatingItemId === item.item_id}
+                            className="flex h-8 w-12 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-1 text-center text-sm font-semibold text-ink outline-none [appearance:textfield] disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
                           <button
                             type="button"
                             aria-label="Increase quantity"
                             onClick={() =>
-                              handleUpdateQty(item.item_id, item.qty + 1)
+                              void handleUpdateQty(item.item_id, item.qty + 1)
                             }
                             disabled={mutatingItemId === item.item_id}
                             className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
@@ -797,9 +846,29 @@ export function CartDrawer() {
           )}
 
           {serviceError && (
-            <p role="alert" className="mt-4 text-center text-xs text-red-500">
-              {serviceError}
-            </p>
+            <div
+              role="alert"
+              className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-600"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mt-0.5 shrink-0"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" x2="12" y1="8" y2="12" />
+                <line x1="12" x2="12.01" y1="16" y2="16" />
+              </svg>
+              <span>{serviceError}</span>
+            </div>
           )}
         </div>
 
@@ -894,11 +963,15 @@ export function CartDrawer() {
             <button
               type="button"
               onClick={handleCheckout}
-              disabled={checkoutLoading}
+              disabled={checkoutLoading || hasStockIssues}
               className="btn-primary flex w-full items-center justify-center gap-2 rounded-xl py-4 text-base font-bold disabled:opacity-60"
             >
               <CreditCard className="h-5 w-5" />
-              {checkoutLoading ? 'Redirecting…' : 'Checkout'}
+              {checkoutLoading
+                ? 'Redirecting…'
+                : hasStockIssues
+                ? 'Please adjust quantities to proceed'
+                : 'Checkout'}
             </button>
           </div>
         )}

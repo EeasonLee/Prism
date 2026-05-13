@@ -34,6 +34,10 @@ export interface ProductCardItem {
   /** 1-5 星评分分布（评分 API 提供，卡片列表不包含此数据） */
   ratingDistribution?: Record<1 | 2 | 3 | 4 | 5, number> | null;
   createdAt?: number;
+  /** 商品分类路径（用于 GTM / 分析） */
+  categories?: string[];
+  /** 品牌名（用于 GTM / 分析） */
+  brand?: string | null;
   /**
    * 可配置商品变体与选项数据（来自 catalog-sync-service Redis 缓存）。
    * 当缓存未命中时为 undefined，前端可以继续通过单独接口获取。

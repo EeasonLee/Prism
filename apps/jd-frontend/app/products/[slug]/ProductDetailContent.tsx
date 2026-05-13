@@ -21,6 +21,7 @@ import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
+import { gtmAddToWishlist, mapDisplayToGtmItem } from '@/shared/utils/gtm';
 
 interface ProductDetailContentProps {
   product: UnifiedProduct;
@@ -194,7 +195,25 @@ export function ProductDetailContent({
       openLogin('signin');
       return;
     }
+    const wasInWishlist = wishlistItemId != null;
     await doToggleWishlist();
+    // GTM: add_to_wishlist (only when adding, not removing)
+    if (!wasInWishlist) {
+      const item = mapDisplayToGtmItem({
+        sku: product.sku,
+        name: product.display_name,
+        price: product.price,
+        final_price: product.special_price ?? product.price,
+        currency: product.currency,
+        categories: product.categories?.map((c: { name: string }) => c.name),
+        brand: (product as unknown as Record<string, unknown>).brand as
+          | string
+          | undefined,
+        url_key: product.url_key,
+        image: product.unified_thumbnail,
+      });
+      gtmAddToWishlist(item);
+    }
   };
 
   useEffect(() => {
@@ -335,7 +354,8 @@ export function ProductDetailContent({
     sku: product.sku,
     cpCode,
     isCouponValid: showCouponBanner,
-    cpExpiresAt: product.cp_expires_at,
+    cpExpiresAt: (product as unknown as Record<string, unknown>)
+      .cp_expires_at as string | null | undefined,
   });
 
   // ?coupon=auto 自动领取

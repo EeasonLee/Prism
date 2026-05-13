@@ -5,6 +5,12 @@ import { ProductCard, mapCardItemToDisplay } from '@/features/product';
 import { ProductCardSkeleton } from '@/features/product';
 import type { ProductCardItem } from '@/features/product';
 import type { ShopAvailableFilter, ShopSortOption } from '@/features/search';
+import {
+  gtmViewItemList,
+  gtmSelectItem,
+  mapDisplayToGtmItem,
+} from '@/shared/utils/gtm';
+import type { GtmEcommerceItem } from '@/shared/utils/gtm';
 
 interface CategoryProductGridProps {
   slug: string;
@@ -38,6 +44,20 @@ export function CategoryProductGrid({
   );
   const [loading, setLoading] = useState(false);
   const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  // GTM: view_item_list on initial render / filter change
+  useEffect(() => {
+    if (products.length === 0) return;
+    const listName = `Category: ${slug}`;
+    const items: GtmEcommerceItem[] = products.map((p, i) =>
+      mapDisplayToGtmItem(mapCardItemToDisplay(p), {
+        index: i,
+        itemListName: listName,
+        itemListId: slug,
+      })
+    );
+    gtmViewItemList(items, listName, slug);
+  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset state when filters or initial data change (e.g. after applying filters)
   useEffect(() => {
@@ -117,11 +137,23 @@ export function CategoryProductGrid({
   return (
     <>
       <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-        {products.map(product => (
+        {products.map((product, index) => (
           <li key={product.sku}>
             <ProductCard
               product={mapCardItemToDisplay(product)}
               fromCategory={slug}
+              onClick={() => {
+                const display = mapCardItemToDisplay(product);
+                gtmSelectItem(
+                  mapDisplayToGtmItem(display, {
+                    index,
+                    itemListName: `Category: ${slug}`,
+                    itemListId: slug,
+                  }),
+                  `Category: ${slug}`,
+                  slug
+                );
+              }}
             />
           </li>
         ))}

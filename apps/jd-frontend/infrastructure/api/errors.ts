@@ -179,20 +179,25 @@ export async function mapHttpError(
       ? rawBody
       : res.statusText || `HTTP ${res.status}`;
 
-  // 尝试从 Strapi 风格的错误响应中提取更友好的消息
-  let strapiMessage: string | undefined;
+  // 尝试从标准错误响应中提取更友好的消息
+  let extractedMessage: string | undefined;
   if (rawBody) {
     try {
       const parsed = JSON.parse(rawBody);
+      // Strapi 风格: { error: { message: "..." } }
       if (parsed?.error?.message) {
-        strapiMessage = parsed.error.message;
+        extractedMessage = parsed.error.message;
+      }
+      // Magento 风格: { message: "...", trace: "..." }
+      else if (parsed?.message) {
+        extractedMessage = parsed.message;
       }
     } catch {
       // 非 JSON body，用 rawBody
     }
   }
 
-  const displayMessage = strapiMessage ?? message;
+  const displayMessage = extractedMessage ?? message;
 
   // 5xx / 502 使用用户友好消息，避免原始 HTML/nginx 错误页暴露给前端
   const userFriendlyMessage = 'Server error, please try again later';

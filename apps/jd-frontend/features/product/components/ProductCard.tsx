@@ -34,6 +34,8 @@ interface ProductCardProps {
   className?: string;
   /** 来源分类 slug，写入链接 ?from= 参数，用于商品详情页面包屑 */
   fromCategory?: string;
+  /** GTM select_item callback */
+  onClick?: () => void;
 }
 
 // ─── 星标组件 ──────────────────────────────────────────────────────────────────
@@ -257,7 +259,29 @@ function ProductCardDefault({
         )}
 
         {addError && (
-          <p className="text-center text-xs text-red-600">{addError}</p>
+          <div
+            role="alert"
+            className="flex items-start gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mt-0.5 shrink-0"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" x2="12" y1="8" y2="12" />
+              <line x1="12" x2="12.01" y1="16" y2="16" />
+            </svg>
+            <span>{addError}</span>
+          </div>
         )}
       </div>
     </article>
@@ -768,6 +792,7 @@ export function ProductCard({
   variant = 'default',
   className,
   fromCategory,
+  onClick,
 }: ProductCardProps) {
   const { items, getQtyBySku, updateItemQty, removeFromCart, syncCart } =
     useCart();
@@ -1012,11 +1037,7 @@ export function ProductCard({
     fromCategory ? { fromCategory } : undefined
   ) as Route;
 
-  const showStepper =
-    supportsDirectQuantity &&
-    !isOutOfStock &&
-    cartQty > 0 &&
-    typeKey !== 'configurable';
+  const showStepper = supportsDirectQuantity && !isOutOfStock && cartQty > 0;
 
   const hasRating = (product.rating_summary ?? 0) > 0;
   const ratingScore = ((product.rating_summary ?? 0) / 100) * 5;
@@ -1025,70 +1046,80 @@ export function ProductCard({
   switch (variant) {
     case 'compact':
       return (
-        <ProductCardCompactVariant
-          product={product}
-          imageUrl={imageUrl}
-          isOutOfStock={isOutOfStock}
-          discountPercent={discountPercent}
-          productHref={productHref}
-          isAdding={isAdding}
-          handleAddToCart={handleCompactAdd}
-          labelProps={labelProps}
-          className={className}
-        />
+        <div onClick={onClick}>
+          <ProductCardCompactVariant
+            product={product}
+            imageUrl={imageUrl}
+            isOutOfStock={isOutOfStock}
+            discountPercent={discountPercent}
+            productHref={productHref}
+            isAdding={isAdding}
+            handleAddToCart={handleCompactAdd}
+            labelProps={labelProps}
+            className={className}
+          />
+        </div>
       );
 
     case 'grid':
       return (
-        <ProductCardGridVariant
-          product={product}
-          imageUrl={imageUrl}
-          isOutOfStock={isOutOfStock}
-          discountPercent={discountPercent}
-          productHref={productHref}
-          isAdding={isAdding}
-          handleAddToCart={handleCompactAdd}
-          labelProps={labelProps}
-        />
+        <div onClick={onClick}>
+          <ProductCardGridVariant
+            product={product}
+            imageUrl={imageUrl}
+            isOutOfStock={isOutOfStock}
+            discountPercent={discountPercent}
+            productHref={productHref}
+            isAdding={isAdding}
+            handleAddToCart={handleCompactAdd}
+            labelProps={labelProps}
+          />
+        </div>
       );
 
     case 'deal':
       return (
-        <ProductCardDealVariant
-          product={product}
-          imageUrl={imageUrl}
-          isOutOfStock={isOutOfStock}
-          discountPercent={discountPercent}
-          productHref={productHref}
-          labelProps={labelProps}
-        />
+        <div onClick={onClick}>
+          <ProductCardDealVariant
+            product={product}
+            imageUrl={imageUrl}
+            isOutOfStock={isOutOfStock}
+            discountPercent={discountPercent}
+            productHref={productHref}
+            labelProps={labelProps}
+          />
+        </div>
       );
 
     case 'category':
       return (
-        <ProductCardCategoryVariant
-          product={product}
-          imageUrl={imageUrl}
-          discountPercent={discountPercent}
-          productHref={productHref}
-          labelProps={labelProps}
-        />
+        <div onClick={onClick}>
+          <ProductCardCategoryVariant
+            product={product}
+            imageUrl={imageUrl}
+            discountPercent={discountPercent}
+            productHref={productHref}
+            labelProps={labelProps}
+          />
+        </div>
       );
 
     case 'featured':
       return (
-        <ProductCardFeaturedVariant
-          product={product}
-          imageUrl={imageUrl}
-          discountPercent={discountPercent}
-          productHref={productHref}
-          labelProps={labelProps}
-        />
+        <div onClick={onClick}>
+          <ProductCardFeaturedVariant
+            product={product}
+            imageUrl={imageUrl}
+            discountPercent={discountPercent}
+            productHref={productHref}
+            labelProps={labelProps}
+          />
+        </div>
       );
 
     default:
       return (
-        <>
+        <div onClick={onClick}>
           <ProductCardDefault
             product={product}
             imageUrl={imageUrl}
@@ -1143,7 +1174,7 @@ export function ProductCard({
               onClose={() => setIsQuickViewOpen(false)}
             />
           )}
-        </>
+        </div>
       );
   }
 }

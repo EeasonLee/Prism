@@ -60,7 +60,11 @@ export {
   mapLinkedProduct,
   mergeProduct,
 } from './api/unified.api';
-export type { UnifiedLinkedProduct, UnifiedProduct } from './api/unified.api';
+export type {
+  UnifiedLinkedProduct,
+  UnifiedProduct,
+  UnifiedProductImage,
+} from './api/unified.api';
 
 // ――― BFF layer ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export {

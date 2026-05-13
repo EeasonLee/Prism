@@ -443,6 +443,17 @@ function SimpleOptions({
             disabled={!allCustomRequiredSelected}
             disabledLabel="Select required options"
             className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            gtmProduct={{
+              sku: product.sku,
+              name: product.name,
+              price: product.price,
+              final_price: product.special_price ?? product.price,
+              currency: product.currency,
+              categories: product.categories?.map(c => c.name),
+              brand: product.brand,
+              url_key: product.url_key,
+              image: product.thumbnail_url ?? product.image_url,
+            }}
           />
         </div>
       </div>
@@ -781,6 +792,21 @@ function ConfigurableOptions({
               !allSelected ? 'Select Options' : 'Select required options'
             }
             className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            gtmProduct={{
+              sku: selectedChild?.sku ?? product.sku,
+              name: selectedChild?.name ?? product.name,
+              price: selectedChild?.price ?? product.price,
+              final_price:
+                selectedChild?.special_price ??
+                selectedChild?.price ??
+                product.special_price ??
+                product.price,
+              currency: product.currency,
+              categories: product.categories?.map(c => c.name),
+              brand: product.brand,
+              url_key: product.url_key,
+              image: product.thumbnail_url ?? product.image_url,
+            }}
           />
         </div>
       </div>
@@ -885,6 +911,17 @@ function GroupedOptions({ product }: { product: MagentoProduct }) {
           productOptionsJson={productOptionsJson}
           disabled={!hasAny}
           disabledLabel="Select at least one item"
+          gtmProduct={{
+            sku: product.sku,
+            name: product.name,
+            price: product.price,
+            final_price: product.special_price ?? product.price,
+            currency: product.currency,
+            categories: product.categories?.map(c => c.name),
+            brand: product.brand,
+            url_key: product.url_key,
+            image: product.thumbnail_url ?? product.image_url,
+          }}
         />
       </div>
       <PurchaseBenefitsBar />
@@ -1120,6 +1157,17 @@ function BundleOptions({ product }: { product: MagentoProduct }) {
             disabled={!allRequiredSelected}
             disabledLabel="Select required options"
             className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            gtmProduct={{
+              sku: product.sku,
+              name: product.name,
+              price: product.price,
+              final_price: product.special_price ?? product.price,
+              currency: product.currency,
+              categories: product.categories?.map(c => c.name),
+              brand: product.brand,
+              url_key: product.url_key,
+              image: product.thumbnail_url ?? product.image_url,
+            }}
           />
         </div>
       </div>
@@ -1279,6 +1327,17 @@ function DownloadableOptions({ product }: { product: MagentoProduct }) {
             disabled={!canAddToCart}
             disabledLabel="Select at least one link"
             className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            gtmProduct={{
+              sku: product.sku,
+              name: product.name,
+              price: product.price,
+              final_price: product.special_price ?? product.price,
+              currency: product.currency,
+              categories: product.categories?.map(c => c.name),
+              brand: product.brand,
+              url_key: product.url_key,
+              image: product.thumbnail_url ?? product.image_url,
+            }}
           />
         </div>
       </div>

@@ -1,9 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 
-// 获取项目根目录
-const projectRoot = path.resolve(__dirname, '..');
-const deployDir = path.join(projectRoot, 'public_html/frontend/dist');
 const envFile = path.join(__dirname, '.env.production');
 
 // 读取环境变量文件
@@ -33,15 +30,18 @@ if (fs.existsSync(envFile)) {
 module.exports = {
   apps: [
     {
+      // 生产：Nx next start（需先在本目录 pnpm run build）
       name: 'jd-frontend',
-      cwd: deployDir,
+      cwd: __dirname,
 
-      // 直接运行 next start
-      script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3092',
-      interpreter: 'node',
+      script: 'pnpm',
+      args: 'run start -- --port=3090 --hostname=0.0.0.0',
+      interpreter: 'none',
 
-      env: envVars,
+      env: {
+        ...envVars,
+        PORT: '3090',
+      },
 
       instances: 1,
       exec_mode: 'fork',
@@ -65,17 +65,17 @@ module.exports = {
       shutdown_with_message: true,
     },
     {
-      // 仓库根目录跑 Nx production server（等同 next start，需先 pnpm run build）
+      // 仓库根目录 Nx dev（热更新）
       name: 'jd-frontend-dev',
       cwd: __dirname,
 
       script: 'pnpm',
-      args: 'run start -- --port=3090 --hostname=0.0.0.0',
+      args: 'run dev -- --port=3091 --hostname=0.0.0.0',
       interpreter: 'none',
 
       env: {
-        ...envVars,
-        PORT: '3090',
+        NODE_ENV: 'development',
+        PORT: '3091',
       },
 
       instances: 1,
@@ -92,8 +92,8 @@ module.exports = {
       max_restarts: 10,
       restart_delay: 4000,
 
-      kill_timeout: 5000,
-      listen_timeout: 10000,
+      kill_timeout: 10000,
+      listen_timeout: 120000,
       shutdown_with_message: true,
     },
   ],

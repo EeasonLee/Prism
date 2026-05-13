@@ -26,6 +26,44 @@ interface UseAddToCartActionResult {
 
 const DEFAULT_ERROR_MESSAGE = 'Failed to add item to cart. Please try again.';
 
+/** 清理 API 错误消息，移除堆栈跟踪等技术信息 */
+function sanitizeErrorMessage(message: string): string {
+  if (!message) return DEFAULT_ERROR_MESSAGE;
+
+  // 尝试解析 JSON 错误响应（Magento 常返回 { message: "...", trace: "..." }）
+  if (message.includes('"message"') || message.includes('"trace"')) {
+    try {
+      const parsed = JSON.parse(message);
+      // 优先使用 error.message 或 message 字段
+      if (parsed.error?.message) {
+        return parsed.error.message;
+      }
+      if (parsed.message) {
+        return parsed.message;
+      }
+    } catch {
+      // 不是合法 JSON，继续处理
+    }
+  }
+
+  // 处理常见的库存错误
+  if (message.includes('The requested qty is not available')) {
+    return 'The requested quantity is not available. Please check the stock status.';
+  }
+
+  // 处理其他常见错误
+  if (message.includes('No active session')) {
+    return 'Please sign in or refresh the page to continue.';
+  }
+
+  // 如果消息太长，截断它
+  if (message.length > 200) {
+    return message.substring(0, 200) + '...';
+  }
+
+  return message;
+}
+
 export function useAddToCartAction(
   options?: UseAddToCartActionOptions
 ): UseAddToCartActionResult {
@@ -67,13 +105,13 @@ export function useAddToCartAction(
         setSuccess(true);
         return true;
       } catch (_err) {
-        setError(
+        const rawMessage =
           _err instanceof Error
             ? _err.message
             : callOptions?.fallbackErrorMessage ??
-                options?.fallbackErrorMessage ??
-                DEFAULT_ERROR_MESSAGE
-        );
+              options?.fallbackErrorMessage ??
+              DEFAULT_ERROR_MESSAGE;
+        setError(sanitizeErrorMessage(rawMessage));
         return false;
       } finally {
         setIsAdding(false);

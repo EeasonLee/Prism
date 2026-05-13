@@ -16,6 +16,11 @@ import type { CartTotals } from '@/features/cart/types';
 import { useAuth } from '@/features/auth';
 import { useCart } from '@/features/cart';
 import { LoginModal } from '@/features/auth';
+import {
+  gtmRemoveFromCart,
+  gtmBeginCheckout,
+  mapDisplayToGtmItem,
+} from '@/shared/utils/gtm';
 
 export default function CartPage() {
   const { hasSession, isGuest } = useAuth();
@@ -92,8 +97,22 @@ export default function CartPage() {
       setMutatingItemId(itemId);
       setServiceError(null);
       try {
+        const item = items.find(i => i.item_id === itemId);
         await removeFromCart(itemId);
         setCartTotals(null);
+        // GTM: remove_from_cart
+        if (item) {
+          gtmRemoveFromCart(
+            mapDisplayToGtmItem({
+              sku: item.sku,
+              name: item.name,
+              price: item.price,
+              final_price: item.price,
+              currency: item.currency ?? 'USD',
+            }),
+            item.qty
+          );
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
         setServiceError(
@@ -105,7 +124,7 @@ export default function CartPage() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart]
+    [removeFromCart, items]
   );
 
   const handleClearCart = useCallback(async () => {
@@ -136,6 +155,18 @@ export default function CartPage() {
     setCheckoutLoading(true);
     setServiceError(null);
     try {
+      // GTM: begin_checkout
+      const gtmItems = items.map(item =>
+        mapDisplayToGtmItem({
+          sku: item.sku,
+          name: item.name,
+          price: item.price,
+          final_price: item.price,
+          currency: item.currency ?? 'USD',
+        })
+      );
+      gtmBeginCheckout(gtmItems);
+
       const { redirect_url } = await getCheckoutRedirectLink();
       window.open(redirect_url, '_blank', 'noopener,noreferrer');
     } catch (err) {
@@ -156,7 +187,7 @@ export default function CartPage() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [hasSession, isGuest]);
+  }, [hasSession, isGuest, items]);
 
   const subtotalFromMagento = useMemo(() => {
     const t = cartTotals;
@@ -342,9 +373,29 @@ export default function CartPage() {
         )}
 
         {serviceError && (
-          <p role="alert" className="mt-5 text-center text-sm text-red-500">
-            {serviceError}
-          </p>
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mt-0.5 shrink-0"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" x2="12" y1="8" y2="12" />
+              <line x1="12" x2="12.01" y1="16" y2="16" />
+            </svg>
+            <span>{serviceError}</span>
+          </div>
         )}
 
         <LoginModal

@@ -2,6 +2,13 @@ import Link from 'next/link';
 import { OptimizedImage, PageContainer } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import { productQueryFacade, buildProductUrl } from '@/features/product';
+import { type ShopSortOption } from '@/features/search';
+import {
+  gtmViewItemList,
+  gtmSelectItem,
+  mapDisplayToGtmItem,
+} from '@/shared/utils/gtm';
+import type { GtmEcommerceItem } from '@/shared/utils/gtm';
 
 interface Props {
   searchParams: Promise<{
@@ -46,6 +53,28 @@ export default async function SearchPage({ searchParams }: Props) {
   const pagination = result?.pagination;
   const total = result?.pagination.total ?? 0;
 
+  const listName = q ? `Search: ${q}` : 'Search';
+  const listId = q ? `search_${q}` : 'search';
+
+  // GTM: view_item_list
+  const gtmItems: GtmEcommerceItem[] = items.map((item, index) =>
+    mapDisplayToGtmItem(
+      {
+        sku: item.sku,
+        name: item.displayName ?? item.name ?? item.sku,
+        price: item.price?.value ?? 0,
+        final_price: item.price?.value ?? 0,
+        currency: item.price?.currency,
+        categories: item.categories,
+        brand: item.brand,
+        url_key: item.urlKey,
+        image: item.image,
+      },
+      { index, itemListName: listName, itemListId: listId }
+    )
+  );
+  gtmViewItemList(gtmItems, listName, listId);
+
   return (
     <PageContainer className="py-10">
       <h1 className="mb-2 text-2xl font-bold text-ink sm:text-3xl">
@@ -64,7 +93,7 @@ export default async function SearchPage({ searchParams }: Props) {
         <>
           <p className="mb-4 text-sm text-ink-muted">{total} products</p>
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {items.map(item => {
+            {items.map((item, index) => {
               const displayName = item.displayName ?? item.name ?? item.sku;
               const href = buildProductUrl({
                 url_key: item.urlKey,
@@ -76,6 +105,26 @@ export default async function SearchPage({ searchParams }: Props) {
                   <Link
                     href={href}
                     className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
+                    onClick={() => {
+                      gtmSelectItem(
+                        mapDisplayToGtmItem(
+                          {
+                            sku: item.sku,
+                            name: displayName,
+                            price: item.price?.value ?? 0,
+                            final_price: item.price?.value ?? 0,
+                            currency: item.price?.currency,
+                            categories: item.categories,
+                            brand: item.brand,
+                            url_key: item.urlKey,
+                            image: item.image,
+                          },
+                          { index, itemListName: listName, itemListId: listId }
+                        ),
+                        listName,
+                        listId
+                      );
+                    }}
                   >
                     <div className="relative aspect-square overflow-hidden bg-surface">
                       <OptimizedImage

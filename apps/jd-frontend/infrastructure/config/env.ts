@@ -63,6 +63,8 @@ const clientSchema = z.object({
   // Cloudflare Turnstile 验证码
   NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: z.string().optional(),
   CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().optional(),
+  // Google Tag Manager 容器 ID（为空则不启用 GTM）
+  NEXT_PUBLIC_GTM_CONTAINER_ID: z.string().optional(),
 });
 
 const mergedSchema = serverSchema.merge(clientSchema);
@@ -85,6 +87,7 @@ const parsedEnv = mergedSchema.parse({
   NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY:
     process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY,
   CLOUDFLARE_TURNSTILE_SECRET_KEY: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+  NEXT_PUBLIC_GTM_CONTAINER_ID: process.env.NEXT_PUBLIC_GTM_CONTAINER_ID,
   MEILISEARCH_API_KEY: process.env.MEILISEARCH_API_KEY,
   MEILISEARCH_HOST: process.env.MEILISEARCH_HOST,
   MEILISEARCH_INDEX_PREFIX: process.env.MEILISEARCH_INDEX_PREFIX,
