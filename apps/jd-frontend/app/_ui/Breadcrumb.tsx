@@ -7,6 +7,11 @@ import { cn } from '@prism/shared';
 const LINK_CLASS =
   'text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 function BreadcrumbListItem({
   item,
   isFirst,
@@ -34,13 +39,6 @@ function BreadcrumbListItem({
       )}
     </li>
   );
-}
-
-export type { BreadcrumbItem };
-
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
 }
 
 interface BreadcrumbProps {
