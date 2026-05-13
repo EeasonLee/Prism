@@ -6,22 +6,22 @@
     "prepare": "husky",
     "commit": "git-cz",
     "lint-staged": "lint-staged",
-    "dev": "nx dev prism",
-    "build": "nx build prism",
-    "start": "nx start prism",
-    "lint": "nx lint prism",
-    "lint:fix": "nx lint prism --fix",
-    "test": "nx test prism",
-    "typecheck": "nx run prism:typecheck",
-    "typecheck:watch": "nx run prism:typecheck --watch",
+    "dev": "nx run jd-frontend:dev --output-style=stream",
+    "build": "nx build jd-frontend",
+    "start": "nx start jd-frontend",
+    "lint": "nx lint jd-frontend",
+    "lint:fix": "nx lint jd-frontend --fix",
+    "test": "nx test jd-frontend",
+    "typecheck": "nx run jd-frontend:typecheck",
+    "typecheck:watch": "nx run jd-frontend:typecheck --watch",
     "check": "pnpm typecheck && pnpm lint",
     "check:fix": "pnpm lint:fix",
-    "e2e": "nx run prism:e2e",
+    "e2e": "nx run jd-frontend:e2e",
     "storybook": "storybook dev -p 6006 -c .storybook",
     "storybook:build": "storybook build -c .storybook -o storybook-static",
-    "version:patch": "cd apps/prism && pnpm version patch",
-    "version:minor": "cd apps/prism && pnpm version minor",
-    "version:major": "cd apps/prism && pnpm version major"
+    "version:patch": "cd apps/jd-frontend && pnpm version patch",
+    "version:minor": "cd apps/jd-frontend && pnpm version minor",
+    "version:major": "cd apps/jd-frontend && pnpm version major"
   },
   "config": {
     "commitizen": {
@@ -38,6 +38,7 @@
   },
   "private": true,
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-select": "^2.2.6",
@@ -53,7 +54,8 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.1.13"
+    "zod": "^4.1.13",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

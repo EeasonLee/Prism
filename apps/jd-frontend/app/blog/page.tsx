@@ -1,0 +1,132 @@
+import type { HeroSlide } from '@/app/_ui/HeroCarousel';
+import { HeroCarousel } from '@/app/_ui/HeroCarousel';
+import { fetchCategoryByType, type CategoryDetail } from '@/features/blog/api';
+import { buildStaticMetadata } from '@/shared/utils/seo';
+import type { Metadata } from 'next';
+import { ArticleSearchBox } from '@/features/blog/components/ArticleSearchBox';
+import { ProductCategories } from '@/features/blog/components/ProductCategories';
+import { ThemeCategories } from '@/features/blog/components/ThemeCategories';
+import { resolveImageUrl } from '@prism/shared';
+import { PageContainer } from '@prism/ui/components/PageContainer';
+import type { CarouselItemResponse } from '@/features/cms-page';
+import { getCarouselItems } from '@/features/cms-page';
+
+/**
+ * 将 API 返回的数据转换为 HeroSlide 格式
+ * 每个 carousel item 包含多个 slides，flatMap 展开后每张图对应一个独立链接
+ * 每个 carousel item 包含多个 slides，flatMap 展开后每张图对应一个独立链接
+ */
+function transformToHeroSlides(items: CarouselItemResponse[]): HeroSlide[] {
+  return items
+    .filter(item => item.enabled)
+    .sort((a, b) => a.order - b.order)
+    .flatMap(item =>
+      (item.slides ?? [])
+        .filter(slide => slide.enabled && slide.image)
+        .map(slide => ({
+          image: resolveImageUrl(slide.image?.url) ?? '',
+          alt: slide.image?.alternativeText || item.title,
+          link: slide.linkUrl || undefined,
+        }))
+    );
+}
+
+// Numeric literal required by Next.js segment config; sync with REVALIDATE_SECONDS_CMS_ASSOCIATION in cache-policy.ts
+export const revalidate = 3600; // ISR 兜底，主要依赖 On-Demand
+
+export const metadata: Metadata = buildStaticMetadata({
+  title: 'Joydeem Blog | Kitchen Guides, Tips, and Inspiration',
+  description:
+    'Browse Joydeem blog articles for kitchen guides, product knowledge, recipes, and cooking inspiration.',
+  path: '/blog',
+  keywords: [
+    'Joydeem blog',
+    'kitchen guides',
+    'cooking tips',
+    'recipe articles',
+  ],
+});
+
+export default async function BlogPage() {
+  // 服务端获取轮播图数据、产品分类和主题分类
+  const [carouselRes, categoryRes, themeRes] = await Promise.all([
+    getCarouselItems('article').catch(error => {
+      console.error('[BlogPage] Failed to fetch carousel items:', error);
+      return { data: [] };
+    }),
+    fetchCategoryByType('product').catch(error => {
+      console.error('[BlogPage] Failed to fetch product categories:', error);
+      return null;
+    }),
+    fetchCategoryByType('theme', {
+      includeChildrenArticles: true,
+    }).catch(error => {
+      console.error('[BlogPage] Failed to fetch theme category:', error);
+      return null;
+    }),
+  ]);
+
+  const slides = transformToHeroSlides(carouselRes.data);
+  const productCategories: CategoryDetail[] =
+    categoryRes?.data?.[0]?.children || [];
+  const themeCategory = themeRes?.data[0] || null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
+      {/* 全屏轮播图 */}
+      {slides.length > 0 ? (
+        <div className="relative">
+          <HeroCarousel
+            slides={slides}
+            height="h-[40vh] min-h-[240px] md:h-[500px] lg:h-[600px]"
+            autoPlayInterval={5000}
+            showIndicators
+            showNavigation
+            showContent={false}
+          />
+        </div>
+      ) : null}
+
+      {/* 搜索区域：移动端收紧重叠与内边距 */}
+      <section className="relative z-10 mt-4 md:-mt-16">
+        <PageContainer>
+          <div className="mx-auto max-w-4xl">
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-lg md:p-6 lg:p-8">
+              <div className="mb-4 text-center md:mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
+                  Discover Your Next Read
+                </h2>
+                <p className="mt-2 text-base text-gray-600 md:mt-3 md:text-lg">
+                  Explore our curated collection of articles, guides, and
+                  insights
+                </p>
+              </div>
+              <ArticleSearchBox
+                placeholder="Search articles, keywords..."
+                suggestionLimit={8}
+                className="max-w-3xl mx-auto"
+              />
+            </div>
+          </div>
+        </PageContainer>
+      </section>
+
+      {/* 产品分类区域 */}
+      {productCategories.length > 0 && (
+        <section className="py-8 md:py-12 lg:py-16">
+          <ProductCategories
+            categories={productCategories}
+            title="By Product"
+          />
+        </section>
+      )}
+
+      {/* 主题分类区域 */}
+      {themeCategory && (
+        <section className="bg-white py-8 md:py-12 lg:py-16">
+          <ThemeCategories category={themeCategory} />
+        </section>
+      )}
+    </div>
+  );
+}

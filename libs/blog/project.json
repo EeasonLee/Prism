@@ -1,9 +1,0 @@
-{
-  "name": "blog",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/blog/src",
-  "projectType": "library",
-  "tags": ["type:lib", "scope:blog"],
-  "implicitDependencies": [],
-  "targets": {}
-}

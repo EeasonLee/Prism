@@ -1,0 +1,242 @@
+import type { ArticleListItem } from '@/features/blog/api';
+import type { Recipe } from '@/features/recipe/types';
+import type { BlogPost, PdpRecipeCard, ProductVideoCard } from '../bff-types';
+import { REVALIDATE_SECONDS_CMS_ASSOCIATION } from '@/infrastructure/config/cache-policy';
+import { strapiClient as apiClient } from '@/infrastructure/api/clients/strapi';
+import { resolveImageUrl } from '@/infrastructure/config/image';
+
+interface ArticleImageLike {
+  url?: string | null;
+  alternativeText?: string | null;
+  formats?: {
+    thumbnail?: { url?: string | null } | null;
+    small?: { url?: string | null } | null;
+    medium?: { url?: string | null } | null;
+  } | null;
+}
+
+interface PdpArticleItem extends Omit<ArticleListItem, 'featuredImage'> {
+  featuredImage?: string | ArticleImageLike | null;
+}
+
+interface StrapiImageLike {
+  url?: string | null;
+  alternativeText?: string | null;
+  formats?: {
+    thumbnail?: { url?: string | null } | null;
+    small?: { url?: string | null } | null;
+    medium?: { url?: string | null } | null;
+  } | null;
+}
+
+interface StrapiListResponse<T> {
+  data: T[];
+}
+
+function pickImageUrl(image: StrapiImageLike | null | undefined): string {
+  return resolveImageUrl(image) ?? '';
+}
+
+function formatRecipeTime(recipe: Recipe): string {
+  const totalMinutes = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
+  if (totalMinutes <= 0) return 'See recipe';
+  return `${totalMinutes} min`;
+}
+
+function formatDifficulty(
+  difficulty: Recipe['difficulty']
+): 'Easy' | 'Medium' | 'Hard' {
+  switch (difficulty) {
+    case 'easy':
+      return 'Easy';
+    case 'hard':
+      return 'Hard';
+    default:
+      return 'Medium';
+  }
+}
+
+function estimateReadTime(text: string | null | undefined): string {
+  const plain = (text ?? '').replace(/<[^>]+>/g, ' ').trim();
+  if (!plain) return '3 min read';
+  const words = plain.split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(words / 200));
+  return `${minutes} min read`;
+}
+
+function formatArticleDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+}
+
+function mapRecipeToPdpCard(recipe: Recipe): PdpRecipeCard | null {
+  if (!recipe.id || !recipe.title || !recipe.slug) return null;
+
+  const categorySlug = recipe.categories?.[0]?.slug || 'recipe';
+  const hasCategoryInUrl =
+    recipe.url && recipe.url.match(/^\/recipes\/[^/]+\/[^/]+$/);
+
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    description:
+      recipe.summary?.trim() ||
+      recipe.description?.trim() ||
+      'Discover this recipe and make it at home.',
+    image: pickImageUrl(recipe.featuredImage),
+    href:
+      hasCategoryInUrl && recipe.url
+        ? recipe.url
+        : `/recipes/${categorySlug}/${recipe.slug}`,
+    time: formatRecipeTime(recipe),
+    servings: recipe.servings ?? 1,
+    difficulty: formatDifficulty(recipe.difficulty),
+    tags: (recipe.tags ?? []).map(tag => tag.name).filter(Boolean),
+  };
+}
+
+function mapArticleToPdpCard(article: PdpArticleItem): BlogPost | null {
+  if (!article.id || !article.title || !article.slug) return null;
+
+  const articleImage =
+    typeof article.featuredImage === 'string'
+      ? article.featuredImage
+      : pickImageUrl(article.featuredImage);
+
+  return {
+    id: article.id,
+    title: article.title,
+    image: articleImage,
+    date: formatArticleDate(article.publishedAt),
+    excerpt: article.excerpt,
+    href: `/blog/${article.categories[0]?.slug ?? 'articles'}/${article.slug}`,
+    readTime: estimateReadTime(article.excerpt),
+  };
+}
+
+export async function fetchPdpRecipesBySku(
+  sku: string
+): Promise<PdpRecipeCard[]> {
+  const response = await apiClient.get<StrapiListResponse<Recipe>>(
+    `api/recipes/by-product-sku/${encodeURIComponent(sku)}`,
+    {
+      next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return response.data
+    .map(mapRecipeToPdpCard)
+    .filter(Boolean) as PdpRecipeCard[];
+}
+
+export async function fetchPdpArticlesBySku(sku: string): Promise<BlogPost[]> {
+  const response = await apiClient.get<StrapiListResponse<PdpArticleItem>>(
+    `api/articles/by-product-sku/${encodeURIComponent(sku)}?locale=en`,
+    {
+      next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
+    } as Parameters<typeof apiClient.get>[1]
+  );
+
+  return response.data.map(mapArticleToPdpCard).filter(Boolean) as BlogPost[];
+}
+
+/** Strapi 上传视频（media single），无 formats */
+interface StrapiVideoFileLike {
+  url?: string | null;
+}
+
+interface StrapiProductVideoRaw {
+  id: number;
+  title?: string | null;
+  caption?: string | null;
+  /** 媒体库 / 上传视频 */
+  video?: StrapiVideoFileLike | null;
+  video_url?: string | null;
+  thumbnail?: StrapiImageLike | null;
+  products?: unknown;
+}
+
+function pickUploadedVideoUrl(
+  file: StrapiVideoFileLike | null | undefined
+): string {
+  return resolveImageUrl(file?.url ?? null) ?? '';
+}
+
+function unwrapRelationObject<T extends object>(value: unknown): T | null {
+  if (!value || typeof value !== 'object') return null;
+  const relation = value as { data?: unknown };
+  if ('data' in relation) {
+    if (!relation.data || typeof relation.data !== 'object') return null;
+    return relation.data as T;
+  }
+  return value as T;
+}
+
+function unwrapRelationArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return [];
+  const relation = value as { data?: unknown };
+  if (Array.isArray(relation.data)) return relation.data;
+  if (relation.data && typeof relation.data === 'object')
+    return [relation.data];
+  return [];
+}
+
+function extractVideoProductSkus(value: unknown): string[] {
+  const skus = new Set<string>();
+  const rows = unwrapRelationArray(value);
+  for (const row of rows) {
+    const product = unwrapRelationObject<{ sku?: string | null }>(row);
+    const sku = product?.sku?.trim();
+    if (sku) skus.add(sku);
+  }
+  return [...skus];
+}
+
+function mapProductVideoToCard(
+  raw: StrapiProductVideoRaw
+): ProductVideoCard | null {
+  const fromUpload = pickUploadedVideoUrl(raw.video ?? null).trim();
+  const fromExternal = (raw.video_url ?? '').trim();
+  const videoUrl = fromUpload || fromExternal;
+  if (!raw.id || !videoUrl) return null;
+
+  const thumb = pickImageUrl(raw.thumbnail);
+  const caption = (raw.caption ?? '').trim();
+  const title = (raw.title ?? '').trim() || caption || 'Video';
+
+  return {
+    id: raw.id,
+    title,
+    caption: caption || title,
+    thumbnailUrl: thumb,
+    videoUrl,
+    productSkus: extractVideoProductSkus(raw.products),
+  };
+}
+
+/**
+ * PDP 商品关联视频（Strapi `product-videos` × Product manyToMany，经 by-product-sku 自定义路由）。
+ */
+export async function fetchPdpProductVideosBySku(
+  sku: string
+): Promise<ProductVideoCard[]> {
+  const response = await apiClient.get<
+    StrapiListResponse<StrapiProductVideoRaw>
+  >(`api/product-videos/by-product-sku/${encodeURIComponent(sku)}`, {
+    next: { revalidate: REVALIDATE_SECONDS_CMS_ASSOCIATION },
+  } as Parameters<typeof apiClient.get>[1]);
+
+  return response.data
+    .map(mapProductVideoToCard)
+    .filter(Boolean) as ProductVideoCard[];
+}
+
+export type { PdpRecipeCard };
+export type { ProductVideoCard as PdpProductVideoCard };

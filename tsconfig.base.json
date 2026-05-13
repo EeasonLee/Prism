@@ -20,10 +20,6 @@
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@prism/blog": ["libs/blog/src/index.ts"],
-      "@prism/blog/*": ["libs/blog/src/*"],
-      "@prism/prism/*": ["apps/prism/*"],
-      "@prism/recipe/*": ["libs/recipe/*"],
       "@prism/shared": ["libs/shared/src/index.ts"],
       "@prism/shared/*": ["libs/shared/*"],
       "@prism/tokens": ["libs/tokens/src/index.ts"],

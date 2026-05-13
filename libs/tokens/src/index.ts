@@ -10,9 +10,3 @@
  * 在 tailwind.config.js 中：
  *   presets: [require('../../libs/tokens/src/tailwind-preset')]
  */
-
-// CSS 变量文件路径（供参考，实际通过 @import 引入）
-export const TOKENS_CSS_PATH = './tokens.css' as const;
-
-// Tailwind preset 路径（供参考，实际通过 require() 引入）
-export const TAILWIND_PRESET_PATH = './tailwind-preset.js' as const;
