@@ -406,6 +406,7 @@ export function ArticlesSearchClient({
                     <Pagination
                       page={pagination.page}
                       pageCount={pagination.pageCount}
+                      total={pagination.total}
                       onPageChange={handlePageChange}
                       pageSize={pagination.pageSize}
                       onPageSizeChange={handlePageSizeChange}
@@ -622,8 +623,8 @@ function FiltersPanel({
                             }
                             className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                               childSelected
-                                ? 'bg-blue-50 text-blue-700 font-medium'
-                                : 'hover:bg-gray-50 text-gray-800'
+                                ? 'bg-primary/10 text-primary font-medium'
+                                : 'text-foreground hover:bg-muted'
                             }`}
                           >
                             <span>{child.name}</span>
@@ -757,6 +758,7 @@ function ArticleCard({ article }: { article: ArticleItem }) {
 function Pagination({
   page,
   pageCount,
+  total,
   onPageChange,
   pageSize,
   onPageSizeChange,
@@ -764,48 +766,225 @@ function Pagination({
 }: {
   page: number;
   pageCount: number;
+  total: number;
   onPageChange: (p: number) => void;
   pageSize: number;
   onPageSizeChange: (s: number) => void;
   isLoading?: boolean;
 }) {
+  const pageSizeOptions = [5, 10, 20, 30, 50];
+
+  const getPageNumbers = (): (number | string)[] => {
+    const delta = 2;
+    const range: (number | string)[] = [];
+
+    let start = Math.max(2, page - delta);
+    let end = Math.min(pageCount - 1, page + delta);
+
+    if (page - delta <= 2) {
+      end = Math.min(5, pageCount - 1);
+    }
+
+    if (page + delta >= pageCount - 1) {
+      start = Math.max(pageCount - 4, 2);
+    }
+
+    range.push(1);
+
+    if (start > 2) {
+      range.push('...');
+    }
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    if (end < pageCount - 1) {
+      range.push('...');
+    }
+
+    if (pageCount > 1) {
+      range.push(pageCount);
+    }
+
+    return range;
+  };
+
+  const pageNumbers = getPageNumbers();
+
   return (
-    <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Per page</span>
-        <select
-          className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-          value={pageSize}
-          onChange={e => onPageSizeChange(Number(e.target.value))}
-          disabled={isLoading}
-        >
-          {[5, 10, 20, 30, 50].map(size => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page <= 1 || isLoading}
-          onClick={() => onPageChange(page - 1)}
-        >
-          Previous
-        </Button>
-        <span className="text-sm text-gray-700">
-          {page} / {pageCount}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page >= pageCount || isLoading}
-          onClick={() => onPageChange(page + 1)}
-        >
-          Next
-        </Button>
+    <div className="border-t border-gray-200 py-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+        <div className="text-sm text-gray-600 sm:mr-auto">
+          Showing{' '}
+          <span className="font-medium text-gray-900">
+            {Math.max((page - 1) * pageSize + 1, 1)}
+          </span>{' '}
+          to{' '}
+          <span className="font-medium text-gray-900">
+            {Math.min(page * pageSize, total)}
+          </span>{' '}
+          of <span className="font-medium text-gray-900">{total}</span> articles
+        </div>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="article-page-size-select"
+              className="text-sm text-gray-600"
+            >
+              Show:
+            </label>
+            <Select
+              value={String(pageSize)}
+              onValueChange={value => onPageSizeChange(Number(value))}
+              disabled={isLoading}
+            >
+              <SelectTrigger
+                id="article-page-size-select"
+                className="w-[140px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map(option => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option} per page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {pageCount > 1 && (
+            <nav aria-label="Pagination" className="flex items-center gap-1">
+              <button
+                onClick={() => onPageChange(1)}
+                disabled={page === 1 || isLoading}
+                aria-label="First page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => onPageChange(page - 1)}
+                disabled={page === 1 || isLoading}
+                aria-label="Previous page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <div className="hidden items-center gap-1 sm:flex">
+                {pageNumbers.map((pageNum, index) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="relative inline-flex h-10 w-10 items-center justify-center px-2 text-sm font-medium text-gray-700"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+
+                  const pageNumber = pageNum as number;
+                  const isCurrentPage = pageNumber === page;
+
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() => onPageChange(pageNumber)}
+                      disabled={isLoading}
+                      aria-label={`Page ${pageNumber}`}
+                      aria-current={isCurrentPage ? 'page' : undefined}
+                      className={`relative inline-flex h-10 w-10 items-center justify-center rounded-md border px-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                        isCurrentPage
+                          ? 'z-10 border-orange-500 bg-orange-50 text-orange-600'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-1 sm:hidden">
+                <span className="relative inline-flex min-h-[44px] min-w-[60px] items-center justify-center rounded-md border border-orange-500 bg-orange-50 px-3 text-sm font-medium text-orange-600">
+                  {page} / {pageCount}
+                </span>
+              </div>
+
+              <button
+                onClick={() => onPageChange(page + 1)}
+                disabled={page === pageCount || isLoading}
+                aria-label="Next page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => onPageChange(pageCount)}
+                disabled={page === pageCount || isLoading}
+                aria-label="Last page"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 sm:h-10 sm:w-10 sm:min-h-0 sm:min-w-0"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </nav>
+          )}
+        </div>
       </div>
     </div>
   );
