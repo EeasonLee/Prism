@@ -16,6 +16,8 @@ export interface ProductNavigationOptions {
   autoClaimCoupon?: boolean;
   /** 面包屑来源标识（用于记录导航路径） */
   breadcrumbSource?: 'search' | 'category' | 'recommendation';
+  /** 来源分类 slug（PDP 读取 ?from= 参数，用于面包屑显示实际导航来源） */
+  fromCategory?: string;
   /** 是否新标签页打开 */
   openInNewTab?: boolean;
 }
@@ -54,6 +56,10 @@ export function buildProductUrl(
 
   if (options?.breadcrumbSource) {
     params.set('breadcrumb', options.breadcrumbSource);
+  }
+
+  if (options?.fromCategory) {
+    params.set('from', options.fromCategory);
   }
 
   const qs = params.toString();

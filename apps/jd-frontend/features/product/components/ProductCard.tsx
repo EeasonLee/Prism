@@ -32,6 +32,8 @@ interface ProductCardProps {
   variant?: ProductCardVariant;
   /** 外层容器 className，用于调用方覆盖特定样式 */
   className?: string;
+  /** 来源分类 slug，写入链接 ?from= 参数，用于商品详情页面包屑 */
+  fromCategory?: string;
 }
 
 // ─── 星标组件 ──────────────────────────────────────────────────────────────────
@@ -765,6 +767,7 @@ export function ProductCard({
   product,
   variant = 'default',
   className,
+  fromCategory,
 }: ProductCardProps) {
   const { items, getQtyBySku, updateItemQty, removeFromCart, syncCart } =
     useCart();
@@ -1000,11 +1003,14 @@ export function ProductCard({
     })();
   };
 
-  const productHref = buildProductUrl({
-    url_key: product.url_key,
-    sku: product.sku,
-    cp_code: null,
-  }) as Route;
+  const productHref = buildProductUrl(
+    {
+      url_key: product.url_key,
+      sku: product.sku,
+      cp_code: null,
+    },
+    fromCategory ? { fromCategory } : undefined
+  ) as Route;
 
   const showStepper =
     supportsDirectQuantity &&

@@ -26,6 +26,7 @@ import { buildBreadcrumbSchema } from '@/shared/utils/seo';
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 function emptyReviewSummary(sku: string): ProductReviewSummary {
@@ -155,8 +156,12 @@ export async function generateMetadata() {
   };
 }
 
-export default async function ProductDetailPage({ params }: Props) {
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: Props) {
   const { slug } = await params;
+  const sp = await searchParams;
   const decodedSku = decodeURIComponent(slug);
 
   let reviewSummary: ProductReviewSummary | null = null;
@@ -228,14 +233,24 @@ export default async function ProductDetailPage({ params }: Props) {
   const ratingCount =
     summaryTotal > 0 ? summaryTotal : product.review_count ?? 0;
 
+  // 面包屑：优先使用 URL ?from= 参数匹配的分类（用户实际导航来源），
+  // 匹配不到时 fallback 到商品主分类
+  const fromSlug = typeof sp.from === 'string' ? sp.from : undefined;
+  const fromCategory = fromSlug
+    ? product.categories?.find(
+        c => c.url_key === fromSlug || String(c.id) === fromSlug
+      )
+    : undefined;
+  const breadcrumbCategory = fromCategory ?? product.categories?.[0];
+
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    ...(product.categories?.[0]
+    ...(breadcrumbCategory
       ? [
           {
-            label: product.categories[0].name,
+            label: breadcrumbCategory.name,
             href: `/categories/${
-              product.categories[0].url_key ?? product.categories[0].id
+              breadcrumbCategory.url_key ?? breadcrumbCategory.id
             }`,
           },
         ]
