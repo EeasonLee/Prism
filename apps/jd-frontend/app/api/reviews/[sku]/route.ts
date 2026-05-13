@@ -4,6 +4,7 @@ import { fetchReviewsBySku, submitReview } from '@/features/product';
 import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 
 interface SubmitReviewRequestBody {
+  sku?: unknown;
   authorName?: unknown;
   authorEmail?: unknown;
   magentoUserId?: unknown;
@@ -25,6 +26,14 @@ function normalizeText(value: unknown) {
 
 function normalizeRating(value: unknown) {
   return typeof value === 'number' ? value : Number(value);
+}
+
+function decodeSku(rawSku: string) {
+  try {
+    return decodeURIComponent(rawSku);
+  } catch {
+    return rawSku;
+  }
 }
 
 function parseCommaNumbers(value: string | null): number[] {
@@ -98,7 +107,15 @@ export async function POST(
     .json()
     .catch(() => ({}))) as SubmitReviewRequestBody;
 
-  const requestSku = decodeURIComponent(sku);
+  const routeSku = normalizeText(decodeSku(sku));
+  const bodySku = normalizeText(body.sku);
+  const requestSku = routeSku || bodySku;
+
+  if (!requestSku) return badRequest('sku is required');
+  if (routeSku && bodySku && routeSku !== bodySku) {
+    return badRequest('sku in path and body must match');
+  }
+
   const authorName = normalizeText(body.authorName);
   const authorEmail = normalizeText(body.authorEmail);
   const magentoUserId = normalizeText(body.magentoUserId);

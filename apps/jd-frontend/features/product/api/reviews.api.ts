@@ -568,17 +568,16 @@ export async function submitReview(
   const response = await apiClient.post<SubmitReviewResponseRaw>(
     'api/product-reviews',
     {
-      data: dataPayload,
-    },
-    {
+      body: {
+        data: dataPayload,
+      },
       cache: 'no-store',
       headers: accessToken
         ? {
             Authorization: `Bearer ${accessToken}`,
           }
         : undefined,
-      skipLogging: true,
-    } as Parameters<typeof apiClient.post>[2]
+    }
   );
 
   return {
