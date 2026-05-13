@@ -96,7 +96,7 @@ function mapRelatedProducts(
   return items.map(item => ({
     id: 0,
     sku: item.sku,
-    url_key: null,
+    url_key: item.url_key ?? null,
     name: item.name,
     display_name: item.name,
     price: item.price,

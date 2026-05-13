@@ -14,6 +14,7 @@ export interface RelatedProductItem {
   price: number;
   image: string;
   inStock: boolean;
+  url_key: string | null;
 }
 
 /**
@@ -42,5 +43,6 @@ export async function fetchRelatedBySlug(
       price: item.price.value ?? 0,
       image: resolveImageUrl(item.image) ?? item.image ?? '',
       inStock: item.inStock ?? true,
+      url_key: item.urlKey ?? null,
     }));
 }
