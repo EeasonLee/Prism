@@ -7,7 +7,7 @@ server {
     index index.php index.html index.htm;
 
     set $MAGE_ROOT /www/webapp/joydeem.com/public_html;
-    set $MAGE_MODE production;
+    set $MAGE_MODE developer;
     set $MAGE_RUN_TYPE store;
 
     # ===== SSL 配置 =====
@@ -164,14 +164,28 @@ server {
         root $MAGE_ROOT/pub;
         try_files $uri $uri/ /index.php?$args;
     }
+    
+   location ~ ^/customer/account/login/?$ {
+    return 301 https://www.joydeem.com/login$is_args$args;
+}
 
-    # 旧 Magento：/customer/account/* → Next /account
-    location = /customer/account {
-        return 301 https://www.joydeem.com/account$is_args$args;
-    }
-    location ^~ /customer/account/ {
-        return 301 https://www.joydeem.com/account$is_args$args;
-    }
+# register
+location ~ ^/customer/account/create/?$ {
+    return 301 https://www.joydeem.com/login$is_args$args;
+}
+
+location /checkout/account/delegateCreate/ {
+    return 301 https://www.joydeem.com/login$is_args$args;
+}
+
+
+
+location /customer/ {
+    root $MAGE_ROOT/pub;
+    try_files $uri $uri/ /index.php?$args;
+}
+
+ 
 
     # ============================================
     # 🌐 其他所有页面 → next.js (3090)
