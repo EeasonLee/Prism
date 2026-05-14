@@ -155,6 +155,7 @@ export type { ProductNavigationOptions } from './services/product-navigation';
 
 // ――― Hooks ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { useCouponClaim } from './hooks/use-coupon-claim';
+export { useAddonProducts } from './hooks/use-addon-products';
 
 // ――― Components ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { ProductCard } from './components/ProductCard';

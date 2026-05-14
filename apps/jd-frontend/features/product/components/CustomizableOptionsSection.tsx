@@ -1,6 +1,8 @@
 'use client';
 
-import type { MagentoCustomizableOption } from '../bff-types';
+import { useMemo } from 'react';
+import Image from 'next/image';
+import type { MagentoCustomizableOption, ProductCardItem } from '../bff-types';
 import {
   Select,
   SelectContent,
@@ -9,6 +11,7 @@ import {
   SelectValue,
 } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
+import { useAddonProducts } from '../hooks/use-addon-products';
 
 export function calculateCustomOptionPriceDelta(
   options: MagentoCustomizableOption[],
@@ -39,6 +42,13 @@ export function hasRequiredCustomOptionsSelected(
   });
 }
 
+/** 检查 options 中是否有任何 value 带 SKU */
+function hasAnySku(options: MagentoCustomizableOption[]): boolean {
+  return options.some(opt =>
+    opt.values?.some(v => v.sku != null && v.sku !== '')
+  );
+}
+
 interface CustomizableOptionsSectionProps {
   options: MagentoCustomizableOption[];
   selections: Record<string, string | string[]>;
@@ -52,9 +62,18 @@ export function CustomizableOptionsSection({
   onSelectionsChange,
   currency,
 }: CustomizableOptionsSectionProps) {
-  if (options.length === 0) return null;
+  const sorted = useMemo(
+    () => [...options].sort((a, b) => a.sort_order - b.sort_order),
+    [options]
+  );
 
-  const sorted = [...options].sort((a, b) => a.sort_order - b.sort_order);
+  // 只有存在 SKU 时才调用 hook 获取商品数据
+  const shouldFetchProducts = useMemo(() => hasAnySku(options), [options]);
+  const addonProducts = useAddonProducts(
+    shouldFetchProducts ? options : []
+  );
+
+  if (options.length === 0) return null;
 
   const handleChange = (optionId: number, value: string | string[]) => {
     onSelectionsChange({ ...selections, [String(optionId)]: value });
@@ -75,6 +94,7 @@ export function CustomizableOptionsSection({
           const values = opt.values ?? [];
           const isMulti = type === 'checkbox' || type === 'multiple';
 
+          // dropdown 保持原样
           if (type === 'drop_down') {
             return (
               <div key={key} className="space-y-2">
@@ -110,6 +130,7 @@ export function CustomizableOptionsSection({
             );
           }
 
+          // radio 和 checkbox/multiple 使用商品卡片样式
           if (type === 'radio') {
             return (
               <fieldset key={key} className="space-y-2">
@@ -121,49 +142,22 @@ export function CustomizableOptionsSection({
                   {values.map(v => {
                     const isChecked =
                       (selections[key] as string) === String(v.option_type_id);
+                    const product = addonProducts.get(v.option_type_id);
 
                     return (
-                      <label
+                      <AddonProductCard
                         key={v.option_type_id}
-                        className={`flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                          isChecked
-                            ? 'border-brand bg-brand/5'
-                            : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`custom-opt-${key}`}
-                          value={String(v.option_type_id)}
-                          checked={isChecked}
-                          onChange={e =>
-                            handleChange(opt.option_id, e.target.value)
-                          }
-                          className="sr-only"
-                        />
-                        <span
-                          className={`relative h-4 w-4 shrink-0 rounded-full border transition ${
-                            isChecked ? 'border-brand' : 'border-border'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          <span
-                            className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand transition ${
-                              isChecked
-                                ? 'scale-100 opacity-100'
-                                : 'scale-0 opacity-0'
-                            }`}
-                          />
-                        </span>
-                        <span className="text-base text-ink">
-                          {v.title}
-                          {v.price > 0 && (
-                            <span className="text-ink-muted">
-                              {` (+${formatPrice(v.price, currency)})`}
-                            </span>
-                          )}
-                        </span>
-                      </label>
+                        title={v.title}
+                        price={v.price}
+                        currency={currency}
+                        product={product}
+                        checked={isChecked}
+                        onChange={() =>
+                          handleChange(opt.option_id, String(v.option_type_id))
+                        }
+                        inputType="radio"
+                        name={`custom-opt-${key}`}
+                      />
                     );
                   })}
                 </div>
@@ -183,51 +177,24 @@ export function CustomizableOptionsSection({
                   {values.map(v => {
                     const val = String(v.option_type_id);
                     const checked = selected.includes(val);
+                    const product = addonProducts.get(v.option_type_id);
 
                     return (
-                      <label
+                      <AddonProductCard
                         key={v.option_type_id}
-                        className={`flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                          checked
-                            ? 'border-brand bg-brand/5'
-                            : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          value={val}
-                          checked={checked}
-                          onChange={() => {
-                            const next = checked
-                              ? selected.filter(s => s !== val)
-                              : [...selected, val];
-                            handleChange(opt.option_id, next);
-                          }}
-                          className="sr-only"
-                        />
-                        <span
-                          className={`relative h-4 w-4 shrink-0 rounded border transition ${
-                            checked ? 'border-brand bg-brand' : 'border-border'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          <span
-                            className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-brand-foreground transition ${
-                              checked
-                                ? 'scale-100 opacity-100'
-                                : 'scale-0 opacity-0'
-                            }`}
-                          />
-                        </span>
-                        <span className="text-base text-ink">
-                          {v.title}
-                          {v.price > 0 && (
-                            <span className="text-ink-muted">
-                              {` (+${formatPrice(v.price, currency)})`}
-                            </span>
-                          )}
-                        </span>
-                      </label>
+                        title={v.title}
+                        price={v.price}
+                        currency={currency}
+                        product={product}
+                        checked={checked}
+                        onChange={() => {
+                          const next = checked
+                            ? selected.filter(s => s !== val)
+                            : [...selected, val];
+                          handleChange(opt.option_id, next);
+                        }}
+                        inputType="checkbox"
+                      />
                     );
                   })}
                 </div>
@@ -267,5 +234,108 @@ export function CustomizableOptionsSection({
         return null;
       })}
     </div>
+  );
+}
+
+// ─── 内部组件 ─────────────────────────────────────────────────────────────────
+
+interface AddonProductCardProps {
+  title: string;
+  price: number;
+  currency: string | null | undefined;
+  product?: ProductCardItem;
+  checked: boolean;
+  onChange: () => void;
+  inputType: 'radio' | 'checkbox';
+  name?: string;
+}
+
+/** 加购选项卡片（水平布局：左图右文） */
+function AddonProductCard({
+  title,
+  price,
+  currency,
+  product,
+  checked,
+  onChange,
+  inputType,
+  name,
+}: AddonProductCardProps) {
+  const image = product?.image ?? null;
+  const displayTitle = product?.shortName || product?.name || title;
+  const displayPrice = product?.price.value ?? price;
+
+  return (
+    <label
+      className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
+        checked
+          ? 'border-brand bg-brand/5'
+          : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
+      }`}
+    >
+      <input
+        type={inputType}
+        name={name}
+        value={String(product?.sku ?? '')}
+        checked={checked}
+        onChange={onChange}
+        className="sr-only"
+      />
+
+      {/* 选择指示器 */}
+      <span
+        className={`relative h-4 w-4 shrink-0 transition ${
+          inputType === 'radio' ? 'rounded-full' : 'rounded'
+        } border ${checked ? 'border-brand' : 'border-border'}`}
+        aria-hidden="true"
+      >
+        <span
+          className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 transition ${
+            inputType === 'radio' ? 'rounded-full' : 'rounded-sm'
+          } ${checked ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${
+            checked ? 'bg-brand' : 'bg-brand-foreground'
+          }`}
+        />
+      </span>
+
+      {/* 商品图片 */}
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+        {image ? (
+          <Image
+            src={image}
+            alt={displayTitle}
+            fill
+            sizes="64px"
+            className="object-contain"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ink-muted">
+            <svg
+              className="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+              />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* 文字内容 */}
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm text-ink">{displayTitle}</p>
+        {displayPrice > 0 && (
+          <p className="mt-0.5 text-sm font-semibold text-brand">
+            +{formatPrice(displayPrice, currency)}
+          </p>
+        )}
+      </div>
+    </label>
   );
 }
