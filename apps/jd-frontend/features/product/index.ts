@@ -72,6 +72,7 @@ export {
   resolveProductDetailAggregate,
   getProductDetailBFF,
 } from './api/detail.bff';
+export { fetchAddonProductsByOptions } from './api/inventory.api';
 export { getRelatedProductsBFF } from './api/related.bff';
 export { getUpsellProductsBFF } from './api/upsell.bff';
 export { getProductStockBFF } from './api/stock.bff';
@@ -156,6 +157,7 @@ export type { ProductNavigationOptions } from './services/product-navigation';
 
 // ――― Hooks ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { useCouponClaim } from './hooks/use-coupon-claim';
+export { useAddonProducts } from './hooks/use-addon-products';
 
 // ――― Components ――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 export { ProductCard } from './components/ProductCard';

@@ -52,6 +52,7 @@ interface GQLVariantAttribute {
 interface GQLCustomizableSelectionValue {
   option_type_id: number;
   title: string;
+  sku?: string | null;
   price: number;
   price_type: string;
   sort_order: number;
@@ -223,16 +224,16 @@ const PRODUCT_DETAIL_QUERY = `
             sort_order
             __typename
             ... on CustomizableDropDownOption {
-              dropdownValue: value { option_type_id title price price_type sort_order }
+              dropdownValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableRadioOption {
-              radioValue: value { option_type_id title price price_type sort_order }
+              radioValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableCheckboxOption {
-              checkboxValue: value { option_type_id title price price_type sort_order }
+              checkboxValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableMultipleOption {
-              multipleValue: value { option_type_id title price price_type sort_order }
+              multipleValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableFieldOption {
               fieldValue: value { price price_type max_characters }
@@ -349,16 +350,16 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
             sort_order
             __typename
             ... on CustomizableDropDownOption {
-              dropdownValue: value { option_type_id title price price_type sort_order }
+              dropdownValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableRadioOption {
-              radioValue: value { option_type_id title price price_type sort_order }
+              radioValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableCheckboxOption {
-              checkboxValue: value { option_type_id title price price_type sort_order }
+              checkboxValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableMultipleOption {
-              multipleValue: value { option_type_id title price price_type sort_order }
+              multipleValue: value { option_type_id title sku price price_type sort_order }
             }
             ... on CustomizableFieldOption {
               fieldValue: value { price price_type max_characters }

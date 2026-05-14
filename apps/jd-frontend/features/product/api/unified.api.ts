@@ -496,6 +496,7 @@ export function mapGQLProduct(
             values: selectionValue.map((v: Record<string, unknown>) => ({
               option_type_id: v.option_type_id as number,
               title: v.title as string,
+              sku: (v.sku as string) ?? null,
               price: v.price as number,
               price_type: v.price_type as 'fixed' | 'percent' | 'dynamic',
               sort_order: v.sort_order as number,

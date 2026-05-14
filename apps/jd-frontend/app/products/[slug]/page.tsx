@@ -186,10 +186,12 @@ export default async function ProductDetailPage({
 
   const fetchedProduct = aggregate.core.product;
 
-  const [fetchedReviewsData, fetchedCms] = await Promise.all([
-    aggregate.deferred.reviews,
-    aggregate.deferred.cms,
-  ]);
+  const [fetchedReviewsData, fetchedCms, fetchedAddonProducts] =
+    await Promise.all([
+      aggregate.deferred.reviews,
+      aggregate.deferred.cms,
+      aggregate.deferred.addonProducts,
+    ]);
 
   const data: ProductDetailPageData = {
     product: fetchedProduct,
@@ -299,6 +301,7 @@ export default async function ProductDetailPage({
         summary={reviewSummary ?? emptyReviewSummary(reviewSku)}
         initialReviews={reviewList.items}
         initialPagination={reviewList.pagination}
+        addonProducts={fetchedAddonProducts}
         allowSubmit
         beforeVideos={
           <Suspense fallback={null}>
