@@ -16,7 +16,7 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "jd-frontend:build",
-        "port": 3020,
+        "port": 3090,
         "dev": true,
         "hostname": "0.0.0.0"
       },
