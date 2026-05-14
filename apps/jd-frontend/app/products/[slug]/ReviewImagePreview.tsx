@@ -4,7 +4,9 @@ import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { OptimizedImage } from '@prism/ui';
 import useEmblaCarousel from 'embla-carousel-react';
+import { resolveImageUrl } from '@prism/shared';
 import type { ProductReviewMedia } from '@/features/product';
+import { useMediaPreload } from './use-media-preload';
 
 interface ReviewMediaViewerProps {
   media: ProductReviewMedia[];
@@ -13,6 +15,22 @@ interface ReviewMediaViewerProps {
   thumbnailClassName?: string;
   buttonClassName?: string;
   previewLabel?: string;
+}
+
+interface PreparedReviewMedia extends ProductReviewMedia {
+  previewImageUrl?: string;
+  fullImageUrl?: string;
+  thumbnailImageUrl?: string;
+}
+
+function circularDistance(
+  target: number,
+  center: number,
+  total: number
+): number {
+  if (total <= 1) return 0;
+  const direct = Math.abs(target - center);
+  return Math.min(direct, total - direct);
 }
 
 function getMediaAlt(item: ProductReviewMedia, altFallback: string) {
@@ -90,8 +108,43 @@ export function ReviewImagePreview({
     containScroll: 'trimSnaps',
     loop: media.length > 1,
   });
-  const activeMedia = media[activeIndex] ?? media[0];
+  const preparedMedia = useMemo<PreparedReviewMedia[]>(
+    () =>
+      media.map(item => {
+        if (item.kind !== 'image') return item;
+        const fullImageUrl = resolveImageUrl(item.url) ?? item.url;
+        return {
+          ...item,
+          fullImageUrl,
+          previewImageUrl:
+            resolveImageUrl(item.url, { size: 1200 }) ?? fullImageUrl,
+          thumbnailImageUrl:
+            resolveImageUrl(item.url, { size: 150 }) ?? fullImageUrl,
+        };
+      }),
+    [media]
+  );
+
+  const activeMedia = preparedMedia[activeIndex] ?? preparedMedia[0];
   const canNavigate = media.length > 1;
+  const preloadItems = useMemo(
+    () =>
+      preparedMedia.map(item => ({
+        kind: item.kind,
+        imageUrl:
+          item.kind === 'image' ? item.previewImageUrl ?? item.url : null,
+        posterUrl: item.kind === 'video' ? item.posterUrl ?? null : null,
+      })),
+    [preparedMedia]
+  );
+
+  const { isReady } = useMediaPreload({
+    items: preloadItems,
+    activeIndex,
+    enabled: isOpen,
+    immediateDistance: 2,
+    idleDistance: 4,
+  });
 
   const dialogLabel = useMemo(() => {
     if (activeMedia?.kind === 'video') {
@@ -155,30 +208,6 @@ export function ReviewImagePreview({
       emblaApi.off('reInit', syncSelectedIndex);
     };
   }, [emblaApi, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || media.length === 0) {
-      return;
-    }
-
-    const preloadDistance = 2;
-    for (let offset = 1; offset <= preloadDistance; offset += 1) {
-      const preloadTargets = [
-        (activeIndex + offset) % media.length,
-        (activeIndex - offset + media.length) % media.length,
-      ];
-
-      preloadTargets.forEach(index => {
-        const item = media[index];
-        if (!item || item.kind !== 'image') {
-          return;
-        }
-
-        const image = new Image();
-        image.src = item.url;
-      });
-    }
-  }, [activeIndex, isOpen, media]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -267,27 +296,57 @@ export function ReviewImagePreview({
               <div className="min-h-0 flex-1 px-2 pb-4 pt-16 sm:px-6">
                 <div ref={emblaRef} className="h-full overflow-hidden">
                   <div className="flex h-full">
-                    {media.map((item, index) => (
+                    {preparedMedia.map((item, index) => (
                       <div
                         key={`${item.id}-${index}`}
                         className="min-w-0 shrink-0 grow-0 basis-full px-1 sm:px-2"
                       >
                         <div className="relative flex h-full min-h-[260px] w-full items-center justify-center overflow-hidden rounded-2xl bg-black sm:min-h-[420px]">
                           {item.kind === 'image' ? (
-                            <OptimizedImage
-                              src={item.url}
-                              alt={getMediaAlt(item, altFallback)}
-                              fill
-                              maxDisplayWidth={1440}
-                              sizes="100vw"
-                              className="bg-black object-contain"
-                            />
+                            <>
+                              <OptimizedImage
+                                src={
+                                  item.thumbnailImageUrl ??
+                                  item.previewImageUrl ??
+                                  item.url
+                                }
+                                alt=""
+                                fill
+                                maxDisplayWidth={150}
+                                sizes="100vw"
+                                className="bg-black object-contain"
+                              />
+                              <OptimizedImage
+                                src={
+                                  index === activeIndex
+                                    ? item.fullImageUrl ??
+                                      item.previewImageUrl ??
+                                      item.url
+                                    : item.previewImageUrl ?? item.url
+                                }
+                                alt={getMediaAlt(item, altFallback)}
+                                fill
+                                maxDisplayWidth={1600}
+                                sizes="100vw"
+                                className={`bg-black object-contain transition-opacity duration-200 ${
+                                  isReady(index) ? 'opacity-100' : 'opacity-0'
+                                }`}
+                              />
+                            </>
                           ) : (
                             <video
                               ref={node => {
                                 videoRefs.current[index] = node;
                               }}
-                              src={item.url}
+                              src={
+                                circularDistance(
+                                  index,
+                                  activeIndex,
+                                  preparedMedia.length
+                                ) <= 1
+                                  ? item.url
+                                  : undefined
+                              }
                               poster={item.posterUrl ?? undefined}
                               controls
                               playsInline
@@ -313,7 +372,7 @@ export function ReviewImagePreview({
                   role="listbox"
                   aria-label="Media thumbnails"
                 >
-                  {media.map((item, index) => {
+                  {preparedMedia.map((item, index) => {
                     const isActive = index === activeIndex;
                     return (
                       <button
@@ -331,7 +390,11 @@ export function ReviewImagePreview({
                       >
                         {item.kind === 'image' ? (
                           <OptimizedImage
-                            src={item.url}
+                            src={
+                              item.thumbnailImageUrl ??
+                              item.previewImageUrl ??
+                              item.url
+                            }
                             alt={getMediaAlt(item, altFallback)}
                             fill
                             maxDisplayWidth={80}
