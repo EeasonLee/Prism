@@ -2,7 +2,11 @@ const path = require('path');
 const fs = require('fs');
 
 // 开发环境：仅 jd-frontend-dev，端口 3090
-const envFile = path.join(__dirname, '.env.production');
+// 优先加载 .env.local（开发环境实际配置），回退到 .env.production
+const envFiles = [
+  path.join(__dirname, '.env.local'),
+  path.join(__dirname, '.env.production'),
+];
 
 const envVars = {
   NODE_ENV: 'development',
@@ -10,8 +14,9 @@ const envVars = {
   NODE_OPTIONS: '--max-old-space-size=900',
 };
 
-if (fs.existsSync(envFile)) {
-  const envContent = fs.readFileSync(envFile, 'utf8');
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const envContent = fs.readFileSync(filePath, 'utf8');
   envContent.split('\n').forEach(line => {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
@@ -24,6 +29,8 @@ if (fs.existsSync(envFile)) {
     }
   });
 }
+
+envFiles.forEach(loadEnvFile);
 
 module.exports = {
   apps: [
