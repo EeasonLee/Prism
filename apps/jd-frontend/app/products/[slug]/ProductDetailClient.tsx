@@ -3,6 +3,7 @@
 import { OptimizedImage } from '@prism/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Calendar, ShieldCheck, ShoppingCart, Truck } from 'lucide-react';
 import type {
   MagentoConfigurableOption,
@@ -48,20 +49,24 @@ const EMPTY_CHILDREN = [] as NonNullable<MagentoProduct['children']>;
 const PURCHASE_BENEFITS = [
   {
     label: '1-Year Limited Warranty',
-    href: 'https://www.joydeem.com/warrant',
+    href: '/warrant',
     icon: ShieldCheck,
   },
   {
     label: 'Free Shipping',
-    href: 'https://www.joydeem.com/shipping-policy',
+    href: '/shipping-policy',
     icon: Truck,
   },
   {
     label: '30-Day Risk-Free Returns',
-    href: 'https://www.joydeem.com/return-policy',
+    href: '/return-policy',
     icon: Calendar,
   },
 ] as const;
+
+function isOutOfStock(isInStock: boolean | null | undefined): boolean {
+  return isInStock === false;
+}
 
 function PurchaseBenefitsBar() {
   return (
@@ -69,18 +74,16 @@ function PurchaseBenefitsBar() {
       {PURCHASE_BENEFITS.map(item => {
         const Icon = item.icon;
         return (
-          <a
+          <Link
             key={item.href}
             href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
             className="flex min-h-20 flex-col items-center justify-center gap-2 px-2 py-3 text-center transition hover:bg-surface"
           >
             <Icon className="h-4 w-4 text-ink" />
             <span className="text-xs font-medium leading-5 text-ink">
               {item.label}
             </span>
-          </a>
+          </Link>
         );
       })}
     </div>
@@ -372,6 +375,7 @@ function SimpleOptions({
     Record<string, string | string[]>
   >({});
   const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
+  const canShowPurchaseSection = !isOutOfStock(product.is_in_stock);
 
   const customOptions = product.options ?? EMPTY_CUSTOMIZABLE_OPTIONS;
   const customOptionPriceDelta = useMemo(
@@ -424,7 +428,7 @@ function SimpleOptions({
 
   return (
     <div className="space-y-6">
-      {customOptions.length > 0 && (
+      {canShowPurchaseSection && customOptions.length > 0 && (
         <CustomizableOptionsSection
           options={customOptions}
           selections={customSelections}
@@ -432,53 +436,57 @@ function SimpleOptions({
           currency={product.currency}
         />
       )}
-      <div ref={purchaseActionsRef} className="flex items-center gap-3">
-        <QtyInput value={qty} min={1} onChange={setQty} />
-        <div className="flex-1">
-          <AddToCartButton
-            sku={product.sku}
-            qty={qty}
-            productOptionsJson={productOptionsJson}
+      {canShowPurchaseSection && (
+        <>
+          <div ref={purchaseActionsRef} className="flex items-center gap-3">
+            <QtyInput value={qty} min={1} onChange={setQty} />
+            <div className="flex-1">
+              <AddToCartButton
+                sku={product.sku}
+                qty={qty}
+                productOptionsJson={productOptionsJson}
+                couponCode={claimedCouponCode}
+                disabled={!allCustomRequiredSelected}
+                disabledLabel="Select required options"
+                className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                gtmProduct={{
+                  sku: product.sku,
+                  name: product.name,
+                  price: product.price,
+                  final_price: product.special_price ?? product.price,
+                  currency: product.currency,
+                  categories: product.categories?.map(c => c.name),
+                  brand: product.brand,
+                  url_key: product.url_key,
+                  image: product.thumbnail_url ?? product.image_url,
+                }}
+              />
+            </div>
+          </div>
+          <StickyAddToCartBar
             couponCode={claimedCouponCode}
-            disabled={!allCustomRequiredSelected}
-            disabledLabel="Select required options"
-            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-            gtmProduct={{
-              sku: product.sku,
-              name: product.name,
-              price: product.price,
-              final_price: product.special_price ?? product.price,
-              currency: product.currency,
-              categories: product.categories?.map(c => c.name),
-              brand: product.brand,
-              url_key: product.url_key,
-              image: product.thumbnail_url ?? product.image_url,
-            }}
+            visible={showStickyBar}
+            productName={product.name}
+            thumbnailUrl={product.thumbnail_url ?? product.image_url}
+            priceText={stickyPriceText}
+            qty={qty}
+            onQtyChange={setQty}
+            primaryAction={
+              !allCustomRequiredSelected
+                ? { type: 'scroll-to-main', label: 'Select required options' }
+                : {
+                    type: 'add-to-cart',
+                    sku: product.sku,
+                    qty,
+                    productOptionsJson,
+                    disabled: false,
+                    disabledLabel: 'Select required options',
+                  }
+            }
           />
-        </div>
-      </div>
+        </>
+      )}
       <PurchaseBenefitsBar />
-      <StickyAddToCartBar
-        couponCode={claimedCouponCode}
-        visible={showStickyBar}
-        productName={product.name}
-        thumbnailUrl={product.thumbnail_url ?? product.image_url}
-        priceText={stickyPriceText}
-        qty={qty}
-        onQtyChange={setQty}
-        primaryAction={
-          !allCustomRequiredSelected
-            ? { type: 'scroll-to-main', label: 'Select required options' }
-            : {
-                type: 'add-to-cart',
-                sku: product.sku,
-                qty,
-                productOptionsJson,
-                disabled: false,
-                disabledLabel: 'Select required options',
-              }
-        }
-      />
     </div>
   );
 }
@@ -642,6 +650,9 @@ function ConfigurableOptions({
       null
     );
   }, [allSelected, children, selectedAttributes, findChildSku]);
+  const canShowPurchaseSection = allSelected
+    ? !isOutOfStock(selectedChild?.is_in_stock)
+    : !isOutOfStock(product.is_in_stock);
 
   const effectiveCouponCode = useMemo(() => {
     if (allSelected && selectedChild?.cp_code) return selectedChild.cp_code;
@@ -769,7 +780,7 @@ function ConfigurableOptions({
         </div>
       ))}
 
-      {customOptions.length > 0 && (
+      {canShowPurchaseSection && customOptions.length > 0 && (
         <CustomizableOptionsSection
           options={customOptions}
           selections={customSelections}
@@ -778,65 +789,69 @@ function ConfigurableOptions({
         />
       )}
 
-      <div ref={purchaseActionsRef} className="flex items-center gap-3">
-        <QtyInput value={qty} min={1} onChange={setQty} />
+      {canShowPurchaseSection && (
+        <>
+          <div ref={purchaseActionsRef} className="flex items-center gap-3">
+            <QtyInput value={qty} min={1} onChange={setQty} />
 
-        <div className="flex-1">
-          <AddToCartButton
-            sku={product.sku}
-            qty={qty}
-            productOptionsJson={productOptionsJson}
+            <div className="flex-1">
+              <AddToCartButton
+                sku={product.sku}
+                qty={qty}
+                productOptionsJson={productOptionsJson}
+                couponCode={effectiveCouponCode}
+                disabled={!allSelected || !allCustomRequiredSelected}
+                disabledLabel={
+                  !allSelected ? 'Select Options' : 'Select required options'
+                }
+                className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                gtmProduct={{
+                  sku: selectedChild?.sku ?? product.sku,
+                  name: selectedChild?.name ?? product.name,
+                  price: selectedChild?.price ?? product.price,
+                  final_price:
+                    selectedChild?.special_price ??
+                    selectedChild?.price ??
+                    product.special_price ??
+                    product.price,
+                  currency: product.currency,
+                  categories: product.categories?.map(c => c.name),
+                  brand: product.brand,
+                  url_key: product.url_key,
+                  image: product.thumbnail_url ?? product.image_url,
+                }}
+              />
+            </div>
+          </div>
+          <StickyAddToCartBar
             couponCode={effectiveCouponCode}
-            disabled={!allSelected || !allCustomRequiredSelected}
-            disabledLabel={
-              !allSelected ? 'Select Options' : 'Select required options'
+            visible={showStickyBar}
+            productName={selectedChild?.name ?? product.name}
+            thumbnailUrl={product.thumbnail_url ?? product.image_url}
+            priceText={stickyPriceText}
+            qty={qty}
+            onQtyChange={setQty}
+            primaryAction={
+              !allSelected
+                ? { type: 'scroll-to-main', label: 'Select Options' }
+                : !allCustomRequiredSelected
+                ? {
+                    type: 'scroll-to-main',
+                    label: 'Select required options',
+                  }
+                : {
+                    type: 'add-to-cart',
+                    sku: product.sku,
+                    qty,
+                    productOptionsJson,
+                    disabled: false,
+                    disabledLabel: 'Select Options',
+                  }
             }
-            className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-            gtmProduct={{
-              sku: selectedChild?.sku ?? product.sku,
-              name: selectedChild?.name ?? product.name,
-              price: selectedChild?.price ?? product.price,
-              final_price:
-                selectedChild?.special_price ??
-                selectedChild?.price ??
-                product.special_price ??
-                product.price,
-              currency: product.currency,
-              categories: product.categories?.map(c => c.name),
-              brand: product.brand,
-              url_key: product.url_key,
-              image: product.thumbnail_url ?? product.image_url,
-            }}
           />
-        </div>
-      </div>
+        </>
+      )}
       <PurchaseBenefitsBar />
-      <StickyAddToCartBar
-        couponCode={effectiveCouponCode}
-        visible={showStickyBar}
-        productName={selectedChild?.name ?? product.name}
-        thumbnailUrl={product.thumbnail_url ?? product.image_url}
-        priceText={stickyPriceText}
-        qty={qty}
-        onQtyChange={setQty}
-        primaryAction={
-          !allSelected
-            ? { type: 'scroll-to-main', label: 'Select Options' }
-            : !allCustomRequiredSelected
-            ? {
-                type: 'scroll-to-main',
-                label: 'Select required options',
-              }
-            : {
-                type: 'add-to-cart',
-                sku: product.sku,
-                qty,
-                productOptionsJson,
-                disabled: false,
-                disabledLabel: 'Select Options',
-              }
-        }
-      />
     </div>
   );
 }
