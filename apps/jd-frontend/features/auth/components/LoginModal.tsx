@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useAuth } from './auth.context';
 
 type Tab = 'signin' | 'register';
@@ -40,7 +40,17 @@ export function LoginModal({
   const [regError, setRegError] = useState<string | null>(null);
   const [regLoading, setRegLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
 
   const handleSignIn = useCallback(
     async (e: React.FormEvent) => {
@@ -77,6 +87,9 @@ export function LoginModal({
         onClose();
       } catch (err) {
         setRegError(err instanceof Error ? err.message : 'Registration failed');
+        // 注册失败时重置 Turnstile，避免 token 被重复使用
+        setTurnstileToken(null);
+        turnstileRef.current?.reset();
       } finally {
         setRegLoading(false);
       }
@@ -86,6 +99,7 @@ export function LoginModal({
       regPassword,
       regFirstName,
       regLastName,
+      turnstileToken,
       register,
       onSuccess,
       onClose,
@@ -286,14 +300,16 @@ export function LoginModal({
               </div>
 
               {process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div ref={turnstileRef} className="flex justify-center">
+                <div className="flex justify-center">
                   <Turnstile
+                    key="register-turnstile"
+                    ref={turnstileRef}
                     siteKey={
                       process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
                     }
                     onSuccess={setTurnstileToken}
-                    onError={() => setTurnstileToken(null)}
-                    onExpire={() => setTurnstileToken(null)}
+                    onError={handleTurnstileError}
+                    onExpire={handleTurnstileExpire}
                   />
                 </div>
               )}

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAccountService } from '@/features/account/http.api';
+import { getCountryRegions } from '@/features/account/countries-data.api';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +17,6 @@ export async function GET(request: Request) {
       { status: 400 }
     );
   }
-  return withAccountService(request, async service => {
-    const regions = await service.getRegions(countryCode);
-    return { regions };
-  });
+  const regions = getCountryRegions(countryCode);
+  return NextResponse.json({ regions });
 }

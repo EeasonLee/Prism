@@ -1,10 +1,9 @@
-import { withAccountService } from '@/features/account/http.api';
+import { NextResponse } from 'next/server';
+import { getCountriesList } from '@/features/account/countries-data.api';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  return withAccountService(request, async service => {
-    const countries = await service.getCountries();
-    return { countries };
-  });
+export async function GET() {
+  const countries = getCountriesList();
+  return NextResponse.json({ countries });
 }
