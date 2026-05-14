@@ -72,6 +72,7 @@ export {
   resolveProductDetailAggregate,
   getProductDetailBFF,
 } from './api/detail.bff';
+export { fetchAddonProductsByOptions } from './api/inventory.api';
 export { getRelatedProductsBFF } from './api/related.bff';
 export { getUpsellProductsBFF } from './api/upsell.bff';
 export { getProductStockBFF } from './api/stock.bff';

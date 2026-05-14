@@ -13,6 +13,7 @@ import type {
 import { formatPrice } from '@prism/shared';
 import { AddToCartButton } from '@/features/product';
 import { CustomizableOptionsSection } from '@/features/product';
+import type { ProductCardItem } from '@/features/product';
 
 export interface SelectedVariantProduct {
   sku: string;
@@ -40,6 +41,7 @@ interface ProductDetailClientProps {
   product: MagentoProduct;
   claimedCouponCode?: string | null;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
+  addonProducts?: Record<number, ProductCardItem>;
 }
 
 const EMPTY_CUSTOMIZABLE_OPTIONS: MagentoCustomizableOption[] = [];
@@ -361,10 +363,12 @@ function SimpleOptions({
   product,
   onSelectionChange,
   claimedCouponCode,
+  addonProducts,
 }: {
   product: MagentoProduct;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
   claimedCouponCode?: string | null;
+  addonProducts?: Record<number, ProductCardItem>;
 }) {
   const [qty, setQty] = useState(1);
   const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
@@ -430,6 +434,7 @@ function SimpleOptions({
           selections={customSelections}
           onSelectionsChange={setCustomSelections}
           currency={product.currency}
+          addonProducts={addonProducts}
         />
       )}
       <div ref={purchaseActionsRef} className="flex items-center gap-3">
@@ -489,10 +494,12 @@ function ConfigurableOptions({
   product,
   onSelectionChange,
   claimedCouponCode,
+  addonProducts,
 }: {
   product: MagentoProduct;
   onSelectionChange?: (selection: ProductDetailSelection) => void;
   claimedCouponCode?: string | null;
+  addonProducts?: Record<number, ProductCardItem>;
 }) {
   const searchParams = useSearchParams();
   const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
@@ -775,6 +782,7 @@ function ConfigurableOptions({
           selections={customSelections}
           onSelectionsChange={setCustomSelections}
           currency={product.currency}
+          addonProducts={addonProducts}
         />
       )}
 
@@ -1372,6 +1380,7 @@ export function ProductDetailClient({
   product,
   claimedCouponCode,
   onSelectionChange,
+  addonProducts,
 }: ProductDetailClientProps) {
   switch (product.type_id) {
     case 'configurable':
@@ -1380,6 +1389,7 @@ export function ProductDetailClient({
           product={product}
           claimedCouponCode={claimedCouponCode}
           onSelectionChange={onSelectionChange}
+          addonProducts={addonProducts}
         />
       );
     case 'grouped':
@@ -1395,6 +1405,7 @@ export function ProductDetailClient({
           product={product}
           claimedCouponCode={claimedCouponCode}
           onSelectionChange={onSelectionChange}
+          addonProducts={addonProducts}
         />
       );
   }

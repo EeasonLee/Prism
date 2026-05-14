@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
+import { OptimizedImage } from '@prism/ui';
 import type { MagentoCustomizableOption, ProductCardItem } from '../bff-types';
 import {
   Select,
@@ -54,6 +54,8 @@ interface CustomizableOptionsSectionProps {
   selections: Record<string, string | string[]>;
   onSelectionsChange: (s: Record<string, string | string[]>) => void;
   currency: string | null | undefined;
+  /** 服务端预加载的 add-on 商品数据，key 为 option_type_id */
+  addonProducts?: Record<number, ProductCardItem>;
 }
 
 export function CustomizableOptionsSection({
@@ -61,17 +63,35 @@ export function CustomizableOptionsSection({
   selections,
   onSelectionsChange,
   currency,
+  addonProducts: serverAddonProducts,
 }: CustomizableOptionsSectionProps) {
   const sorted = useMemo(
     () => [...options].sort((a, b) => a.sort_order - b.sort_order),
     [options]
   );
 
-  // 只有存在 SKU 时才调用 hook 获取商品数据
-  const shouldFetchProducts = useMemo(() => hasAnySku(options), [options]);
-  const addonProducts = useAddonProducts(
+  // 只有存在 SKU 且无服务端数据时才调用 hook
+  const shouldFetchProducts = useMemo(
+    () => hasAnySku(options) && !serverAddonProducts,
+    [options, serverAddonProducts]
+  );
+  const hookAddonProducts = useAddonProducts(
     shouldFetchProducts ? options : []
   );
+
+  // 合并服务端预加载数据和 hook 数据（hook 数据优先，可覆盖更新）
+  const mergedAddonProducts = useMemo(() => {
+    const base = new Map<number, ProductCardItem>();
+    if (serverAddonProducts) {
+      for (const [key, value] of Object.entries(serverAddonProducts)) {
+        base.set(Number(key), value);
+      }
+    }
+    for (const [key, value] of hookAddonProducts) {
+      base.set(key, value);
+    }
+    return base;
+  }, [serverAddonProducts, hookAddonProducts]);
 
   if (options.length === 0) return null;
 
@@ -132,17 +152,22 @@ export function CustomizableOptionsSection({
 
           // radio 和 checkbox/multiple 使用商品卡片样式
           if (type === 'radio') {
+            // 过滤掉没有库存的商品
+            const availableValues = values.filter(
+              v => mergedAddonProducts.has(v.option_type_id)
+            );
+
             return (
-              <fieldset key={key} className="space-y-2">
+              <fieldset key={key} className="space-y-3">
                 <legend className="text-sm font-semibold text-ink">
                   {opt.title}
                   {opt.required && <span className="text-red-500"> *</span>}
                 </legend>
-                <div className="space-y-2">
-                  {values.map(v => {
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {availableValues.map(v => {
                     const isChecked =
                       (selections[key] as string) === String(v.option_type_id);
-                    const product = addonProducts.get(v.option_type_id);
+                    const product = mergedAddonProducts.get(v.option_type_id);
 
                     return (
                       <AddonProductCard
@@ -167,17 +192,22 @@ export function CustomizableOptionsSection({
 
           if (isMulti) {
             const selected = (selections[key] as string[]) ?? [];
+            // 过滤掉没有库存的商品
+            const availableValues = values.filter(
+              v => mergedAddonProducts.has(v.option_type_id)
+            );
+
             return (
-              <fieldset key={key} className="space-y-2">
+              <fieldset key={key} className="space-y-3">
                 <legend className="text-sm font-semibold text-ink">
                   {opt.title}
                   {opt.required && <span className="text-red-500"> *</span>}
                 </legend>
-                <div className="space-y-2">
-                  {values.map(v => {
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {availableValues.map(v => {
                     const val = String(v.option_type_id);
                     const checked = selected.includes(val);
-                    const product = addonProducts.get(v.option_type_id);
+                    const product = mergedAddonProducts.get(v.option_type_id);
 
                     return (
                       <AddonProductCard
@@ -250,7 +280,7 @@ interface AddonProductCardProps {
   name?: string;
 }
 
-/** 加购选项卡片（水平布局：左图右文） */
+/** 加购选项卡片（现代化卡片样式） */
 function AddonProductCard({
   title,
   price,
@@ -267,10 +297,10 @@ function AddonProductCard({
 
   return (
     <label
-      className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
+      className={`group relative flex cursor-pointer items-center gap-4 rounded-2xl bg-white p-4 transition-all duration-300 ${
         checked
-          ? 'border-brand bg-brand/5'
-          : 'border-border bg-surface hover:border-brand/40 hover:bg-surface-muted'
+          ? 'shadow-md ring-2 ring-brand/30'
+          : 'shadow-sm hover:shadow-md hover:ring-1 hover:ring-brand/20'
       }`}
     >
       <input
@@ -282,36 +312,45 @@ function AddonProductCard({
         className="sr-only"
       />
 
-      {/* 选择指示器 */}
-      <span
-        className={`relative h-4 w-4 shrink-0 transition ${
-          inputType === 'radio' ? 'rounded-full' : 'rounded'
-        } border ${checked ? 'border-brand' : 'border-border'}`}
-        aria-hidden="true"
+      {/* 选中角标 - 卡片左上角 */}
+      <div
+        className={`absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full transition-all duration-300 ${
+          checked
+            ? 'scale-100 bg-brand text-white shadow-sm'
+            : 'scale-0 bg-surface text-ink-muted'
+        }`}
       >
-        <span
-          className={`absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 transition ${
-            inputType === 'radio' ? 'rounded-full' : 'rounded-sm'
-          } ${checked ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} ${
-            checked ? 'bg-brand' : 'bg-brand-foreground'
-          }`}
-        />
-      </span>
+        <svg
+          className="h-3 w-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={3}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
 
       {/* 商品图片 */}
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
         {image ? (
-          <Image
+          <OptimizedImage
             src={image}
             alt={displayTitle}
             fill
-            sizes="64px"
-            className="object-contain"
+            maxDisplayWidth={80}
+            sizes="80px"
+            className="object-contain transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-ink-muted">
+          <div className="flex h-full w-full items-center justify-center bg-surface-muted text-ink-muted">
             <svg
-              className="h-8 w-8"
+              className="h-10 w-10"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -329,9 +368,19 @@ function AddonProductCard({
 
       {/* 文字内容 */}
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm text-ink">{displayTitle}</p>
+        <p
+          className={`line-clamp-2 text-sm font-medium transition-colors duration-300 ${
+            checked ? 'text-brand' : 'text-ink'
+          }`}
+        >
+          {displayTitle}
+        </p>
         {displayPrice > 0 && (
-          <p className="mt-0.5 text-sm font-semibold text-brand">
+          <p
+            className={`mt-1 text-sm font-semibold transition-colors duration-300 ${
+              checked ? 'text-brand' : 'text-ink-muted'
+            }`}
+          >
             +{formatPrice(displayPrice, currency)}
           </p>
         )}

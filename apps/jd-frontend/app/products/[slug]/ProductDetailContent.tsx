@@ -17,7 +17,7 @@ import {
   CouponBanner,
   useCouponClaim,
 } from '@/features/product';
-import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
+import type { UnifiedProduct, UnifiedProductImage, ProductCardItem } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
@@ -32,6 +32,7 @@ interface ProductDetailContentProps {
   onSelectionChange: (selection: ProductDetailSelection) => void;
   onWriteReview: () => void;
   shareTarget?: ShareTarget;
+  addonProducts?: Record<number, ProductCardItem>;
 }
 
 const STAR_PATH =
@@ -99,6 +100,7 @@ export function ProductDetailContent({
   onSelectionChange,
   onWriteReview,
   shareTarget,
+  addonProducts,
 }: ProductDetailContentProps) {
   const { isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
@@ -578,6 +580,7 @@ export function ProductDetailContent({
           product={product}
           claimedCouponCode={claimedCode}
           onSelectionChange={onSelectionChange}
+          addonProducts={addonProducts}
         />
         {product.short_description_html ? (
           <div
