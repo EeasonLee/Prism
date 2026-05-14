@@ -104,6 +104,7 @@ export {
   fetchReviewMediaBySku,
   fetchReviewTags,
   type ProductReview,
+  type ProductReviewListResult,
   type ProductReviewSummary,
   type ProductReviewPagination,
   type ProductReviewDistributionKey,

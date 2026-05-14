@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CheckCircle2,
   BadgeCheck,
   ImageIcon,
   LoaderCircle,
@@ -77,6 +78,11 @@ interface ProductReviewsProps {
   isReviewFormOpen?: boolean;
   onReviewFormOpenChange?: (open: boolean) => void;
 }
+
+type ReviewSubmitToast = {
+  kind: 'success';
+  message: string;
+};
 
 function StarRow({
   rating,
@@ -511,6 +517,9 @@ export function ProductReviews({
   >([]);
   const [internalIsReviewFormOpen, setInternalIsReviewFormOpen] =
     useState(false);
+  const [submitToast, setSubmitToast] = useState<ReviewSubmitToast | null>(
+    null
+  );
 
   const effectiveIsReviewFormOpen =
     isReviewFormOpen ?? internalIsReviewFormOpen;
@@ -715,6 +724,20 @@ export function ProductReviews({
   }, [setReviewFormOpen]);
 
   const showDimensionBreakdown = dimensionSummary.length > 0;
+
+  useEffect(() => {
+    if (!submitToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSubmitToast(null);
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [submitToast]);
 
   return (
     <section aria-labelledby="reviews-heading" className="py-12 lg:py-16">
@@ -997,10 +1020,30 @@ export function ProductReviews({
                 target={target}
                 onSubmitted={() => {
                   closeReviewForm();
+                  setSubmitToast({
+                    kind: 'success',
+                    message:
+                      'Review submitted successfully. It will appear after approval.',
+                  });
                   void loadPage(1, sort, reviewFilters);
                 }}
               />
             </div>
+          </div>
+        </div>
+      )}
+      {submitToast && (
+        <div className="pointer-events-none fixed inset-x-0 top-4 z-[60] flex justify-center px-4 sm:top-6">
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-auto inline-flex max-w-[min(92vw,560px)] items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg"
+          >
+            <CheckCircle2
+              className="mt-0.5 h-4 w-4 shrink-0"
+              aria-hidden="true"
+            />
+            <span>{submitToast.message}</span>
           </div>
         </div>
       )}
