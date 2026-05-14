@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { ProductReviews } from '../app/products/[slug]/ProductReviews';
 import type {
   ProductReview,
@@ -34,6 +34,65 @@ vi.mock('../app/products/[slug]/review-visitor-key', () => ({
 vi.mock('../app/recipes/components/Pagination', () => ({
   Pagination: () => <div data-testid="pagination">Pagination</div>,
 }));
+
+beforeAll(() => {
+  if (typeof window.matchMedia !== 'function') {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  }
+
+  if (typeof window.IntersectionObserver === 'undefined') {
+    class IntersectionObserverMock {
+      disconnect() {
+        return undefined;
+      }
+      observe() {
+        return undefined;
+      }
+      takeRecords() {
+        return [];
+      }
+      unobserve() {
+        return undefined;
+      }
+    }
+
+    Object.defineProperty(window, 'IntersectionObserver', {
+      writable: true,
+      value: IntersectionObserverMock,
+    });
+  }
+
+  if (typeof window.ResizeObserver === 'undefined') {
+    class ResizeObserverMock {
+      disconnect() {
+        return undefined;
+      }
+      observe() {
+        return undefined;
+      }
+      unobserve() {
+        return undefined;
+      }
+    }
+
+    Object.defineProperty(window, 'ResizeObserver', {
+      writable: true,
+      value: ResizeObserverMock,
+    });
+  }
+});
 
 const target = {
   sku: 'PARENT',
@@ -198,17 +257,24 @@ describe('ProductReviews', () => {
       name: /media viewer video preview/i,
     });
     expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('Review video')).toBeInTheDocument();
+    expect(
+      within(dialog).getAllByLabelText('Review video').length
+    ).toBeGreaterThan(0);
 
     await user.click(
       screen.getByRole('button', { name: /^show next media$/i })
     );
 
+    await waitFor(() => {
+      expect(
+        screen.getByRole('dialog', { name: /media viewer image preview/i })
+      ).toBeInTheDocument();
+    });
     expect(
-      screen.getByRole('dialog', { name: /media viewer image preview/i })
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByRole('dialog')).getByAltText('Review image')
+      screen.getByRole('option', {
+        name: /preview media 2/i,
+        selected: true,
+      })
     ).toBeInTheDocument();
 
     await user.click(

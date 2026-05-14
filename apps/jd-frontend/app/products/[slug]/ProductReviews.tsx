@@ -278,7 +278,7 @@ function CustomerMediaGallery({
         </div>
       </div>
       {media.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
           {media.map((item, index) => (
             <div
               key={`${item.id}-${index}`}
@@ -738,10 +738,10 @@ export function ProductReviews({
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,420px)_minmax(0,1fr)]">
             <div
               data-testid="reviews-summary"
-              className="rounded-[28px] border border-border bg-card p-5 sm:p-6"
+              className="flex items-center rounded-[28px] border border-border bg-card p-5 sm:p-6"
             >
-              <div className="flex w-full min-w-0 flex-col items-center gap-5 sm:grid sm:grid-cols-[minmax(104px,124px)_1px_minmax(0,1fr)] sm:items-stretch sm:gap-3 md:gap-4">
-                <div className="flex shrink-0 flex-col items-center sm:justify-center">
+              <div className="grid w-full min-w-0 grid-cols-[minmax(104px,124px)_1px_minmax(0,1fr)] items-stretch gap-3 md:gap-4">
+                <div className="flex shrink-0 flex-col items-center justify-center">
                   <p className="text-5xl font-black tracking-tight text-ink">
                     {(effectiveSummary?.average ?? 0).toFixed(1)}
                   </p>
@@ -757,7 +757,7 @@ export function ProductReviews({
                   </p>
                 </div>
 
-                <div className="hidden w-px shrink-0 self-stretch bg-border sm:block" />
+                <div className="w-px shrink-0 self-stretch bg-border" />
 
                 {/* w-0 + flex-1：让中间列吃掉左侧评分与右侧之间的剩余宽度，进度条才能拉满 */}
                 <div className="w-full min-w-0 space-y-2.5 sm:min-w-0">

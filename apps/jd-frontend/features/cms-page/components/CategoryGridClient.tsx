@@ -23,6 +23,8 @@ export function CategoryGridClient({
   const [activeCategoryId, setActiveCategoryId] =
     useState<string>(initialCategoryId);
   const [showScrollArrows, setShowScrollArrows] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const [products, setProducts] = useState<ProductCardItem[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(initialProducts.length > 0);
@@ -106,13 +108,22 @@ export function CategoryGridClient({
     const updateScrollability = () => {
       const tabsEl = tabsRef.current;
       if (!tabsEl) return;
-      setShowScrollArrows(tabsEl.scrollWidth > tabsEl.clientWidth + 1);
+      const hasOverflow = tabsEl.scrollWidth > tabsEl.clientWidth + 1;
+      setShowScrollArrows(hasOverflow);
+      setCanScrollLeft(hasOverflow && tabsEl.scrollLeft > 1);
+      setCanScrollRight(
+        hasOverflow &&
+          tabsEl.scrollLeft + tabsEl.clientWidth < tabsEl.scrollWidth - 1
+      );
     };
 
+    const tabsEl = tabsRef.current;
     updateScrollability();
+    tabsEl?.addEventListener('scroll', updateScrollability, { passive: true });
     window.addEventListener('resize', updateScrollability);
 
     return () => {
+      tabsEl?.removeEventListener('scroll', updateScrollability);
       window.removeEventListener('resize', updateScrollability);
     };
   }, [categories]);
@@ -128,14 +139,14 @@ export function CategoryGridClient({
         </h2>
 
         <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-full border border-border">
-          {showScrollArrows && (
+          {showScrollArrows && canScrollLeft && (
             <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-surface to-transparent" />
           )}
-          {showScrollArrows && (
+          {showScrollArrows && canScrollRight && (
             <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-surface to-transparent" />
           )}
 
-          {showScrollArrows && (
+          {showScrollArrows && canScrollLeft && (
             <button
               type="button"
               onClick={() => scroll('left')}
@@ -145,7 +156,7 @@ export function CategoryGridClient({
               <ChevronLeft className="h-4 w-4" />
             </button>
           )}
-          {showScrollArrows && (
+          {showScrollArrows && canScrollRight && (
             <button
               type="button"
               onClick={() => scroll('right')}
@@ -159,8 +170,8 @@ export function CategoryGridClient({
           <div
             ref={tabsRef}
             className={`no-scrollbar flex gap-1 overflow-x-auto py-1.5 ${
-              showScrollArrows ? 'px-12' : 'px-1.5'
-            }`}
+              canScrollLeft ? 'pl-12' : 'pl-1.5'
+            } ${canScrollRight ? 'pr-12' : 'pr-1.5'}`}
           >
             {categories.map(cat => (
               <button

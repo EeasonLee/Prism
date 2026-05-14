@@ -495,12 +495,12 @@ export function ProductDetailContent({
           {displayProduct.isInStock ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-emerald-600">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Item is in stock
+              in stock
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-none text-red-500">
               <span className="h-2 w-2 rounded-full bg-red-400" />
-              Item is out of stock
+              out of stock
             </span>
           )}
           {ratingCount > 0 && (

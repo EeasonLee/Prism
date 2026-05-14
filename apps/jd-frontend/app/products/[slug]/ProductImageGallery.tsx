@@ -1,7 +1,7 @@
 'use client';
 
 import { OptimizedImage } from '@prism/ui';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveImageUrl } from '@prism/shared';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
@@ -12,6 +12,7 @@ import {
   Play,
 } from 'lucide-react';
 import type { UnifiedProductImage } from '@/features/product';
+import { useMediaPreload } from './use-media-preload';
 
 interface ProductGalleryVideo {
   url: string;
@@ -27,6 +28,8 @@ interface ProductImageGalleryProps {
 interface ProductGalleryMediaItem {
   type: 'video' | 'image';
   url: string;
+  displayUrl?: string;
+  fullUrl?: string;
   thumbUrl?: string;
   alt: string;
   poster?: string;
@@ -51,24 +54,51 @@ export function ProductImageGallery({
     align: 'start',
     containScroll: 'trimSnaps',
   });
-  const mediaItems: ProductGalleryMediaItem[] = [
-    ...(featuredVideo
-      ? [
-          {
-            type: 'video' as const,
-            url: featuredVideo.url,
-            alt: `${productName} video`,
-            poster: featuredVideo.poster,
-          },
-        ]
-      : []),
-    ...images.map(image => ({
-      type: 'image' as const,
-      url: resolveImageUrl(image.url, { size: 800 }) ?? image.url,
-      thumbUrl: resolveImageUrl(image.url, { size: 150 }) ?? image.url,
-      alt: image.alt ?? productName,
-    })),
-  ];
+  const mediaItems = useMemo<ProductGalleryMediaItem[]>(
+    () => [
+      ...(featuredVideo
+        ? [
+            {
+              type: 'video' as const,
+              url: featuredVideo.url,
+              alt: `${productName} video`,
+              poster: featuredVideo.poster,
+            },
+          ]
+        : []),
+      ...images.map(image => {
+        const fullUrl = resolveImageUrl(image.url) ?? image.url;
+        return {
+          type: 'image' as const,
+          url: resolveImageUrl(image.url, { size: 800 }) ?? fullUrl,
+          displayUrl: resolveImageUrl(image.url, { size: 1200 }) ?? fullUrl,
+          fullUrl,
+          thumbUrl: resolveImageUrl(image.url, { size: 150 }) ?? fullUrl,
+          alt: image.alt ?? productName,
+        };
+      }),
+    ],
+    [featuredVideo, images, productName]
+  );
+  const preloadItems = useMemo(
+    () =>
+      mediaItems.map(item => ({
+        kind: item.type,
+        imageUrl:
+          item.type === 'image'
+            ? item.displayUrl ?? item.url ?? item.fullUrl
+            : null,
+        posterUrl: item.type === 'video' ? item.poster ?? null : null,
+      })),
+    [mediaItems]
+  );
+
+  const { isReady } = useMediaPreload({
+    items: preloadItems,
+    activeIndex,
+    immediateDistance: 2,
+    idleDistance: 4,
+  });
 
   // 变体切换时重置到第一张
   const prevImagesRef = useRef(images);
@@ -318,17 +348,29 @@ export function ProductImageGallery({
                   className="relative min-w-0 shrink-0 grow-0 basis-full"
                 >
                   {item.type === 'image' ? (
-                    <OptimizedImage
-                      src={item.url}
-                      alt={item.alt}
-                      fill
-                      {...(idx === 0
-                        ? { priority: true }
-                        : { loading: 'lazy' as const })}
-                      maxDisplayWidth={800}
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      className="object-cover"
-                    />
+                    <>
+                      <OptimizedImage
+                        src={item.thumbUrl ?? item.url}
+                        alt=""
+                        fill
+                        maxDisplayWidth={150}
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        className="object-cover"
+                      />
+                      <OptimizedImage
+                        src={item.displayUrl ?? item.url ?? item.fullUrl}
+                        alt={item.alt}
+                        fill
+                        {...(idx === 0
+                          ? { priority: true }
+                          : { loading: 'lazy' as const })}
+                        maxDisplayWidth={1200}
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        className={`object-cover transition-opacity duration-200 ${
+                          isReady(idx) ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                    </>
                   ) : item.type === 'video' && idx === activeIndex ? (
                     <video
                       src={item.url}

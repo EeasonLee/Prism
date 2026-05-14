@@ -252,7 +252,7 @@ function toReviewImageUrl(
   const resolvedSize =
     typeof width === 'number' && Number.isFinite(width) && width > 0
       ? Math.round(width)
-      : 800;
+      : undefined;
 
   return (
     resolveImageUrl(normalizedPath, {
