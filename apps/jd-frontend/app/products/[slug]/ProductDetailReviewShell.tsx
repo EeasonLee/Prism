@@ -15,7 +15,6 @@ import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '@/infrastructure/config/env';
 import { gtmViewItem, mapDisplayToGtmItem } from '@/shared/utils/gtm';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
@@ -24,7 +23,11 @@ import type {
   ProductReviewSummary,
 } from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
-import type { ProductVideoCard, PdpRecipeCard, ProductCardItem } from '@/features/product';
+import type {
+  ProductVideoCard,
+  PdpRecipeCard,
+  ProductCardItem,
+} from '@/features/product';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 
@@ -90,16 +93,11 @@ export function ProductDetailReviewShell({
   }, []);
 
   const shareTarget = useMemo(() => {
-    if (!pathname) {
+    if (!pathname || typeof window === 'undefined') {
       return undefined;
     }
 
-    return buildProductShareTarget(
-      product,
-      pathname,
-      env.NEXT_PUBLIC_APP_URL,
-      selection
-    );
+    return buildProductShareTarget(product, window.location.href, selection);
   }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {

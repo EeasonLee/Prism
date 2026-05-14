@@ -1,7 +1,8 @@
 import { OptimizedImage } from '@prism/ui';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { formatPrice } from '@prism/shared';
 import type { UnifiedLinkedProduct } from '@/features/product';
 import { PageContainer } from '@prism/ui';
@@ -20,13 +21,123 @@ import type { ProductDetailPageData } from './product-detail-data';
 import { buildPdpSectionNav } from './pdp-section-nav';
 import { PDP_FEATURES } from './pdp-features';
 import { AddToCartButton } from '@/features/product';
-import { resolveImageUrl } from '@prism/shared';
 import { Breadcrumb, type BreadcrumbItem } from '@/app/_ui/Breadcrumb';
-import { buildBreadcrumbSchema } from '@/shared/utils/seo';
+import { absoluteUrl, buildBreadcrumbSchema } from '@/shared/utils/seo';
+import { resolveImageUrl } from '@/infrastructure/config/image';
 
 interface Props {
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+interface MetadataProduct {
+  sku?: string | null;
+  url_key?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  short_description?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  unified_thumbnail?: string | null;
+  display_name: string;
+}
+
+const getProductDetailAggregateSafe = cache(async (sku: string) => {
+  return getProductDetailAggregate(sku).catch(() => null);
+});
+
+function buildFallbackMetadata(slug: string): Metadata {
+  const fallbackPath = `/products/${encodeURIComponent(slug)}`;
+  const fallbackUrl = absoluteUrl(fallbackPath);
+  return {
+    title: 'Product - Joydeem',
+    description: 'Product details',
+    alternates: { canonical: fallbackPath },
+    openGraph: {
+      title: 'Product - Joydeem',
+      description: 'Product details',
+      url: fallbackUrl,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Product - Joydeem',
+      description: 'Product details',
+    },
+  };
+}
+
+function cleanDescription(product: MetadataProduct): string {
+  const raw =
+    product.meta_description?.trim() ||
+    (product.short_description ?? product.description ?? '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() ||
+    'Product details';
+  return raw.length > 160 ? `${raw.slice(0, 159).trimEnd()}…` : raw;
+}
+
+function resolveMetadataImage(product: MetadataProduct): string | undefined {
+  const imageCandidate =
+    product.image_url ?? product.thumbnail_url ?? product.unified_thumbnail;
+  const resolvedImageUrl = resolveImageUrl(imageCandidate);
+  return resolvedImageUrl ? absoluteUrl(resolvedImageUrl) : undefined;
+}
+
+function buildProductMetadata(
+  product: MetadataProduct,
+  slug: string
+): Metadata {
+  const path = buildProductUrl({
+    url_key: product.url_key ?? null,
+    sku: product.sku ?? slug,
+    cp_code: null,
+  });
+  const canonicalUrl = absoluteUrl(path);
+  const title = `${
+    product.meta_title?.trim() || product.display_name
+  } | Joydeem`;
+  const description = cleanDescription(product);
+  const imageUrl = resolveMetadataImage(product);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: 'website',
+      images: imageUrl
+        ? [
+            {
+              url: imageUrl,
+              alt: product.display_name,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: imageUrl ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+  };
+}
+
+function getCategorySlug(category: { id: number }): string {
+  const categoryWithUrlKey = category as { url_key?: unknown };
+  if (
+    typeof categoryWithUrlKey.url_key === 'string' &&
+    categoryWithUrlKey.url_key.trim()
+  ) {
+    return categoryWithUrlKey.url_key;
+  }
+  return String(category.id);
 }
 
 function emptyReviewSummary(sku: string): ProductReviewSummary {
@@ -149,11 +260,18 @@ async function DeferredUpsellProductsSection({
   return <UpsellProductsSection initialProducts={upsellProducts} />;
 }
 
-export async function generateMetadata() {
-  return {
-    title: 'Product - Joydeem',
-    description: 'Product details',
-  };
+export async function generateMetadata({
+  params,
+}: Pick<Props, 'params'>): Promise<Metadata> {
+  const { slug } = await params;
+  const decodedSku = decodeURIComponent(slug);
+  const aggregate = await getProductDetailAggregateSafe(decodedSku);
+
+  if (!aggregate) {
+    return buildFallbackMetadata(decodedSku);
+  }
+
+  return buildProductMetadata(aggregate.core.product, decodedSku);
 }
 
 export default async function ProductDetailPage({
@@ -178,9 +296,7 @@ export default async function ProductDetailPage({
   let deferredRelated: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
   let deferredUpsell: Promise<UnifiedLinkedProduct[]> = Promise.resolve([]);
 
-  const aggregate = await getProductDetailAggregate(decodedSku).catch(
-    () => null
-  );
+  const aggregate = await getProductDetailAggregateSafe(decodedSku);
 
   if (!aggregate) notFound();
 
@@ -240,7 +356,7 @@ export default async function ProductDetailPage({
   const fromSlug = typeof sp.from === 'string' ? sp.from : undefined;
   const fromCategory = fromSlug
     ? product.categories?.find(
-        c => c.url_key === fromSlug || String(c.id) === fromSlug
+        c => getCategorySlug(c) === fromSlug || String(c.id) === fromSlug
       )
     : undefined;
   const breadcrumbCategory = fromCategory ?? product.categories?.[0];
@@ -251,9 +367,7 @@ export default async function ProductDetailPage({
       ? [
           {
             label: breadcrumbCategory.name,
-            href: `/categories/${
-              breadcrumbCategory.url_key ?? breadcrumbCategory.id
-            }`,
+            href: `/categories/${getCategorySlug(breadcrumbCategory)}`,
           },
         ]
       : []),
@@ -266,9 +380,7 @@ export default async function ProductDetailPage({
       ? [
           {
             name: product.categories[0].name,
-            path: `/categories/${
-              product.categories[0].url_key ?? product.categories[0].id
-            }`,
+            path: `/categories/${getCategorySlug(product.categories[0])}`,
           },
         ]
       : []),

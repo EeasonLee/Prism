@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  Check,
-  Copy,
-  Facebook,
-  Mail,
-  MessageSquareShare,
-  MessagesSquare,
-  Pin,
-  Send,
-} from 'lucide-react';
+import { Check, Copy, Facebook, Pin, Send } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShareChannel } from './types';
 
@@ -19,22 +10,17 @@ interface ShareMenuProps {
   getChannelHref: (channel: ShareChannel) => string;
 }
 
-const CORE_CHANNELS: ShareChannel[] = ['sms', 'email', 'whatsapp'];
-const SOCIAL_CHANNELS: ShareChannel[] = ['facebook', 'x', 'pinterest'];
+type SocialShareChannel = Extract<ShareChannel, 'facebook' | 'x' | 'pinterest'>;
 
-const CHANNEL_LABELS: Record<ShareChannel, string> = {
-  email: 'Email',
-  sms: 'SMS / iMessage',
-  whatsapp: 'WhatsApp',
+const SOCIAL_CHANNELS: SocialShareChannel[] = ['facebook', 'x', 'pinterest'];
+
+const CHANNEL_LABELS: Record<SocialShareChannel, string> = {
   facebook: 'Facebook',
   x: 'X',
   pinterest: 'Pinterest',
 };
 
-const CHANNEL_ICONS: Record<ShareChannel, LucideIcon> = {
-  email: Mail,
-  sms: MessagesSquare,
-  whatsapp: MessageSquareShare,
+const CHANNEL_ICONS: Record<SocialShareChannel, LucideIcon> = {
   facebook: Facebook,
   x: Send,
   pinterest: Pin,
@@ -64,38 +50,6 @@ export function ShareMenu({
           <CopyIcon className="h-4 w-4" />
           <span>{copied ? 'Copied' : 'Copy product link'}</span>
         </button>
-
-        <div className="rounded-[24px] border border-border/70 bg-surface/60 p-3">
-          <div className="mb-3 flex items-center justify-between px-1">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-ink-faint">
-              Send to someone
-            </p>
-            <span className="micro-text text-ink-faint">High intent</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {CORE_CHANNELS.map(channel => {
-              const Icon = CHANNEL_ICONS[channel];
-
-              return (
-                <a
-                  key={channel}
-                  role="menuitem"
-                  href={getChannelHref(channel)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-2xl border border-border/70 bg-background px-3 py-3 text-center text-sm font-medium text-ink transition hover:-translate-y-0.5 hover:bg-surface-muted"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="leading-tight">
-                    {CHANNEL_LABELS[channel]}
-                  </span>
-                </a>
-              );
-            })}
-          </div>
-        </div>
 
         <div className="rounded-[24px] border border-border/60 bg-background p-3">
           <div className="mb-3 px-1">

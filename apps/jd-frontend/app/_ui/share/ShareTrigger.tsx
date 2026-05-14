@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { buildShareChannelUrl } from './build-share-channel-url';
 import { ShareMenu } from './ShareMenu';
@@ -14,7 +14,6 @@ interface ShareTriggerProps {
 
 export function ShareTrigger({ target, className }: ShareTriggerProps) {
   const [open, setOpen] = useState(false);
-  const [showCopyToast, setShowCopyToast] = useState(false);
   const { copied, isTouchDevice, copyLink, shareNatively } = useShareActions({
     target,
   });
@@ -46,22 +45,6 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       window.clearTimeout(timer);
     };
   }, [copied, open]);
-
-  useEffect(() => {
-    if (!copied) {
-      return;
-    }
-
-    setShowCopyToast(true);
-
-    const timer = window.setTimeout(() => {
-      setShowCopyToast(false);
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [copied]);
 
   const handleCopyLink = async () => {
     const copied = await copyLink();
@@ -130,17 +113,6 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
             onCopyLink={() => void handleCopyLink()}
             getChannelHref={getChannelHref}
           />
-        </div>
-      )}
-
-      {showCopyToast && (
-        <div className="pointer-events-none fixed bottom-24 right-4 z-40 sm:bottom-6 sm:right-6">
-          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-            <CheckCircle2 className="h-4 w-4 text-brand" />
-            <span className="text-sm font-medium text-ink">
-              Product link copied to clipboard
-            </span>
-          </div>
         </div>
       )}
     </div>
