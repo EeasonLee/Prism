@@ -5,10 +5,10 @@ import {
 } from '@/infrastructure/config/api-config';
 
 /**
- * Strapi custom routes are prefixed with ``api/``. When ``STRAPI_URL`` /
- * ``STRAPI_INTERNAL_URL`` is configured on the server, connect directly
- * to Strapi to avoid routing through ``NEXT_PUBLIC_API_URL`` (public/nginx
- * loopback, which can be extremely slow, time out, and appear to "retry endlessly").
+ * Strapi custom routes are prefixed with ``api/``. When ``STRAPI_URL``
+ * is configured on the server, connect directly to Strapi to avoid
+ * routing through ``NEXT_PUBLIC_API_URL`` (public/nginx loopback, which
+ * can be extremely slow, time out, and appear to "retry endlessly").
  */
 function resolveServerSideBaseUrl(cleanUrl: string): string {
   if (cleanUrl.startsWith('http')) {
@@ -19,9 +19,7 @@ function resolveServerSideBaseUrl(cleanUrl: string): string {
   if (!strapiStylePath) {
     return getApiBaseUrl();
   }
-  const hasExplicitStrapiHost =
-    Boolean((env.STRAPI_INTERNAL_URL || '').trim()) ||
-    Boolean((env.STRAPI_URL || '').trim());
+  const hasExplicitStrapiHost = Boolean((env.STRAPI_URL || '').trim());
   if (!hasExplicitStrapiHost) {
     return getApiBaseUrl();
   }

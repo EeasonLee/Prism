@@ -1,13 +1,8 @@
-import Link from 'next/link';
 import { OptimizedImage, PageContainer } from '@prism/ui';
 import { formatPrice } from '@prism/shared';
 import { productQueryFacade, buildProductUrl } from '@/features/product';
-import { type ShopSortOption } from '@/features/search';
-import {
-  gtmViewItemList,
-  gtmSelectItem,
-  mapDisplayToGtmItem,
-} from '@/shared/utils/gtm';
+import { SearchProductLink, type ShopSortOption } from '@/features/search';
+import { gtmViewItemList, mapDisplayToGtmItem } from '@/shared/utils/gtm';
 import type { GtmEcommerceItem } from '@/shared/utils/gtm';
 
 interface Props {
@@ -102,28 +97,22 @@ export default async function SearchPage({ searchParams }: Props) {
               });
               return (
                 <li key={item.sku}>
-                  <Link
+                  <SearchProductLink
                     href={href}
                     className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition hover:shadow-md"
-                    onClick={() => {
-                      gtmSelectItem(
-                        mapDisplayToGtmItem(
-                          {
-                            sku: item.sku,
-                            name: displayName,
-                            price: item.price?.value ?? 0,
-                            final_price: item.price?.value ?? 0,
-                            currency: item.price?.currency,
-                            categories: item.categories,
-                            brand: item.brand,
-                            url_key: item.urlKey,
-                            image: item.image,
-                          },
-                          { index, itemListName: listName, itemListId: listId }
-                        ),
-                        listName,
-                        listId
-                      );
+                    listName={listName}
+                    listId={listId}
+                    index={index}
+                    product={{
+                      sku: item.sku,
+                      name: displayName,
+                      price: item.price?.value ?? 0,
+                      final_price: item.price?.value ?? 0,
+                      currency: item.price?.currency,
+                      categories: item.categories,
+                      brand: item.brand,
+                      url_key: item.urlKey,
+                      image: item.image,
                     }}
                   >
                     <div className="relative aspect-square overflow-hidden bg-surface">
@@ -153,7 +142,7 @@ export default async function SearchPage({ searchParams }: Props) {
                         )}
                       </div>
                     </div>
-                  </Link>
+                  </SearchProductLink>
                 </li>
               );
             })}

@@ -44,15 +44,31 @@ server {
     # 🛒 Magento 路径（走 PHP）
     # ============================================
 
+    # hrmanager2025
+    location ^~ /hrmanager2025/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
     # 购物车 / 结账
     location ^~ /checkout/ {
         try_files $uri $uri/ /index.php?$args;
     }
-
-    # 客户账户（登录、注册）
-    location ^~ /customer/ {
+    location ^~ /sso/ {
         try_files $uri $uri/ /index.php?$args;
     }
+    location ^~ /stripe/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+    location ^~ /amasty_promo/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ^~ /onepagecheckout/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+    location ^~ /giftcard/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
 
     # 订单
     location ^~ /sales/ {
@@ -149,11 +165,19 @@ server {
         try_files $uri $uri/ /index.php?$args;
     }
 
+    # 旧 Magento：/customer/account/* → Next /account
+    location = /customer/account {
+        return 301 https://www.joydeem.com/account$is_args$args;
+    }
+    location ^~ /customer/account/ {
+        return 301 https://www.joydeem.com/account$is_args$args;
+    }
+
     # ============================================
     # 🌐 其他所有页面 → next.js (3090)
     # ============================================
     location / {
-        proxy_pass http://44.226.192.149:3090;
+        proxy_pass http://44.226.192.149:3091;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
