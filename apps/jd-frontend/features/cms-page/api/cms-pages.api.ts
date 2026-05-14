@@ -1169,3 +1169,98 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
     return null;
   }
 }
+
+const CMS_PAGES_SITEMAP_PAGE_SIZE = 100;
+
+/** 与 `app` 下已有静态/动态段冲突的 slug，避免与 `/blog` 等重复收录 */
+const RESERVED_CMS_PAGE_SLUGS = new Set(
+  [
+    'blog',
+    'recipes',
+    'search',
+    'cart',
+    'checkout',
+    'login',
+    'logout',
+    'products',
+    'categories',
+    'account',
+    'admin',
+    'api',
+    'forgot-password',
+    'reset-password',
+    'api-proxy',
+  ].map(s => s.toLowerCase())
+);
+
+export interface CmsPageSitemapRow {
+  slug: string;
+  lastModified: string | null;
+}
+
+/**
+ * 分页拉取 Strapi `pages` 文档（仅 slug / 日期），供 sitemap 收录 `[slug]` CMS 页。
+ */
+export async function fetchAllCmsPagesForSitemap(): Promise<
+  CmsPageSitemapRow[]
+> {
+  try {
+    const collected: CmsPageSitemapRow[] = [];
+    let page = 1;
+    let pageCount = 1;
+
+    while (page <= pageCount) {
+      const qs = [
+        'locale=en',
+        'fields[0]=slug',
+        'fields[1]=publishedAt',
+        `pagination[page]=${page}`,
+        `pagination[pageSize]=${CMS_PAGES_SITEMAP_PAGE_SIZE}`,
+      ].join('&');
+
+      const strapiUrl = `${getStrapiBaseUrl()}/api/pages?${qs}`;
+
+      const response = await fetch(strapiUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        next: {
+          revalidate: REVALIDATE_SECONDS_CMS_PAGE,
+          tags: ['cms-pages-sitemap-list'],
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          '[sitemap] Strapi pages list failed:',
+          response.status,
+          response.statusText
+        );
+        break;
+      }
+
+      const json = (await response.json()) as StrapiPageResponse;
+      pageCount = Math.max(json.meta?.pagination?.pageCount ?? 1, 1);
+
+      for (const row of json.data ?? []) {
+        const raw = typeof row.slug === 'string' ? row.slug.trim() : '';
+        const slug = raw.replace(/^\/+|\/+$/g, '');
+        if (!slug || slug.includes('/')) continue;
+        if (RESERVED_CMS_PAGE_SLUGS.has(slug.toLowerCase())) continue;
+
+        collected.push({
+          slug,
+          lastModified: row.publishedAt ?? null,
+        });
+      }
+
+      page += 1;
+    }
+
+    return collected;
+  } catch (error) {
+    console.error('[sitemap] Failed to fetch Strapi pages list:', error);
+    return [];
+  }
+}
