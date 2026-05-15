@@ -102,7 +102,9 @@ export function HeroBanner({
               maxDisplayWidth={1920}
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
+            {slide.theme != null && (
+              <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
+            )}
           </div>
 
           <div className="relative z-20 flex h-full items-center">
