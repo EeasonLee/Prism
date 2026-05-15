@@ -6,11 +6,15 @@ import type {
   ShareActionHandlers,
   ShareActionState,
   ShareChannel,
-  ShareTarget,
+  ShareTargetResolver,
 } from './types';
 
+function resolveShareTarget(input: ShareTargetResolver): ShareTarget {
+  return typeof input === 'function' ? input() : input;
+}
+
 interface UseShareActionsOptions {
-  target: ShareTarget;
+  target: ShareTargetResolver;
 }
 
 type UseShareActionsResult = ShareActionState & ShareActionHandlers;
@@ -40,7 +44,8 @@ export function useShareActions({
     }
 
     try {
-      await navigator.clipboard.writeText(target.url);
+      const resolved = resolveShareTarget(target);
+      await navigator.clipboard.writeText(resolved.url);
       setCopied(true);
       window.setTimeout(() => {
         setCopied(false);
@@ -49,7 +54,7 @@ export function useShareActions({
     } catch {
       return false;
     }
-  }, [target.url]);
+  }, [target]);
 
   const shareNatively = useCallback(async () => {
     if (!nativeShareSupported) {
@@ -57,20 +62,22 @@ export function useShareActions({
     }
 
     try {
+      const resolved = resolveShareTarget(target);
       await navigator.share({
-        title: target.title,
-        text: target.text,
-        url: target.url,
+        title: resolved.title,
+        text: resolved.text,
+        url: resolved.url,
       });
       return true;
     } catch {
       return false;
     }
-  }, [nativeShareSupported, target.text, target.title, target.url]);
+  }, [nativeShareSupported, target]);
 
   const openChannel = useCallback(
     (channel: ShareChannel) => {
-      const url = buildShareChannelUrl(channel, target);
+      const resolved = resolveShareTarget(target);
+      const url = buildShareChannelUrl(channel, resolved);
       window.open(url, '_blank', 'noopener,noreferrer');
     },
     [target]

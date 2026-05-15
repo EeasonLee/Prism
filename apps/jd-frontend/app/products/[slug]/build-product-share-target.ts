@@ -1,20 +1,48 @@
 /**
  * Build a normalized ShareTarget for product detail pages.
- * Handles canonical PDP URLs and optional variant query parameters.
+ * Uses current browser URL and optional variant query parameters.
  */
 
-import type { MagentoProduct } from '../../../lib/api/magento/types';
+import type { UnifiedProduct } from '@/features/product';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type { ShareTarget } from '@/app/_ui/share';
 
+function stripHtml(value?: string | null): string {
+  if (!value) {
+    return '';
+  }
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildShareText(product: UnifiedProduct): string | undefined {
+  const price = product.special_price ?? product.final_price ?? product.price;
+  const currency = product.currency ? ` ${product.currency}` : '';
+  const priceText =
+    typeof price === 'number' && Number.isFinite(price)
+      ? ` | ${price}${currency}`
+      : '';
+  const description = stripHtml(
+    product.short_description ?? product.description
+  );
+  const shortDescription =
+    description.length > 110
+      ? `${description.slice(0, 109).trimEnd()}...`
+      : description;
+  const text = `${product.name}${priceText}${
+    shortDescription ? ` | ${shortDescription}` : ''
+  }`;
+  return text.trim() || undefined;
+}
+
 export function buildProductShareTarget(
-  product: MagentoProduct,
-  pathname: string,
-  origin: string,
+  product: UnifiedProduct,
+  currentUrl: string,
   selection: ProductDetailSelection
 ): ShareTarget {
-  // Build canonical PDP URL from origin and pathname
-  let url = `${origin}${pathname}`;
+  const url = new URL(currentUrl);
 
   // Append variant query parameter only when configurable selection is complete
   if (
@@ -22,17 +50,15 @@ export function buildProductShareTarget(
     selection.allSelected &&
     selection.selectedVariant?.sku
   ) {
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}variant=${encodeURIComponent(
-      selection.selectedVariant.sku
-    )}`;
+    url.searchParams.set('variant', selection.selectedVariant.sku);
   }
 
   return {
     type: 'product',
     title: product.name,
-    url,
-    imageUrl: product.image_url,
+    text: buildShareText(product),
+    url: url.toString(),
+    imageUrl: product.image_url ?? product.thumbnail_url ?? undefined,
     meta: {
       sku: product.sku,
     },

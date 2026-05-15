@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
@@ -15,7 +14,6 @@ import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
 import { buildProductShareTarget } from './build-product-share-target';
-import { env } from '@/infrastructure/config/env';
 import { gtmViewItem, mapDisplayToGtmItem } from '@/shared/utils/gtm';
 import type { ProductDetailSelection } from './ProductDetailClient';
 import type {
@@ -24,7 +22,11 @@ import type {
   ProductReviewSummary,
 } from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
-import type { ProductVideoCard, PdpRecipeCard, ProductCardItem } from '@/features/product';
+import type {
+  ProductVideoCard,
+  PdpRecipeCard,
+  ProductCardItem,
+} from '@/features/product';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 
@@ -63,12 +65,15 @@ export function ProductDetailReviewShell({
   recipes = [],
   mediaGallery,
 }: ProductDetailReviewShellProps) {
-  const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
     selectedVariant: null,
     allSelected: false,
     customOptionPriceDelta: 0,
   });
+  const getShareTarget = useCallback(
+    () => buildProductShareTarget(product, window.location.href, selection),
+    [product, selection]
+  );
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
 
   // GTM: view_item on product detail page mount
@@ -92,19 +97,6 @@ export function ProductDetailReviewShell({
   const handleWriteReview = useCallback(() => {
     setIsReviewFormOpen(true);
   }, []);
-
-  const shareTarget = useMemo(() => {
-    if (!pathname) {
-      return undefined;
-    }
-
-    return buildProductShareTarget(
-      product,
-      pathname,
-      env.NEXT_PUBLIC_APP_URL,
-      selection
-    );
-  }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {
     return {
@@ -137,7 +129,7 @@ export function ProductDetailReviewShell({
         selection={selection}
         onSelectionChange={setSelection}
         onWriteReview={handleWriteReview}
-        shareTarget={shareTarget}
+        shareTarget={getShareTarget}
         addonProducts={addonProducts}
         mediaGallery={mediaGallery}
       />

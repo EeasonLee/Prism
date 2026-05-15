@@ -17,8 +17,13 @@ import {
   CouponBanner,
   useCouponClaim,
 } from '@/features/product';
-import type { UnifiedProduct, UnifiedProductImage, ProductCardItem, MagentoMediaGalleryItem } from '@/features/product';
-import type { ShareTarget } from '@/app/_ui/share';
+import type {
+  UnifiedProduct,
+  UnifiedProductImage,
+  ProductCardItem,
+  MagentoMediaGalleryItem,
+} from '@/features/product';
+import type { ShareTargetResolver } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 import { gtmAddToWishlist, mapDisplayToGtmItem } from '@/shared/utils/gtm';
@@ -31,7 +36,7 @@ interface ProductDetailContentProps {
   selection: ProductDetailSelection;
   onSelectionChange: (selection: ProductDetailSelection) => void;
   onWriteReview: () => void;
-  shareTarget?: ShareTarget;
+  shareTarget?: ShareTargetResolver;
   addonProducts?: Record<number, ProductCardItem>;
   mediaGallery?: MagentoMediaGalleryItem[];
 }
@@ -350,7 +355,10 @@ export function ProductDetailContent({
   ]);
 
   const showCouponBanner =
-    typeof cpCode === 'string' && cpCode.trim().length > 0 && !isCouponExpired;
+    displayProduct.isInStock &&
+    typeof cpCode === 'string' &&
+    cpCode.trim().length > 0 &&
+    !isCouponExpired;
 
   const searchParams = useSearchParams();
 
@@ -480,7 +488,7 @@ export function ProductDetailContent({
                 ? 'Saved'
                 : 'Wishlist'}
             </button>
-            {shareTarget && (
+            {shareTarget != null && (
               <div className="shrink-0">
                 <ShareTrigger target={shareTarget} />
               </div>
@@ -569,16 +577,18 @@ export function ProductDetailContent({
             onClaim={claim}
           />
         )}
-        {displayPromotionLabel && !showCouponBanner && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
-            <span className="text-sm font-medium text-brand">
-              {displayPromotionLabel}
-            </span>
-            <span className="text-sm text-ink-muted">
-              Save big while offer lasts
-            </span>
-          </div>
-        )}
+        {displayProduct.isInStock &&
+          displayPromotionLabel &&
+          !showCouponBanner && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
+              <span className="text-sm font-medium text-brand">
+                {displayPromotionLabel}
+              </span>
+              <span className="text-sm text-ink-muted">
+                Save big while offer lasts
+              </span>
+            </div>
+          )}
         <ProductDetailClient
           product={product}
           claimedCouponCode={claimedCode}

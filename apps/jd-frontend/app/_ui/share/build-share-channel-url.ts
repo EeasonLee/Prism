@@ -56,6 +56,14 @@ export function buildPinterestShareUrl(target: ShareTarget): string {
 }
 
 /**
+ * Instagram 没有官方分享 URL scheme，只能跳转首页。
+ * 调用方需自行处理"先复制链接再跳转"的逻辑。
+ */
+export function buildInstagramShareUrl(_target: ShareTarget): string {
+  return 'https://www.instagram.com/';
+}
+
+/**
  * Builds a share URL for the specified channel.
  * @param channel - Share channel
  * @param target - Normalized share target
@@ -78,6 +86,8 @@ export function buildShareChannelUrl(
       return buildXShareUrl(target);
     case 'pinterest':
       return buildPinterestShareUrl(target);
+    case 'instagram':
+      return buildInstagramShareUrl(target);
     default: {
       const _exhaustive: never = channel;
       return _exhaustive;

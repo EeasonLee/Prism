@@ -1,27 +1,31 @@
 'use client';
 
-import { CheckCircle2, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { buildShareChannelUrl } from './build-share-channel-url';
 import { ShareMenu } from './ShareMenu';
 import { useShareActions } from './useShareActions';
-import type { ShareChannel, ShareTarget } from './types';
+import type { ShareChannel, ShareTargetResolver } from './types';
 
 interface ShareTriggerProps {
-  target: ShareTarget;
+  target: ShareTargetResolver;
   className?: string;
+}
+
+function resolveShareTargetInput(input: ShareTargetResolver) {
+  return typeof input === 'function' ? input() : input;
 }
 
 export function ShareTrigger({ target, className }: ShareTriggerProps) {
   const [open, setOpen] = useState(false);
-  const [showCopyToast, setShowCopyToast] = useState(false);
   const { copied, isTouchDevice, copyLink, shareNatively } = useShareActions({
     target,
   });
 
   const copyLinkLegacy = () => {
+    const resolved = resolveShareTargetInput(target);
     const input = document.createElement('textarea');
-    input.value = target.url;
+    input.value = resolved.url;
     input.setAttribute('readonly', '');
     input.style.position = 'fixed';
     input.style.opacity = '0';
@@ -47,22 +51,6 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
     };
   }, [copied, open]);
 
-  useEffect(() => {
-    if (!copied) {
-      return;
-    }
-
-    setShowCopyToast(true);
-
-    const timer = window.setTimeout(() => {
-      setShowCopyToast(false);
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [copied]);
-
   const handleCopyLink = async () => {
     const copied = await copyLink();
     if (copied) {
@@ -73,7 +61,10 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       return;
     }
 
-    window.prompt('Copy this product link', target.url);
+    window.prompt(
+      'Copy this product link',
+      resolveShareTargetInput(target).url
+    );
   };
 
   const handleTriggerClick = async () => {
@@ -93,7 +84,14 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
   };
 
   const getChannelHref = (channel: ShareChannel) =>
-    buildShareChannelUrl(channel, target);
+    buildShareChannelUrl(channel, resolveShareTargetInput(target));
+
+  /** Instagram 等无分享 URL 的渠道：先复制链接，再打开首页 */
+  const handleCopyAndOpen = async (channel: ShareChannel) => {
+    await handleCopyLink();
+    const url = buildShareChannelUrl(channel, resolveShareTargetInput(target));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="relative inline-flex">
@@ -129,18 +127,8 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
             copied={copied}
             onCopyLink={() => void handleCopyLink()}
             getChannelHref={getChannelHref}
+            onCopyAndOpen={channel => void handleCopyAndOpen(channel)}
           />
-        </div>
-      )}
-
-      {showCopyToast && (
-        <div className="pointer-events-none fixed bottom-24 right-4 z-40 sm:bottom-6 sm:right-6">
-          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-            <CheckCircle2 className="h-4 w-4 text-brand" />
-            <span className="text-sm font-medium text-ink">
-              Product link copied to clipboard
-            </span>
-          </div>
         </div>
       )}
     </div>

@@ -3,14 +3,17 @@
 import {
   Check,
   Copy,
-  Facebook,
   Mail,
   MessageSquareShare,
   MessagesSquare,
-  Pin,
-  Send,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  FacebookBrandIcon,
+  InstagramBrandIcon,
+  PinterestBrandIcon,
+  XBrandIcon,
+} from './social-brand-icons';
 import type { ShareChannel } from './types';
 
 interface ShareSheetProps {
@@ -18,10 +21,17 @@ interface ShareSheetProps {
   onClose: () => void;
   onCopyLink: () => void;
   getChannelHref: (channel: ShareChannel) => string;
+  /** 复制链接后打开指定渠道（用于 Instagram 等无分享 URL 的平台） */
+  onCopyAndOpen?: (channel: ShareChannel) => void;
 }
 
 const CORE_CHANNELS: ShareChannel[] = ['sms', 'email', 'whatsapp'];
-const SOCIAL_CHANNELS: ShareChannel[] = ['facebook', 'x', 'pinterest'];
+const SOCIAL_CHANNELS: ShareChannel[] = [
+  'facebook',
+  'x',
+  'pinterest',
+  'instagram',
+];
 
 const CHANNEL_LABELS: Record<ShareChannel, string> = {
   email: 'Email',
@@ -30,15 +40,13 @@ const CHANNEL_LABELS: Record<ShareChannel, string> = {
   facebook: 'Facebook',
   x: 'X',
   pinterest: 'Pinterest',
+  instagram: 'Instagram',
 };
 
-const CHANNEL_ICONS: Record<ShareChannel, LucideIcon> = {
+const CORE_CHANNEL_ICONS: Record<'email' | 'sms' | 'whatsapp', LucideIcon> = {
   email: Mail,
   sms: MessagesSquare,
   whatsapp: MessageSquareShare,
-  facebook: Facebook,
-  x: Send,
-  pinterest: Pin,
 };
 
 export function ShareSheet({
@@ -46,6 +54,7 @@ export function ShareSheet({
   onClose,
   onCopyLink,
   getChannelHref,
+  onCopyAndOpen,
 }: ShareSheetProps) {
   const CopyIcon = copied ? Check : Copy;
 
@@ -82,7 +91,9 @@ export function ShareSheet({
             </div>
             <div className="grid grid-cols-3 gap-2">
               {CORE_CHANNELS.map(channel => {
-                const Icon = CHANNEL_ICONS[channel];
+                const Icon =
+                  CORE_CHANNEL_ICONS[channel as 'email' | 'sms' | 'whatsapp'];
+                if (!Icon) return null;
 
                 return (
                   <a
@@ -104,15 +115,15 @@ export function ShareSheet({
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-border/60 bg-background p-3">
+          <div>
             <div className="mb-3 px-1">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-ink-faint">
                 Social media
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {SOCIAL_CHANNELS.map(channel => {
-                const Icon = CHANNEL_ICONS[channel];
+                const isInstagram = channel === 'instagram';
 
                 return (
                   <a
@@ -120,11 +131,26 @@ export function ShareSheet({
                     href={getChannelHref(channel)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex min-h-[78px] flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 px-3 py-3 text-center text-sm font-medium text-ink transition hover:bg-surface"
+                    onClick={
+                      isInstagram && onCopyAndOpen
+                        ? e => {
+                            e.preventDefault();
+                            onCopyAndOpen(channel);
+                          }
+                        : undefined
+                    }
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center text-xs font-medium text-ink transition hover:bg-surface"
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-ink-muted">
-                      <Icon className="h-4 w-4" />
-                    </span>
+                    {channel === 'facebook' && (
+                      <FacebookBrandIcon className="h-9 w-9" />
+                    )}
+                    {channel === 'x' && <XBrandIcon className="h-9 w-9" />}
+                    {channel === 'pinterest' && (
+                      <PinterestBrandIcon className="h-9 w-9" />
+                    )}
+                    {channel === 'instagram' && (
+                      <InstagramBrandIcon className="h-9 w-9" />
+                    )}
                     <span>{CHANNEL_LABELS[channel]}</span>
                   </a>
                 );
