@@ -9,7 +9,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -608,6 +608,14 @@ export function ProductReviews({
     void loadPage(1, sort, reviewFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sku]);
+
+  // visitorKey 从 localStorage 异步获取，就绪后重新获取评论以恢复 viewerHasMarkedHelpful 状态
+  const hasHydratedVisitorKey = useRef(false);
+  useEffect(() => {
+    if (!visitorKey || hasHydratedVisitorKey.current) return;
+    hasHydratedVisitorKey.current = true;
+    void loadPage(1, sort, reviewFilters);
+  }, [visitorKey, sort, reviewFilters, loadPage]);
 
   useEffect(() => {
     const loadAuxData = async () => {
