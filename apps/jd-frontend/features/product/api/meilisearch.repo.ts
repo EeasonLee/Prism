@@ -147,6 +147,21 @@ function buildSort(sort?: UnifiedProductSortOption): string[] {
   return [];
 }
 
+function buildSortWithStock(sort?: UnifiedProductSortOption): string[] {
+  const base = buildSort(sort);
+  return ['stock_status:asc', ...base];
+}
+
+/** 将无库存商品排到列表末尾 */
+function pushOutOfStockToEnd(items: ProductCardItem[]): ProductCardItem[] {
+  const inStock: ProductCardItem[] = [];
+  const outOfStock: ProductCardItem[] = [];
+  for (const item of items) {
+    (item.inStock ? inStock : outOfStock).push(item);
+  }
+  return [...inStock, ...outOfStock];
+}
+
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
   const rawPrice = hit.price != null ? Number(hit.price) : null;
   const rawFinal = hit.final_price != null ? Number(hit.final_price) : null;
@@ -341,34 +356,33 @@ export async function searchProductsFromMeilisearch(params: {
     hitsPerPage: params.pageSize ?? 24,
   };
 
-  const sort = buildSort(params.sort);
-  if (sort.length > 0) baseBody.sort = sort;
+  // 优先使用带库存排序的 sort，若索引不支持则降级
+  const sortWithStock = buildSortWithStock(params.sort);
+  baseBody.sort = sortWithStock;
 
   const facetKeys =
     params.facets && params.facets.length > 0 ? params.facets : undefined;
 
-  try {
+  const doSearch = async (body: Record<string, unknown>) => {
     let last404Error: Error | null = null;
     for (const indexUid of getIndexCandidates()) {
       const outcome = await searchIndexWithFacetFallback(
         host,
         indexUid,
         headers,
-        baseBody,
+        body,
         facetKeys
       );
       if (outcome.kind === 'ok') {
         const data = outcome.data;
         let facetDistribution = data.facetDistribution;
 
-        // 某些索引配置下，批量 facets 请求会失败并回退到无 facets 查询，导致筛选项全空。
-        // 这里做单字段补偿探测，尽量恢复可用筛选。
         if (!hasFacetData(facetDistribution) && facetKeys?.length) {
           const recovered = await recoverFacetDistributionBySingleKeys(
             host,
             indexUid,
             headers,
-            baseBody,
+            body,
             facetKeys
           );
           if (recovered) {
@@ -395,7 +409,21 @@ export async function searchProductsFromMeilisearch(params: {
       throw outcome.error;
     }
     throw last404Error ?? new Error('No available Meilisearch index');
+  };
+
+  try {
+    return await doSearch(baseBody);
   } catch (error) {
+    // stock_status 不可排序时降级：去掉库存排序重试，客户端排序兜底
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('invalid_search_sort') && msg.includes('stock_status')) {
+      const fallbackSort = buildSort(params.sort);
+      const fallbackBody = { ...baseBody };
+      if (fallbackSort.length > 0) fallbackBody.sort = fallbackSort;
+      else delete fallbackBody.sort;
+      const result = await doSearch(fallbackBody);
+      return { ...result, items: pushOutOfStockToEnd(result.items) };
+    }
     await notifyError({
       title: 'Unified Meilisearch Search Failed',
       message: JSON.stringify(params),
