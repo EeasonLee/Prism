@@ -2,6 +2,7 @@
 
 import { Play } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { resolveImageUrl } from '@prism/shared';
 import type { VideoItem, VideoShowcaseProps } from '../types';
 import { VideoShowcaseModal } from './VideoShowcaseModal';
 
@@ -156,7 +157,7 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
                           videoRefs.current[index] = el;
                         }}
                         src={shouldLoad ? video.videoUrl : undefined}
-                        poster={video.thumbnail?.url}
+                        poster={video.thumbnail ? resolveImageUrl(video.thumbnail, { size: 350 }) ?? undefined : undefined}
                         preload={shouldLoad ? 'metadata' : 'none'}
                         muted
                         playsInline
