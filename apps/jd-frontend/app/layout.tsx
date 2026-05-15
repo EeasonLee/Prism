@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Inter, Montserrat } from 'next/font/google';
 import { env } from '@/infrastructure/config/env';
 import { Footer } from '@/app/_ui/Footer';
 import { Header } from '@/app/_ui/Header';
@@ -7,6 +8,20 @@ import { MobileTabbar } from '@/app/_ui/MobileTabbar';
 import './globals.css';
 import { AppProviders } from './providers';
 // import { DevtoolsPanel } from '@/infrastructure/api/devtools/panel';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+  variable: '--font-montserrat',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Joydeem Kitchen Appliances - Dough Makers, Rice Cookers & More',
@@ -26,7 +41,12 @@ export default function RootLayout({
   const gtmId = env.NEXT_PUBLIC_GTM_CONTAINER_ID;
 
   return (
-    <html lang="en" data-app={env.NODE_ENV} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-app={env.NODE_ENV}
+      suppressHydrationWarning
+      className={`${inter.variable} ${montserrat.variable}`}
+    >
       <head>
         {gtmId && (
           <script

@@ -730,10 +730,7 @@ function ProductCardFeaturedVariant({
 
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-between p-4 lg:p-6">
           <div className="min-w-0 flex-1 overflow-hidden">
-            <h3
-              className="mb-2 line-clamp-2 text-base font-bold leading-snug text-ink lg:text-xl"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
-            >
+            <h3 className="mb-2 line-clamp-2 font-heading text-base font-bold leading-snug text-ink lg:text-xl">
               {product.short_name ?? product.name}
             </h3>
             {cleanLongTitle && (

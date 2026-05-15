@@ -22,12 +22,7 @@ export function DealCategoryNav({ title, items }: DealCategoryNavProps) {
     <section className="py-10 lg:py-16">
       <div className="px-6 lg:px-[8vw]">
         {title && (
-          <h2
-            className="heading-3 mb-6 text-center text-ink"
-            style={{ fontFamily: 'Montserrat, sans-serif' }}
-          >
-            {title}
-          </h2>
+          <h2 className="heading-3 mb-6 text-center text-ink">{title}</h2>
         )}
 
         <div className="relative">

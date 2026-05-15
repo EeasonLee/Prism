@@ -109,12 +109,11 @@ export function HeroBanner({
             <div className="w-full px-6 lg:px-[8vw]">
               <div className="max-w-xl">
                 <h1
-                  className={`mb-4 text-4xl font-bold leading-tight transition-all duration-700 lg:text-6xl ${
+                  className={`mb-4 font-heading text-4xl font-bold leading-tight transition-all duration-700 lg:text-6xl ${
                     index === currentSlide
                       ? 'translate-y-0 opacity-100'
                       : 'translate-y-8 opacity-0'
                   } ${slide.theme === 'dark' ? 'text-ink' : 'text-white'}`}
-                  style={{ fontFamily: 'Montserrat, sans-serif' }}
                 >
                   {slide.title}
                 </h1>

@@ -89,10 +89,7 @@ export function LazyDealProductBlock({ block }: LazyDealProductBlockProps) {
       className="py-8 lg:py-12"
     >
       <div className="mb-6 flex items-end justify-between">
-        <h3
-          className="text-xl font-bold text-ink md:text-2xl"
-          style={{ fontFamily: 'Montserrat, sans-serif' }}
-        >
+        <h3 className="font-heading text-xl font-bold text-ink md:text-2xl">
           {block.categoryName}
         </h3>
         {block.categoryLink && (

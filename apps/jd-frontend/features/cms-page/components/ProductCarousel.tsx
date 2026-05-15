@@ -48,12 +48,7 @@ export async function ProductCarousel({
                 {subtitle}
               </span>
             )}
-            <h2
-              className="heading-3 text-ink"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
-            >
-              {title}
-            </h2>
+            <h2 className="heading-3 text-ink">{title}</h2>
           </div>
           {showViewAll && viewAllLink && (
             <Link

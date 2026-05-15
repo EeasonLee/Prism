@@ -37,12 +37,7 @@ export async function FeaturedProducts({
           {subtitle && (
             <span className="micro-text mb-2 block text-brand">{subtitle}</span>
           )}
-          <h2
-            className="heading-3 text-ink"
-            style={{ fontFamily: 'Montserrat, sans-serif' }}
-          >
-            {title}
-          </h2>
+          <h2 className="heading-3 text-ink">{title}</h2>
         </div>
 
         <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory no-scrollbar lg:grid lg:grid-cols-2">

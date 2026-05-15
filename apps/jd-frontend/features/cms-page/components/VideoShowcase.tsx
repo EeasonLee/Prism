@@ -117,7 +117,6 @@ export function VideoShowcase({ title, videos }: VideoShowcaseProps) {
             <h2
               id="video-showcase-title"
               className="heading-2 text-center text-ink"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
             >
               {title}
             </h2>

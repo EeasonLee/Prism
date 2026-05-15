@@ -131,12 +131,7 @@ export function CategoryGridClient({
   return (
     <section className="py-12 lg:py-20">
       <div className="px-6 lg:px-[8vw]">
-        <h2
-          className="heading-3 mb-8 text-center text-ink"
-          style={{ fontFamily: 'Montserrat, sans-serif' }}
-        >
-          {title}
-        </h2>
+        <h2 className="heading-3 mb-8 text-center text-ink">{title}</h2>
 
         <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-full border border-border">
           {showScrollArrows && canScrollLeft && (

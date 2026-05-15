@@ -57,10 +57,9 @@ export function DealBanner({
             <div className="w-full px-6 lg:px-[8vw]">
               <div className="max-w-xl">
                 <h1
-                  className={`mb-3 text-3xl font-bold leading-tight md:text-5xl ${
+                  className={`mb-3 font-heading text-3xl font-bold leading-tight md:text-5xl ${
                     slide.theme === 'dark' ? 'text-ink' : 'text-white'
                   }`}
-                  style={{ fontFamily: 'Montserrat, sans-serif' }}
                 >
                   {slide.title}
                 </h1>
