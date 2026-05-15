@@ -22,21 +22,6 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
     target,
   });
 
-  const copyLinkLegacy = () => {
-    const resolved = resolveShareTargetInput(target);
-    const input = document.createElement('textarea');
-    input.value = resolved.url;
-    input.setAttribute('readonly', '');
-    input.style.position = 'fixed';
-    input.style.opacity = '0';
-    document.body.appendChild(input);
-    input.select();
-
-    const copied = document.execCommand('copy');
-    document.body.removeChild(input);
-    return copied;
-  };
-
   useEffect(() => {
     if (!copied || !open) {
       return;
@@ -52,19 +37,13 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
   }, [copied, open]);
 
   const handleCopyLink = async () => {
-    const copied = await copyLink();
-    if (copied) {
-      return;
+    const ok = await copyLink();
+    if (!ok) {
+      window.prompt(
+        'Copy this product link',
+        resolveShareTargetInput(target).url
+      );
     }
-
-    if (copyLinkLegacy()) {
-      return;
-    }
-
-    window.prompt(
-      'Copy this product link',
-      resolveShareTargetInput(target).url
-    );
   };
 
   const handleTriggerClick = async () => {

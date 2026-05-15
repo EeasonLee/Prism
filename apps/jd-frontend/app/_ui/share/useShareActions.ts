@@ -6,11 +6,29 @@ import type {
   ShareActionHandlers,
   ShareActionState,
   ShareChannel,
+  ShareTarget,
   ShareTargetResolver,
 } from './types';
 
+const COPIED_FEEDBACK_MS = 1500;
+
 function resolveShareTarget(input: ShareTargetResolver): ShareTarget {
   return typeof input === 'function' ? input() : input;
+}
+
+/** 非安全上下文（如 http + 局域网 IP）下 Clipboard API 不可用时的回退 */
+function copyTextWithExecCommand(url: string): boolean {
+  if (typeof document === 'undefined') return false;
+  const input = document.createElement('textarea');
+  input.value = url;
+  input.setAttribute('readonly', '');
+  input.style.position = 'fixed';
+  input.style.opacity = '0';
+  document.body.appendChild(input);
+  input.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(input);
+  return ok;
 }
 
 interface UseShareActionsOptions {
@@ -23,6 +41,13 @@ export function useShareActions({
   target,
 }: UseShareActionsOptions): UseShareActionsResult {
   const [copied, setCopied] = useState(false);
+
+  const showCopiedFeedback = useCallback(() => {
+    setCopied(true);
+    window.setTimeout(() => {
+      setCopied(false);
+    }, COPIED_FEEDBACK_MS);
+  }, []);
 
   const nativeShareSupported = useMemo(
     () =>
@@ -38,23 +63,27 @@ export function useShareActions({
     []
   );
 
-  const copyLink = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-      return false;
+  const copyLink = useCallback(async (): Promise<boolean> => {
+    const resolved = resolveShareTarget(target);
+    const url = resolved.url;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showCopiedFeedback();
+        return true;
+      } catch {
+        // 权限被拒等：继续尝试 execCommand
+      }
     }
 
-    try {
-      const resolved = resolveShareTarget(target);
-      await navigator.clipboard.writeText(resolved.url);
-      setCopied(true);
-      window.setTimeout(() => {
-        setCopied(false);
-      }, 1500);
+    if (copyTextWithExecCommand(url)) {
+      showCopiedFeedback();
       return true;
-    } catch {
-      return false;
     }
-  }, [target]);
+
+    return false;
+  }, [target, showCopiedFeedback]);
 
   const shareNatively = useCallback(async () => {
     if (!nativeShareSupported) {

@@ -148,10 +148,8 @@ describe('ShareTrigger', () => {
       });
     });
 
-    it('falls back to a prompt when clipboard copy fails', async () => {
+    it('falls back to a prompt when copyLink fails', async () => {
       copyLinkMock.mockResolvedValueOnce(false);
-      const execCommandSpy = vi.fn().mockReturnValue(false);
-      document.execCommand = execCommandSpy;
       const promptSpy = vi
         .spyOn(window, 'prompt')
         .mockImplementation(() => null);
@@ -172,17 +170,14 @@ describe('ShareTrigger', () => {
         screen.getByRole('menuitem', { name: 'Copy product link' })
       );
 
-      expect(execCommandSpy).toHaveBeenCalledWith('copy');
       expect(promptSpy).toHaveBeenCalledWith(
         'Copy this product link',
         'https://example.com/products/JD-AF550'
       );
     });
 
-    it('uses legacy copy before showing the manual prompt', async () => {
-      copyLinkMock.mockResolvedValueOnce(false);
-      const execCommandSpy = vi.fn().mockReturnValue(true);
-      document.execCommand = execCommandSpy;
+    it('does not open prompt when copyLink succeeds', async () => {
+      copyLinkMock.mockResolvedValueOnce(true);
       const promptSpy = vi
         .spyOn(window, 'prompt')
         .mockImplementation(() => null);
@@ -203,7 +198,6 @@ describe('ShareTrigger', () => {
         screen.getByRole('menuitem', { name: 'Copy product link' })
       );
 
-      expect(execCommandSpy).toHaveBeenCalledWith('copy');
       expect(promptSpy).not.toHaveBeenCalled();
     });
   });

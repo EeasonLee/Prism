@@ -148,10 +148,17 @@ describe('useShareActions', () => {
     expect(shared).toBe(false);
   });
 
-  it('does not mark copied when clipboard support is unavailable', async () => {
+  it('falls back to execCommand when clipboard API is unavailable', async () => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: undefined,
+    });
+
+    const execMock = vi.fn().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: execMock,
     });
 
     const { result } = renderHook(() =>
@@ -164,11 +171,50 @@ describe('useShareActions', () => {
       })
     );
 
+    let ok = false;
     await act(async () => {
-      await result.current.copyLink();
+      ok = await result.current.copyLink();
     });
 
-    expect(result.current.copied).toBe(false);
+    expect(execMock).toHaveBeenCalledWith('copy');
+    expect(ok).toBe(true);
+    expect(result.current.copied).toBe(true);
+    Reflect.deleteProperty(document, 'execCommand');
+  });
+
+  it('falls back to execCommand when clipboard write is rejected but execCommand succeeds', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockRejectedValue(new Error('clipboard denied')),
+      },
+    });
+
+    const execMock = vi.fn().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: execMock,
+    });
+
+    const { result } = renderHook(() =>
+      useShareActions({
+        target: {
+          type: 'product',
+          title: 'Joydeem Air Fryer',
+          url: 'https://example.com/products/JD-AF550',
+        },
+      })
+    );
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.copyLink();
+    });
+
+    expect(ok).toBe(true);
+    expect(result.current.copied).toBe(true);
+    Reflect.deleteProperty(document, 'execCommand');
   });
 
   it('detects touch device when maxTouchPoints > 0', () => {
@@ -219,12 +265,19 @@ describe('useShareActions', () => {
     }
   });
 
-  it('returns false when clipboard write is rejected', async () => {
+  it('returns false when clipboard write is rejected and execCommand fails', async () => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
         writeText: vi.fn().mockRejectedValue(new Error('clipboard denied')),
       },
+    });
+
+    const execMock = vi.fn().mockReturnValue(false);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: execMock,
     });
 
     const { result } = renderHook(() =>
@@ -244,5 +297,6 @@ describe('useShareActions', () => {
 
     expect(copied).toBe(false);
     expect(result.current.copied).toBe(false);
+    Reflect.deleteProperty(document, 'execCommand');
   });
 });
