@@ -271,9 +271,16 @@ async function fetchProductVideosByIds(ids: number[]): Promise<VideoItem[]> {
             (typeof v.caption === 'string' ? v.caption.trim() : '') ||
             'Video',
           caption: typeof v.caption === 'string' ? v.caption.trim() : undefined,
-          thumbnail: transformImage(
-            unwrapStrapiRelation<StrapiImageRaw>(v.thumbnail)
-          ),
+          thumbnail: (() => {
+            const img = transformImage(
+              unwrapStrapiRelation<StrapiImageRaw>(v.thumbnail)
+            );
+            // video poster 专用 CDN 尺寸，减少不必要的大图传输
+            if (img) {
+              img.url = resolveImageUrl(img, { size: 350 }) ?? img.url;
+            }
+            return img;
+          })(),
           productSkus,
         };
       })

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { OptimizedImage, Skeleton, useBodyScrollLock } from '@prism/ui';
-import { formatPrice, resolveImageUrl } from '@prism/shared';
+import { formatPrice } from '@prism/shared';
 import type { ProductCardItem } from '@/features/product';
 import { buildProductUrl } from '@/features/product';
 import type { VideoItem } from '../types';
@@ -147,7 +147,7 @@ export function VideoShowcaseModal({
             <video
               ref={videoRef}
               src={video.videoUrl}
-              poster={video.thumbnail ? resolveImageUrl(video.thumbnail, { size: 350 }) ?? undefined : undefined}
+              poster={video.thumbnail?.url}
               controls
               autoPlay
               muted
