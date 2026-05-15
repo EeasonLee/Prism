@@ -33,6 +33,8 @@ interface StrapiReviewRaw {
   helpful_count?: number | null;
   viewer_has_marked_helpful?: boolean | null;
   review_status?: 'pending' | 'approved' | 'rejected' | null;
+  /** 评论对外展示时间（审核通过 / 同步自 Magento 的发布时间） */
+  review_published_at?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -148,6 +150,8 @@ export interface ProductReview {
   helpfulCount: number;
   viewerHasMarkedHelpful: boolean;
   status: 'pending' | 'approved' | 'rejected';
+  /** 对应 Strapi `review_published_at`，无则回退 `createdAt` 展示 */
+  reviewPublishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -379,6 +383,7 @@ function normalizeReview(review: StrapiReviewRaw): ProductReview {
     helpfulCount: Number(review.helpful_count ?? 0),
     viewerHasMarkedHelpful: review.viewer_has_marked_helpful ?? false,
     status: review.review_status ?? 'pending',
+    reviewPublishedAt: review.review_published_at ?? null,
     createdAt: review.createdAt ?? null,
     updatedAt: review.updatedAt ?? null,
   };

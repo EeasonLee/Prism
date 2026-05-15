@@ -318,8 +318,8 @@ function ReviewCard({
   onHelpful: (review: ProductReview) => Promise<void>;
   helpfulPending: boolean;
 }) {
-  const displayDate =
-    formatReviewDate(review.createdAt) || review.createdAt || '';
+  const publishedAt = review.reviewPublishedAt ?? review.createdAt;
+  const displayDate = formatReviewDate(publishedAt) || publishedAt || '';
   const reviewDimensionRatings = review.dimensionRatings
     .map(item => {
       const relatedTag = review.reviewTags.find(

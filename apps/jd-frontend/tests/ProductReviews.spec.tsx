@@ -152,6 +152,7 @@ const review: ProductReview = {
   helpfulCount: 3,
   viewerHasMarkedHelpful: false,
   status: 'approved',
+  reviewPublishedAt: '2026-03-26T10:00:00.000Z',
   createdAt: '2026-03-26T10:00:00.000Z',
   updatedAt: '2026-03-26T10:00:00.000Z',
 };
