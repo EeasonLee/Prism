@@ -28,6 +28,8 @@ import type { ProductVideoCard, PdpRecipeCard, ProductCardItem } from '@/feature
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 
+import type { MagentoMediaGalleryItem } from '@/features/product';
+
 interface ProductDetailReviewShellProps {
   product: UnifiedProduct;
   galleryImages: UnifiedProductImage[];
@@ -42,6 +44,7 @@ interface ProductDetailReviewShellProps {
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
   recipes?: PdpRecipeCard[];
+  mediaGallery?: MagentoMediaGalleryItem[];
 }
 
 export function ProductDetailReviewShell({
@@ -58,6 +61,7 @@ export function ProductDetailReviewShell({
   beforeVideos,
   videos = [],
   recipes = [],
+  mediaGallery,
 }: ProductDetailReviewShellProps) {
   const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
@@ -135,6 +139,7 @@ export function ProductDetailReviewShell({
         onWriteReview={handleWriteReview}
         shareTarget={shareTarget}
         addonProducts={addonProducts}
+        mediaGallery={mediaGallery}
       />
 
       {beforeVideos}

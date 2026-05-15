@@ -9,11 +9,21 @@ import { magentoGraphQL } from '@/infrastructure/api/clients/magento-graphql';
 
 // ─── GraphQL 类型 ──────────────────────────────────────────────────────────────
 
+interface GQLVideoContent {
+  media_type: string;
+  video_provider: string;
+  video_url: string;
+  video_title: string;
+  video_description: string;
+  video_metadata: string;
+}
+
 interface GQLMediaGallery {
   url: string;
   label: string | null;
   position: number;
   disabled: boolean;
+  video_content?: GQLVideoContent | null;
 }
 
 interface GQLConfigurableOption {
@@ -182,6 +192,16 @@ const PRODUCT_DETAIL_QUERY = `
           label
           position
           disabled
+          ... on ProductVideo {
+            video_content {
+              media_type
+              video_provider
+              video_url
+              video_title
+              video_description
+              video_metadata
+            }
+          }
         }
         thumbnail { url label }
         stock_status
@@ -267,7 +287,22 @@ const PRODUCT_DETAIL_QUERY = `
                   final_price { value currency }
                 }
               }
-              media_gallery { url label position disabled }
+              media_gallery {
+                url
+                label
+                position
+                disabled
+                ... on ProductVideo {
+                  video_content {
+                    media_type
+                    video_provider
+                    video_url
+                    video_title
+                    video_description
+                    video_metadata
+                  }
+                }
+              }
             }
             attributes { code value_index label }
           }
@@ -308,6 +343,16 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
           label
           position
           disabled
+          ... on ProductVideo {
+            video_content {
+              media_type
+              video_provider
+              video_url
+              video_title
+              video_description
+              video_metadata
+            }
+          }
         }
         thumbnail { url label }
         stock_status
@@ -393,7 +438,22 @@ const PRODUCT_DETAIL_BY_URL_KEY_QUERY = `
                   final_price { value currency }
                 }
               }
-              media_gallery { url label position disabled }
+              media_gallery {
+                url
+                label
+                position
+                disabled
+                ... on ProductVideo {
+                  video_content {
+                    media_type
+                    video_provider
+                    video_url
+                    video_title
+                    video_description
+                    video_metadata
+                  }
+                }
+              }
             }
             attributes { code value_index label }
           }

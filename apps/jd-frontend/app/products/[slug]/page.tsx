@@ -226,6 +226,7 @@ export default async function ProductDetailPage({
           })) ??
         [];
 
+
   const summaryAverage = reviewSummary?.average ?? 0;
   const summaryTotal = reviewSummary?.total ?? 0;
   const ratingPercentage =
@@ -310,6 +311,7 @@ export default async function ProductDetailPage({
         }
         videos={cms?.product_videos ?? []}
         recipes={cms?.recipes ?? []}
+        mediaGallery={product.media_gallery}
       />
       <Suspense fallback={null}>
         <DeferredRelatedProductsSection promise={deferredRelated} />
