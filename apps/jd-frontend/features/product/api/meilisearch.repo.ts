@@ -140,16 +140,17 @@ function buildFilter(
 }
 
 function buildSort(sort?: UnifiedProductSortOption): string[] {
-  if (sort === 'price_asc') return ['final_price:asc'];
-  if (sort === 'price_desc') return ['final_price:desc'];
-  if (sort === 'newest') return ['content_updated_at:desc'];
-  if (sort === 'name') return ['name:asc'];
-  return [];
+  const base: string[] = [];
+  if (sort === 'price_asc') base.push('final_price:asc');
+  else if (sort === 'price_desc') base.push('final_price:desc');
+  else if (sort === 'newest') base.push('content_updated_at:desc');
+  else if (sort === 'name') base.push('name:asc');
+  return base;
 }
 
-function buildSortWithStock(sort?: UnifiedProductSortOption): string[] {
-  const base = buildSort(sort);
-  return ['stock_status:asc', ...base];
+/** 构建带库存优先的排序：stock_status:asc 始终在最前 */
+function buildSortWithStockPriority(sort?: UnifiedProductSortOption): string[] {
+  return ['stock_status:asc', ...buildSort(sort)];
 }
 
 /** 将无库存商品排到列表末尾 */
@@ -356,14 +357,18 @@ export async function searchProductsFromMeilisearch(params: {
     hitsPerPage: params.pageSize ?? 24,
   };
 
-  // 优先使用带库存排序的 sort，若索引不支持则降级
-  const sortWithStock = buildSortWithStock(params.sort);
-  baseBody.sort = sortWithStock;
+  // 服务端排序：stock_status:asc 优先，无库存商品排到最后
+  baseBody.sort = buildSortWithStockPriority(params.sort);
 
   const facetKeys =
     params.facets && params.facets.length > 0 ? params.facets : undefined;
 
-  const doSearch = async (body: Record<string, unknown>) => {
+  /**
+   * 执行搜索，返回标准化结果。
+   * @param body 请求体
+   * @param clientSort 是否需要客户端排序兜底
+   */
+  const doSearch = async (body: Record<string, unknown>, clientSort = false) => {
     let last404Error: Error | null = null;
     for (const indexUid of getIndexCandidates()) {
       const outcome = await searchIndexWithFacetFallback(
@@ -377,6 +382,8 @@ export async function searchProductsFromMeilisearch(params: {
         const data = outcome.data;
         let facetDistribution = data.facetDistribution;
 
+        // 某些索引配置下，批量 facets 请求会失败并回退到无 facets 查询，导致筛选项全空。
+        // 这里做单字段补偿探测，尽量恢复可用筛选。
         if (!hasFacetData(facetDistribution) && facetKeys?.length) {
           const recovered = await recoverFacetDistributionBySingleKeys(
             host,
@@ -390,8 +397,12 @@ export async function searchProductsFromMeilisearch(params: {
           }
         }
 
+        // 服务端已按 stock_status:asc 排序；仅降级场景需要客户端兜底
+        const rawItems = data.hits.map(toProductCardItem);
+        const items = clientSort ? pushOutOfStockToEnd(rawItems) : rawItems;
+
         return {
-          items: data.hits.map(toProductCardItem),
+          items,
           pagination: {
             page: data.page,
             pageSize: data.hitsPerPage,
@@ -416,13 +427,21 @@ export async function searchProductsFromMeilisearch(params: {
   } catch (error) {
     // stock_status 不可排序时降级：去掉库存排序重试，客户端排序兜底
     const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('invalid_search_sort') && msg.includes('stock_status')) {
-      const fallbackSort = buildSort(params.sort);
+    if (msg.includes('is not sortable') && msg.includes('stock_status')) {
       const fallbackBody = { ...baseBody };
+      const fallbackSort = buildSort(params.sort);
       if (fallbackSort.length > 0) fallbackBody.sort = fallbackSort;
       else delete fallbackBody.sort;
-      const result = await doSearch(fallbackBody);
-      return { ...result, items: pushOutOfStockToEnd(result.items) };
+      try {
+        return await doSearch(fallbackBody, true);
+      } catch (fallbackError) {
+        await notifyError({
+          title: 'Unified Meilisearch Search Failed (fallback)',
+          message: JSON.stringify(params),
+          error: fallbackError,
+        });
+        throw fallbackError;
+      }
     }
     await notifyError({
       title: 'Unified Meilisearch Search Failed',
