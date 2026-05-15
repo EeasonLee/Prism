@@ -16,6 +16,9 @@ const ACCOUNT_LINKS = [
   { href: '/account/wishlist', label: 'Wishlist' },
 ];
 
+/** Public account pages that do NOT require authentication */
+const PUBLIC_ACCOUNT_PATHS = ['/forgot-password', '/reset-password'];
+
 export default function AccountLayout({
   children,
 }: {
@@ -31,11 +34,15 @@ export default function AccountLayout({
   });
   const [logoutLoading, setLogoutLoading] = useState(false);
 
+  const isPublicPage = PUBLIC_ACCOUNT_PATHS.some(
+    p => pathname === p || pathname.startsWith(`${p}/`)
+  );
+
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!isPublicPage && !authLoading && !isAuthenticated) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [authLoading, isAuthenticated, router, pathname]);
+  }, [isPublicPage, authLoading, isAuthenticated, router, pathname]);
 
   const handleLogout = useCallback(async () => {
     setLogoutLoading(true);
@@ -52,7 +59,7 @@ export default function AccountLayout({
     return <AccountSkeleton />;
   }
 
-  if (!isAuthenticated) {
+  if (!isPublicPage && !isAuthenticated) {
     return (
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <p className="text-sm text-ink-muted">Redirecting to sign in...</p>
@@ -60,10 +67,14 @@ export default function AccountLayout({
     );
   }
 
+  if (isPublicPage) {
+    return <>{children}</>;
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <aside className="h-fit rounded-xl border border-border bg-background p-3">
+        <aside className="h-fit rounded-2xl border border-black/5 bg-background p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)]">
           <nav aria-label="Account navigation" className="space-y-1">
             {ACCOUNT_LINKS.map(item => {
               const active = pathname === item.href;
@@ -94,7 +105,9 @@ export default function AccountLayout({
           </button>
         </aside>
 
-        <section className="min-h-0">{children}</section>
+        <section className="min-h-0 rounded-2xl border border-black/5 bg-background p-6 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] sm:p-8">
+          {children}
+        </section>
       </div>
     </main>
   );

@@ -13,7 +13,7 @@ export default function AccountOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <h1 className="heading-2 text-ink">Orders</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Review your recent order history.
@@ -24,7 +24,7 @@ export default function AccountOrdersPage() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">Orders</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Review your recent order history.

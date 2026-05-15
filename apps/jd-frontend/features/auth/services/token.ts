@@ -56,10 +56,16 @@ export function verifyHmacToken<T>(token: string, secret: string): T {
 
   const payload = JSON.parse(decodeBase64Url(encodedPayload)) as T & {
     exp?: number;
+    iat?: number;
   };
 
   if (!payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
     throw new Error('Token expired');
+  }
+
+  // 防重放：iat 不能是未来时间（允许 60 秒时钟偏移）
+  if (payload.iat && payload.iat > Math.floor(Date.now() / 1000) + 60) {
+    throw new Error('Token issued in the future');
   }
 
   return payload;

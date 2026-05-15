@@ -163,6 +163,34 @@ const nextConfig = {
         destination: '/categories/:slug',
         permanent: true,
       },
+      // Magento native password reset → /reset-password
+      {
+        source: '/customer/account/createPassword',
+        destination: '/reset-password',
+        permanent: true,
+      },
+      {
+        source: '/customer/account/createPassword/',
+        destination: '/reset-password',
+        permanent: true,
+      },
+      // Magento native forgot password → /forgot-password
+      {
+        source: '/customer/account/forgotpassword',
+        destination: '/forgot-password',
+        permanent: true,
+      },
+      {
+        source: '/customer/account/forgotpassword/',
+        destination: '/forgot-password',
+        permanent: true,
+      },
+      // Magento native account pages → /login
+      {
+        source: '/customer/account/:path*',
+        destination: '/login',
+        permanent: true,
+      },
     ];
   },
   nx: {

@@ -442,7 +442,7 @@ export default function AccountAddressesPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <h1 className="heading-2 text-ink">Addresses</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Manage your saved shipping and billing addresses.
@@ -453,7 +453,7 @@ export default function AccountAddressesPage() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">Addresses</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Manage your saved shipping and billing addresses.

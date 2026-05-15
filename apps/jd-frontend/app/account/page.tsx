@@ -27,7 +27,7 @@ export default function AccountOverviewPage() {
   }, [getDefaultAddresses]);
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">My Account</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Manage your profile, orders, and saved addresses.

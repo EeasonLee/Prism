@@ -28,7 +28,7 @@ export function useAuthModal() {
 
 export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [defaultTab, setDefaultTab] = useState<LoginTab>('signin');
+  const [_defaultTab, setDefaultTab] = useState<LoginTab>('signin');
 
   const openLogin = useCallback((tab: LoginTab = 'signin') => {
     setDefaultTab(tab);
@@ -47,11 +47,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthModalContext.Provider value={value}>
       {children}
-      <LoginModal
-        isOpen={isOpen}
-        onClose={closeLogin}
-        defaultTab={defaultTab}
-      />
+      <LoginModal isOpen={isOpen} onClose={closeLogin} onSuccess={closeLogin} />
     </AuthModalContext.Provider>
   );
 }

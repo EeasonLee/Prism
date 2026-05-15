@@ -118,7 +118,7 @@ export default function AccountProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <h1 className="heading-2 text-ink">Profile</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Update your account details.
@@ -133,7 +133,7 @@ export default function AccountProfilePage() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">Profile</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Update your account details.
@@ -150,25 +150,6 @@ export default function AccountProfilePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1 block text-ink">First Name</span>
-            <input
-              value={firstname}
-              onChange={event => setFirstname(event.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-ink">Last Name</span>
-            <input
-              value={lastname}
-              onChange={event => setLastname(event.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
-            />
-          </label>
-        </div>
-
         <label className="block text-sm">
           <span className="mb-1 block text-ink">Email</span>
           <input
@@ -176,9 +157,13 @@ export default function AccountProfilePage() {
             required
             value={email}
             onChange={event => setEmail(event.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
           />
         </label>
+
+        {/* Hidden fields for firstname/lastname — still submitted but not visible */}
+        <input type="hidden" value={firstname} />
+        <input type="hidden" value={lastname} />
 
         <button
           type="submit"
@@ -220,7 +205,7 @@ export default function AccountProfilePage() {
                 required
                 value={currentPassword}
                 onChange={event => setCurrentPassword(event.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
               />
             </label>
             <label className="block text-sm">
@@ -231,7 +216,7 @@ export default function AccountProfilePage() {
                 minLength={6}
                 value={newPassword}
                 onChange={event => setNewPassword(event.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
               />
             </label>
             <label className="block text-sm">
@@ -242,7 +227,7 @@ export default function AccountProfilePage() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={event => setConfirmPassword(event.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none"
               />
             </label>
             <div className="flex gap-3">
