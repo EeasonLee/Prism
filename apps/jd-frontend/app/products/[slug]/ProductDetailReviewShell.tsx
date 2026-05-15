@@ -128,7 +128,7 @@ export function ProductDetailReviewShell({
   const shouldMountReviews = hasReviewData || allowSubmit;
 
   return (
-    <>
+    <div>
       <ProductDetailContent
         product={product}
         galleryImages={galleryImages}
@@ -195,6 +195,6 @@ export function ProductDetailReviewShell({
       )}
 
       <ProductBackToTopButton />
-    </>
+    </div>
   );
 }

@@ -305,7 +305,7 @@ export default async function ProductDetailPage({
         addonProducts={fetchedAddonProducts}
         allowSubmit
         beforeVideos={
-          <Suspense fallback={null}>
+          <Suspense key="upsell" fallback={null}>
             <DeferredUpsellProductsSection promise={deferredUpsell} />
           </Suspense>
         }
