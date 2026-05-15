@@ -20,7 +20,8 @@ export type ShareChannel =
   | 'whatsapp'
   | 'facebook'
   | 'x'
-  | 'pinterest';
+  | 'pinterest'
+  | 'instagram';
 
 export interface ShareActionState {
   copied: boolean;

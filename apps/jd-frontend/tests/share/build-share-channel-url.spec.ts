@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildEmailShareUrl,
   buildFacebookShareUrl,
+  buildInstagramShareUrl,
   buildPinterestShareUrl,
   buildShareChannelUrl,
   buildSmsShareUrl,
@@ -223,6 +224,33 @@ describe('buildXShareUrl', () => {
   });
 });
 
+describe('buildInstagramShareUrl', () => {
+  it('should return the Instagram homepage URL', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Product',
+    };
+
+    const result = buildInstagramShareUrl(target);
+
+    expect(result).toBe('https://www.instagram.com/');
+  });
+
+  it('should ignore target url, title, and text', () => {
+    const target: ShareTarget = {
+      type: 'product',
+      url: 'https://example.com/product',
+      title: 'Title',
+      text: 'Text',
+    };
+
+    const result = buildInstagramShareUrl(target);
+
+    expect(result).toBe('https://www.instagram.com/');
+  });
+});
+
 describe('buildPinterestShareUrl', () => {
   it('should build a Pinterest share URL using the target URL and title', () => {
     const target: ShareTarget = {
@@ -266,6 +294,9 @@ describe('buildShareChannelUrl', () => {
     expect(buildShareChannelUrl('x', target)).toBe(buildXShareUrl(target));
     expect(buildShareChannelUrl('pinterest', target)).toBe(
       buildPinterestShareUrl(target)
+    );
+    expect(buildShareChannelUrl('instagram', target)).toBe(
+      buildInstagramShareUrl(target)
     );
   });
 });

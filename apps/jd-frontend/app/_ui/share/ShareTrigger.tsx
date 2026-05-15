@@ -86,6 +86,13 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
   const getChannelHref = (channel: ShareChannel) =>
     buildShareChannelUrl(channel, resolveShareTargetInput(target));
 
+  /** Instagram 等无分享 URL 的渠道：先复制链接，再打开首页 */
+  const handleCopyAndOpen = async (channel: ShareChannel) => {
+    await handleCopyLink();
+    const url = buildShareChannelUrl(channel, resolveShareTargetInput(target));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="relative inline-flex">
       <button
@@ -120,6 +127,7 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
             copied={copied}
             onCopyLink={() => void handleCopyLink()}
             getChannelHref={getChannelHref}
+            onCopyAndOpen={channel => void handleCopyAndOpen(channel)}
           />
         </div>
       )}
