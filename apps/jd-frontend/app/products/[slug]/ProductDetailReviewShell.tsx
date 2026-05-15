@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { usePathname } from 'next/navigation';
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
@@ -62,12 +61,15 @@ export function ProductDetailReviewShell({
   videos = [],
   recipes = [],
 }: ProductDetailReviewShellProps) {
-  const pathname = usePathname();
   const [selection, setSelection] = useState<ProductDetailSelection>({
     selectedVariant: null,
     allSelected: false,
     customOptionPriceDelta: 0,
   });
+  const getShareTarget = useCallback(
+    () => buildProductShareTarget(product, window.location.href, selection),
+    [product, selection]
+  );
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
 
   // GTM: view_item on product detail page mount
@@ -91,14 +93,6 @@ export function ProductDetailReviewShell({
   const handleWriteReview = useCallback(() => {
     setIsReviewFormOpen(true);
   }, []);
-
-  const shareTarget = useMemo(() => {
-    if (!pathname || typeof window === 'undefined') {
-      return undefined;
-    }
-
-    return buildProductShareTarget(product, window.location.href, selection);
-  }, [pathname, product, selection]);
 
   const reviewTarget = useMemo<ReviewTarget>(() => {
     return {
@@ -131,7 +125,7 @@ export function ProductDetailReviewShell({
         selection={selection}
         onSelectionChange={setSelection}
         onWriteReview={handleWriteReview}
-        shareTarget={shareTarget}
+        shareTarget={getShareTarget}
         addonProducts={addonProducts}
       />
 

@@ -5,11 +5,15 @@ import { useEffect, useState } from 'react';
 import { buildShareChannelUrl } from './build-share-channel-url';
 import { ShareMenu } from './ShareMenu';
 import { useShareActions } from './useShareActions';
-import type { ShareChannel, ShareTarget } from './types';
+import type { ShareChannel, ShareTargetResolver } from './types';
 
 interface ShareTriggerProps {
-  target: ShareTarget;
+  target: ShareTargetResolver;
   className?: string;
+}
+
+function resolveShareTargetInput(input: ShareTargetResolver) {
+  return typeof input === 'function' ? input() : input;
 }
 
 export function ShareTrigger({ target, className }: ShareTriggerProps) {
@@ -19,8 +23,9 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
   });
 
   const copyLinkLegacy = () => {
+    const resolved = resolveShareTargetInput(target);
     const input = document.createElement('textarea');
-    input.value = target.url;
+    input.value = resolved.url;
     input.setAttribute('readonly', '');
     input.style.position = 'fixed';
     input.style.opacity = '0';
@@ -56,7 +61,10 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
       return;
     }
 
-    window.prompt('Copy this product link', target.url);
+    window.prompt(
+      'Copy this product link',
+      resolveShareTargetInput(target).url
+    );
   };
 
   const handleTriggerClick = async () => {
@@ -76,7 +84,7 @@ export function ShareTrigger({ target, className }: ShareTriggerProps) {
   };
 
   const getChannelHref = (channel: ShareChannel) =>
-    buildShareChannelUrl(channel, target);
+    buildShareChannelUrl(channel, resolveShareTargetInput(target));
 
   return (
     <div className="relative inline-flex">

@@ -5,7 +5,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildProductShareTarget } from '../../app/products/[slug]/build-product-share-target';
 import type { MagentoProduct } from '../../lib/api/magento/types';
+import type { UnifiedProduct } from '@/features/product';
 import type { ProductDetailSelection } from '../../app/products/[slug]/ProductDetailClient';
+
+function asUnified(product: MagentoProduct): UnifiedProduct {
+  return product as unknown as UnifiedProduct;
+}
 
 describe('buildProductShareTarget', () => {
   const baseProduct: MagentoProduct = {
@@ -21,11 +26,12 @@ describe('buildProductShareTarget', () => {
     allSelected: false,
   };
 
+  const baseUrl = 'https://example.com/products/TEST-SKU-001';
+
   it('should return a ShareTarget with type "product"', () => {
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       baseSelection
     );
 
@@ -34,20 +40,18 @@ describe('buildProductShareTarget', () => {
 
   it('should use product name as title', () => {
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       baseSelection
     );
 
     expect(result.title).toBe('Test Product');
   });
 
-  it('should use canonical PDP URL by default', () => {
+  it('should use current page URL by default', () => {
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       baseSelection
     );
 
@@ -56,9 +60,8 @@ describe('buildProductShareTarget', () => {
 
   it('should include sku in meta', () => {
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       baseSelection
     );
 
@@ -72,9 +75,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       selection
     );
 
@@ -97,9 +99,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      configurableProduct,
-      '/products/CONFIG-SKU',
-      'https://example.com',
+      asUnified(configurableProduct),
+      'https://example.com/products/CONFIG-SKU',
       selection
     );
 
@@ -119,9 +120,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      configurableProduct,
-      '/products/CONFIG-SKU',
-      'https://example.com',
+      asUnified(configurableProduct),
+      'https://example.com/products/CONFIG-SKU',
       selection
     );
 
@@ -144,9 +144,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      configurableProduct,
-      '/products/CONFIG-SKU?ref=search',
-      'https://example.com',
+      asUnified(configurableProduct),
+      'https://example.com/products/CONFIG-SKU?ref=search',
       selection
     );
 
@@ -161,9 +160,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      productWithImage,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(productWithImage),
+      baseUrl,
       baseSelection
     );
 
@@ -172,9 +170,8 @@ describe('buildProductShareTarget', () => {
 
   it('should not include imageUrl if product has no image', () => {
     const result = buildProductShareTarget(
-      baseProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(baseProduct),
+      baseUrl,
       baseSelection
     );
 
@@ -193,9 +190,8 @@ describe('buildProductShareTarget', () => {
     };
 
     const result = buildProductShareTarget(
-      simpleProduct,
-      '/products/TEST-SKU-001',
-      'https://example.com',
+      asUnified(simpleProduct),
+      baseUrl,
       selection
     );
 

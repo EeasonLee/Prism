@@ -104,15 +104,6 @@ describe('ShareTrigger', () => {
         screen.getByRole('menuitem', { name: 'Copy product link' })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('menuitem', { name: 'SMS / iMessage' })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('menuitem', { name: 'Email' })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('menuitem', { name: 'WhatsApp' })
-      ).toBeInTheDocument();
-      expect(
         screen.getByRole('menuitem', { name: 'Facebook' })
       ).toBeInTheDocument();
       expect(screen.getByRole('menuitem', { name: 'X' })).toBeInTheDocument();

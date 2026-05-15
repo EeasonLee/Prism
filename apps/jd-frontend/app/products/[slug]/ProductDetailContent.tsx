@@ -22,7 +22,7 @@ import type {
   UnifiedProductImage,
   ProductCardItem,
 } from '@/features/product';
-import type { ShareTarget } from '@/app/_ui/share';
+import type { ShareTargetResolver } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 import { gtmAddToWishlist, mapDisplayToGtmItem } from '@/shared/utils/gtm';
@@ -35,7 +35,7 @@ interface ProductDetailContentProps {
   selection: ProductDetailSelection;
   onSelectionChange: (selection: ProductDetailSelection) => void;
   onWriteReview: () => void;
-  shareTarget?: ShareTarget;
+  shareTarget?: ShareTargetResolver;
   addonProducts?: Record<number, ProductCardItem>;
 }
 
@@ -484,7 +484,7 @@ export function ProductDetailContent({
                 ? 'Saved'
                 : 'Wishlist'}
             </button>
-            {shareTarget && (
+            {shareTarget != null && (
               <div className="shrink-0">
                 <ShareTrigger target={shareTarget} />
               </div>

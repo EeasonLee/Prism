@@ -11,6 +11,9 @@ export interface ShareTarget {
   meta?: { id?: string; sku?: string; slug?: string };
 }
 
+/** 静态目标或点击时再解析（避免依赖 window 的首屏延迟） */
+export type ShareTargetResolver = ShareTarget | (() => ShareTarget);
+
 export type ShareChannel =
   | 'email'
   | 'sms'
