@@ -33,7 +33,6 @@ interface StrapiReviewRaw {
   helpful_count?: number | null;
   viewer_has_marked_helpful?: boolean | null;
   review_status?: 'pending' | 'approved' | 'rejected' | null;
-  review_published_at?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -380,7 +379,7 @@ function normalizeReview(review: StrapiReviewRaw): ProductReview {
     helpfulCount: Number(review.helpful_count ?? 0),
     viewerHasMarkedHelpful: review.viewer_has_marked_helpful ?? false,
     status: review.review_status ?? 'pending',
-    createdAt: review.review_published_at ?? review.createdAt ?? null,
+    createdAt: review.createdAt ?? null,
     updatedAt: review.updatedAt ?? null,
   };
 }
