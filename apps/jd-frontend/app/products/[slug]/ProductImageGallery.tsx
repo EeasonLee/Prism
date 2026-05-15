@@ -14,15 +14,13 @@ import {
 import type { UnifiedProductImage } from '@/features/product';
 import { useMediaPreload } from './use-media-preload';
 
-interface ProductGalleryVideo {
-  url: string;
-  poster?: string;
-}
+import type { MagentoMediaGalleryItem } from '@/features/product';
 
 interface ProductImageGalleryProps {
   images: UnifiedProductImage[];
   productName: string;
-  featuredVideo?: ProductGalleryVideo;
+  /** 完整的 media_gallery（含视频），按 position 排序后与 images 合并 */
+  mediaGallery?: MagentoMediaGalleryItem[];
 }
 
 interface ProductGalleryMediaItem {
@@ -33,12 +31,32 @@ interface ProductGalleryMediaItem {
   thumbUrl?: string;
   alt: string;
   poster?: string;
+  /** 视频平台类型：'direct' 表示可直接 <video> 播放，'youtube' 需要 iframe */
+  videoProvider?: 'direct' | 'youtube';
+}
+
+/** 将 YouTube URL 转换为嵌入 URL */
+function toYouTubeEmbedUrl(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match?.[1]) {
+      return `https://www.youtube.com/embed/${match[1]}?autoplay=1&mute=1&rel=0`;
+    }
+  }
+  return null;
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return /youtube\.com|youtu\.be/i.test(url);
 }
 
 export function ProductImageGallery({
   images,
   productName,
-  featuredVideo,
+  mediaGallery,
 }: ProductImageGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [canScrollUp, setCanScrollUp] = useState(false);
@@ -54,19 +72,13 @@ export function ProductImageGallery({
     align: 'start',
     containScroll: 'trimSnaps',
   });
-  const mediaItems = useMemo<ProductGalleryMediaItem[]>(
-    () => [
-      ...(featuredVideo
-        ? [
-            {
-              type: 'video' as const,
-              url: featuredVideo.url,
-              alt: `${productName} video`,
-              poster: featuredVideo.poster,
-            },
-          ]
-        : []),
-      ...images.map(image => {
+  const mediaItems = useMemo<ProductGalleryMediaItem[]>(() => {
+    // 没有 mediaGallery 或没有视频时，直接返回纯图片列表
+    const videoItems = mediaGallery?.filter(
+      m => m.media_type === 'video' && m.video_content
+    );
+    if (!videoItems || videoItems.length === 0) {
+      return images.map(image => {
         const fullUrl = resolveImageUrl(image.url) ?? image.url;
         return {
           type: 'image' as const,
@@ -76,10 +88,63 @@ export function ProductImageGallery({
           thumbUrl: resolveImageUrl(image.url, { size: 150 }) ?? fullUrl,
           alt: image.alt ?? productName,
         };
-      }),
-    ],
-    [featuredVideo, images, productName]
-  );
+      });
+    }
+
+    // 收集视频 poster URL，用于排除图片列表中的重复项
+    const videoPosterUrls = new Set(
+      videoItems.map(v => resolveImageUrl(v.url) ?? v.url)
+    );
+
+    const imageItems: ProductGalleryMediaItem[] = images
+      .filter(image => {
+        const normalized = resolveImageUrl(image.url) ?? image.url;
+        return !videoPosterUrls.has(normalized);
+      })
+      .map(image => {
+        const fullUrl = resolveImageUrl(image.url) ?? image.url;
+        return {
+          type: 'image' as const,
+          url: resolveImageUrl(image.url, { size: 800 }) ?? fullUrl,
+          displayUrl: resolveImageUrl(image.url, { size: 1200 }) ?? fullUrl,
+          fullUrl,
+          thumbUrl: resolveImageUrl(image.url, { size: 150 }) ?? fullUrl,
+          alt: image.alt ?? productName,
+        };
+      });
+
+    // 按 position 将视频插入对应位置
+    const sorted = [...(mediaGallery ?? [])]
+      .sort((a, b) => a.position - b.position);
+
+    const result: ProductGalleryMediaItem[] = [];
+    let imageIdx = 0;
+    for (const item of sorted) {
+      if (item.media_type === 'video' && item.video_content) {
+        const videoUrl = item.video_content.video_url;
+        result.push({
+          type: 'video',
+          url: videoUrl,
+          alt: item.video_content.video_title || `${productName} video`,
+          poster: item.url || undefined,
+          videoProvider: isYouTubeUrl(videoUrl) ? 'youtube' : 'direct',
+        });
+      } else {
+        // 图片：从 images 列表按顺序取（已排除视频 poster）
+        if (imageIdx < imageItems.length) {
+          result.push(imageItems[imageIdx]);
+          imageIdx++;
+        }
+      }
+    }
+    // 追加剩余图片（mediaGallery 可能缺少某些图片项）
+    while (imageIdx < imageItems.length) {
+      result.push(imageItems[imageIdx]);
+      imageIdx++;
+    }
+
+    return result;
+  }, [mediaGallery, images, productName]);
   const preloadItems = useMemo(
     () =>
       mediaItems.map(item => ({
@@ -371,6 +436,16 @@ export function ProductImageGallery({
                         }`}
                       />
                     </>
+                  ) : item.type === 'video' &&
+                    idx === activeIndex &&
+                    item.videoProvider === 'youtube' ? (
+                    <iframe
+                      src={toYouTubeEmbedUrl(item.url) ?? item.url}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={item.alt}
+                    />
                   ) : item.type === 'video' && idx === activeIndex ? (
                     <video
                       src={item.url}

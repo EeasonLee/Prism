@@ -234,6 +234,22 @@ function detectPathInfo(pathname: string): PathInfo | null {
   return null;
 }
 
+// ─── 内部：提取 CDN 路径前缀 ──────────────────────────────────────────────────
+
+/**
+ * 从 pathname 中提取 /media/ 之前的路径前缀
+ * 用于域名重写后保留 CDN 路径前缀（如 /joydeem）
+ *
+ * @example
+ * extractPathPrefix('/joydeem/media/pages/img.jpg') → '/joydeem'
+ * extractPathPrefix('/media/pages/img.jpg') → ''
+ * extractPathPrefix('/no-media-here') → ''
+ */
+function extractPathPrefix(pathname: string): string {
+  const match = pathname.match(/^(.*?)\/media\//);
+  return match?.[1] ?? '';
+}
+
 // ─── 内部：构建 CDN URL ────────────────────────────────────────────────────────
 
 /** CDN 支持格式转换的位图扩展名 */
@@ -366,10 +382,16 @@ function resolveAbsoluteUrl(
     if (rewrittenParsed?.detectedSubPath && rewrittenParsed.fileSubPath) {
       const effectiveSubPath =
         options?.subPath ?? rewrittenParsed.detectedSubPath;
+      // 从重写后 URL 的 pathname 提取 CDN 路径前缀（如 /joydeem），
+      // 避免 parseAbsoluteUrl 用 origin 丢弃路径前缀
+      const prefix = extractPathPrefix(rewrittenParsed.pathname);
+      const baseUrl = prefix
+        ? `${rewrittenParsed.baseUrl}${prefix}`
+        : options?.baseUrl ?? rewrittenParsed.baseUrl;
       return buildCdnUrl(
         effectiveSubPath,
         rewrittenParsed.fileSubPath,
-        options?.baseUrl ?? rewrittenParsed.baseUrl,
+        baseUrl,
         options?.size ??
           normalizeCdnSize(rewrittenParsed.existingSize ?? undefined) ??
           undefined

@@ -140,11 +140,27 @@ function buildFilter(
 }
 
 function buildSort(sort?: UnifiedProductSortOption): string[] {
-  if (sort === 'price_asc') return ['final_price:asc'];
-  if (sort === 'price_desc') return ['final_price:desc'];
-  if (sort === 'newest') return ['content_updated_at:desc'];
-  if (sort === 'name') return ['name:asc'];
-  return [];
+  const base: string[] = [];
+  if (sort === 'price_asc') base.push('final_price:asc');
+  else if (sort === 'price_desc') base.push('final_price:desc');
+  else if (sort === 'newest') base.push('content_updated_at:desc');
+  else if (sort === 'name') base.push('name:asc');
+  return base;
+}
+
+/** 构建带库存优先的排序：stock_status:asc 始终在最前 */
+function buildSortWithStockPriority(sort?: UnifiedProductSortOption): string[] {
+  return ['stock_status:asc', ...buildSort(sort)];
+}
+
+/** 将无库存商品排到列表末尾 */
+function pushOutOfStockToEnd(items: ProductCardItem[]): ProductCardItem[] {
+  const inStock: ProductCardItem[] = [];
+  const outOfStock: ProductCardItem[] = [];
+  for (const item of items) {
+    (item.inStock ? inStock : outOfStock).push(item);
+  }
+  return [...inStock, ...outOfStock];
 }
 
 function toProductCardItem(hit: MeilisearchHit): ProductCardItem {
@@ -341,20 +357,25 @@ export async function searchProductsFromMeilisearch(params: {
     hitsPerPage: params.pageSize ?? 24,
   };
 
-  const sort = buildSort(params.sort);
-  if (sort.length > 0) baseBody.sort = sort;
+  // 服务端排序：stock_status:asc 优先，无库存商品排到最后
+  baseBody.sort = buildSortWithStockPriority(params.sort);
 
   const facetKeys =
     params.facets && params.facets.length > 0 ? params.facets : undefined;
 
-  try {
+  /**
+   * 执行搜索，返回标准化结果。
+   * @param body 请求体
+   * @param clientSort 是否需要客户端排序兜底
+   */
+  const doSearch = async (body: Record<string, unknown>, clientSort = false) => {
     let last404Error: Error | null = null;
     for (const indexUid of getIndexCandidates()) {
       const outcome = await searchIndexWithFacetFallback(
         host,
         indexUid,
         headers,
-        baseBody,
+        body,
         facetKeys
       );
       if (outcome.kind === 'ok') {
@@ -368,7 +389,7 @@ export async function searchProductsFromMeilisearch(params: {
             host,
             indexUid,
             headers,
-            baseBody,
+            body,
             facetKeys
           );
           if (recovered) {
@@ -376,8 +397,12 @@ export async function searchProductsFromMeilisearch(params: {
           }
         }
 
+        // 服务端已按 stock_status:asc 排序；仅降级场景需要客户端兜底
+        const rawItems = data.hits.map(toProductCardItem);
+        const items = clientSort ? pushOutOfStockToEnd(rawItems) : rawItems;
+
         return {
-          items: data.hits.map(toProductCardItem),
+          items,
           pagination: {
             page: data.page,
             pageSize: data.hitsPerPage,
@@ -395,7 +420,29 @@ export async function searchProductsFromMeilisearch(params: {
       throw outcome.error;
     }
     throw last404Error ?? new Error('No available Meilisearch index');
+  };
+
+  try {
+    return await doSearch(baseBody);
   } catch (error) {
+    // stock_status 不可排序时降级：去掉库存排序重试，客户端排序兜底
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('is not sortable') && msg.includes('stock_status')) {
+      const fallbackBody = { ...baseBody };
+      const fallbackSort = buildSort(params.sort);
+      if (fallbackSort.length > 0) fallbackBody.sort = fallbackSort;
+      else delete fallbackBody.sort;
+      try {
+        return await doSearch(fallbackBody, true);
+      } catch (fallbackError) {
+        await notifyError({
+          title: 'Unified Meilisearch Search Failed (fallback)',
+          message: JSON.stringify(params),
+          error: fallbackError,
+        });
+        throw fallbackError;
+      }
+    }
     await notifyError({
       title: 'Unified Meilisearch Search Failed',
       message: JSON.stringify(params),

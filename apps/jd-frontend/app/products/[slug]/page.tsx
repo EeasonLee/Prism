@@ -226,6 +226,7 @@ export default async function ProductDetailPage({
           })) ??
         [];
 
+
   const summaryAverage = reviewSummary?.average ?? 0;
   const summaryTotal = reviewSummary?.total ?? 0;
   const ratingPercentage =
@@ -304,12 +305,13 @@ export default async function ProductDetailPage({
         addonProducts={fetchedAddonProducts}
         allowSubmit
         beforeVideos={
-          <Suspense fallback={null}>
+          <Suspense key="upsell" fallback={null}>
             <DeferredUpsellProductsSection promise={deferredUpsell} />
           </Suspense>
         }
         videos={cms?.product_videos ?? []}
         recipes={cms?.recipes ?? []}
+        mediaGallery={product.media_gallery}
       />
       <Suspense fallback={null}>
         <DeferredRelatedProductsSection promise={deferredRelated} />

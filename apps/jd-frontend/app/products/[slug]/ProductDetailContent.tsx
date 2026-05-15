@@ -17,7 +17,7 @@ import {
   CouponBanner,
   useCouponClaim,
 } from '@/features/product';
-import type { UnifiedProduct, UnifiedProductImage, ProductCardItem } from '@/features/product';
+import type { UnifiedProduct, UnifiedProductImage, ProductCardItem, MagentoMediaGalleryItem } from '@/features/product';
 import type { ShareTarget } from '@/app/_ui/share';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
@@ -33,6 +33,7 @@ interface ProductDetailContentProps {
   onWriteReview: () => void;
   shareTarget?: ShareTarget;
   addonProducts?: Record<number, ProductCardItem>;
+  mediaGallery?: MagentoMediaGalleryItem[];
 }
 
 const STAR_PATH =
@@ -101,6 +102,7 @@ export function ProductDetailContent({
   onWriteReview,
   shareTarget,
   addonProducts,
+  mediaGallery,
 }: ProductDetailContentProps) {
   const { isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
@@ -419,6 +421,7 @@ export function ProductDetailContent({
         <ProductImageGallery
           images={displayProduct.images}
           productName={displayTitle}
+          mediaGallery={mediaGallery}
         />
       </div>
 

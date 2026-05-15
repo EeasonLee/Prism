@@ -212,11 +212,21 @@ export interface MagentoProductImage {
   url: string;
 }
 
+export interface MagentoMediaGalleryVideoContent {
+  media_type: string;
+  video_provider: string;
+  video_url: string;
+  video_title: string;
+  video_description: string;
+  video_metadata: string;
+}
+
 export interface MagentoMediaGalleryItem {
   url: string;
   label: string | null;
   position: number;
   media_type: string | null;
+  video_content?: MagentoMediaGalleryVideoContent;
 }
 
 export interface MagentoConfigurableOption {
