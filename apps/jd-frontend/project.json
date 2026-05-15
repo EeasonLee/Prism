@@ -23,12 +23,27 @@
       "dependsOn": ["print-build-info"]
     },
     "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/jd-frontend",
+        "{workspaceRoot}/apps/jd-frontend/.next"
+      ],
+      "dependsOn": ["print-build-info"],
+      "options": {
+        "parallel": false,
+        "cwd": "{workspaceRoot}",
+        "commands": [
+          "nx run jd-frontend:next-build",
+          "node apps/jd-frontend/scripts/sync-standalone-assets.mjs"
+        ]
+      }
+    },
+    "next-build": {
       "executor": "@nx/next:build",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/jd-frontend"
-      },
-      "dependsOn": ["print-build-info"]
+      }
     },
     "start": {
       "executor": "@nx/next:server",
