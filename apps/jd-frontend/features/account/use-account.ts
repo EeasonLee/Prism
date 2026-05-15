@@ -345,13 +345,7 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
   );
 
   const getCountries = useCallback(async () => {
-    const res = await fetchWithSessionRecovery(
-      '/api/v1/account/addresses/countries',
-      {
-        method: 'GET',
-        credentials: 'include',
-      }
-    );
+    const res = await fetch('/api/v1/account/addresses/countries');
     const data = (await res.json()) as {
       countries: Array<{ id: string; full_name_english: string }>;
     };
@@ -359,14 +353,10 @@ export function useAccount(options: UseAccountOptions = {}): UseAccountResult {
   }, []);
 
   const getRegions = useCallback(async (countryCode: string) => {
-    const res = await fetchWithSessionRecovery(
+    const res = await fetch(
       `/api/v1/account/addresses/regions?country=${encodeURIComponent(
         countryCode
-      )}`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      }
+      )}`
     );
     const data = (await res.json()) as {
       regions: Array<{ id: string; code: string; name: string }>;

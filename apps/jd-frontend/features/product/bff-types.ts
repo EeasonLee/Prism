@@ -302,6 +302,7 @@ export type CustomizableOptionType =
 export interface MagentoCustomizableOptionValue {
   option_type_id: number;
   title: string;
+  sku?: string | null;
   price: number;
   price_type: 'fixed' | 'percent' | 'dynamic';
   sort_order: number;

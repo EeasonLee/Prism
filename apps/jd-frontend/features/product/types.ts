@@ -24,6 +24,7 @@ export interface VariantOption {
 export interface CustomizableOptionValue {
   option_type_id: number;
   title: string;
+  sku?: string | null;
   price: number;
 }
 

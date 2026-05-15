@@ -215,7 +215,7 @@ export interface ProductVariantsResponse {
     title: string;
     required: boolean;
     type: string;
-    values?: Array<{ option_type_id: number; title: string; price: number }>;
+    values?: Array<{ option_type_id: number; title: string; sku?: string | null; price: number }>;
   }>;
   variants: ProductVariant[];
 }
@@ -261,11 +261,13 @@ export function mapProductVariants(
           selectionValue as Array<{
             option_type_id: number;
             title: string;
+            sku?: string | null;
             price?: number;
           }>
         ).map(v => ({
           option_type_id: v.option_type_id,
           title: v.title,
+          sku: v.sku ?? null,
           price: (v as { price?: number }).price ?? 0,
         }))
       : undefined;

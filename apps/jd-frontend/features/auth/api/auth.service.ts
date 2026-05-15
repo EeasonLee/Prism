@@ -107,8 +107,15 @@ export async function register(request: Request): Promise<NextResponse> {
   const guestId = getGuestId(request);
 
   // Verify Cloudflare Turnstile token
+  const clientIp =
+    request.headers.get('cf-connecting-ip')?.trim() ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    undefined;
+
   const turnstileResult = await verifyTurnstileToken(
-    body.turnstile_token ?? ''
+    body.turnstile_token ?? '',
+    clientIp
   );
   if (!turnstileResult.success) {
     return NextResponse.json(

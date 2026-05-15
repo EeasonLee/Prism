@@ -104,8 +104,26 @@ const parsedEnv = mergedSchema.parse({
     'default',
 });
 
+/**
+ * `next build` 收集路由/预渲染时会加载 API 模块，但 CI/本地构建未必注入生产密钥。
+ * 构建阶段跳过强制校验；`next start` 等运行时必须配置 AUTH_TOKEN_SECRET。
+ */
+function isNextCompilerBuildPhase(): boolean {
+  const phase = process.env.NEXT_PHASE;
+  return (
+    phase === 'phase-production-build' ||
+    phase === 'phase-development-build' ||
+    phase === 'phase-production-export'
+  );
+}
+
 // 仅在服务端校验敏感密钥（客户端无权限访问非 NEXT_PUBLIC_ 变量）
-if (typeof window === 'undefined' && !parsedEnv.AUTH_TOKEN_SECRET) {
+if (
+  typeof window === 'undefined' &&
+  !parsedEnv.AUTH_TOKEN_SECRET &&
+  !isNextCompilerBuildPhase() &&
+  process.env.SKIP_AUTH_TOKEN_SECRET_VALIDATION !== '1'
+) {
   throw new Error('AUTH_TOKEN_SECRET is required');
 }
 

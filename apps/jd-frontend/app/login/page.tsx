@@ -10,7 +10,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { PageContainer } from '@prism/ui';
 import { useAuth } from '@/features/auth';
 
@@ -62,7 +62,17 @@ function LoginPageContent() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -96,6 +106,11 @@ function LoginPageContent() {
         router.replace(nextPath);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Authentication failed');
+        // 注册失败时重置 Turnstile，避免 token 被重复使用
+        if (tab === 'register') {
+          setTurnstileToken(null);
+          turnstileRef.current?.reset();
+        }
       } finally {
         setSubmitting(false);
       }
@@ -211,14 +226,16 @@ function LoginPageContent() {
 
             {tab === 'register' &&
               process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div ref={turnstileRef} className="flex justify-center">
+                <div className="flex justify-center">
                   <Turnstile
+                    key="register-turnstile"
+                    ref={turnstileRef}
                     siteKey={
                       process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
                     }
                     onSuccess={setTurnstileToken}
-                    onError={() => setTurnstileToken(null)}
-                    onExpire={() => setTurnstileToken(null)}
+                    onError={handleTurnstileError}
+                    onExpire={handleTurnstileExpire}
                   />
                 </div>
               )}

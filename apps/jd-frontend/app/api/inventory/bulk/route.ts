@@ -11,6 +11,7 @@ interface InventoryItem {
   salable_qty: number;
   is_salable: boolean;
   stock_status: string;
+  image_url?: string;
   updated_at?: string;
 }
 

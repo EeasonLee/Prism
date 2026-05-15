@@ -1,4 +1,8 @@
-export { getPageBySlug } from './api/cms-pages.api';
+export {
+  getPageBySlug,
+  fetchAllCmsPagesForSitemap,
+  type CmsPageSitemapRow,
+} from './api/cms-pages.api';
 export { getPageContentLayoutClass } from './api/cms-page-layout.api';
 export {
   getCarouselItems,

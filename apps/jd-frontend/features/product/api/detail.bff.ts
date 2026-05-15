@@ -24,7 +24,8 @@ import {
   fetchPdpProductVideosBySku,
   fetchPdpRecipesBySku,
 } from './content.api';
-import type { ProductPageCms } from '../bff-types';
+import type { ProductCardItem, ProductPageCms } from '../bff-types';
+import { fetchAddonProductsByOptions } from './inventory.api';
 
 export interface ProductPriceInfo {
   regular: number;
@@ -61,6 +62,7 @@ interface ProductDetailDeferred {
   upsell: Promise<UnifiedLinkedProduct[]>;
   reviews: Promise<ProductReviewsData>;
   cms: Promise<ProductDetailCms | null>;
+  addonProducts: Promise<Record<number, ProductCardItem>>;
 }
 
 export interface ProductDetailAggregate {
@@ -76,6 +78,7 @@ export interface ProductDetailApiResponse {
   upsell: UnifiedLinkedProduct[];
   reviews: ProductReviewsData;
   cms: ProductDetailCms | null;
+  addonProducts: Record<number, ProductCardItem>;
 }
 
 function buildPriceInfo(product: UnifiedProduct): ProductPriceInfo {
@@ -230,6 +233,9 @@ export async function getProductDetailAggregate(
   const cmsPromise = productPromise.then(product =>
     getProductCmsBFF(product.sku)
   );
+  const addonProductsPromise = productPromise.then(product =>
+    fetchAddonProductsByOptions(product.options ?? [])
+  );
 
   const [product, stock] = await Promise.all([productPromise, stockPromise]);
 
@@ -244,6 +250,7 @@ export async function getProductDetailAggregate(
       upsell: upsellPromise,
       reviews: reviewsPromise,
       cms: cmsPromise,
+      addonProducts: addonProductsPromise,
     },
   };
 }
@@ -251,11 +258,12 @@ export async function getProductDetailAggregate(
 export async function resolveProductDetailAggregate(
   aggregate: ProductDetailAggregate
 ): Promise<ProductDetailApiResponse> {
-  const [related, upsell, reviews, cms] = await Promise.all([
+  const [related, upsell, reviews, cms, addonProducts] = await Promise.all([
     aggregate.deferred.related,
     aggregate.deferred.upsell,
     aggregate.deferred.reviews,
     aggregate.deferred.cms,
+    aggregate.deferred.addonProducts,
   ]);
 
   return {
@@ -266,6 +274,7 @@ export async function resolveProductDetailAggregate(
     upsell,
     reviews,
     cms,
+    addonProducts,
   };
 }
 

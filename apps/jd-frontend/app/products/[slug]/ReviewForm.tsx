@@ -16,7 +16,7 @@ import { guestAuthorLabelFromEmail, isReasonableEmail } from '@prism/shared';
 interface ReviewFormProps {
   sku: string;
   target: ReviewTarget;
-  onSubmitted?: () => void;
+  onSubmitted?: (result: { message: string }) => void;
 }
 
 interface UploadingReviewMedia {
@@ -428,11 +428,11 @@ export function ReviewForm({ sku, target, onSubmitted }: ReviewFormProps) {
       setUploads([]);
       setSelectedTagSlugs([]);
       setDimensionScores({});
-      setSuccess(
+      const successMessage =
         data?.message ??
-          'Your review has been submitted and is pending approval.'
-      );
-      onSubmitted?.();
+        'Your review has been submitted and is pending approval.';
+      setSuccess(successMessage);
+      onSubmitted?.({ message: successMessage });
     } catch (submitError) {
       setError(
         submitError instanceof Error

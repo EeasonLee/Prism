@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-const JSON_PATH = join(__dirname, 'countries.json');
+// Next.js 运行时 cwd 是 apps/jd-frontend，路径要相对于项目根目录
+const JSON_PATH = join(process.cwd(), 'features/account/countries.json');
 
 interface CountryEntry {
   id: string;

@@ -24,7 +24,7 @@ import type {
   ProductReviewSummary,
 } from '@/features/product';
 import type { UnifiedProduct, UnifiedProductImage } from '@/features/product';
-import type { ProductVideoCard, PdpRecipeCard } from '@/features/product';
+import type { ProductVideoCard, PdpRecipeCard, ProductCardItem } from '@/features/product';
 import { ExpandableHtmlSections } from './ExpandableHtmlSections';
 import { parseHtmlIntoSections } from './parse-html-sections';
 
@@ -37,6 +37,7 @@ interface ProductDetailReviewShellProps {
   summary?: ProductReviewSummary;
   initialReviews?: ProductReview[];
   initialPagination?: ProductReviewPagination;
+  addonProducts?: Record<number, ProductCardItem>;
   allowSubmit?: boolean;
   beforeVideos?: ReactNode;
   videos?: ProductVideoCard[];
@@ -52,6 +53,7 @@ export function ProductDetailReviewShell({
   summary,
   initialReviews,
   initialPagination,
+  addonProducts,
   allowSubmit = true,
   beforeVideos,
   videos = [],
@@ -132,6 +134,7 @@ export function ProductDetailReviewShell({
         onSelectionChange={setSelection}
         onWriteReview={handleWriteReview}
         shareTarget={shareTarget}
+        addonProducts={addonProducts}
       />
 
       {beforeVideos}

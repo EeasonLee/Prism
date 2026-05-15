@@ -5,6 +5,10 @@ export {
 export { GlobalSearch } from './components/GlobalSearch';
 export { FilterPanel } from './components/FilterPanel';
 export { SortPanel, type ShopSortOption } from './components/SortPanel';
+export {
+  SearchProductLink,
+  type SearchProductLinkProduct,
+} from './components/SearchProductLink';
 export type {
   SearchSeo,
   SearchSortOption,
