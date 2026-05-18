@@ -71,8 +71,10 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<GlobalSearchResponse | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
   const ignoreCloseUntilRef = useRef<number>(0);
 
   const hasResults =
@@ -139,7 +141,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   useEffect(() => {
     if (!open) return undefined;
     ignoreCloseUntilRef.current = Date.now() + 150;
-    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    const t = setTimeout(() => {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      const targetInput = isDesktop
+        ? desktopInputRef.current
+        : mobileInputRef.current;
+      targetInput?.focus();
+    }, 50);
     return () => clearTimeout(t);
   }, [open]);
 
@@ -154,9 +162,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
       if (Date.now() < ignoreCloseUntilRef.current) return;
+      const target = e.target as Node;
+      const isInsideSearch =
+        mobileContainerRef.current?.contains(target) === true ||
+        desktopContainerRef.current?.contains(target) === true;
       if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        (mobileContainerRef.current || desktopContainerRef.current) &&
+        !isInsideSearch
       ) {
         close();
       }
@@ -209,7 +221,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           aria-hidden="true"
         />
         <div
-          ref={containerRef}
+          ref={mobileContainerRef}
           className="absolute inset-x-0 top-0 z-50 bg-surface-muted px-4 pb-4 pt-[env(safe-area-inset-top)] shadow-xl"
         >
           <div className="flex h-[73px] items-center gap-3">
@@ -230,7 +242,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                 </svg>
               </div>
               <input
-                ref={inputRef}
+                ref={mobileInputRef}
                 type="text"
                 value={keyword}
                 onChange={e => handleInputChange(e.target.value)}
@@ -467,7 +479,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           aria-hidden="true"
         />
         <div
-          ref={containerRef}
+          ref={desktopContainerRef}
           className="absolute left-1/2 top-[73px] z-40 w-full max-w-2xl -translate-x-1/2"
         >
           <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
@@ -489,7 +501,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                   </svg>
                 </div>
                 <input
-                  ref={inputRef}
+                  ref={desktopInputRef}
                   type="text"
                   value={keyword}
                   onChange={e => handleInputChange(e.target.value)}
