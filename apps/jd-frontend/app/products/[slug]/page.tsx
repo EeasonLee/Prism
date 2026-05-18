@@ -43,12 +43,19 @@ interface MetadataProduct {
   display_name: string;
 }
 
+/** 清理可能混入 slug 的非法字符（如引号），防止 Next.js RSC 序列化引入的 %22 导致查询失败 */
+function sanitizeSlug(raw: string): string {
+  // 去除引号和其他非 URL 安全字符，保留字母数字、连字符、下划线
+  return raw.replace(/["'`]/g, '').trim();
+}
+
 const getProductDetailAggregateSafe = cache(async (sku: string) => {
   return getProductDetailAggregate(sku).catch(() => null);
 });
 
 function buildFallbackMetadata(slug: string): Metadata {
-  const fallbackPath = `/products/${encodeURIComponent(slug)}`;
+  const cleanSlug = slug.replace(/["'`]/g, '').trim();
+  const fallbackPath = `/products/${encodeURIComponent(cleanSlug)}`;
   const fallbackUrl = absoluteUrl(fallbackPath);
   return {
     title: 'Product - Joydeem',
@@ -264,7 +271,7 @@ export async function generateMetadata({
   params,
 }: Pick<Props, 'params'>): Promise<Metadata> {
   const { slug } = await params;
-  const decodedSku = decodeURIComponent(slug);
+  const decodedSku = sanitizeSlug(decodeURIComponent(slug));
   const aggregate = await getProductDetailAggregateSafe(decodedSku);
 
   if (!aggregate) {
@@ -280,7 +287,7 @@ export default async function ProductDetailPage({
 }: Props) {
   const { slug } = await params;
   const sp = await searchParams;
-  const decodedSku = decodeURIComponent(slug);
+  const decodedSku = sanitizeSlug(decodeURIComponent(slug));
 
   let reviewSummary: ProductReviewSummary | null = null;
   let reviewList: ProductReviewListResult = {
