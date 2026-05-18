@@ -92,6 +92,36 @@ function PurchaseBenefitsBar() {
   );
 }
 
+function PurchaseErrorMessage({ message }: { message: string | null }) {
+  if (!message) return null;
+
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="mt-0.5 shrink-0"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" x2="12" y1="8" y2="12" />
+        <line x1="12" x2="12.01" y1="16" y2="16" />
+      </svg>
+      <span>{message}</span>
+    </div>
+  );
+}
+
 function calculateCustomOptionPriceDelta(
   options: MagentoCustomizableOption[],
   selections: Record<string, string | string[]>,
@@ -375,6 +405,7 @@ function SimpleOptions({
 }) {
   const [qty, setQty] = useState(1);
   const purchaseActionsRef = useRef<HTMLDivElement | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [customSelections, setCustomSelections] = useState<
     Record<string, string | string[]>
   >({});
@@ -443,30 +474,35 @@ function SimpleOptions({
       )}
       {canShowPurchaseSection && (
         <>
-          <div ref={purchaseActionsRef} className="flex items-center gap-3">
-            <QtyInput value={qty} min={1} onChange={setQty} />
-            <div className="flex-1">
-              <AddToCartButton
-                sku={product.sku}
-                qty={qty}
-                productOptionsJson={productOptionsJson}
-                couponCode={claimedCouponCode}
-                disabled={!allCustomRequiredSelected}
-                disabledLabel="Select required options"
-                className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                gtmProduct={{
-                  sku: product.sku,
-                  name: product.name,
-                  price: product.price,
-                  final_price: product.special_price ?? product.price,
-                  currency: product.currency,
-                  categories: product.categories?.map(c => c.name),
-                  brand: product.brand,
-                  url_key: product.url_key,
-                  image: product.thumbnail_url ?? product.image_url,
-                }}
-              />
+          <div className="space-y-2">
+            <div ref={purchaseActionsRef} className="flex items-center gap-3">
+              <QtyInput value={qty} min={1} onChange={setQty} />
+              <div className="flex-1">
+                <AddToCartButton
+                  sku={product.sku}
+                  qty={qty}
+                  productOptionsJson={productOptionsJson}
+                  couponCode={claimedCouponCode}
+                  disabled={!allCustomRequiredSelected}
+                  disabledLabel="Select required options"
+                  showError={false}
+                  onErrorChange={setPurchaseError}
+                  className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  gtmProduct={{
+                    sku: product.sku,
+                    name: product.name,
+                    price: product.price,
+                    final_price: product.special_price ?? product.price,
+                    currency: product.currency,
+                    categories: product.categories?.map(c => c.name),
+                    brand: product.brand,
+                    url_key: product.url_key,
+                    image: product.thumbnail_url ?? product.image_url,
+                  }}
+                />
+              </div>
             </div>
+            <PurchaseErrorMessage message={purchaseError} />
           </div>
           <StickyAddToCartBar
             couponCode={claimedCouponCode}
@@ -525,6 +561,7 @@ function ConfigurableOptions({
   >({});
   const [qty, setQty] = useState(1);
   const showStickyBar = useStickyAddToCartVisibility(purchaseActionsRef);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   const findChildSku = useCallback(
     (attrs: Record<string, number>): string | null => {
@@ -799,37 +836,42 @@ function ConfigurableOptions({
 
       {canShowPurchaseSection && (
         <>
-          <div ref={purchaseActionsRef} className="flex items-center gap-3">
-            <QtyInput value={qty} min={1} onChange={setQty} />
+          <div className="space-y-2">
+            <div ref={purchaseActionsRef} className="flex items-center gap-3">
+              <QtyInput value={qty} min={1} onChange={setQty} />
 
-            <div className="flex-1">
-              <AddToCartButton
-                sku={product.sku}
-                qty={qty}
-                productOptionsJson={productOptionsJson}
-                couponCode={effectiveCouponCode}
-                disabled={!allSelected || !allCustomRequiredSelected}
-                disabledLabel={
-                  !allSelected ? 'Select Options' : 'Select required options'
-                }
-                className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                gtmProduct={{
-                  sku: selectedChild?.sku ?? product.sku,
-                  name: selectedChild?.name ?? product.name,
-                  price: selectedChild?.price ?? product.price,
-                  final_price:
-                    selectedChild?.special_price ??
-                    selectedChild?.price ??
-                    product.special_price ??
-                    product.price,
-                  currency: product.currency,
-                  categories: product.categories?.map(c => c.name),
-                  brand: product.brand,
-                  url_key: product.url_key,
-                  image: product.thumbnail_url ?? product.image_url,
-                }}
-              />
+              <div className="flex-1">
+                <AddToCartButton
+                  sku={product.sku}
+                  qty={qty}
+                  productOptionsJson={productOptionsJson}
+                  couponCode={effectiveCouponCode}
+                  disabled={!allSelected || !allCustomRequiredSelected}
+                  disabledLabel={
+                    !allSelected ? 'Select Options' : 'Select required options'
+                  }
+                  showError={false}
+                  onErrorChange={setPurchaseError}
+                  className="btn-primary !rounded-xl border-0 flex h-11 w-full items-center justify-center gap-2 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  gtmProduct={{
+                    sku: selectedChild?.sku ?? product.sku,
+                    name: selectedChild?.name ?? product.name,
+                    price: selectedChild?.price ?? product.price,
+                    final_price:
+                      selectedChild?.special_price ??
+                      selectedChild?.price ??
+                      product.special_price ??
+                      product.price,
+                    currency: product.currency,
+                    categories: product.categories?.map(c => c.name),
+                    brand: product.brand,
+                    url_key: product.url_key,
+                    image: product.thumbnail_url ?? product.image_url,
+                  }}
+                />
+              </div>
             </div>
+            <PurchaseErrorMessage message={purchaseError} />
           </div>
           <StickyAddToCartBar
             couponCode={effectiveCouponCode}

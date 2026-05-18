@@ -20,6 +20,10 @@ interface AddToCartButtonProps {
   /** 加购成功后自动应用的优惠券码 */
   couponCode?: string | null;
   className?: string;
+  /** 是否在按钮内部渲染错误提示 */
+  showError?: boolean;
+  /** 错误状态变化回调，方便外部单独摆放提示 */
+  onErrorChange?: (error: string | null) => void;
   /** GTM product data for add_to_cart event */
   gtmProduct?: {
     sku: string;
@@ -44,6 +48,8 @@ export function AddToCartButton({
   disabled: externalDisabled = false,
   disabledLabel = 'Select Options',
   className,
+  showError = true,
+  onErrorChange,
   gtmProduct,
 }: AddToCartButtonProps) {
   const { addItemToCart, isAdding, error, success, resetSuccess } =
@@ -55,6 +61,10 @@ export function AddToCartButton({
     const timer = window.setTimeout(() => resetSuccess(), 3000);
     return () => window.clearTimeout(timer);
   }, [resetSuccess, success]);
+
+  useEffect(() => {
+    onErrorChange?.(error);
+  }, [error, onErrorChange]);
 
   const handleAddToCart = useCallback(async () => {
     const result = await addItemToCart(
@@ -119,7 +129,7 @@ export function AddToCartButton({
           : label}
       </button>
 
-      {error && (
+      {showError && error && (
         <div
           role="alert"
           className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-600"
