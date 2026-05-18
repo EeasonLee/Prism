@@ -114,8 +114,9 @@ export function ProductImageGallery({
       });
 
     // 按 position 将视频插入对应位置
-    const sorted = [...(mediaGallery ?? [])]
-      .sort((a, b) => a.position - b.position);
+    const sorted = [...(mediaGallery ?? [])].sort(
+      (a, b) => a.position - b.position
+    );
 
     const result: ProductGalleryMediaItem[] = [];
     let imageIdx = 0;
@@ -145,6 +146,7 @@ export function ProductImageGallery({
 
     return result;
   }, [mediaGallery, images, productName]);
+  const hasCarousel = mediaItems.length > 1;
   const preloadItems = useMemo(
     () =>
       mediaItems.map(item => ({
@@ -296,10 +298,55 @@ export function ProductImageGallery({
     );
   }
 
+  if (!hasCarousel) {
+    const singleItem = mediaItems[0];
+
+    return (
+      <div className="flex flex-col">
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-background">
+          {singleItem.type === 'image' ? (
+            <OptimizedImage
+              src={
+                singleItem.displayUrl ?? singleItem.url ?? singleItem.fullUrl
+              }
+              alt={singleItem.alt}
+              fill
+              priority
+              maxDisplayWidth={1200}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+            />
+          ) : singleItem.videoProvider === 'youtube' ? (
+            <iframe
+              src={toYouTubeEmbedUrl(singleItem.url) ?? singleItem.url}
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={singleItem.alt}
+            />
+          ) : (
+            <video
+              src={singleItem.url}
+              poster={singleItem.poster}
+              className="h-full w-full object-cover"
+              controls
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label={`${productName} product video`}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-[5rem_minmax(0,1fr)] lg:items-stretch lg:gap-3">
       {/* 缩略图走廊：桌面端放左侧，移动端放底部 */}
-      {mediaItems.length > 1 && (
+      {hasCarousel && (
         <div
           className="order-2 mt-3 flex w-full gap-2 lg:order-1 lg:mt-0 lg:w-20 lg:flex-col lg:items-stretch"
           style={
@@ -413,29 +460,19 @@ export function ProductImageGallery({
                   className="relative min-w-0 shrink-0 grow-0 basis-full"
                 >
                   {item.type === 'image' ? (
-                    <>
-                      <OptimizedImage
-                        src={item.thumbUrl ?? item.url}
-                        alt=""
-                        fill
-                        maxDisplayWidth={150}
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                        className="object-cover"
-                      />
-                      <OptimizedImage
-                        src={item.displayUrl ?? item.url ?? item.fullUrl}
-                        alt={item.alt}
-                        fill
-                        {...(idx === 0
-                          ? { priority: true }
-                          : { loading: 'lazy' as const })}
-                        maxDisplayWidth={1200}
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                        className={`object-cover transition-opacity duration-200 ${
-                          isReady(idx) ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      />
-                    </>
+                    <OptimizedImage
+                      src={item.displayUrl ?? item.url ?? item.fullUrl}
+                      alt={item.alt}
+                      fill
+                      {...(idx === 0
+                        ? { priority: true }
+                        : { loading: 'lazy' as const })}
+                      maxDisplayWidth={1200}
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className={`object-cover transition-opacity duration-200 ${
+                        isReady(idx) ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
                   ) : item.type === 'video' &&
                     idx === activeIndex &&
                     item.videoProvider === 'youtube' ? (
@@ -466,7 +503,7 @@ export function ProductImageGallery({
           </div>
 
           {/* 左右切换箭头 */}
-          {mediaItems.length > 1 && (
+          {hasCarousel && (
             <>
               <button
                 type="button"
@@ -490,7 +527,7 @@ export function ProductImageGallery({
           )}
 
           {/* 图片计数 badge */}
-          {mediaItems.length > 1 && (
+          {hasCarousel && (
             <span className="absolute bottom-3 right-3 rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm">
               {activeIndex + 1} / {mediaItems.length}
             </span>
