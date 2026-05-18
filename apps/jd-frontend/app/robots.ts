@@ -75,6 +75,12 @@ const BLOCKED_SEO_USER_AGENTS = [
 ] as const;
 
 function buildRules(): MetadataRoute.Robots['rules'] {
+  // 测试环境全站禁止爬虫收录
+  const isTestEnv = env.NEXT_PUBLIC_APP_URL?.includes('test1.joydeem.com');
+  if (isTestEnv) {
+    return [{ userAgent: '*', disallow: '/' }];
+  }
+
   return [
     {
       userAgent: '*',

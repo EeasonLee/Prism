@@ -23,15 +23,29 @@ const montserrat = Montserrat({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: 'Joydeem Kitchen Appliances - Dough Makers, Rice Cookers & More',
-  description:
-    'Explore the joy of cooking with Joydeem kitchen appliances, designed to blend innovation, simplify cooking, and inspire creativity.',
-  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
-  icons: {
-    icon: 'https://www.joydeem.com/media/favicon/stores/14/joydeem_logo_html_2.png',
-  },
-};
+export function generateMetadata(): Metadata {
+  const isTestEnv = env.NEXT_PUBLIC_APP_URL?.includes('test1.joydeem.com');
+
+  return {
+    title: 'Joydeem Kitchen Appliances - Dough Makers, Rice Cookers & More',
+    description:
+      'Explore the joy of cooking with Joydeem kitchen appliances, designed to blend innovation, simplify cooking, and inspire creativity.',
+    metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
+    icons: {
+      icon: 'https://www.joydeem.com/media/favicon/stores/14/joydeem_logo_html_2.png',
+    },
+    ...(isTestEnv && {
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      },
+    }),
+  };
+}
 
 export default function RootLayout({
   children,
