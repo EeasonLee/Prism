@@ -19,7 +19,7 @@ export function AccountSkeleton() {
           <div className="mt-3 h-9 w-full animate-pulse rounded-lg bg-surface" />
         </aside>
 
-        <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
+        <section className="">
           <div className="space-y-4">
             <div className="h-6 w-1/3 animate-pulse rounded-lg bg-surface" />
             <div className="h-4 w-full animate-pulse rounded-lg bg-surface" />

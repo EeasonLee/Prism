@@ -52,7 +52,7 @@ export default function WishlistPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <h1 className="heading-2 text-ink">My Wishlist</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Products you have saved for later.
@@ -70,7 +70,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">My Wishlist</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Products you have saved for later.

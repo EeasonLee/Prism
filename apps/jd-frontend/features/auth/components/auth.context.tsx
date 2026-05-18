@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { AuthUser, SessionResponse } from '../types';
@@ -32,7 +33,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function waitForSessionEstablished(
   refreshSession: () => Promise<SessionResponse>,
-  maxAttempts = 4
+  maxAttempts = 10,
+  signal?: AbortSignal
 ): Promise<SessionResponse> {
   let latest = await refreshSession();
   if (latest.isAuthenticated) {
@@ -40,7 +42,13 @@ async function waitForSessionEstablished(
   }
 
   for (let attempt = 1; attempt < maxAttempts; attempt += 1) {
-    await new Promise(resolve => setTimeout(resolve, 120 * attempt));
+    if (signal?.aborted) {
+      throw new Error('Session polling aborted');
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+    if (signal?.aborted) {
+      throw new Error('Session polling aborted');
+    }
     latest = await refreshSession();
     if (latest.isAuthenticated) {
       return latest;
@@ -56,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const refreshSession = useCallback(async (): Promise<SessionResponse> => {
     try {
@@ -103,19 +112,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.error?.message ?? 'Login failed');
-      }
-      const session = await waitForSessionEstablished(refreshSession);
-      if (!session.isAuthenticated) {
-        throw new Error('Login succeeded but session was not established');
+      // 取消之前的轮询
+      abortControllerRef.current?.abort();
+      const ctrl = new AbortController();
+      abortControllerRef.current = ctrl;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data?.error?.message ?? 'Login failed');
+        }
+        const session = await waitForSessionEstablished(
+          refreshSession,
+          10,
+          ctrl.signal
+        );
+        if (!session.isAuthenticated) {
+          throw new Error('Login succeeded but session was not established');
+        }
+      } finally {
+        if (abortControllerRef.current === ctrl) {
+          abortControllerRef.current = null;
+        }
       }
     },
     [refreshSession]
@@ -129,39 +154,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastName?: string,
       turnstileToken?: string
     ) => {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          first_name: firstName,
-          last_name: lastName,
-          turnstile_token: turnstileToken,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.error?.message ?? 'Registration failed');
-      }
-      const session = await waitForSessionEstablished(refreshSession);
-      if (!session.isAuthenticated) {
-        throw new Error(
-          'Registration succeeded but session was not established'
+      // 取消之前的轮询
+      abortControllerRef.current?.abort();
+      const ctrl = new AbortController();
+      abortControllerRef.current = ctrl;
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            first_name: firstName,
+            last_name: lastName,
+            turnstile_token: turnstileToken,
+          }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data?.error?.message ?? 'Registration failed');
+        }
+        const session = await waitForSessionEstablished(
+          refreshSession,
+          10,
+          ctrl.signal
         );
+        if (!session.isAuthenticated) {
+          throw new Error(
+            'Registration succeeded but session was not established'
+          );
+        }
+      } finally {
+        if (abortControllerRef.current === ctrl) {
+          abortControllerRef.current = null;
+        }
       }
     },
     [refreshSession]
   );
 
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    }).catch(() => {
+    abortControllerRef.current?.abort();
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
       /* 失败也继续 */
-    });
+    }
     await refreshSession().catch(() => {
       setUser(null);
       setIsAuthenticated(false);
@@ -169,6 +213,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasSession(false);
     });
   }, [refreshSession]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({

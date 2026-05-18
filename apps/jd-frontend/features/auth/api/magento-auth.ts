@@ -74,18 +74,39 @@ export const magentoAuthProvider: MagentoAuthProvider = {
     };
   },
   async register(input) {
-    await magentoClient.post<MagentoCustomerMeResponse>('customers', {
-      body: {
-        customer: {
-          email: input.email,
-          firstname: input.firstName ?? 'Customer',
-          lastname: input.lastName ?? 'User',
+    try {
+      await magentoClient.post<MagentoCustomerMeResponse>('customers', {
+        body: {
+          customer: {
+            email: input.email,
+            firstname: input.firstName ?? 'Customer',
+            lastname: input.lastName ?? 'User',
+          },
+          password: input.password,
         },
-        password: input.password,
-      },
-    });
+      });
+    } catch (error) {
+      // 区分邮箱已注册 vs 其他注册错误
+      const message = error instanceof Error ? error.message : String(error);
+      const isAlreadyRegistered =
+        message.includes('already exists') ||
+        message.includes('A customer with the same email address');
+      if (isAlreadyRegistered) {
+        throw new Error(
+          'This email is already registered. Please sign in instead.'
+        );
+      }
+      throw new Error('Registration failed. Please try again later.');
+    }
 
-    return this.login(input);
+    try {
+      return await this.login(input);
+    } catch (_loginError) {
+      // 注册成功但登录失败（如账号需激活）
+      throw new Error(
+        'Account created successfully, but automatic sign-in failed. Please sign in manually.'
+      );
+    }
   },
   async getCustomerProfile(magentoAccessToken) {
     const customer = await magentoClient.get<MagentoCustomerMeResponse>(

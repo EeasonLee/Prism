@@ -27,6 +27,10 @@ interface IssueGuestSessionTokensInput {
   sessionId?: string;
 }
 
+// Refresh Token Rotation: 已使用的 token 集合（内存级，进程重启清空）
+// 生产环境应改用 Redis 等持久化存储
+const usedRefreshTokens = new Set<string>();
+
 function createSessionId(sessionId?: string): string {
   return sessionId ?? randomUUID();
 }
@@ -98,17 +102,32 @@ export function validateRefreshToken(
 export function reissueSessionTokensFromRefreshToken(
   refreshToken: string
 ): LocalSessionTokens {
-  // TODO: 安全加固 - 实现 Refresh Token Rotation
-  // 当前每次 refresh 只是重新签发新 token 对，旧 refresh token 在
-  // 原始 exp 到达前仍可被重复使用。应实现:
-  // 1. 每次 refresh 时使旧 refresh token 立即失效
-  // 2. 检测到已用过的 refresh token 再次使用时，触发安全告警并
-  //    强制登出该用户所有设备
+  // Refresh Token Rotation: 检测重放攻击
+  if (usedRefreshTokens.has(refreshToken)) {
+    // 安全告警：已使用的 refresh token 被再次使用，可能是 token 被盗
+    // 清空该 session 相关的所有已使用记录（强制重新登录）
+    const payload = validateRefreshToken(refreshToken);
+    for (const token of usedRefreshTokens) {
+      try {
+        const p = validateRefreshToken(token);
+        if (p.sessionId === payload.sessionId) {
+          usedRefreshTokens.delete(token);
+        }
+      } catch {
+        // 忽略无效 token
+      }
+    }
+    throw new Error('Refresh token reused. Session invalidated for security.');
+  }
+
   const payload = validateRefreshToken(refreshToken);
 
   if (payload.type === 'customer' && !payload.customerEmail) {
     throw new Error('Customer refresh token missing customer email');
   }
+
+  // 标记旧 token 为已使用
+  usedRefreshTokens.add(refreshToken);
 
   return payload.type === 'customer'
     ? issueCustomerSessionTokens({

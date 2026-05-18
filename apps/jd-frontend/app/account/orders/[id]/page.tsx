@@ -79,7 +79,7 @@ export default function AccountOrderDetailPage({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <div className="h-8 w-48 animate-pulse rounded-lg bg-surface" />
         <div className="mt-2 h-4 w-64 animate-pulse rounded-lg bg-surface" />
         <div className="mt-6 h-64 animate-pulse rounded-lg bg-surface" />
@@ -89,14 +89,14 @@ export default function AccountOrderDetailPage({
 
   if (orderId === null) {
     return (
-      <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+      <div className="">
         <p className="text-sm text-red-600">Invalid order ID.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
+    <div className="">
       <h1 className="heading-2 text-ink">Order #{order?.number ?? orderId}</h1>
       <p className="mt-2 text-sm text-ink-muted">Review your order details.</p>
       {error && (

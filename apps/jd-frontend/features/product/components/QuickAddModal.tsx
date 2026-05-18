@@ -330,7 +330,7 @@ export function QuickAddModal({
           </div>
 
           {!isLoading && allConfigOptionsSelected && !selectedVariant && (
-            <p className="text-sm text-red-500">
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 border-l-4 border-red-400">
               This combination is unavailable.
             </p>
           )}
