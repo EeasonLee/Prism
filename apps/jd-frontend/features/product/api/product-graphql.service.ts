@@ -484,14 +484,17 @@ export async function fetchProductDetailBySkuGQL(
 export async function fetchProductDetailByUrlKeyGQL(
   url_key: string
 ): Promise<GQLProduct> {
+  // 清理可能混入的非法字符（如 Next.js RSC 序列化引入的引号）
+  const cleanUrlKey = url_key.replace(/["'`]/g, '').trim();
+  
   const response = await magentoGraphQL<GQLProductsResponse>(
     PRODUCT_DETAIL_BY_URL_KEY_QUERY,
-    { url_key }
+    { url_key: cleanUrlKey }
   );
 
   const item = response.products.items[0];
   if (!item) {
-    throw new Error(`Product not found: ${url_key}`);
+    throw new Error(`Product not found: ${cleanUrlKey}`);
   }
 
   return item;

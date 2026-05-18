@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { magentoClient } from '@/infrastructure/api/clients/magento';
-import { verifyTurnstileToken } from '@/features/auth/services/cloudflare-turnstile';
 
 // ── IP 限流（内存级） ────────────────────────────────
 
@@ -47,7 +46,6 @@ function isRateLimited(ip: string): boolean {
 
 interface CheckEmailPayload {
   email: string;
-  turnstile_token?: string;
 }
 
 function isValidEmail(email: string): boolean {
@@ -110,7 +108,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, turnstile_token: turnstileToken } = body;
+  const { email } = body;
 
   // 3. 邮箱格式校验
   if (!email || !isValidEmail(email)) {
@@ -125,32 +123,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. Turnstile 验证（生产环境强制）
-  if (process.env.NODE_ENV === 'production') {
-    const clientIp =
-      request.headers.get('cf-connecting-ip')?.trim() ??
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-      request.headers.get('x-real-ip') ??
-      undefined;
-
-    const turnstileResult = await verifyTurnstileToken(
-      turnstileToken ?? '',
-      clientIp
-    );
-    if (!turnstileResult.success) {
-      return NextResponse.json(
-        {
-          error: {
-            message: turnstileResult.error ?? 'Captcha verification failed',
-            code: 'TURNSTILE_FAILED',
-          },
-        },
-        { status: 400 }
-      );
-    }
-  }
-
-  // 5. 查询 Magento 邮箱是否已注册
+  // 4. 查询 Magento 邮箱是否已注册
   try {
     const isAvailable = await checkEmailAvailable(email);
 

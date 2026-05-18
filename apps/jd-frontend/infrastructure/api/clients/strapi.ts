@@ -12,7 +12,16 @@ import {
   isServerSide,
 } from '@/infrastructure/config/api-config';
 
-const strapiBaseUrl = isServerSide()
+function isBuildPhase(): boolean {
+  const phase = process.env.NEXT_PHASE;
+  return (
+    phase === 'phase-production-build' ||
+    phase === 'phase-development-build' ||
+    phase === 'phase-production-export'
+  );
+}
+
+const strapiBaseUrl = isServerSide() && !isBuildPhase()
   ? getStrapiServerBaseUrl()
   : getApiBaseUrl();
 
