@@ -94,11 +94,6 @@ beforeAll(() => {
   }
 });
 
-const target = {
-  sku: 'PARENT',
-  requiresVariantSelection: false,
-};
-
 const summary: ProductReviewSummary = {
   sku: 'PARENT',
   average: 4.5,
@@ -169,7 +164,6 @@ describe('ProductReviews', () => {
     render(
       <ProductReviews
         sku="PARENT"
-        target={target}
         summary={summary}
         initialReviews={[review]}
         initialPagination={pagination}
@@ -187,7 +181,6 @@ describe('ProductReviews', () => {
     render(
       <ProductReviews
         sku="PARENT"
-        target={target}
         summary={summary}
         initialReviews={[review]}
         initialPagination={pagination}
@@ -209,7 +202,6 @@ describe('ProductReviews', () => {
     render(
       <ProductReviews
         sku="PARENT"
-        target={target}
         summary={summary}
         initialReviews={[review]}
         initialPagination={pagination}
@@ -241,7 +233,6 @@ describe('ProductReviews', () => {
     render(
       <ProductReviews
         sku="PARENT"
-        target={target}
         summary={summary}
         initialReviews={[review]}
         initialPagination={pagination}

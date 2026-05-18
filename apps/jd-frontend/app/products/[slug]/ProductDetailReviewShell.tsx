@@ -10,6 +10,7 @@ import {
 import { ProductDetailContent } from './ProductDetailContent';
 import { ProductDetailsSection } from './ProductDetailsSection';
 import { ProductReviews, type ReviewTarget } from './ProductReviews';
+import { ReviewFormDialog } from './ReviewFormDialog';
 import { ProductVideosSection } from './ProductVideosSection';
 import { RecipesSection } from './RecipesSection';
 import { ProductBackToTopButton } from './ProductBackToTopButton';
@@ -116,9 +117,6 @@ export function ProductDetailReviewShell({
     (initialPagination?.total ?? 0) > 0 ||
     (initialReviews?.length ?? 0) > 0;
 
-  // 即使还没有评论，只要允许提交，也要挂载 ProductReviews 以提供 ReviewForm 弹窗
-  const shouldMountReviews = hasReviewData || allowSubmit;
-
   return (
     <div>
       <ProductDetailContent
@@ -152,19 +150,26 @@ export function ProductDetailReviewShell({
         </div>
       )}
 
-      {shouldMountReviews && (
+      {hasReviewData && (
         <div id="section-reviews">
           <ProductReviews
             sku={reviewSku}
-            target={reviewTarget}
             summary={summary}
             initialReviews={initialReviews}
             initialPagination={initialPagination}
             allowSubmit={allowSubmit}
-            isReviewFormOpen={isReviewFormOpen}
-            onReviewFormOpenChange={setIsReviewFormOpen}
+            onWriteReview={handleWriteReview}
           />
         </div>
+      )}
+
+      {allowSubmit && (
+        <ReviewFormDialog
+          sku={reviewSku}
+          target={reviewTarget}
+          isOpen={isReviewFormOpen}
+          onOpenChange={setIsReviewFormOpen}
+        />
       )}
 
       {faqSections.length > 0 && (
