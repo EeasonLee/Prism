@@ -12,7 +12,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = join(__dirname, '..');
-const appPkgPath = join(workspaceRoot, 'apps', 'jd-frontend', 'package.json');
+const appName = process.argv[2] ?? 'jd-frontend';
+const appPkgPath = join(workspaceRoot, 'apps', appName, 'package.json');
 const rootPkgPath = join(workspaceRoot, 'package.json');
 
 function readJson(path, fallback = {}) {
@@ -67,7 +68,7 @@ const sep = '+' + '-'.repeat(labelWidth + 2) + '+' + '-'.repeat(valueWidth + 2) 
 const headerContentWidth = labelWidth + valueWidth + 3;
 const rows = [
   sep,
-  `| ${'Prism Build Info'.padEnd(headerContentWidth)} |`,
+  `| ${`${appName} Build Info`.padEnd(headerContentWidth)} |`,
   sep,
   line('Version', version),
   line('Version Status', versionStatus),

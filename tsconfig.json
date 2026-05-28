@@ -7,6 +7,9 @@
       "path": "./apps/jd-frontend"
     },
     {
+      "path": "./apps/hr-frontend"
+    },
+    {
       "path": "./libs/shared"
     },
     {

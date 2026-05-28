@@ -234,6 +234,12 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@20.19.9)(@vitest/ui@3.2.4)(jiti@2.4.2)(jsdom@22.1.0)(less@4.4.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(yaml@2.8.1)
 
+  apps/hr-frontend:
+    dependencies:
+      zustand:
+        specifier: ^5.0.13
+        version: 5.0.13(@types/react@19.2.13)(react@19.0.0)
+
   apps/jd-frontend:
     dependencies:
       zustand:
