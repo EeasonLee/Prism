@@ -1,10 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { Youtube } from 'lucide-react';
 import { PageContainer } from '@prism/ui/components/PageContainer';
 import { useAuth } from '@/features/auth';
 import { useAuthModal } from '@/features/auth';
 import { env } from '@/infrastructure/config/env';
+import {
+  FacebookBrandIcon,
+  InstagramBrandIcon,
+} from './share/social-brand-icons';
 
 interface InfoLinkItem {
   href: string;
@@ -30,6 +36,63 @@ const SERVICE_LINKS = [
   { href: '/payment-policy', label: 'Payment Policy' },
   { href: '/terms-of-use', label: 'Terms of Use' },
   { href: '/faqs', label: 'FAQs' },
+];
+
+const SOCIAL_LINKS = [
+  {
+    href: 'https://www.facebook.com/joydeemkitchen',
+    label: 'Facebook',
+    icon: FacebookBrandIcon,
+  },
+  {
+    href: 'https://www.instagram.com/joydeemkitchen',
+    label: 'Instagram',
+    icon: InstagramBrandIcon,
+  },
+  {
+    href: 'https://www.youtube.com/@Joydeem',
+    label: 'YouTube',
+    icon: Youtube,
+  },
+];
+
+const PAYMENT_METHODS = [
+  {
+    label: 'American Express',
+    src: '/images/payments/amex.svg',
+    width: 36,
+    height: 24,
+  },
+  {
+    label: 'Google Pay',
+    src: '/images/payments/google-pay.svg',
+    width: 56,
+    height: 24,
+  },
+  {
+    label: 'Mastercard',
+    src: '/images/payments/mastercard.svg',
+    width: 38,
+    height: 24,
+  },
+  {
+    label: 'PayPal',
+    src: '/images/payments/paypal.svg',
+    width: 58,
+    height: 24,
+  },
+  {
+    label: 'Shop Pay',
+    src: '/images/payments/shop-pay.svg',
+    width: 64,
+    height: 24,
+  },
+  {
+    label: 'Visa',
+    src: '/images/payments/visa.svg',
+    width: 50,
+    height: 24,
+  },
 ];
 
 export function Footer() {
@@ -118,6 +181,41 @@ export function Footer() {
                       Mon–Fri, 10 AM – 6 PM EST
                     </span>
                   </p>
+                  <ul className="flex flex-wrap gap-3 pt-1">
+                    {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
+                      <li key={label}>
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Visit Joydeem on ${label}`}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
+                        >
+                          <Icon className="h-5 w-5" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-1">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-600">
+                      We accept
+                    </p>
+                    <ul className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.map(({ label, src, width, height }) => (
+                        <li key={label}>
+                          <span className="inline-flex h-8 items-center justify-center rounded bg-white px-2 shadow-sm">
+                            <Image
+                              src={src}
+                              alt={label}
+                              width={width}
+                              height={height}
+                              className="max-h-5 w-auto"
+                            />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
