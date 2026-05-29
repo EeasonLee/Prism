@@ -6,10 +6,12 @@ import {
   ProductCard,
   productQueryFacade,
   mapCardItemToDisplay,
+  type ProductCardItem,
+  type UnifiedProductQuery,
 } from '@/features/product';
 import { CategoryFilterScroller } from './CategoryFilterScroller';
 
-const PRODUCTS_PER_SECTION = 8;
+const CATEGORY_PRODUCTS_PAGE_SIZE = 48;
 
 interface MallCategorySection {
   id: number;
@@ -34,6 +36,29 @@ interface MallCategorySeed {
 interface MallPageData {
   bannerImageUrl: string | null;
   sections: MallCategorySection[];
+}
+
+async function fetchAllCategoryProducts(
+  query: Omit<UnifiedProductQuery, 'page' | 'pageSize'>
+): Promise<ProductCardItem[]> {
+  const firstPage = await productQueryFacade.queryProducts({
+    ...query,
+    page: 1,
+    pageSize: CATEGORY_PRODUCTS_PAGE_SIZE,
+  });
+  const products = [...firstPage.items];
+  const totalPages = Math.max(1, firstPage.pagination.totalPages);
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const result = await productQueryFacade.queryProducts({
+      ...query,
+      page,
+      pageSize: CATEGORY_PRODUCTS_PAGE_SIZE,
+    });
+    products.push(...result.items);
+  }
+
+  return products;
 }
 
 function pickMallConfigFromSections(sections: PageSection[]): {
@@ -135,19 +160,17 @@ async function getMallPageData(sections: PageSection[]): Promise<MallPageData> {
         category.magentoCategoryId > 0;
 
       try {
-        const result = await productQueryFacade.queryProducts({
-          ...(hasMagentoCategoryId
+        const products = await fetchAllCategoryProducts(
+          hasMagentoCategoryId
             ? { magentoCategoryId: category.magentoCategoryId }
             : category.slug?.trim()
             ? { strapiCategorySlug: category.slug.trim() }
-            : { strapiCategoryId: category.id }),
-          page: 1,
-          pageSize: PRODUCTS_PER_SECTION,
-        });
+            : { strapiCategoryId: category.id }
+        );
 
         return {
           ...category,
-          products: result.items,
+          products,
         };
       } catch {
         return {
