@@ -15,6 +15,12 @@ export {
   removeCoupon,
 } from './api/cart-bff.service';
 export { useAddToCartAction } from './hooks/use-add-to-cart-action';
+export {
+  getCartItemStockWarning,
+  resolveCartItemView,
+  sortCartItemsByStock,
+  useCartEnrichment,
+} from './hooks/use-cart-enrichment';
 export { authenticatedCartRequest } from './api/cart-rest-handler.bff';
 export {
   createGuestCart,
@@ -47,3 +53,8 @@ export type {
   MagentoResponse,
   MagentoErrorBody,
 } from './types';
+export type {
+  CartEnrichmentData,
+  ResolvedCartItemView,
+  ResolvedCartOption,
+} from './hooks/use-cart-enrichment';

@@ -1,74 +1,99 @@
 'use client';
 
-import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import { PageContainer } from '@prism/ui';
+import { env } from '@/infrastructure/config/env';
+import { PageContainer, OptimizedImage } from '@prism/ui';
+import { formatPrice } from '@prism/shared';
+import {
+  AlertTriangle,
+  CreditCard,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Trash2,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { env } from '@/infrastructure/config/env';
-import { formatPrice } from '@prism/shared';
+import { LoginModal, useAuth } from '@/features/auth';
 import {
   formatCartLineTotal,
   formatCartMoney,
   getCartSnapshot,
   getCheckoutRedirectLink,
+  removeCoupon,
+  resolveCartItemView,
+  sortCartItemsByStock,
+  useCartEnrichment,
+  useCart,
 } from '@/features/cart';
 import type { CartTotals } from '@/features/cart/types';
-import { useAuth } from '@/features/auth';
-import { useCart } from '@/features/cart';
-import { LoginModal } from '@/features/auth';
 import {
-  gtmRemoveFromCart,
   gtmBeginCheckout,
-  mapDisplayToGtmItem,
+  gtmRemoveFromCart,
+  mapCartItemToGtmItem,
 } from '@/shared/utils/gtm';
 
 export default function CartPage() {
   const { hasSession, isGuest } = useAuth();
-  const { items, removeFromCart, clearCart, updateItemQty } = useCart();
+  const {
+    items,
+    isCartInitializing,
+    removeFromCart,
+    clearCart,
+    updateItemQty,
+    syncCart,
+  } = useCart();
 
   const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
-  const [loadingItems, setLoadingItems] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
   const [clearLoading, setClearLoading] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const enrichment = useCartEnrichment(items);
 
-  const loadCartItems = useCallback(
-    async (opts?: { showSpinner?: boolean }) => {
-      if (!hasSession) {
-        setCartTotals(null);
-        setLoadingItems(false);
-        return;
-      }
-
-      const showSpinner = opts?.showSpinner !== false;
-      if (showSpinner) {
-        setLoadingItems(true);
-      }
-      setServiceError(null);
-      try {
-        const snapshot = await getCartSnapshot();
-        setCartTotals(snapshot.totals);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : '';
-        setServiceError(
-          msg.includes('unavailable')
-            ? 'Shop service is temporarily unavailable, please try again later.'
-            : 'Failed to load cart items. Please try again.'
-        );
-      } finally {
-        if (showSpinner) {
-          setLoadingItems(false);
-        }
-      }
-    },
-    [hasSession]
-  );
+  const hasItems = items.length > 0;
 
   useEffect(() => {
-    void loadCartItems();
-  }, [loadCartItems]);
+    if (!hasSession) {
+      setCartTotals(null);
+      setInitialLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncTotals = async () => {
+      try {
+        const snapshot = await getCartSnapshot();
+        if (!cancelled) {
+          setCartTotals(snapshot.totals);
+          setServiceError(null);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        if (!cancelled) {
+          setServiceError(
+            msg.includes('unavailable')
+              ? 'Shop service is temporarily unavailable, please try again later.'
+              : 'Failed to load cart totals. Please try again.'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setInitialLoading(false);
+        }
+      }
+    };
+
+    void syncTotals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasSession, items]);
 
   const handleUpdateQty = useCallback(
     async (itemId: string, newQty: number) => {
@@ -94,24 +119,14 @@ export default function CartPage() {
 
   const handleRemoveItem = useCallback(
     async (itemId: string) => {
+      const item = items.find(i => i.item_id === itemId);
       setMutatingItemId(itemId);
       setServiceError(null);
       try {
-        const item = items.find(i => i.item_id === itemId);
         await removeFromCart(itemId);
         setCartTotals(null);
-        // GTM: remove_from_cart
         if (item) {
-          gtmRemoveFromCart(
-            mapDisplayToGtmItem({
-              sku: item.sku,
-              name: item.name,
-              price: item.price,
-              final_price: item.price,
-              currency: item.currency ?? 'USD',
-            }),
-            item.qty
-          );
+          gtmRemoveFromCart(mapCartItemToGtmItem(item), item.qty);
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : '';
@@ -124,7 +139,7 @@ export default function CartPage() {
         setMutatingItemId(null);
       }
     },
-    [removeFromCart, items]
+    [items, removeFromCart]
   );
 
   const handleClearCart = useCallback(async () => {
@@ -145,6 +160,26 @@ export default function CartPage() {
     }
   }, [clearCart]);
 
+  const handleRemoveCoupon = useCallback(async () => {
+    setCouponLoading(true);
+    setCouponError(null);
+    setServiceError(null);
+    try {
+      const snapshot = await removeCoupon();
+      setCartTotals(snapshot.totals);
+      await syncCart();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setCouponError(
+        msg.includes('unavailable')
+          ? 'Service temporarily unavailable, please try again later.'
+          : msg || 'Failed to remove coupon. Please try again.'
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  }, [syncCart]);
+
   const handleCheckout = useCallback(async () => {
     if (!hasSession) return;
     if (isGuest && env.REQUIRE_LOGIN_FOR_CHECKOUT) {
@@ -155,20 +190,10 @@ export default function CartPage() {
     setCheckoutLoading(true);
     setServiceError(null);
     try {
-      // GTM: begin_checkout
-      const gtmItems = items.map(item =>
-        mapDisplayToGtmItem({
-          sku: item.sku,
-          name: item.name,
-          price: item.price,
-          final_price: item.price,
-          currency: item.currency ?? 'USD',
-        })
-      );
-      gtmBeginCheckout(gtmItems);
+      gtmBeginCheckout(items.map(item => mapCartItemToGtmItem(item)));
 
       const { redirect_url } = await getCheckoutRedirectLink();
-      window.open(redirect_url, '_blank', 'noopener,noreferrer');
+      window.location.assign(redirect_url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('GUEST_CHECKOUT_NOT_ALLOWED') || msg.includes('guest')) {
@@ -199,70 +224,145 @@ export default function CartPage() {
     [items]
   );
   const subtotalFallbackCurrency = items[0]?.currency ?? 'USD';
-  const hasItems = items.length > 0;
+  const sortedItems = useMemo(
+    () => sortCartItemsByStock(items, enrichment),
+    [enrichment, items]
+  );
+  const hasStockIssues = useMemo(
+    () =>
+      items.some(
+        item => resolveCartItemView(item, enrichment[item.sku]).stockWarning
+      ),
+    [enrichment, items]
+  );
+  const showInitialSkeleton =
+    isCartInitializing || (hasSession && initialLoading && !hasItems);
 
   return (
-    <main>
-      <PageContainer className="max-w-6xl py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="heading-2 text-ink">Shopping Cart</h1>
+    <main className="min-h-[calc(100dvh-4rem)] bg-background pb-24 md:pb-0">
+      <PageContainer className="max-w-6xl px-4 py-6 sm:py-8">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <h1 className="text-3xl font-bold leading-none text-ink sm:text-4xl">
+            Shopping Cart
+          </h1>
           <Link
-            href="/categories"
-            className="text-sm font-medium text-brand underline"
+            href="/categories/kitchen-appliances"
+            className="shrink-0 text-sm font-medium text-brand underline"
           >
             Continue shopping
           </Link>
         </div>
 
-        {!hasSession && (
-          <div className="rounded-xl border border-border bg-background p-8 text-center">
+        {!isCartInitializing && !hasSession && (
+          <div className="rounded-lg border border-border bg-background p-8 text-center">
             <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
-            <p className="body-text text-ink">
+            <p className="text-sm font-medium text-ink">
               Your cart is currently unavailable.
             </p>
-            <p className="micro-text mt-2 text-ink-muted">
+            <p className="mt-2 text-sm text-ink-muted">
               Please refresh the page or sign in again.
             </p>
           </div>
         )}
 
-        {hasSession && loadingItems && (
+        {showInitialSkeleton && (
           <div className="space-y-3">
             {[1, 2, 3].map(n => (
               <div
                 key={n}
-                className="h-20 animate-pulse rounded-lg bg-surface"
+                className="h-24 animate-pulse rounded-lg bg-surface"
               />
             ))}
           </div>
         )}
 
-        {hasSession && !loadingItems && !hasItems && (
-          <div className="rounded-xl border border-border bg-background p-12 text-center">
+        {hasSession && !showInitialSkeleton && !hasItems && (
+          <div className="rounded-lg border border-border bg-background p-12 text-center">
             <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
-            <p className="body-text text-ink">Your cart is empty</p>
+            <p className="text-sm font-medium text-ink">Your cart is empty</p>
           </div>
         )}
 
-        {hasSession && !loadingItems && hasItems && (
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        {hasSession && hasItems && (
+          <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
             <ul className="space-y-3">
-              {items.map(item => (
-                <li
-                  key={item.item_id}
-                  className="rounded-xl border border-border bg-background p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-ink">
-                        {item.name}
-                      </p>
-                      <p className="mt-1 text-xs text-ink-muted">
-                        SKU: {item.sku}
-                      </p>
-                      {item.options && item.options.length > 0 && (
+              {sortedItems.map(item => {
+                const itemView = resolveCartItemView(
+                  item,
+                  enrichment[item.sku]
+                );
+                const stock = enrichment[item.sku]?.inventory;
+
+                return (
+                  <li
+                    key={item.item_id}
+                    className={`flex gap-3 rounded-lg bg-background p-3 ${
+                      itemView.stockWarning
+                        ? 'border-[3px] border-red-300 bg-red-50/60'
+                        : 'border border-border'
+                    }`}
+                  >
+                    {itemView.imageUrl ? (
+                      <Link
+                        href={itemView.productUrl}
+                        className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-surface sm:h-24 sm:w-24"
+                      >
+                        <OptimizedImage
+                          src={itemView.imageUrl}
+                          alt={item.name}
+                          width={96}
+                          height={96}
+                          maxDisplayWidth={96}
+                          className="h-full w-full object-cover"
+                        />
+                      </Link>
+                    ) : (
+                      <Link
+                        href={itemView.productUrl}
+                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-surface sm:h-24 sm:w-24"
+                      >
+                        <ShoppingCart className="h-6 w-6 text-ink-muted/30" />
+                      </Link>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            href={itemView.productUrl}
+                            className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition hover:text-brand sm:text-base"
+                          >
+                            {item.name}
+                          </Link>
+                          {itemView.stockWarning && (
+                            <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-600">
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              {itemView.stockWarning}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-ink-muted">
+                            SKU: {item.sku}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-semibold text-ink">
+                            {formatCartLineTotal(item)}
+                          </p>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${item.name} from cart`}
+                            onClick={() => void handleRemoveItem(item.item_id)}
+                            disabled={mutatingItemId === item.item_id}
+                            className="ml-auto mt-1 flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {itemView.options.length > 0 && (
                         <ul className="mt-2 space-y-0.5 text-xs text-ink-muted">
-                          {item.options.map((opt, idx) => (
+                          {itemView.options.map((opt, idx) => (
                             <li key={`${item.item_id}-opt-${idx}`}>
                               <span className="text-ink-faint">
                                 {opt.label}:
@@ -272,56 +372,90 @@ export default function CartPage() {
                           ))}
                         </ul>
                       )}
-                      <div className="mt-3 flex items-center gap-1">
+
+                      <div className="mt-3 inline-flex items-center overflow-hidden rounded-md border border-border bg-surface">
                         <button
                           type="button"
                           aria-label="Decrease quantity"
                           onClick={() =>
-                            handleUpdateQty(item.item_id, item.qty - 1)
+                            void handleUpdateQty(item.item_id, item.qty - 1)
                           }
                           disabled={
                             mutatingItemId === item.item_id || item.qty <= 1
                           }
-                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-7 text-center text-sm text-ink">
-                          {item.qty}
-                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={
+                            stock?.salable_qty && stock.salable_qty > 0
+                              ? stock.salable_qty
+                              : undefined
+                          }
+                          value={item.qty}
+                          onChange={e => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!Number.isNaN(val) && val >= 1) {
+                              void handleUpdateQty(item.item_id, val);
+                            }
+                          }}
+                          onBlur={e => {
+                            const val = parseInt(e.target.value, 10);
+                            if (Number.isNaN(val) || val < 1) {
+                              void handleUpdateQty(item.item_id, 1);
+                            }
+                          }}
+                          disabled={mutatingItemId === item.item_id}
+                          className="flex h-8 w-12 min-w-[2.5rem] items-center justify-center border-x border-border bg-surface px-1 text-center text-sm font-semibold text-ink outline-none [appearance:textfield] disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
                         <button
                           type="button"
                           aria-label="Increase quantity"
                           onClick={() =>
-                            handleUpdateQty(item.item_id, item.qty + 1)
+                            void handleUpdateQty(item.item_id, item.qty + 1)
                           }
                           disabled={mutatingItemId === item.item_id}
-                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-ink-muted transition hover:bg-surface hover:text-ink disabled:opacity-50"
+                          className="flex h-8 w-8 items-center justify-center text-ink-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-50"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <p className="text-base font-semibold text-ink">
-                        {formatCartLineTotal(item)}
-                      </p>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${item.name} from cart`}
-                        onClick={() => handleRemoveItem(item.item_id)}
-                        disabled={mutatingItemId === item.item_id}
-                        className="flex h-8 w-8 items-center justify-center rounded text-ink-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
 
-            <aside className="h-fit rounded-xl border border-border bg-background p-5">
+            <aside className="h-fit space-y-3 rounded-lg border border-border bg-background p-4 lg:sticky lg:top-24">
+              {cartTotals?.coupon_code && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg bg-surface px-3 py-2">
+                    <span className="text-sm text-ink">
+                      Coupon:{' '}
+                      <span className="font-semibold">
+                        {cartTotals.coupon_code}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleRemoveCoupon()}
+                      disabled={couponLoading}
+                      className="text-sm text-red-500 transition hover:text-red-600 disabled:opacity-50"
+                    >
+                      {couponLoading ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <div className="rounded-lg bg-red-50 px-3 py-2">
+                      <p className="text-sm text-red-600">{couponError}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Subtotal</span>
                 <span className="font-semibold text-ink">
@@ -331,42 +465,44 @@ export default function CartPage() {
                 </span>
               </div>
               {cartTotals?.discount && cartTotals.discount.value !== 0 && (
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-ink-muted">
-                    {(cartTotals.discount_reason ?? 'Discount') +
-                      (cartTotals.coupon_code
-                        ? ` (${cartTotals.coupon_code})`
-                        : '')}
+                <div className="flex items-center justify-between gap-3 text-sm text-ink">
+                  <span className="min-w-0">
+                    {cartTotals.coupon_code
+                      ? `Discount (${cartTotals.coupon_code})`
+                      : cartTotals.discount_reason ?? 'Discount'}
                   </span>
-                  <span className="font-semibold text-ink">
+                  <span className="shrink-0 font-semibold">
                     {formatCartMoney(cartTotals.discount)}
                   </span>
                 </div>
               )}
               {cartTotals?.grand_total && (
-                <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
-                  <span className="text-ink-muted">Estimated total</span>
-                  <span className="font-semibold text-ink">
-                    {formatCartMoney(cartTotals.grand_total)}
-                  </span>
+                <div className="flex items-center justify-between border-t border-border pt-3 text-base font-bold text-ink">
+                  <span>Estimated total</span>
+                  <span>{formatCartMoney(cartTotals.grand_total)}</span>
                 </div>
               )}
 
               <button
                 type="button"
                 onClick={handleCheckout}
-                disabled={checkoutLoading}
-                className="btn-primary mt-4 w-full py-3 text-sm font-semibold disabled:opacity-60"
+                disabled={checkoutLoading || hasStockIssues}
+                className="btn-primary flex w-full items-center justify-center gap-2 rounded-xl py-4 text-base font-bold disabled:opacity-60"
               >
-                {checkoutLoading ? 'Redirecting…' : 'Checkout'}
+                <CreditCard className="h-5 w-5" />
+                {checkoutLoading
+                  ? 'Redirecting...'
+                  : hasStockIssues
+                  ? 'Please adjust quantities to proceed'
+                  : 'Checkout'}
               </button>
               <button
                 type="button"
                 onClick={handleClearCart}
                 disabled={clearLoading}
-                className="mt-3 w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
+                className="w-full py-2 text-sm text-ink-muted transition hover:text-ink disabled:opacity-50"
               >
-                {clearLoading ? 'Clearing…' : 'Clear cart'}
+                {clearLoading ? 'Clearing...' : 'Clear cart'}
               </button>
             </aside>
           </div>
@@ -377,23 +513,7 @@ export default function CartPage() {
             role="alert"
             className="mt-5 flex items-start gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mt-0.5 shrink-0"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" x2="12" y1="8" y2="12" />
-              <line x1="12" x2="12.01" y1="16" y2="16" />
-            </svg>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{serviceError}</span>
           </div>
         )}

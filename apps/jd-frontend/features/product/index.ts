@@ -82,6 +82,7 @@ export { getProductVariantsBFF } from './api/variants.bff';
 export { productQueryFacade } from './api/query-facade';
 export { parseProductQueryParams } from './api/product-params';
 export type {
+  UnifiedProductQuery,
   UnifiedProductQueryResult,
   UnifiedProductSortOption,
 } from './services/query.model';
