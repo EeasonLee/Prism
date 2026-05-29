@@ -3,6 +3,7 @@
 import { env } from '@/infrastructure/config/env';
 import {
   CreditCard,
+  Loader2,
   Minus,
   Plus,
   ShoppingCart,
@@ -174,6 +175,7 @@ function findVariantImage(
 export function CartDrawer() {
   const {
     items,
+    isCartInitializing,
     isCartOpen,
     closeCart,
     itemCount,
@@ -574,7 +576,16 @@ export function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {!hasItems && (
+          {isCartInitializing && !hasItems && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Loader2 className="mb-3 h-10 w-10 animate-spin text-ink-muted/40" />
+              <p className="text-sm font-medium text-ink-muted">
+                Loading cart...
+              </p>
+            </div>
+          )}
+
+          {!isCartInitializing && !hasItems && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <ShoppingCart className="mb-3 h-10 w-10 text-ink-muted/40" />
               <p className="text-sm font-medium text-ink-muted">

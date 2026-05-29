@@ -34,8 +34,14 @@ import {
 
 export default function CartPage() {
   const { hasSession, isGuest } = useAuth();
-  const { items, removeFromCart, clearCart, updateItemQty, syncCart } =
-    useCart();
+  const {
+    items,
+    isCartInitializing,
+    removeFromCart,
+    clearCart,
+    updateItemQty,
+    syncCart,
+  } = useCart();
 
   const [cartTotals, setCartTotals] = useState<CartTotals | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -229,7 +235,8 @@ export default function CartPage() {
       ),
     [enrichment, items]
   );
-  const showInitialSkeleton = hasSession && initialLoading && !hasItems;
+  const showInitialSkeleton =
+    isCartInitializing || (hasSession && initialLoading && !hasItems);
 
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-background pb-24 md:pb-0">
@@ -246,7 +253,7 @@ export default function CartPage() {
           </Link>
         </div>
 
-        {!hasSession && (
+        {!isCartInitializing && !hasSession && (
           <div className="rounded-lg border border-border bg-background p-8 text-center">
             <ShoppingCart className="mx-auto mb-3 h-10 w-10 text-ink-muted/50" />
             <p className="text-sm font-medium text-ink">

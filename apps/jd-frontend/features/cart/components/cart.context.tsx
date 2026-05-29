@@ -23,6 +23,7 @@ interface CartContextValue {
   items: CartItem[];
   itemCount: number;
   getQtyBySku: (sku: string) => number;
+  isCartInitializing: boolean;
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -41,8 +42,14 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { hasSession, isAuthenticated, refreshSession } = useAuth();
+  const {
+    hasSession,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    refreshSession,
+  } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [hasSyncedCart, setHasSyncedCart] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const prevAuthStateRef = useRef<{
     hasSession: boolean | null;
@@ -61,10 +68,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const nextItems = await getCartItems();
       if (requestId === syncRequestIdRef.current) {
         setItems(nextItems);
+        setHasSyncedCart(true);
       }
     } catch (error) {
       // 短暂失败时保留旧值，避免角标抖动；仅在身份迁移时统一清零
       console.warn('[cart] syncCart failed:', error);
+      if (requestId === syncRequestIdRef.current) {
+        setHasSyncedCart(true);
+      }
     }
   }, []);
 
@@ -88,19 +99,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     if (justLoggedOut || sessionLost) {
       setItems([]);
+      setHasSyncedCart(false);
       setIsCartOpen(false);
     }
 
     if (sessionBecameAvailable || justLoggedIn) {
+      setHasSyncedCart(false);
       void syncCart();
     }
     if (!initialized && hasSession && !initialSyncDoneRef.current) {
       initialSyncDoneRef.current = true;
+      setHasSyncedCart(false);
       void syncCart();
+    }
+    if (!isAuthLoading && !hasSession) {
+      setHasSyncedCart(true);
     }
 
     prevAuthStateRef.current = { hasSession, isAuthenticated };
-  }, [hasSession, isAuthenticated, syncCart]);
+  }, [hasSession, isAuthenticated, isAuthLoading, syncCart]);
 
   const addToCart = useCallback(
     async (params: AddCartItemParams) => {
@@ -141,6 +158,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items.reduce((sum, item) => (item.sku === sku ? sum + item.qty : sum), 0),
     [items]
   );
+  const isCartInitializing = isAuthLoading || (hasSession && !hasSyncedCart);
 
   const removeFromCart = useCallback(
     async (itemId: string) => {
@@ -176,6 +194,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items,
       itemCount,
       getQtyBySku,
+      isCartInitializing,
       isCartOpen,
       openCart,
       closeCart,
@@ -189,6 +208,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items,
       itemCount,
       getQtyBySku,
+      isCartInitializing,
       isCartOpen,
       openCart,
       closeCart,
