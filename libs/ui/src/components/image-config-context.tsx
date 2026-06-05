@@ -4,9 +4,13 @@ import { createContext, useContext } from 'react';
 
 interface ImageConfig {
   baseUrl: string;
+  domainRewriteMap: Record<string, string>;
 }
 
-const ImageConfigContext = createContext<ImageConfig>({ baseUrl: '' });
+const ImageConfigContext = createContext<ImageConfig>({
+  baseUrl: '',
+  domainRewriteMap: {},
+});
 
 export function useImageConfig() {
   return useContext(ImageConfigContext);

@@ -33,7 +33,7 @@
         "parallel": false,
         "cwd": "{workspaceRoot}",
         "commands": [
-          "nx run jd-frontend:next-build",
+          "pnpm nx run jd-frontend:next-build",
           "node apps/jd-frontend/scripts/sync-standalone-assets.mjs"
         ]
       }
@@ -62,7 +62,7 @@
     "test": {
       "executor": "@nx/vite:test",
       "options": {
-        "passWithNoTests": false,
+        "passWithNoTests": true,
         "config": "apps/jd-frontend/vite.config.ts",
         "reportsDirectory": "apps/jd-frontend/test-output/vitest"
       }
@@ -71,7 +71,7 @@
       "executor": "@nx/playwright:playwright",
       "options": {
         "config": "apps/jd-frontend/playwright.config.js",
-        "passWithNoTests": false
+        "passWithNoTests": true
       }
     },
     "typecheck": {

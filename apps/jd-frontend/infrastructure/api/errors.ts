@@ -1,12 +1,3 @@
-/**
- * 统一 API 错误类型
- *
- * 自包含错误树，不依赖 @prism/shared。
- * 所有 HTTP 客户端统一使用此文件中的错误类。
- */
-
-// ── 根 ──────────────────────────────────────────────
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -16,21 +7,13 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = 'ApiError';
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ApiError);
-    }
   }
 }
-
-// ── 网络 / 超时 ─────────────────────────────────────
 
 export class NetworkError extends Error {
   constructor(message: string, public originalError?: Error) {
     super(message);
     this.name = 'NetworkError';
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, NetworkError);
-    }
   }
 }
 
@@ -38,13 +21,8 @@ export class TimeoutError extends Error {
   constructor(message = 'Request timeout') {
     super(message);
     this.name = 'TimeoutError';
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, TimeoutError);
-    }
   }
 }
-
-// ── HTTP 状态 ────────────────────────────────────────
 
 export class AuthenticationError extends ApiError {
   constructor(message = 'Authentication failed', data?: unknown) {
@@ -81,30 +59,6 @@ export class ServerError extends ApiError {
   }
 }
 
-export class MagentoApiError extends ApiError {
-  constructor(
-    message: string,
-    public code: string,
-    status: number,
-    public detail: unknown = null
-  ) {
-    super(message, status, code, detail);
-    this.name = 'MagentoApiError';
-  }
-}
-
-export class MagentoServiceError extends MagentoApiError {
-  constructor(
-    message = 'Service temporarily unavailable, please try again later',
-    detail: unknown = null
-  ) {
-    super(message, 'SERVICE_UNAVAILABLE', 502, detail);
-    this.name = 'MagentoServiceError';
-  }
-}
-
-// ── 子系统特化 ───────────────────────────────────────
-
 export interface GraphQLErrorItem {
   message: string;
   extensions?: Record<string, unknown>;
@@ -112,17 +66,15 @@ export interface GraphQLErrorItem {
   path?: Array<string | number>;
 }
 
-export class MagentoGraphQLError extends ServerError {
+export class GraphQLApiError extends ServerError {
   public readonly errors: GraphQLErrorItem[];
 
   constructor(message: string, errors: GraphQLErrorItem[] = []) {
     super(500, message);
-    this.name = 'MagentoGraphQLError';
+    this.name = 'GraphQLApiError';
     this.errors = errors;
   }
 }
-
-// ── 类型守卫 ─────────────────────────────────────────
 
 export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError;
@@ -136,77 +88,57 @@ export function isTimeoutError(error: unknown): error is TimeoutError {
   return error instanceof TimeoutError;
 }
 
-export function isMagentoGraphQLError(
-  error: unknown
-): error is MagentoGraphQLError {
-  return error instanceof MagentoGraphQLError;
+export function isGraphQLApiError(error: unknown): error is GraphQLApiError {
+  return error instanceof GraphQLApiError;
 }
-
-export function isMagentoApiError(error: unknown): error is MagentoApiError {
-  if (error instanceof MagentoApiError) return true;
-  return (
-    error instanceof Error &&
-    (error.name === 'MagentoApiError' ||
-      error.name === 'MagentoServiceError') &&
-    typeof (error as { status?: unknown }).status === 'number'
-  );
-}
-
-// ── 统一错误映射 ─────────────────────────────────────
 
 export type ErrorMapper = (
   status: number,
   body: unknown
 ) => Error | null | undefined;
 
-export async function mapHttpError(
-  res: Response,
-  overrides?: ErrorMapper
-): Promise<never> {
-  // 子系统优先处理（如 GraphQL 的 body.errors）
-  if (overrides) {
-    const body = await res
-      .clone()
-      .json()
-      .catch(() => null);
-    const result = overrides(res.status, body);
-    if (result) throw result;
+function extractMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') {
+    return undefined;
   }
 
-  const rawBody = await res.text().catch(() => null);
-  const message =
-    rawBody && rawBody.length > 0
-      ? rawBody
-      : res.statusText || `HTTP ${res.status}`;
-
-  // 尝试从标准错误响应中提取更友好的消息
-  let extractedMessage: string | undefined;
-  if (rawBody) {
-    try {
-      const parsed = JSON.parse(rawBody);
-      // Strapi 风格: { error: { message: "..." } }
-      if (parsed?.error?.message) {
-        extractedMessage = parsed.error.message;
-      }
-      // Magento 风格: { message: "...", trace: "..." }
-      else if (parsed?.message) {
-        extractedMessage = parsed.message;
-      }
-    } catch {
-      // 非 JSON body，用 rawBody
+  const bodyRecord = body as Record<string, unknown>;
+  const nestedError = bodyRecord.error;
+  if (nestedError && typeof nestedError === 'object') {
+    const message = (nestedError as Record<string, unknown>).message;
+    if (typeof message === 'string') {
+      return message;
     }
   }
 
-  const displayMessage = extractedMessage ?? message;
+  return typeof bodyRecord.message === 'string'
+    ? bodyRecord.message
+    : undefined;
+}
 
-  // 5xx / 502 使用用户友好消息，避免原始 HTML/nginx 错误页暴露给前端
-  const userFriendlyMessage = 'Server error, please try again later';
+export async function mapHttpError(
+  response: Response,
+  overrides?: ErrorMapper
+): Promise<never> {
+  const parsedBody = await response
+    .clone()
+    .json()
+    .catch((): unknown => null);
 
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(`[api] HTTP ${res.status} — ${displayMessage.slice(0, 200)}`);
+  if (overrides) {
+    const result = overrides(response.status, parsedBody);
+    if (result) {
+      throw result;
+    }
   }
 
-  switch (res.status) {
+  const rawBody = await response.text().catch(() => '');
+  const fallbackMessage =
+    rawBody || response.statusText || `HTTP ${response.status}`;
+  const displayMessage = extractMessage(parsedBody) ?? fallbackMessage;
+  const serverMessage = 'Server error, please try again later';
+
+  switch (response.status) {
     case 400:
       throw new ApiError(displayMessage, 400, 'BAD_REQUEST');
     case 401:
@@ -217,26 +149,25 @@ export async function mapHttpError(
       throw new NotFoundError(displayMessage);
     case 422:
       throw new ValidationError(displayMessage);
-    case 502:
-      throw new MagentoServiceError(userFriendlyMessage, displayMessage);
     default:
-      if (res.status >= 500)
-        throw new ServerError(res.status, userFriendlyMessage, displayMessage);
-      throw new ApiError(displayMessage, res.status);
+      if (response.status >= 500) {
+        throw new ServerError(response.status, serverMessage, displayMessage);
+      }
+      throw new ApiError(displayMessage, response.status);
   }
 }
 
-// ── 错误标准化 ───────────────────────────────────────
-
 export function normalizeError(error: unknown): ApiError {
-  if (error instanceof ApiError) return error;
+  if (error instanceof ApiError) {
+    return error;
+  }
 
   if (error instanceof DOMException && error.name === 'AbortError') {
-    return new TimeoutError(error.message);
+    return new ApiError(error.message, 408, 'TIMEOUT');
   }
 
   if (error instanceof TypeError && error.message.includes('fetch')) {
-    return new NetworkError(error.message);
+    return new ApiError(error.message, 0, 'NETWORK_ERROR');
   }
 
   if (error instanceof Error) {

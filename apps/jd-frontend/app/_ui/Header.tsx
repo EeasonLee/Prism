@@ -1,45 +1,32 @@
-import { getHeaderMenu } from '@/features/navigation/header-menu.bff';
-import { HeaderClient } from './HeaderClient';
-import type { HeaderMenuNode } from '@/features/navigation/types';
+import Link from 'next/link';
+import { PageContainer } from '@prism/ui';
 
-const FALLBACK_MENU_ITEMS: HeaderMenuNode[] = [
-  {
-    title: 'Categories',
-    url: '/categories',
-    openInNewTab: false,
-    children: [],
-  },
-  {
-    title: 'Recipes',
-    url: '/recipes',
-    openInNewTab: false,
-    children: [],
-  },
-  {
-    title: 'Blog',
-    url: '/blog',
-    openInNewTab: false,
-    children: [],
-  },
+const navItems: Array<{ href: '/'; label: string }> = [
+  { href: '/', label: 'Home' },
 ];
 
-function hasRenderableMenu(nodes: HeaderMenuNode[]): boolean {
-  return nodes.some(node => {
-    if (typeof node.url === 'string' && node.url.trim()) {
-      return true;
-    }
-    if (Array.isArray(node.children) && node.children.length > 0) {
-      return hasRenderableMenu(node.children);
-    }
-    return false;
-  });
-}
-
-export async function Header() {
-  const menu = await getHeaderMenu().catch(() => ({ items: [] }));
-  const items = hasRenderableMenu(menu.items)
-    ? menu.items
-    : FALLBACK_MENU_ITEMS;
-
-  return <HeaderClient menuItems={items} />;
+export function Header() {
+  return (
+    <header className="border-b border-border bg-background">
+      <PageContainer className="flex min-h-16 items-center justify-between gap-6 py-3">
+        <Link href="/" className="text-base font-semibold text-foreground">
+          Prism
+        </Link>
+        <nav
+          aria-label="Primary navigation"
+          className="flex items-center gap-4"
+        >
+          {navItems.map(item => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </PageContainer>
+    </header>
+  );
 }

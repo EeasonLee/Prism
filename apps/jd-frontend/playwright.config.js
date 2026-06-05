@@ -6,7 +6,7 @@ const path = require('path');
 const filename = __filename ?? path.join(__dirname, 'playwright.config.js');
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:3000';
+const baseURL = process.env['BASE_URL'] || 'http://localhost:3090';
 
 /**
  * Read environment variables from file.
@@ -28,7 +28,7 @@ module.exports = defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'pnpm nx dev jd-frontend',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3090',
     reuseExistingServer: true,
     cwd: workspaceRoot,
   },

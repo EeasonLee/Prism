@@ -1,38 +1,51 @@
-import { getPageBySlug } from '@/features/cms-page';
-import { renderSections } from '@/features/cms-page';
+import { Button, PageContainer } from '@prism/ui';
 
-// Next.js requires a numeric literal here (cannot import REVALIDATE_SECONDS_CMS_PAGE). Keep in sync with cache-policy.ts.
-export const revalidate = 60; // ISR + On-Demand
+const preservedLayers = [
+  'Nx workspace',
+  'Next.js app shell',
+  'Design tokens',
+  'Shared UI primitives',
+  'Infrastructure folders',
+];
 
-export async function generateMetadata() {
-  const page = await getPageBySlug('home');
-
-  if (!page || !page.seo) {
-    return {
-      title: 'Joydeem - Smart Kitchen Appliances',
-      description: 'Discover innovative kitchen appliances for modern living',
-    };
-  }
-
-  return {
-    title: page.seo.title,
-    description: page.seo.description,
-    keywords: page.seo.keywords,
-    openGraph: {
-      title: page.seo.ogTitle || page.seo.title,
-      description: page.seo.ogDescription || page.seo.description,
-      images: page.seo.ogImage ? [page.seo.ogImage.url] : [],
-    },
-  };
-}
-
-export default async function Page() {
-  const page = await getPageBySlug('home');
-  const sections = page?.sections ?? [];
-
+export default function HomePage() {
   return (
-    <div className="grain-overlay">
-      <main className="relative">{renderSections(sections)}</main>
-    </div>
+    <main className="flex-1">
+      <section className="border-b border-border bg-surface">
+        <PageContainer className="py-16 md:py-24">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+              Prism Starter
+            </p>
+            <h1 className="mt-4 text-4xl font-bold leading-tight text-foreground md:text-6xl">
+              Business code has been cleared.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+              This app is back to a clean framework state with the workspace,
+              design system, shared utilities, and application shell preserved.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button>Start building</Button>
+              <Button variant="outline">View components</Button>
+            </div>
+          </div>
+        </PageContainer>
+      </section>
+
+      <section>
+        <PageContainer className="py-12 md:py-16">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {preservedLayers.map(layer => (
+              <div
+                key={layer}
+                className="rounded-md border border-border bg-card p-4 text-sm font-medium text-card-foreground"
+              >
+                {layer}
+              </div>
+            ))}
+          </div>
+        </PageContainer>
+      </section>
+    </main>
   );
 }
