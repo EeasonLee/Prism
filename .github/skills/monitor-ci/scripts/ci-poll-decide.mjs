@@ -89,16 +89,16 @@ const failureClassification = rawFailureClassification?.toLowerCase() ?? null;
 
 function categorizeTasks() {
   const verifiedSet = new Set(verifiedTaskIds);
-  const unverified = failedTaskIds.filter(t => !verifiedSet.has(t));
+  const unverified = failedTaskIds.filter((t) => !verifiedSet.has(t));
   if (unverified.length === 0) return { category: 'all_verified' };
 
-  const e2e = unverified.filter(t => {
+  const e2e = unverified.filter((t) => {
     const parts = t.split(':');
     return parts.length >= 2 && parts[1].includes('e2e');
   });
   if (e2e.length === unverified.length) return { category: 'e2e_only' };
 
-  const verifiable = unverified.filter(t => {
+  const verifiable = unverified.filter((t) => {
     const parts = t.split(':');
     return !(parts.length >= 2 && parts[1].includes('e2e'));
   });
@@ -106,7 +106,7 @@ function categorizeTasks() {
 }
 
 function backoff(count) {
-  const delays = [60, 90, 120];
+  const delays = [60, 90, 120, 180];
   return delays[Math.min(count, delays.length - 1)];
 }
 
@@ -153,7 +153,7 @@ function isNewCipe() {
 //     3. still waiting                   → wait  (waiting_for_cipe)
 //   NORMAL MODE:
 //     4. polling timeout                 → done  (polling_timeout)
-//     5. circuit breaker (5 polls)       → done  (circuit_breaker)
+//     5. circuit breaker (13 polls)      → done  (circuit_breaker)
 //     6. CI succeeded                    → done  (ci_success)
 //     7. CI canceled                     → done  (cipe_canceled)
 //     8. CI timed out                    → done  (cipe_timed_out)
@@ -185,7 +185,7 @@ function classify() {
 
   // --- Guards ---
   if (isTimedOut()) return { action: 'done', code: 'polling_timeout' };
-  if (noProgressCount >= 5) return { action: 'done', code: 'circuit_breaker' };
+  if (noProgressCount >= 13) return { action: 'done', code: 'circuit_breaker' };
 
   // --- Terminal CI states ---
   if (cipeStatus === 'SUCCEEDED') return { action: 'done', code: 'ci_success' };
@@ -300,7 +300,7 @@ const messages = {
 
   // guards
   polling_timeout: () => 'Polling timeout exceeded.',
-  circuit_breaker: () => 'No progress after 5 consecutive polls. Stopping.',
+  circuit_breaker: () => 'No progress after 13 consecutive polls. Stopping.',
 
   // terminal
   ci_success: () => 'CI passed successfully!',
@@ -328,7 +328,7 @@ const messages = {
 
   // actionable
   fix_auto_applying: () => 'Fix verified! Auto-applying...',
-  fix_auto_apply_skipped: extra =>
+  fix_auto_apply_skipped: (extra) =>
     `Fix verified but auto-apply was skipped. ${
       extra?.autoApplySkipReason
         ? `Reason: ${extra.autoApplySkipReason}`
@@ -339,7 +339,7 @@ const messages = {
       verificationStatus || 'N/A'
     }`,
   fix_apply_ready: () => 'Fix available and verified. Ready to apply.',
-  fix_needs_local_verify: extra =>
+  fix_needs_local_verify: (extra) =>
     `Fix available. ${extra.verifiableTaskIds.length} task(s) need local verification.`,
   fix_failed: () => 'Self-healing failed to generate a fix.',
   no_fix: () => 'CI failed, no fix available.',
