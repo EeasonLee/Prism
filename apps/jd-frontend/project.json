@@ -32,10 +32,7 @@
       "options": {
         "parallel": false,
         "cwd": "{workspaceRoot}",
-        "commands": [
-          "pnpm nx run jd-frontend:next-build",
-          "node apps/jd-frontend/scripts/sync-standalone-assets.mjs"
-        ]
+        "commands": ["pnpm nx run jd-frontend:next-build"]
       }
     },
     "next-build": {
