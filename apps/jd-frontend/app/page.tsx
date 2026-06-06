@@ -1,9 +1,9 @@
-import { PipelinePreview } from '@/app/_ui/PipelinePreview';
+import { HomePageView } from '@/app/_ui/HomePageView';
 
 export default function HomePage() {
   return (
-    <main className="flex-1 bg-[#0d0f15]">
-      <PipelinePreview />
+    <main className="flex-1">
+      <HomePageView />
     </main>
   );
 }
