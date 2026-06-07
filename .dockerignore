@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+*.md
+.storybook
+storybook-static
+**/e2e
+**/tests
+**/*.spec.*
+**/*.test.*
+.env.local
+.env.development

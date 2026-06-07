@@ -1,0 +1,13 @@
+services:
+  jd-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jd-frontend
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_LOG_LEVEL=info
+    restart: unless-stopped

@@ -1,0 +1,51 @@
+{
+  "files": [],
+  "include": [
+    ".next/types/**/*.ts",
+    "../../dist/apps/jd-frontend/.next/types/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "../../libs/shared"
+    },
+    {
+      "path": "../../libs/tokens"
+    },
+    {
+      "path": "../../libs/ui"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./tsconfig.e2e.json"
+    }
+  ],
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@prism/shared": ["../../libs/shared/src/index.ts"],
+      "@prism/shared/*": ["../../libs/shared/*"],
+      "@prism/ui": ["../../libs/ui/src/index.ts"],
+      "@prism/ui/*": ["../../libs/ui/src/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "exclude": ["node_modules"]
+}

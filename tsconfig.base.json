@@ -13,14 +13,24 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@prism/*": ["libs/*"],
-      "@prism/prism/*": ["apps/prism/*"]
-    }
+      "@prism/shared": ["libs/shared/src/index.ts"],
+      "@prism/shared/*": ["libs/shared/*"],
+      "@prism/tokens": ["libs/tokens/src/index.ts"],
+      "@prism/tokens/*": ["libs/tokens/src/*"],
+      "@prism/ui": ["libs/ui/src/index.ts"],
+      "@prism/ui/*": ["libs/ui/src/*"]
+    },
+    "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "incremental": true
   }
 }
