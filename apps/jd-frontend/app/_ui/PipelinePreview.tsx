@@ -34,30 +34,27 @@ type DecorativeRibbon = {
 const nodes: PipelineNode[] = [
   {
     id: 'requirements',
-    title: 'Requirement Inputs',
-    eyebrow: 'User feedback / PRS / Issues',
-    detail:
-      'The intake node collects product signals and routes them into the workflow.',
+    title: '需求输入',
+    eyebrow: '用户反馈 / PRS / Issues',
+    detail: '接入层负责汇总产品信号，并把需求线索分发到后续协作流程中。',
     x: 17,
     y: 27,
     tone: 'silver',
   },
   {
     id: 'event-center',
-    title: 'Hermes Event Center',
-    eyebrow: 'Messages / aggregation / synthesis',
-    detail:
-      'The central hub normalizes events, fans out context, and keeps the map alive.',
+    title: 'Hermes 事件中心',
+    eyebrow: '消息 / 聚合 / 综合',
+    detail: '中心枢纽负责标准化事件、扩散上下文，并持续维护全局协作视图。',
     x: 50,
     y: 31,
     tone: 'cyan',
   },
   {
     id: 'decision-layer',
-    title: 'Decision Layer',
-    eyebrow: 'RFC / ADR / review / priority',
-    detail:
-      'Decision nodes turn raw signals into explicit architecture and delivery choices.',
+    title: '决策层',
+    eyebrow: 'RFC / ADR / 评审 / 优先级',
+    detail: '决策节点把原始信号转化成明确的架构判断与交付选择。',
     x: 61,
     y: 58,
     tone: 'violet',
@@ -177,9 +174,9 @@ const decorativeRibbons = [
 ];
 
 const toneClassByNode: Record<PipelineNode['tone'], string> = {
-  violet: 'border-fuchsia-300/70 bg-fuchsia-400/20 text-fuchsia-50',
-  cyan: 'border-cyan-200/70 bg-cyan-300/20 text-cyan-50',
-  silver: 'border-slate-200/60 bg-slate-300/15 text-slate-50',
+  violet: 'border-fuchsia-300/80 bg-fuchsia-100/85 text-fuchsia-950',
+  cyan: 'border-cyan-300/80 bg-cyan-100/85 text-cyan-950',
+  silver: 'border-slate-300/80 bg-white/90 text-slate-900',
 };
 
 const toneClassByTrace: Record<PipelineTrace['tone'], string> = {
@@ -201,24 +198,24 @@ export function PipelinePreview() {
     selectedNodeId === 'event-center' || selectedNodeId === 'decision-layer';
 
   return (
-    <div className="relative min-h-[760px] overflow-hidden rounded-none bg-[#11131a] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(120,226,255,0.18),transparent_28%),radial-gradient(circle_at_62%_58%,rgba(214,94,255,0.18),transparent_32%),linear-gradient(180deg,#171821_0%,#0d0f15_100%)]" />
-      <div className="pipeline-grid absolute inset-0 opacity-55" />
+    <div className="relative min-h-[760px] overflow-hidden rounded-none bg-white text-slate-950">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(56,189,248,0.12),transparent_28%),radial-gradient(circle_at_62%_58%,rgba(217,70,239,0.12),transparent_32%),linear-gradient(180deg,#ffffff_0%,#eef4fb_100%)]" />
+      <div className="pipeline-grid absolute inset-0 opacity-90" />
 
       <div className="relative z-10 mx-auto flex min-h-[760px] max-w-6xl flex-col px-5 py-8 md:px-8 md:py-10">
         <div className="max-w-4xl">
-          <p className="text-xs font-semibold uppercase text-cyan-200">
-            Interactive workflow prototype
+          <p className="text-xs font-semibold uppercase text-cyan-700">
+            交互式工作流原型
           </p>
-          <h1 className="mt-3 text-4xl font-bold uppercase leading-tight text-slate-100 md:text-6xl">
-            Software Development Pipeline
+          <h1 className="mt-3 text-4xl font-bold uppercase leading-tight text-slate-950 md:text-6xl">
+            软件开发流水线
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">
-            Click a node to light up its connections and inspect the flow.
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+            点击节点，高亮关联链路并查看当前流转说明。
           </p>
         </div>
 
-        <div className="relative mt-8 flex-1 overflow-hidden rounded-lg border border-white/10 bg-black/15 shadow-[0_0_80px_rgba(151,93,255,0.18)]">
+        <div className="relative mt-8 flex-1 overflow-hidden rounded-lg border border-slate-200/80 bg-white/70 shadow-[0_24px_90px_rgba(15,23,42,0.10)]">
           <svg
             aria-hidden="true"
             className="absolute inset-0 h-full w-full"
@@ -380,25 +377,21 @@ export function PipelinePreview() {
             })}
           </svg>
 
-          <div className="absolute left-[8%] top-[48%] hidden w-40 rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300 md:block">
-            <p className="font-semibold uppercase text-slate-100">
-              Knowledge Base
-            </p>
+          <div className="absolute left-[8%] top-[48%] hidden w-40 rounded-md border border-slate-200 bg-white/85 p-4 text-sm text-slate-600 shadow-[0_16px_40px_rgba(148,163,184,0.14)] backdrop-blur-md md:block">
+            <p className="font-semibold uppercase text-slate-900">知识底座</p>
             <ul className="mt-3 space-y-2">
-              <li>Design docs</li>
-              <li>Source code</li>
-              <li>Team playbooks</li>
+              <li>设计文档</li>
+              <li>源码仓库</li>
+              <li>团队手册</li>
             </ul>
           </div>
 
-          <div className="absolute bottom-[7%] right-[7%] hidden w-44 rounded-md border border-white/10 bg-[#11131a]/80 p-4 text-sm text-slate-300 shadow-[0_0_28px_rgba(103,232,249,0.12)] backdrop-blur-md md:block">
-            <p className="font-semibold uppercase text-slate-100">
-              Capability Layer
-            </p>
+          <div className="absolute bottom-[7%] right-[7%] hidden w-44 rounded-md border border-slate-200 bg-white/88 p-4 text-sm text-slate-600 shadow-[0_18px_46px_rgba(56,189,248,0.10)] backdrop-blur-md md:block">
+            <p className="font-semibold uppercase text-slate-900">能力层</p>
             <ul className="mt-3 space-y-2">
               <li>Claude Code</li>
               <li>Codex</li>
-              <li>MCP tools</li>
+              <li>MCP 工具</li>
             </ul>
           </div>
 
@@ -418,7 +411,7 @@ export function PipelinePreview() {
                 style={{ left: `${node.x}%`, top: `${node.y}%` }}
               >
                 <span className="pipeline-node-core" />
-                <span className="block text-[11px] font-semibold uppercase text-slate-300">
+                <span className="block text-[11px] font-semibold uppercase text-slate-500">
                   {node.eyebrow}
                 </span>
                 <span className="mt-1 block text-base font-bold uppercase leading-tight">
@@ -429,27 +422,27 @@ export function PipelinePreview() {
           })}
 
           <div className="absolute left-1/2 top-[66%] h-28 w-[1px] -translate-x-1/2 bg-gradient-to-b from-fuchsia-300/80 to-transparent shadow-[0_0_18px_rgba(217,70,239,0.75)]" />
-          <div className="absolute left-1/2 top-[83%] grid w-[70%] -translate-x-1/2 grid-cols-3 gap-3 rounded-md border border-white/10 bg-black/20 p-3 text-center text-xs font-semibold uppercase text-slate-300 md:w-[48%]">
-            <span className="rounded border border-white/10 bg-white/[0.04] px-2 py-3">
-              Lint
+          <div className="absolute left-1/2 top-[83%] grid w-[70%] -translate-x-1/2 grid-cols-3 gap-3 rounded-md border border-slate-200/90 bg-white/82 p-3 text-center text-xs font-semibold uppercase text-slate-600 shadow-[0_18px_44px_rgba(148,163,184,0.16)] backdrop-blur-md md:w-[48%]">
+            <span className="rounded border border-slate-200 bg-slate-50 px-2 py-3">
+              检查
             </span>
-            <span className="rounded border border-white/10 bg-white/[0.04] px-2 py-3">
-              Build
+            <span className="rounded border border-slate-200 bg-slate-50 px-2 py-3">
+              构建
             </span>
-            <span className="rounded border border-fuchsia-300/40 bg-fuchsia-400/10 px-2 py-3 text-fuchsia-100">
-              Ship
+            <span className="rounded border border-fuchsia-300/60 bg-fuchsia-100 px-2 py-3 text-fuchsia-800">
+              交付
             </span>
           </div>
         </div>
 
-        <aside className="mt-5 rounded-md border border-white/10 bg-white/[0.05] p-4 text-slate-200 shadow-[0_0_34px_rgba(103,232,249,0.12)] md:max-w-3xl">
-          <p className="text-xs font-semibold uppercase text-cyan-200">
-            Selected node
+        <aside className="mt-5 rounded-md border border-slate-200 bg-white/88 p-4 text-slate-700 shadow-[0_18px_48px_rgba(56,189,248,0.10)] backdrop-blur-md md:max-w-3xl">
+          <p className="text-xs font-semibold uppercase text-cyan-700">
+            当前节点
           </p>
-          <h2 className="mt-2 text-xl font-bold uppercase text-white">
+          <h2 className="mt-2 text-xl font-bold uppercase text-slate-950">
             {selectedNode.title}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             {selectedNode.detail}
           </p>
         </aside>

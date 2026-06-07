@@ -87,12 +87,6 @@
 - 内部导航必须使用 `next/link` 的 `<Link>`
 - 不要直接使用裸 `<a href="...">` 处理站内跳转
 
-### Language
-
-- 所有用户可见文本必须使用 English
-- 包括按钮、标签、placeholder、错误信息、空状态文案、`aria-label`
-- 代码注释可以使用中文
-
 ## 使用建议
 
 - 新增或修改项目规则时，优先判断能否下沉到 `ESLint`、`TypeScript`、测试或 CI

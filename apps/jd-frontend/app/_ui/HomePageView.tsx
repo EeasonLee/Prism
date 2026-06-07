@@ -7,10 +7,10 @@ import {
   Bot,
   BrainCircuit,
   FolderKanban,
-  GitBranch,
-  ShieldCheck,
+  Gauge,
   Sparkles,
 } from 'lucide-react';
+import { PipelinePreview } from './PipelinePreview';
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/95e9f5c8-6d0d-485e-922b-43c7d17604b1';
@@ -20,7 +20,6 @@ const logoImage =
 type NavItem = {
   href: string;
   label: string;
-  active?: boolean;
 };
 
 type AbilityItem = {
@@ -34,9 +33,8 @@ type ProofItem = {
   badge: string;
   badgeClassName: string;
   title: string;
-  decision: string;
+  summary: string;
   result: string;
-  inverted?: boolean;
 };
 
 type LogItem = {
@@ -47,103 +45,81 @@ type LogItem = {
 };
 
 const navItems: NavItem[] = [
-  { href: '#proof', label: 'Projects' },
-  { href: '#log', label: 'Blog' },
-  { href: '#abilities', label: 'Dashboard' },
-  { href: '#footer', label: 'About' },
-  { href: '#log', label: 'Articles', active: true },
+  { href: '#abilities', label: '能力' },
+  { href: '#proof', label: '项目' },
+  { href: '#log', label: '文章' },
+  { href: '#footer', label: '关于' },
 ];
 
 const abilityItems: AbilityItem[] = [
   {
-    title: 'Frontend Engineering',
-    description:
-      'Interfaces are built to serve. Architecture is what makes them scale.',
+    title: '前端工程',
+    description: '复杂业务页面、稳定的组件体系，以及真正能落地上线的实现能力。',
     icon: FolderKanban,
     accentClassName: 'text-[#8127cf]',
   },
   {
-    title: 'AI Workflows',
+    title: 'AI 工作流',
     description:
-      'Automation, agents, eval loops, and production-ready LLM integration.',
+      '围绕 AI 协作、上下文设计、自动化链路与实际可用的 LLM 集成能力。',
     icon: Bot,
     accentClassName: 'text-[#8127cf]',
   },
   {
-    title: 'Knowledge Systems',
-    description:
-      'Grids, modules, notes, and retrieval structures that stay connected.',
+    title: '知识管理',
+    description: '把笔记、内容地图和检索结构组织成可复用、可持续积累的系统。',
     icon: BrainCircuit,
     accentClassName: 'text-[#8127cf]',
   },
   {
-    title: 'System Thinking',
-    description:
-      'From branching paths to deploy rules, every move stays functional.',
-    icon: GitBranch,
-    accentClassName: 'text-[#8127cf]',
-  },
-  {
-    title: 'Risk Control',
-    description:
-      'High standards, sharp rollback paths, and no patience for fragile flows.',
-    icon: ShieldCheck,
+    title: '性能优化',
+    description: '以前端性能为重点专项，关注速度、体验、交付成本和可量化结果。',
+    icon: Gauge,
     accentClassName: 'text-[#8127cf]',
   },
 ];
 
 const proofItems: ProofItem[] = [
   {
-    badge: 'AI Memory OS',
+    badge: '代表项目',
     badgeClassName: 'bg-[#a4d64c] text-[#1f2a00]',
-    title: 'Obsidian AI memory architecture',
-    decision:
-      'A modular vault with typed notes, automation hooks, and retrieval-friendly metadata.',
+    title: '个人博客能力证明站',
+    summary:
+      '以内容优先的方式组织能力、项目和文章，让首页本身就成为清晰的能力证明入口。',
     result:
-      'Structured notes stay queryable at scale and keep context reusable over time.',
+      '让访问者能在很短时间内理解我做什么、怎么思考，以及这些工作为什么值得继续了解。',
   },
   {
-    badge: 'Risk Control',
+    badge: '代表项目',
     badgeClassName: 'bg-[#8127cf] text-white',
-    title: 'AI translation rollback review',
-    decision:
-      'Every bulk translation change is versioned, diffed, and prepared for instant rollback.',
+    title: '完整电商链路项目',
+    summary: '围绕复杂业务流程、前端工程深度和性能取舍展开的完整项目实践。',
     result:
-      'Zero production incidents and rollback time kept under two minutes.',
-  },
-  {
-    badge: 'Frontend Eng',
-    badgeClassName: 'bg-[#8127cf] text-white',
-    title: 'Personal proof-of-skill site',
-    decision:
-      'An ultra-fast first paint, CSS Grid structure, and a brutalist visual system with strict constraints.',
-    result:
-      'High Lighthouse scores with a visual identity that is instantly recognizable.',
-    inverted: true,
+      '证明我不仅能做页面实现，也能在真实业务复杂度里做出稳定且可靠的工程判断。',
   },
 ];
 
 const logItems: LogItem[] = [
   {
-    category: 'AI Workflow',
+    category: '项目策略',
     categoryClassName: 'bg-[#8127cf]',
-    title: 'How Obsidian became long-term memory for AI',
+    title: '为什么这个站点按“证明”而不是按时间来组织',
     summary:
-      'A lightweight practice for blending structured notes with large language models.',
+      '首页的目标不是展示我发了多少内容，而是帮助访问者快速判断这些内容是否值得继续看下去。',
   },
   {
-    category: 'Engineering Risk',
+    category: 'AI 工作流',
     categoryClassName: 'bg-[#a4d64c]',
-    title: 'Why every major automation change must be reversible',
+    title: '结构化笔记如何成为 AI 协作中的长期上下文',
     summary:
-      'Defensive programming matters most when scripts can touch content in bulk.',
+      '当笔记系统具备连接关系后，提示词、记忆和项目背景就会随着时间不断变得更可复用。',
   },
   {
-    category: 'Frontend Engineering',
+    category: '前端工程',
     categoryClassName: 'bg-[#8127cf]',
-    title: 'Why Chinese semantic memory cannot copy English-first ecosystems',
+    title: '在真实前端项目里，性能优化到底证明了什么',
     summary:
-      'Tokenizer differences change architecture decisions more than most teams expect.',
+      '真正有价值的优化，不只是分数更高，而是它能同时支撑业务流程、视觉质量和交付信心。',
   },
 ];
 
@@ -198,11 +174,7 @@ export function HomePageView() {
                   <li key={item.label}>
                     <Link
                       href={item.href}
-                      className={`border-b-2 pb-1 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
-                        item.active
-                          ? 'border-[#8127cf] text-black'
-                          : 'border-transparent text-[#4c4546] hover:text-black'
-                      }`}
+                      className="border-b-2 border-transparent pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4c4546] transition-colors hover:text-black"
                     >
                       {item.label}
                     </Link>
@@ -214,10 +186,10 @@ export function HomePageView() {
 
           <div className="hidden items-center gap-8 lg:flex">
             <label className="relative block">
-              <span className="sr-only">Search articles</span>
+              <span className="sr-only">搜索文章</span>
               <input
                 type="search"
-                placeholder="Search"
+                placeholder="搜索"
                 className="h-11 w-32 rounded-sm border border-[#cfc4c54d] bg-[#f3f3f5] px-4 pr-10 text-xs text-black outline-none transition focus:border-[#8127cf]"
               />
               <BookOpen className="absolute right-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#7e7576]" />
@@ -227,9 +199,9 @@ export function HomePageView() {
 
             <div className="text-right">
               <p className="font-mono-ui text-[10px] uppercase leading-none text-[#7e7576]">
-                Sys.Time
+                系统时间
               </p>
-              <p className="font-mono-ui mt-1 text-[11px] text-black">
+              <p className="mt-1 font-mono-ui text-[11px] text-black">
                 {utcTime}
               </p>
             </div>
@@ -238,12 +210,12 @@ export function HomePageView() {
 
             <div className="text-right">
               <p className="font-mono-ui text-[10px] uppercase leading-none text-[#7e7576]">
-                Sys.State
+                系统状态
               </p>
               <div className="mt-1 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#a4d64c]" />
-                <span className="font-mono-ui text-[11px] uppercase text-black">
-                  Connection Secure
+                <span className="font-mono-ui text-[11px] text-black">
+                  运行正常
                 </span>
               </div>
             </div>
@@ -255,21 +227,19 @@ export function HomePageView() {
         <section className="relative isolate grid items-center gap-12 py-12 lg:grid-cols-[minmax(0,603px)_minmax(420px,1fr)] lg:py-20">
           <div className="relative z-20">
             <p className="font-mono-ui text-xs font-medium tracking-[0.16em] text-[#8127cf]">
-              /01 HERO_PROMPT
+              /01 首页引导
             </p>
-            <p className="mt-4 text-xs tracking-[0.16em] text-[#4c4546] uppercase">
-              Frontend engineering / AI workflows / knowledge systems
+            <p className="mt-4 text-xs tracking-[0.16em] text-[#4c4546]">
+              前端工程 / AI 工作流 / 知识管理
             </p>
 
-            <h1 className="font-display mt-6 max-w-[620px] text-[clamp(4rem,9vw,6rem)] uppercase leading-[0.9] tracking-[-0.06em] text-black">
+            <h1 className="mt-6 max-w-[620px] font-display text-[clamp(4rem,9vw,6rem)] leading-[0.9] tracking-[-0.06em] text-black">
               Love technology embrace life
             </h1>
 
             <div className="mt-10 border-l-4 border-[#8127cf] pl-7">
               <p className="max-w-[44rem] text-base leading-7 text-[#4c4546]">
-                I use engineering thinking to decode complex systems and I am
-                actively exploring AI-driven workflows for long-term knowledge
-                management.
+                用工程思维理解复杂世界 · 正在探索 AI 驱动知识管理的工作流
               </p>
             </div>
 
@@ -278,14 +248,14 @@ export function HomePageView() {
                 href="#proof"
                 className="yason-button-shadow inline-flex items-center gap-3 border border-black bg-black px-8 py-4 font-display text-sm uppercase tracking-[0.08em] text-white transition-transform hover:-translate-y-1"
               >
-                Explore Proof
+                查看项目
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="#log"
                 className="yason-button-shadow inline-flex items-center gap-3 border border-black bg-[#f9f9fb] px-8 py-4 font-display text-sm uppercase tracking-[0.08em] text-black transition-transform hover:-translate-y-1"
               >
-                Read Articles
+                阅读文章
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -305,9 +275,9 @@ export function HomePageView() {
         </section>
 
         <section id="abilities" className="py-16 lg:py-24">
-          <SectionHeading index="/02" title="Core Abilities" />
+          <SectionHeading index="/02" title="核心能力" />
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {abilityItems.map(item => {
               const Icon = item.icon;
 
@@ -320,21 +290,25 @@ export function HomePageView() {
                   <h3 className="mt-6 text-sm font-semibold uppercase tracking-[0.12em] text-black">
                     {item.title}
                   </h3>
-                  <p className="font-mono-ui mt-4 text-xs leading-6 text-[#4c4546]">
+                  <p className="mt-4 font-mono-ui text-xs leading-6 text-[#4c4546]">
                     {item.description}
                   </p>
                 </article>
               );
             })}
           </div>
+
+          <div className="relative left-1/2 mt-12 w-screen -translate-x-1/2">
+            <PipelinePreview />
+          </div>
         </section>
 
         <section className="grid gap-12 border-t border-[#cfc4c54d] py-16 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] lg:gap-14 lg:py-24">
           <div id="proof">
-            <SectionHeading index="/04" title="Selected Proof" />
+            <SectionHeading index="/03" title="代表项目" />
 
             <div className="mt-12 grid gap-6 lg:grid-cols-2">
-              {proofItems.slice(0, 2).map(item => (
+              {proofItems.map(item => (
                 <article
                   key={item.title}
                   className="yason-card rounded-3xl bg-white p-8 transition-transform duration-200"
@@ -350,62 +324,27 @@ export function HomePageView() {
                   <h3 className="mt-8 max-w-[14ch] text-[2rem] font-semibold leading-tight tracking-[-0.04em] text-black">
                     {item.title}
                   </h3>
-                  <div className="font-mono-ui mt-6 space-y-3 text-[11px] leading-4 text-[#4c4546]">
+                  <div className="mt-6 space-y-3 font-mono-ui text-[11px] leading-4 text-[#4c4546]">
                     <p>
                       <span className="font-bold uppercase text-black">
-                        Proof:
+                        证明：
                       </span>{' '}
-                      {item.decision}
+                      {item.summary}
                     </p>
                     <p>
                       <span className="font-bold uppercase text-black">
-                        Result:
+                        结果：
                       </span>{' '}
                       {item.result}
                     </p>
                   </div>
                 </article>
               ))}
-
-              {proofItems[2] ? (
-                <article className="rounded-3xl bg-black p-8 text-white lg:col-span-2">
-                  <div className="grid gap-10 lg:grid-cols-[295px_minmax(0,1fr)]">
-                    <div>
-                      <div className="flex items-start justify-between gap-4">
-                        <span className="inline-flex items-center border border-white px-2.5 py-1 font-mono-ui text-[11px] font-bold uppercase tracking-[0.08em] text-white">
-                          {proofItems[2].badge}
-                        </span>
-                        <ArrowRight className="h-4 w-4 text-white" />
-                      </div>
-                      <h3 className="mt-10 max-w-[10ch] text-[2.3rem] font-semibold leading-none tracking-[-0.05em] text-white">
-                        {proofItems[2].title}
-                      </h3>
-                    </div>
-
-                    <div className="border-l border-white/20 pl-0 lg:pl-8">
-                      <div className="space-y-6 font-mono-ui text-xs uppercase tracking-[-0.02em]">
-                        <p className="text-white">
-                          <span className="font-bold">Decision:</span>{' '}
-                          <span className="normal-case text-white/70">
-                            {proofItems[2].decision}
-                          </span>
-                        </p>
-                        <p className="text-white">
-                          <span className="font-bold">Result:</span>{' '}
-                          <span className="normal-case text-white/70">
-                            {proofItems[2].result}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ) : null}
             </div>
           </div>
 
           <aside id="log">
-            <SectionHeading index="/05" title="Thinking Log" />
+            <SectionHeading index="/04" title="思考记录" />
 
             <div className="mt-12 space-y-4">
               {logItems.map(item => (
@@ -449,36 +388,31 @@ export function HomePageView() {
                 Yason_
               </span>
             </div>
-            <p className="font-mono-ui mt-8 max-w-[18rem] text-xs leading-5 text-white/50">
-              © 2024 Yason. All nodes active. Precision over aesthetic
-              compromise.
+            <p className="mt-8 max-w-[18rem] font-mono-ui text-xs leading-5 text-white/50">
+              © 2026 Yason。一个围绕能力、判断与执行力展开的个人博客。
             </p>
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/40">
-              Navigation
-            </p>
+            <p className="text-[10px] tracking-[0.18em] text-white/40">导航</p>
             <div className="mt-8 space-y-4 font-mono-ui text-sm">
               <Link href="#proof" className="block hover:text-[#a4d64c]">
-                Work
+                项目
               </Link>
               <Link href="#abilities" className="block hover:text-[#a4d64c]">
-                Services
+                能力
               </Link>
               <Link href="#footer" className="block hover:text-[#a4d64c]">
-                About
+                关于
               </Link>
             </div>
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/40">
-              Resources
-            </p>
+            <p className="text-[10px] tracking-[0.18em] text-white/40">资源</p>
             <div className="mt-8 space-y-4 font-mono-ui text-sm">
               <Link href="#log" className="block hover:text-[#a4d64c]">
-                Manifesto
+                文章
               </Link>
               <a
                 href="https://github.com"
@@ -492,18 +426,18 @@ export function HomePageView() {
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/40">
-              System Status
+            <p className="text-[10px] tracking-[0.18em] text-white/40">
+              系统状态
             </p>
             <div className="mt-8 inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-4">
               <span className="h-2.5 w-2.5 rounded-full bg-[#a4d64c]" />
-              <span className="font-mono-ui text-[11px] uppercase tracking-[-0.03em] text-white">
-                Connection Secure
+              <span className="font-mono-ui text-[11px] tracking-[-0.03em] text-white">
+                运行正常
               </span>
             </div>
             <div className="mt-6 flex items-center gap-2 font-mono-ui text-xs text-white/60">
               <Sparkles className="h-4 w-4 text-[#8127cf]" />
-              Crafted for precise engineering stories.
+              让能力、项目与思考更容易被看见。
             </div>
           </div>
         </div>
