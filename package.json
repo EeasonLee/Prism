@@ -120,5 +120,15 @@
     "typescript-eslint": "^8.29.0",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "nx",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

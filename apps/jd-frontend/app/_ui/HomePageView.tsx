@@ -18,7 +18,7 @@ const logoImage =
   'https://www.figma.com/api/mcp/asset/a2ae4972-b12b-43e1-998c-871366cf0f55';
 
 type NavItem = {
-  href: string;
+  href: `#${string}`;
   label: string;
 };
 
