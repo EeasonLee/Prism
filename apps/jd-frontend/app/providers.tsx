@@ -7,6 +7,7 @@ import {
   useMemo,
 } from 'react';
 import { ImageConfigContext } from '@prism/ui';
+import { AuthProvider } from '../features/auth/provider';
 
 type AppConfig = {
   appName: string;
@@ -31,7 +32,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <AppConfigContext.Provider value={appConfig}>
       <ImageConfigContext.Provider value={imageConfig}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </ImageConfigContext.Provider>
     </AppConfigContext.Provider>
   );

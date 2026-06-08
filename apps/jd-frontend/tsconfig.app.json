@@ -9,6 +9,7 @@
     "paths": {
       // 应用层别名（仅限 apps/jd-frontend 内部使用）
       "@/app/*": ["./app/*"],
+      "@/features/*": ["./features/*"],
       "@/infrastructure/*": ["./infrastructure/*"],
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./lib/*"],

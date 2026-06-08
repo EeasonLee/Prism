@@ -11,6 +11,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PipelinePreview } from './PipelinePreview';
+import { Suspense } from 'react';
+import { DashboardNav } from './DashboardNav';
 
 const heroImage =
   'https://www.figma.com/api/mcp/asset/95e9f5c8-6d0d-485e-922b-43c7d17604b1';
@@ -180,6 +182,9 @@ export function HomePageView() {
                     </Link>
                   </li>
                 ))}
+                <Suspense fallback={null}>
+                  <DashboardNav />
+                </Suspense>
               </ul>
             </nav>
           </div>
